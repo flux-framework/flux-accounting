@@ -9,8 +9,6 @@
 #
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
-from __future__ import print_function
-
 import sys
 import sqlite3
 import pandas as pd
