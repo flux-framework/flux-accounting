@@ -1,1 +1,4 @@
-JobCompletion.db
+test/__pycache__/
+accounting/__pycache__/
+dist/
+flux_accounting.egg-info
