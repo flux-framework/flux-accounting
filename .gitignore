@@ -2,3 +2,7 @@ test/__pycache__/
 accounting/__pycache__/
 dist/
 flux_accounting.egg-info
+accounting/FluxAccounting.db
+accounting/db_creation.log
+test/FluxAccounting.db
+build/
