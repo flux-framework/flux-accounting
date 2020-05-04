@@ -10,50 +10,45 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import sqlite3
+import pandas as pd
+import logging
 
 
-def create_db():
+LOGGER = logging.basicConfig(filename="accounting/db_creation.log", level=logging.INFO)
+
+
+def create_db(filepath):
     # open connection to database
-    print("Creating JobCompletion DB...")
-    conn = sqlite3.connect("JobCompletion.db")
-    print("Created JobCompletion DB sucessfully")
+    logging.info("Creating Flux Accounting DB")
+    conn = sqlite3.connect(filepath)
+    logging.info("Created Flux Accounting DB sucessfully")
 
-    # create table in DB
-    print("Creating inactive table in DB...")
+    # Association Table
+    logging.info("Creating association_table in DB...")
     conn.execute(
         """
-            CREATE TABLE IF NOT EXISTS inactive (
-                t_submit   text NOT NULL,
-                name       text NOT NULL,
-                t_run      text NOT NULL,
-                t_cleanup  text NOT NULL,
-                userid     text NOT NULL,
-                ntasks     text NOT NULL,
-                t_inactive text NOT NULL,
-                t_depend   text NOT NULL,
-                priority   text NOT NULL,
-                state      text NOT NULL,
-                t_sched    text NOT NULL,
-                id         text PRIMARY KEY
-            );"""
+            CREATE TABLE IF NOT EXISTS association_table (
+                creation_time bigint(20)            NOT NULL,
+                mod_time      bigint(20)  DEFAULT 0 NOT NULL,
+                deleted       tinyint(4)  DEFAULT 0 NOT NULL,
+                id_assoc      integer                         PRIMARY KEY AUTOINCREMENT,
+                user_name     tinytext              NOT NULL,
+                admin_level   smallint(6) DEFAULT 1 NOT NULL,
+                account       tinytext              NOT NULL,
+                parent_acct   tinytext,
+                shares        int(11)     DEFAULT 1 NOT NULL,
+                max_jobs      int(11),
+                max_wall_pj   int(11)
+        );"""
     )
-    print("Created table successfully")
+    logging.info("Created association_table successfully")
 
-    # create user table in DB
-    print("Creating user table in DB...")
-    conn.execute(
-        """
-            CREATE TABLE IF NOT EXISTS users_assoc_table (
-                userid     text PRIMARY KEY,
-                acct       text NOT NULL,
-                shares     text NOT NULL
-            );"""
-    )
-    print("Created table successfully")
+    conn.close()
 
 
 def main():
-    create_db()
+    create_db("accounting/FluxAccounting.db")
 
 
-main()
+if __name__ == "__main__":
+    main()
