@@ -6,3 +6,4 @@ accounting/FluxAccounting.db
 accounting/db_creation.log
 test/FluxAccounting.db
 build/
+.tox
