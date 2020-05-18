@@ -28,17 +28,17 @@ def create_db(filepath):
     conn.execute(
         """
             CREATE TABLE IF NOT EXISTS association_table (
+                id_assoc      integer                           PRIMARY KEY,
                 creation_time bigint(20)            NOT NULL,
                 mod_time      bigint(20)  DEFAULT 0 NOT NULL,
                 deleted       tinyint(4)  DEFAULT 0 NOT NULL,
-                id_assoc      integer                         PRIMARY KEY AUTOINCREMENT,
-                user_name     tinytext              NOT NULL,
+                user_name     tinytext    UNIQUE    NOT NULL,
                 admin_level   smallint(6) DEFAULT 1 NOT NULL,
                 account       tinytext              NOT NULL,
-                parent_acct   tinytext,
+                parent_acct   tinytext              NOT NULL,
                 shares        int(11)     DEFAULT 1 NOT NULL,
-                max_jobs      int(11),
-                max_wall_pj   int(11)
+                max_jobs      int(11)               NOT NULL,
+                max_wall_pj   int(11)               NOT NULL
         );"""
     )
     logging.info("Created association_table successfully")
