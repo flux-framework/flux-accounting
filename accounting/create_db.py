@@ -14,7 +14,7 @@ import pandas as pd
 import logging
 
 
-LOGGER = logging.basicConfig(filename="accounting/db_creation.log", level=logging.INFO)
+LOGGER = logging.basicConfig(filename="db_creation.log", level=logging.INFO)
 
 
 def create_db(filepath):
@@ -47,7 +47,7 @@ def create_db(filepath):
 
 
 def main():
-    create_db("accounting/FluxAccounting.db")
+    create_db("FluxAccounting.db")
 
 
 if __name__ == "__main__":
