@@ -28,7 +28,7 @@ Run the unit tests with `tox` to ensure the correctness of this package on your 
 
 ```
 $ tox
-python3.6 run-test: commands[0] | python -m unittest discover
+python3.6 run-test: commands[0] | python -m unittest discover -b
 ....
 ----------------------------------------------------------------------
 Ran 4 tests in 0.008s
@@ -58,17 +58,12 @@ Step 3/5 : ADD . src/
  .
  .
  .
- python3.6 run-test: commands[0] | python -m unittest discover
+ python3.6 run-test: commands[0] | python -m unittest discover -b
 .........
 ----------------------------------------------------------------------
 Ran 9 tests in 0.035s
 
 OK
-missing fields for account.
-
-FIELDS=user_name admin_level account parent_acct shares max_jobs max_wall_pj
-UNIQUE constraint failed: association_table.user_name
-no such column: bar
 ___________________________________ summary ____________________________________
   python3.6: commands succeeded
   congratulations :)
