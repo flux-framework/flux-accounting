@@ -13,19 +13,20 @@ import unittest
 import os
 import sqlite3
 import pandas as pd
+
 from accounting import create_db as c
 
 
 class TestDB(unittest.TestCase):
     # create database and make sure it exists
     def test_00_test_create_db(self):
-        c.create_db("test/FluxAccounting.db")
+        c.create_db("FluxAccounting.db")
 
-        assert os.path.exists("test/FluxAccounting.db")
+        assert os.path.exists("FluxAccounting.db")
 
     # make sure association table exists
     def test_01_user_table_exists(self):
-        with sqlite3.connect("test/FluxAccounting.db") as db:
+        with sqlite3.connect("FluxAccounting.db") as db:
             cursor = db.cursor()
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
             tables = cursor.fetchall()
@@ -41,7 +42,7 @@ class TestDB(unittest.TestCase):
 
     # add an association to the association_table
     def test_02_create_association(self):
-        with sqlite3.connect("test/FluxAccounting.db") as db:
+        with sqlite3.connect("FluxAccounting.db") as db:
             db.execute(
                 """
             INSERT INTO association_table
@@ -56,6 +57,21 @@ class TestDB(unittest.TestCase):
             num_rows = cursor.execute("DELETE FROM association_table").rowcount
             self.assertEqual(num_rows, 1)
 
+    # remove database file
+    @classmethod
+    def tearDownClass(self):
+        os.remove("FluxAccounting.db")
+
+
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(TestDB("test_00_test_create_db"))
+    suite.addTest(TestDB("test_01_user_table_exists"))
+    suite.addTest(TestDB("test_02_create_association"))
+
+    return suite
+
 
 if __name__ == "__main__":
-    unittest.main()
+    runner = unittest.TextTestRunner()
+    runner.run(suite())
