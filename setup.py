@@ -15,7 +15,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     entry_points={
         'console_scripts': [
-            'flux-account = accounting.accounting_cli:main',
+            'flux-account.py = accounting.accounting_cli:main',
         ]
     },
     classifiers=[
