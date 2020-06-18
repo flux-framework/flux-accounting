@@ -2,9 +2,9 @@ pull_request_rules:
   - name: rebase and merge when passing all checks
     conditions:
       - base=master
-      - status-success="validate commits"
-      - status-success="Lint with flake8"
-      - status-success="Test with unittest"
+      - status-success="validate commits (3.6)"
+      - status-success="validate commits (3.7)"
+      - status-success="validate commits (3.8)"
       - label="merge-when-passing"
       - label!="work-in-progress"
       - "approved-reviews-by=@flux-framework/core"
