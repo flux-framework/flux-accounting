@@ -12,6 +12,7 @@
 import sqlite3
 import argparse
 import time
+import sys
 
 import pandas as pd
 
@@ -27,6 +28,10 @@ def main():
         """
     )
     subparsers = parser.add_subparsers(help="sub-command help",)
+
+    parser.add_argument(
+        "-p", "--path", dest="path", help="specify location of database file"
+    )
 
     subparser_view_user = subparsers.add_parser(
         "view-user", help="view a user's information in the accounting database"
@@ -82,7 +87,13 @@ def main():
 
     args = parser.parse_args()
 
-    conn = sqlite3.connect("FluxAccounting.db")
+    # try to open database file; will exit with -1 if database file not found
+    path = args.path if args.path else "FluxAccounting.db"
+    try:
+        conn = sqlite3.connect("file:" + path + "?mode=rw", uri=True)
+    except sqlite3.OperationalError:
+        print("Unable to open database file")
+        sys.exit(-1)
 
     try:
         if args.func == "view_user":
