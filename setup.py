@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="flux-accounting",
-    version="0.0.1",
+    version="0.1.0",
     author="Christopher Moussa",
     author_email="moussa1@llnl.gov",
     description="User accounting interface for Flux framework",
