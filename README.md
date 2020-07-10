@@ -16,15 +16,46 @@ flux-accounting requires the following packages to build:
 
 ### Install Instructions
 
-You can install the dependencies required by flux-accounting (located in **requirements.txt**) with the following command:
+You can install the dependencies required by flux-accounting as well as the package itself to be recognized by Flux's command driver `flux(1)` with `make`.
+
+1. Set your **FLUX_INSTALL_PREFIX** environment variable to point to flux-core's installation target:
 
 ```
-$ pip3 install -r requirements.txt
+$ export FLUX_INSTALL_PREFIX = ~/path/to/flux-core/install/
+```
+
+2. Pull down and install the flux-accounting repo:
+
+```
+$ git clone https://github.com/flux-framework/flux-accounting
+$ cd flux-accounting/
+$ make install
+```
+
+3. Run flux-accounting's commands:
+
+```
+$ flux account -h
+usage: flux-account.py [-h] {view-user,add-user,delete-user,edit-user} ...
+
+Description: Translate command line arguments into SQLite instructions for the
+Flux Accounting Database.
+
+positional arguments:
+  {view-user,add-user,delete-user,edit-user}
+                        sub-command help
+    view-user           view a user's information in the accounting database
+    add-user            add a user to the accounting database
+    delete-user         remove a user from the accounting database
+    edit-user           edit a user's value
+
+optional arguments:
+  -h, --help            show this help message and exit
 ```
 
 ### Test Instructions
 
-Run the unit tests with `tox` to ensure the correctness of this package on your platform::
+Run the unit tests with `tox` to ensure the correctness of this package on your platform:
 
 ```
 $ tox
@@ -108,22 +139,12 @@ id_assoc    creation_time  mod_time    deleted     user_name   admin_level  acco
 1           1589225734     1589225734  0           fluxuser    1            acct        pacct        10          100         60  
 ```
 
-The second way is to use flux-accounting's command line arguments. You can install them by running the following command from the `flux-accounting` directory:
+The second way is to use flux-accounting's command line arguments. Then, from the same directory where the database file (**FluxAccounting.db**) is located, you can use flux-accounting's command line interface:
 
 ```
-$ pip3 install .
+$ flux account -h
 
-Installing collected packages: flux-accounting
-  Running setup.py develop for flux-accounting
-Successfully installed flux-accounting
-```
-
-Then, from the same directory where the database file (**FluxAccounting.db**) is located, you can use flux-accounting's command line interface:
-
-```
-$ flux-accounting -h
-
-usage: flux-accounting [-h] {view-user,add-user,delete-user,edit-user} ...
+usage: flux-account.py [-h] {view-user,add-user,delete-user,edit-user} ...
 
 Description: Translate command line arguments into SQLite instructions for the
 Flux Accounting Database.
@@ -143,7 +164,7 @@ optional arguments:
 With flux-accounting's command line tools, you can view a user's account information, add and remove users to the accounting database, and edit an existing user's account information. Just make sure you are in the same directory where the database file is located when you run the commands:
 
 ```
-$ flux-account view-user fluxuser
+$ flux account view-user fluxuser
 
 id_assoc  creation_time    mod_time  deleted user_name  admin_level account parent_acct  shares  max_jobs  max_wall_pj
        1     1589225734  1589225734        0  fluxuser            1    acct       pacct      10       100           60
