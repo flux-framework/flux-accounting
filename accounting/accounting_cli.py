@@ -47,22 +47,25 @@ def main():
         "--username", help="username", metavar="USERNAME",
     )
     subparser_add_user.add_argument(
-        "--admin-level", help="admin level", metavar="ADMIN_LEVEL",
+        "--admin-level", help="admin level", default=1, metavar="ADMIN_LEVEL",
     )
     subparser_add_user.add_argument(
         "--account", help="account to charge jobs against", metavar="ACCOUNT",
     )
     subparser_add_user.add_argument(
-        "--parent-acct", help="parent account", metavar="PARENT_ACCOUNT",
+        "--parent-acct", help="parent account", default="", metavar="PARENT_ACCOUNT",
     )
     subparser_add_user.add_argument(
-        "--shares", help="shares", metavar="SHARES",
+        "--shares", help="shares", default=1, metavar="SHARES",
     )
     subparser_add_user.add_argument(
-        "--max-jobs", help="max jobs", metavar="MAX_JOBS",
+        "--max-jobs", help="max jobs", default=1, metavar="MAX_JOBS",
     )
     subparser_add_user.add_argument(
-        "--max-wall-pj", help="max wall time per job", metavar="MAX_WALL_PJ",
+        "--max-wall-pj",
+        help="max wall time per job",
+        default=60,
+        metavar="MAX_WALL_PJ",
     )
 
     subparser_delete_user = subparsers.add_parser(
