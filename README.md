@@ -134,9 +134,9 @@ This will output queries like the following:
 
 ```
 sqlite> SELECT * FROM association_table;
-id_assoc    creation_time  mod_time    deleted     user_name   admin_level  account     parent_acct  shares      max_jobs    max_wall_pj
-----------  -------------  ----------  ----------  ----------  -----------  ----------  -----------  ----------  ----------  -----------
-1           1589225734     1589225734  0           fluxuser    1            acct        pacct        10          100         60  
+creation_time  mod_time    deleted     user_name   admin_level  account     parent_acct  shares      max_jobs    max_wall_pj
+-------------  ----------  ----------  ----------  -----------  ----------  -----------  ----------  ----------  -----------
+1589225734     1589225734  0           fluxuser    1            acct        pacct        10          100         60  
 ```
 
 The second way is to use flux-accounting's command line arguments. Then, from the same directory where the database file (**FluxAccounting.db**) is located, you can use flux-accounting's command line interface:
@@ -166,6 +166,6 @@ With flux-accounting's command line tools, you can view a user's account informa
 ```
 $ flux account view-user fluxuser
 
-id_assoc  creation_time    mod_time  deleted user_name  admin_level account parent_acct  shares  max_jobs  max_wall_pj
-       1     1589225734  1589225734        0  fluxuser            1    acct       pacct      10       100           60
+creation_time    mod_time  deleted user_name  admin_level     account parent_acct  shares  max_jobs  max_wall_pj
+   1595438356  1595438356        0  fluxuser            1        acct       pacct       1       100           60
 ```

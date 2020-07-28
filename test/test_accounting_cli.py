@@ -34,17 +34,29 @@ class TestAccountingCLI(unittest.TestCase):
         num_rows = cursor.execute("DELETE FROM association_table").rowcount
         self.assertEqual(num_rows, 1)
 
-    # adding a user with the same user_name as an existing user should
+    # adding a user with the same primary key (user_name, account) should
     # return an IntegrityError
-    def test_02_add_duplicate_user(self):
+    def test_02_add_duplicate_primary_key(self):
         aclif.add_user(conn, "fluxuser", "1", "acct", "pacct", "10", "100", "60")
 
         aclif.add_user(conn, "fluxuser", "1", "acct", "pacct", "10", "100", "60")
 
         self.assertRaises(sqlite3.IntegrityError)
 
+    # adding a user with the same username BUT a different account should
+    # succeed
+    def test_03_add_duplicate_user(self):
+        aclif.add_user(conn, "dup_user", "1", "acct", "pacct", "10", "100", "60")
+        aclif.add_user(conn, "dup_user", "1", "other_acct", "pacct", "10", "100", "60")
+        cursor = conn.cursor()
+        cursor.execute("SELECT * from association_table where user_name='dup_user'")
+        num_rows = cursor.execute(
+            "DELETE FROM association_table where user_name='dup_user'"
+        ).rowcount
+        self.assertEqual(num_rows, 2)
+
     # edit a value for a user in the association table
-    def test_03_edit_user_value(self):
+    def test_04_edit_user_value(self):
         aclif.edit_user(conn, "fluxuser", "max_jobs", "10000")
         cursor = conn.cursor()
         cursor.execute(
@@ -55,7 +67,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # trying to edit a field in a column that doesn't
     # exist should return an OperationalError
-    def test_04_edit_bad_field(self):
+    def test_05_edit_bad_field(self):
         with self.assertRaises(SystemExit) as cm:
             aclif.edit_user(conn, "fluxuser", "foo", "bar")
 
@@ -72,7 +84,7 @@ class TestAccountingCLI(unittest.TestCase):
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(TestAccountingCLI("test_01_add_valid_user"))
-    suite.addTest(TestAccountingCLI("test_02_add_bad_user"))
+    suite.addTest(TestAccountingCLI("test_02_add_duplicate_primary_key"))
     suite.addTest(TestAccountingCLI("test_03_add_duplicate_user"))
     suite.addTest(TestAccountingCLI("test_04_edit_user_value"))
     suite.addTest(TestAccountingCLI("test_05_edit_bad_field"))
