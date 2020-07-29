@@ -109,16 +109,15 @@ The accounting table in this database stores information like user name and ID, 
 
 ### Interacting With the Accounting DB
 
-There are two ways you can interact with the tables contained in the Accounting DB. Both of these require you to be in the same directory where the database file (**FluxAccounting.db**) is located. The first way is to launch into an interactive SQLite shell. From there, you can open the database file and interface with any of the tables using SQLite commands:
+There are two ways you can interact with the tables contained in the Accounting DB. The first way is to launch into an interactive SQLite shell. From there, you can open the database file and interface with any of the tables using SQLite commands:
 
 ```
-$ sqlite3
+$ sqlite3 path/to/FluxAccounting.db
 SQLite version 3.24.0 2018-06-04 14:10:15
 Enter ".help" for usage hints.
 Connected to a transient in-memory database.
 Use ".open FILENAME" to reopen on a persistent database.
 
-sqlite> .open FluxAccounting.db
 sqlite> .tables
 association_table
 ```
@@ -139,7 +138,7 @@ creation_time  mod_time    deleted     user_name   admin_level  account     pare
 1589225734     1589225734  0           fluxuser    1            acct        pacct        10          100         60  
 ```
 
-The second way is to use flux-accounting's command line arguments. Then, from the same directory where the database file (**FluxAccounting.db**) is located, you can use flux-accounting's command line interface:
+The second way is to use flux-accounting's command line arguments. You can pass in a path to the database file, or be in the same directory where the database file (**FluxAccounting.db**) is located:
 
 ```
 $ flux account -h
@@ -161,7 +160,7 @@ optional arguments:
   -h, --help            show this help message and exit
 ```
 
-With flux-accounting's command line tools, you can view a user's account information, add and remove users to the accounting database, and edit an existing user's account information. Just make sure you are in the same directory where the database file is located when you run the commands:
+With flux-accounting's command line tools, you can view a user's account information, add and remove users to the accounting database, and edit an existing user's account information:
 
 ```
 $ flux account view-user fluxuser
