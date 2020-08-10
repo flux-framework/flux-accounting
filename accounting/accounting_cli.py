@@ -33,6 +33,13 @@ def main():
         "-p", "--path", dest="path", help="specify location of database file"
     )
 
+    parser.add_argument(
+        "-o",
+        "--output-file",
+        dest="output_file",
+        help="specify location of output file",
+    )
+
     subparser_view_user = subparsers.add_parser(
         "view-user", help="view a user's information in the accounting database"
     )
@@ -88,6 +95,38 @@ def main():
         "--new-value", help="new value", metavar="VALUE",
     )
 
+    subparser_view_jobs_by_username = subparsers.add_parser(
+        "by-user", help="show jobs run by username"
+    )
+    subparser_view_jobs_by_username.set_defaults(func="view_jobs_run_by_username")
+    subparser_view_jobs_by_username.add_argument(
+        "username", help="username", metavar="USERNAME",
+    )
+
+    subparser_view_job_by_jobid = subparsers.add_parser(
+        "by-jobid", help="show job info from jobid"
+    )
+    subparser_view_job_by_jobid.set_defaults(func="view_jobs_with_jobid")
+    subparser_view_job_by_jobid.add_argument(
+        "jobid", help="jobid", metavar="JOBID",
+    )
+
+    subparser_view_jobs_after_start_time = subparsers.add_parser(
+        "after-start-time", help="show jobs that completed after start time"
+    )
+    subparser_view_jobs_after_start_time.set_defaults(func="view_jobs_after_start_time")
+    subparser_view_jobs_after_start_time.add_argument(
+        "start_time", help="start time", metavar="START TIME",
+    )
+
+    subparser_view_jobs_before_end_time = subparsers.add_parser(
+        "before-end-time", help="show jobs that completed before end time"
+    )
+    subparser_view_jobs_before_end_time.set_defaults(func="view_jobs_before_end_time")
+    subparser_view_jobs_before_end_time.add_argument(
+        "end_time", help="end time", metavar="END TIME",
+    )
+
     args = parser.parse_args()
 
     # try to open database file; will exit with -1 if database file not found
@@ -97,6 +136,9 @@ def main():
     except sqlite3.OperationalError:
         print("Unable to open database file")
         sys.exit(-1)
+
+    # set path for output file
+    output_file = args.output_file if args.output_file else None
 
     try:
         if args.func == "view_user":
@@ -116,6 +158,14 @@ def main():
             aclif.delete_user(conn, args.username)
         elif args.func == "edit_user":
             aclif.edit_user(conn, args.username, args.field, args.new_value)
+        elif args.func == "view_jobs_run_by_username":
+            aclif.view_jobs_run_by_username(conn, args.username, args.output_file)
+        elif args.func == "view_jobs_with_jobid":
+            aclif.view_jobs_with_jobid(conn, args.jobid, args.output_file)
+        elif args.func == "view_jobs_after_start_time":
+            aclif.view_jobs_after_start_time(conn, args.start_time, args.output_file)
+        elif args.func == "view_jobs_before_end_time":
+            aclif.view_jobs_before_end_time(conn, args.end_time, args.output_file)
         else:
             print(parser.print_usage())
     finally:
