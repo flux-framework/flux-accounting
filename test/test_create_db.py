@@ -30,7 +30,7 @@ class TestDB(unittest.TestCase):
         assert os.path.exists("FluxAccounting.db")
 
     # make sure association table exists
-    def test_01_user_table_exists(self):
+    def test_01_tables_exist(self):
         cursor = conn.cursor()
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
         tables = cursor.fetchall()
@@ -40,25 +40,55 @@ class TestDB(unittest.TestCase):
             list_of_tables.append(table_name)
             table = pd.read_sql_query("SELECT * from %s" % table_name, conn)
 
-        expected = ["association_table"]
-        test = list_of_tables[:1]
+        expected = ["association_table", "bank_table"]
+        test = list_of_tables[:2]
         self.assertEqual(test, expected)
 
     # add an association to the association_table
     def test_02_create_association(self):
         conn.execute(
-        """
-        INSERT INTO association_table
-        (creation_time, mod_time, deleted, user_name, admin_level,
-        account, shares, max_jobs, max_wall_pj)
-        VALUES
-        (0, 0, 0, "test user", 1, "test account", 0, 0,
-        0)
-        """
+            """
+            INSERT INTO association_table
+            (creation_time, mod_time, deleted, user_name, admin_level,
+            account, shares, max_jobs, max_wall_pj)
+            VALUES
+            (0, 0, 0, "test user", 1, "test account", 0, 0,
+            0)
+            """
         )
         cursor = conn.cursor()
         num_rows = cursor.execute("DELETE FROM association_table").rowcount
         self.assertEqual(num_rows, 1)
+
+    # add a top-level account to the bank_table
+    def test_03_create_top_level_account(self):
+        conn.execute(
+            """
+            INSERT INTO bank_table
+            (bank, shares)
+            VALUES
+            ("root", 100)
+            """
+        )
+        cursor = conn.cursor()
+        select_stmt = "SELECT * FROM bank_table"
+        dataframe = pd.read_sql_query(select_stmt, conn)
+        self.assertEqual(len(dataframe.index), 1)
+
+    # let's add a sub account under root
+    def test_04_create_sub_account(self):
+        conn.execute(
+            """
+            INSERT INTO bank_table
+            (bank, parent_bank, shares)
+            VALUES
+            ("sub_account_1", "parent_account", 50)
+            """
+        )
+        cursor = conn.cursor()
+        select_stmt = "SELECT * FROM bank_table"
+        dataframe = pd.read_sql_query(select_stmt, conn)
+        self.assertEqual(len(dataframe.index), 2)
 
     # remove database file
     @classmethod
@@ -69,8 +99,10 @@ class TestDB(unittest.TestCase):
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(TestDB("test_00_test_create_db"))
-    suite.addTest(TestDB("test_01_user_table_exists"))
+    suite.addTest(TestDB("test_01_tables_exist"))
     suite.addTest(TestDB("test_02_create_association"))
+    suite.addTest(TestDB("test_03_create_top_level_account"))
+    suite.addTest(TestDB("test_04_create_sub_account"))
 
     return suite
 

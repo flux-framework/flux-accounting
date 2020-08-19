@@ -44,4 +44,18 @@ def create_db(filepath):
     )
     logging.info("Created association_table successfully")
 
+    # Bank Table
+    logging.info("Creating bank_table in DB...")
+    conn.execute(
+        """
+            CREATE TABLE IF NOT EXISTS bank_table (
+                bank            text    NOT NULL,
+                parent_bank     text,
+                shares          int     NOT NULL,
+                PRIMARY KEY     (bank)
+
+        );"""
+    )
+    logging.info("Created bank_table successfully")
+
     conn.close()
