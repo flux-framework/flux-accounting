@@ -61,6 +61,9 @@ def main():
         "--account", help="account to charge jobs against", metavar="ACCOUNT",
     )
     subparser_add_user.add_argument(
+        "--parent-acct", help="parent account", default="", metavar="PARENT_ACCOUNT",
+    )
+    subparser_add_user.add_argument(
         "--shares", help="shares", default=1, metavar="SHARES",
     )
     subparser_add_user.add_argument(
@@ -131,6 +134,18 @@ def main():
     subparser_create_db.set_defaults(func="create_db")
     subparser_create_db.add_argument(
         "dbpath", help="specify location of database file", metavar=("DATABASE PATH")
+    )
+
+    subparser_add_bank = subparsers.add_parser("add-bank", help="add a new bank")
+    subparser_add_bank.set_defaults(func="add_bank")
+    subparser_add_bank.add_argument(
+        "bank", help="bank name", metavar="BANK",
+    )
+    subparser_add_bank.add_argument(
+        "--parent-bank", help="parent bank name", default="", metavar="PARENT BANK"
+    )
+    subparser_add_bank.add_argument(
+        "shares", help="number of shares to allocate to bank", metavar="SHARES"
     )
 
     subparser_view_bank = subparsers.add_parser(
@@ -207,6 +222,8 @@ def main():
             aclif.view_jobs_after_start_time(conn, args.start_time, args.output_file)
         elif args.func == "view_jobs_before_end_time":
             aclif.view_jobs_before_end_time(conn, args.end_time, args.output_file)
+        elif args.func == "add_bank":
+            aclif.add_bank(conn, args.bank, args.shares, args.parent_bank)
         elif args.func == "view_bank":
             aclif.view_bank(conn, args.bank)
         elif args.func == "delete_bank":
