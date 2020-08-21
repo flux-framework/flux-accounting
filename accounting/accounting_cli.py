@@ -141,6 +141,12 @@ def main():
         "bank", help="bank name", metavar="BANK",
     )
 
+    subparser_delete_bank = subparsers.add_parser("delete-bank", help="remove a bank")
+    subparser_delete_bank.set_defaults(func="delete_bank")
+    subparser_delete_bank.add_argument(
+        "bank", help="bank name", metavar="BANK",
+    )
+
     args = parser.parse_args()
 
     # if we are creating the DB for the first time, we need
@@ -187,6 +193,8 @@ def main():
             aclif.view_jobs_before_end_time(conn, args.end_time, args.output_file)
         elif args.func == "view_bank":
             aclif.view_bank(conn, args.bank)
+        elif args.func == "delete_bank":
+            aclif.delete_bank(conn, args.bank)
         else:
             print(parser.print_usage())
     finally:

@@ -263,6 +263,18 @@ def view_bank(conn, bank):
         print(e_database_error)
 
 
+def delete_bank(conn, bank):
+    last_parent_bank_seen = bank
+
+    # delete bank from bank_table
+    delete_stmt = "DELETE FROM bank_table WHERE bank=?"
+    cursor = conn.cursor()
+    cursor.execute(delete_stmt, (bank,))
+
+    # commit changes
+    conn.commit()
+
+
 def view_user(conn, user):
     try:
         # get the information pertaining to a user in the Accounting DB
