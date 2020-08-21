@@ -248,6 +248,21 @@ def view_jobs_before_end_time(conn, time_before, output_file):
     return job_records
 
 
+def view_bank(conn, bank):
+    try:
+        # get the information pertaining to a bank in the Accounting DB
+        select_stmt = "SELECT * FROM bank_table where bank=?"
+        dataframe = pd.read_sql_query(select_stmt, conn, params=(bank,))
+        # if the length of dataframe is 0, that means
+        # the bank specified was not found in the table
+        if len(dataframe.index) == 0:
+            print("Bank not found in bank_table")
+        else:
+            print(dataframe)
+    except pd.io.sql.DatabaseError as e_database_error:
+        print(e_database_error)
+
+
 def view_user(conn, user):
     try:
         # get the information pertaining to a user in the Accounting DB

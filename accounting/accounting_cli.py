@@ -133,6 +133,14 @@ def main():
         "dbpath", help="specify location of database file", metavar=("DATABASE PATH")
     )
 
+    subparser_view_bank = subparsers.add_parser(
+        "view-bank", help="view bank information"
+    )
+    subparser_view_bank.set_defaults(func="view_bank")
+    subparser_view_bank.add_argument(
+        "bank", help="bank name", metavar="BANK",
+    )
+
     args = parser.parse_args()
 
     # if we are creating the DB for the first time, we need
@@ -177,6 +185,8 @@ def main():
             aclif.view_jobs_after_start_time(conn, args.start_time, args.output_file)
         elif args.func == "view_jobs_before_end_time":
             aclif.view_jobs_before_end_time(conn, args.end_time, args.output_file)
+        elif args.func == "view_bank":
+            aclif.view_bank(conn, args.bank)
         else:
             print(parser.print_usage())
     finally:
