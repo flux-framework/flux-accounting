@@ -218,6 +218,109 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(len(job_records), 1)
 
     # remove databases, log file, and output file
+    # let's add a top-level account using the add-bank
+    # subcommand
+    def test_16_add_bank_success(self):
+        aclif.add_bank(acct_conn, bank="root", shares=100)
+        select_stmt = "SELECT * FROM bank_table WHERE bank='root'"
+        dataframe = pd.read_sql_query(select_stmt, acct_conn)
+        self.assertEqual(len(dataframe.index), 1)
+
+    # let's make sure if we try to add it a second time,
+    # it fails gracefully
+    def test_17_add_dup_bank(self):
+        aclif.add_bank(acct_conn, bank="root", shares=100)
+        self.assertRaises(sqlite3.IntegrityError)
+
+    # trying to add a sub account with an invalid parent bank
+    # name should result in a failure
+    def test_18_add_with_invalid_parent_bank(self):
+        with self.assertRaises(SystemExit) as cm:
+            aclif.add_bank(
+                acct_conn,
+                bank="bad_subaccount",
+                parent_bank="bad_parentaccount",
+                shares=1,
+            )
+
+        self.assertEqual(cm.exception.code, -1)
+
+    # now let's add a couple sub accounts whose parent is 'root'
+    # and whose total shares equal root's allocation (100 shares)
+    def test_19_add_subaccounts(self):
+        aclif.add_bank(acct_conn, bank="sub_account_1", parent_bank="root", shares=50)
+        select_stmt = "SELECT * FROM bank_table WHERE bank='sub_account_1'"
+        dataframe = pd.read_sql_query(select_stmt, acct_conn)
+        self.assertEqual(len(dataframe.index), 1)
+        aclif.add_bank(acct_conn, bank="sub_account_2", parent_bank="root", shares=50)
+        select_stmt = "SELECT * FROM bank_table WHERE bank='sub_account_2'"
+        dataframe = pd.read_sql_query(select_stmt, acct_conn)
+        self.assertEqual(len(dataframe.index), 1)
+
+    # removing a bank currently in the bank_table
+    def test_20_delete_bank_success(self):
+        aclif.delete_bank(acct_conn, bank="sub_account_1")
+        select_stmt = "SELECT * FROM bank_table WHERE bank='sub_account_1'"
+        dataframe = pd.read_sql_query(select_stmt, acct_conn)
+        self.assertEqual(len(dataframe.index), 0)
+
+    # edit a bank value
+    def test_21_edit_bank_value(self):
+        aclif.add_bank(acct_conn, bank="root", shares=100)
+        aclif.edit_bank(acct_conn, bank="root", shares=50)
+        cursor = acct_conn.cursor()
+        cursor.execute("SELECT shares FROM bank_table where bank='root'")
+
+        self.assertEqual(cursor.fetchone()[0], 50)
+
+    # trying to edit a parent bank's value to be
+    # less than the total amount allocated to all of its
+    # sub banks should result in a failure message and exit
+    def test_22_edit_parent_bank_failure(self):
+        with self.assertRaises(SystemExit) as cm:
+            aclif.add_bank(acct_conn, bank="sub_bank_1", parent_bank="root", shares=25)
+            aclif.add_bank(acct_conn, bank="sub_bank_2", parent_bank="root", shares=25)
+            aclif.edit_bank(acct_conn, bank="root", shares=49)
+
+        self.assertEqual(cm.exception.code, -1)
+
+    # edit a parent bank that has sub banks successfully
+    def test_23_edit_parent_bank_success(self):
+        aclif.add_bank(acct_conn, bank="sub_bank_1", shares=25)
+        aclif.add_bank(
+            acct_conn, bank="sub_bank_1_1", parent_bank="sub_bank_1", shares=5
+        )
+        aclif.add_bank(
+            acct_conn, bank="sub_bank_1_2", parent_bank="sub_bank_1", shares=5
+        )
+        aclif.edit_bank(acct_conn, bank="sub_bank_1", shares=11)
+        cursor = acct_conn.cursor()
+        cursor.execute("SELECT shares FROM bank_table where bank='sub_bank_1'")
+
+        self.assertEqual(cursor.fetchone()[0], 11)
+
+    # trying to edit a sub bank's shares to be greater
+    # than its parent bank's allocation should result
+    # in a failure message and exit
+    def test_24_edit_sub_bank_greater_than_parent_bank(self):
+        with self.assertRaises(SystemExit) as cm:
+            aclif.add_bank(
+                acct_conn, bank="sub_bank_2_1", parent_bank="sub_bank_2", shares=5
+            )
+            aclif.edit_bank(acct_conn, bank="sub_bank_2_1", shares=26)
+
+        self.assertEqual(cm.exception.code, -1)
+
+    # edit the sub bank successfully
+    def test_25_edit_sub_bank_successfully(self):
+        aclif.add_bank(acct_conn, bank="sub_bank_2_1", shares=26)
+        aclif.edit_bank(acct_conn, bank="sub_bank_2_1", shares=24)
+        cursor = acct_conn.cursor()
+        cursor.execute("SELECT shares FROM bank_table where bank='sub_bank_2_1'")
+
+        self.assertEqual(cursor.fetchone()[0], 24)
+
+    # remove database and log file
     @classmethod
     def tearDownClass(self):
         acct_conn.close()
@@ -230,21 +333,6 @@ class TestAccountingCLI(unittest.TestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(TestAccountingCLI("test_01_add_valid_user"))
-    suite.addTest(TestAccountingCLI("test_02_add_duplicate_primary_key"))
-    suite.addTest(TestAccountingCLI("test_03_add_duplicate_user"))
-    suite.addTest(TestAccountingCLI("test_04_edit_user_value"))
-    suite.addTest(TestAccountingCLI("test_05_edit_bad_field"))
-    suite.addTest(TestAccountingCLI("test_06_with_jobid_valid"))
-    suite.addTest(TestAccountingCLI("test_07_with_jobid_failure"))
-    suite.addTest(TestAccountingCLI("test_08_after_start_time_all"))
-    suite.addTest(TestAccountingCLI("test_09_after_start_time_some"))
-    suite.addTest(TestAccountingCLI("test_10_after_start_time_none"))
-    suite.addTest(TestAccountingCLI("test_11_before_end_time_all"))
-    suite.addTest(TestAccountingCLI("test_12_before_end_time_some"))
-    suite.addTest(TestAccountingCLI("test_13_before_end_time_none"))
-    suite.addTest(TestAccountingCLI("test_14_by_user_failure"))
-    suite.addTest(TestAccountingCLI("test_15_by_user_success"))
 
     return suite
 
