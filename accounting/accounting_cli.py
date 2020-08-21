@@ -147,6 +147,17 @@ def main():
         "bank", help="bank name", metavar="BANK",
     )
 
+    subparser_edit_bank = subparsers.add_parser(
+        "edit-bank", help="edit a bank's allocation"
+    )
+    subparser_edit_bank.set_defaults(func="edit_bank")
+    subparser_edit_bank.add_argument(
+        "bank", help="bank", metavar="BANK",
+    )
+    subparser_edit_bank.add_argument(
+        "--shares", help="new shares value", metavar="SHARES",
+    )
+
     args = parser.parse_args()
 
     # if we are creating the DB for the first time, we need
@@ -195,6 +206,8 @@ def main():
             aclif.view_bank(conn, args.bank)
         elif args.func == "delete_bank":
             aclif.delete_bank(conn, args.bank)
+        elif args.func == "edit_bank":
+            aclif.edit_bank(conn, args.bank, args.shares)
         else:
             print(parser.print_usage())
     finally:
