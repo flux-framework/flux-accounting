@@ -315,6 +315,40 @@ def edit_bank(conn, bank, shares):
     conn.commit()
 
 
+def print_hierarchy(conn):
+    print("Bank = RawShares\n  | User = RawShares\n")
+    select_stmt = """
+        SELECT bank_table.bank,
+        bank_table.shares,
+        bank_table.parent_bank
+        FROM bank_table;
+        """
+    dataframe = pd.read_sql_query(select_stmt, conn)
+    for index, row in dataframe.iterrows():
+        print("-" * 50)
+        print(
+            "Bank:",
+            row["bank"],
+            "| Shares =",
+            row["shares"],
+            "| Parent Bank:",
+            row["parent_bank"],
+        )
+        print("-" * 50)
+        select_stmt = """
+            SELECT association_table.user_name,
+            association_table.shares AS user_shares
+            FROM association_table
+            INNER JOIN bank_table ON association_table.account = ?;
+            """
+        dataframe = pd.read_sql_query(select_stmt, conn, params=(row["bank"],))
+        users_seen = []
+        for index, row in dataframe.iterrows():
+            if row["user_name"] not in users_seen:
+                print("  |", row["user_name"], "| Shares =", row["user_shares"])
+                users_seen.append(row["user_name"])
+
+
 def view_user(conn, user):
     try:
         # get the information pertaining to a user in the Accounting DB

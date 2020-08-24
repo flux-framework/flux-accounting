@@ -158,6 +158,11 @@ def main():
         "--shares", help="new shares value", metavar="SHARES",
     )
 
+    subparser_print_hierarchy = subparsers.add_parser(
+        "print-hierarchy", help="print accounting database"
+    )
+    subparser_print_hierarchy.set_defaults(func="print_hierarchy")
+
     args = parser.parse_args()
 
     # if we are creating the DB for the first time, we need
@@ -208,6 +213,8 @@ def main():
             aclif.delete_bank(conn, args.bank)
         elif args.func == "edit_bank":
             aclif.edit_bank(conn, args.bank, args.shares)
+        elif args.func == "print_hierarchy":
+            aclif.print_hierarchy(conn)
         else:
             print(parser.print_usage())
     finally:
