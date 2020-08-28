@@ -46,30 +46,3 @@ def create_db(filepath):
     logging.info("Created association_table successfully")
 
     conn.close()
-
-
-def main():
-
-    parser = argparse.ArgumentParser(
-        description="""
-        Description: Create flux-accounting database to store
-        user account information.
-        """
-    )
-
-    parser.add_argument(
-        "-p", "--path", dest="path", help="specify location of database file"
-    )
-
-    args = parser.parse_args()
-
-    path = args.path if args.path else "FluxAccounting.db"
-    try:
-        create_db(path)
-    except sqlite3.OperationalError as e:
-        print("Unable to create database file:", e)
-        sys.exit(-1)
-
-
-if __name__ == "__main__":
-    main()
