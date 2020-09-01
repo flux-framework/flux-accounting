@@ -263,9 +263,7 @@ def view_user(conn, user):
         print(e_database_error)
 
 
-def add_user(
-    conn, username, admin_level, account, parent_acct, shares, max_jobs, max_wall_pj
-):
+def add_user(conn, username, admin_level, account, shares, max_jobs, max_wall_pj):
 
     # insert the user values into the database
     try:
@@ -278,12 +276,11 @@ def add_user(
                 user_name,
                 admin_level,
                 account,
-                parent_acct,
                 shares,
                 max_jobs,
                 max_wall_pj
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 int(time.time()),
@@ -292,7 +289,6 @@ def add_user(
                 username,
                 admin_level,
                 account,
-                parent_acct,
                 shares,
                 max_jobs,
                 max_wall_pj,
@@ -319,7 +315,6 @@ def edit_user(conn, username, field, new_value):
         "user_name",
         "admin_level",
         "account",
-        "parent_acct",
         "shares",
         "max_jobs",
         "max_wall_pj",

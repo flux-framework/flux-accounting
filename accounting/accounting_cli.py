@@ -61,9 +61,6 @@ def main():
         "--account", help="account to charge jobs against", metavar="ACCOUNT",
     )
     subparser_add_user.add_argument(
-        "--parent-acct", help="parent account", default="", metavar="PARENT_ACCOUNT",
-    )
-    subparser_add_user.add_argument(
         "--shares", help="shares", default=1, metavar="SHARES",
     )
     subparser_add_user.add_argument(
@@ -164,7 +161,6 @@ def main():
                 args.username,
                 args.admin_level,
                 args.account,
-                args.parent_acct,
                 args.shares,
                 args.max_jobs,
                 args.max_wall_pj,

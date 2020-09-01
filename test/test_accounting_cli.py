@@ -111,7 +111,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # add a valid user to association_table
     def test_01_add_valid_user(self):
-        aclif.add_user(acct_conn, "fluxuser", "1", "acct", "pacct", "10", "100", "60")
+        aclif.add_user(acct_conn, "fluxuser", "1", "acct", "10", "100", "60")
 
         cursor = acct_conn.cursor()
         num_rows = cursor.execute("DELETE FROM association_table").rowcount
@@ -120,19 +120,17 @@ class TestAccountingCLI(unittest.TestCase):
     # adding a user with the same primary key (user_name, account) should
     # return an IntegrityError
     def test_02_add_duplicate_primary_key(self):
-        aclif.add_user(acct_conn, "fluxuser", "1", "acct", "pacct", "10", "100", "60")
+        aclif.add_user(acct_conn, "fluxuser", "1", "acct", "10", "100", "60")
 
-        aclif.add_user(acct_conn, "fluxuser", "1", "acct", "pacct", "10", "100", "60")
+        aclif.add_user(acct_conn, "fluxuser", "1", "acct", "10", "100", "60")
 
         self.assertRaises(sqlite3.IntegrityError)
 
     # adding a user with the same username BUT a different account should
     # succeed
     def test_03_add_duplicate_user(self):
-        aclif.add_user(acct_conn, "dup_user", "1", "acct", "pacct", "10", "100", "60")
-        aclif.add_user(
-            acct_conn, "dup_user", "1", "other_acct", "pacct", "10", "100", "60"
-        )
+        aclif.add_user(acct_conn, "dup_user", "1", "acct", "10", "100", "60")
+        aclif.add_user(acct_conn, "dup_user", "1", "other_acct", "10", "100", "60")
         cursor = acct_conn.cursor()
         cursor.execute("SELECT * from association_table where user_name='dup_user'")
         num_rows = cursor.execute(
