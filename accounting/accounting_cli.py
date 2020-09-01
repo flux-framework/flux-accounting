@@ -17,6 +17,7 @@ import sys
 import pandas as pd
 
 from accounting import accounting_cli_functions as aclif
+from accounting import create_db as c
 
 
 def main():
@@ -127,7 +128,21 @@ def main():
         "end_time", help="end time", metavar="END TIME",
     )
 
+    subparser_create_db = subparsers.add_parser(
+        "create-db", help="create the flux-accounting database"
+    )
+    subparser_create_db.set_defaults(func="create_db")
+    subparser_create_db.add_argument(
+        "dbpath", help="specify location of database file", metavar=("DATABASE PATH")
+    )
+
     args = parser.parse_args()
+
+    # if we are creating the DB for the first time, we need
+    # to ONLY create the DB and then exit out successfully
+    if args.func == "create_db":
+        c.create_db(args.dbpath)
+        sys.exit(0)
 
     # try to open database file; will exit with -1 if database file not found
     path = args.path if args.path else "FluxAccounting.db"
