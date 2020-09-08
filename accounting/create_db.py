@@ -36,7 +36,6 @@ def create_db(filepath):
                 user_name     tinytext              NOT NULL,
                 admin_level   smallint(6) DEFAULT 1 NOT NULL,
                 account       tinytext              NOT NULL,
-                parent_acct   tinytext              NOT NULL,
                 shares        int(11)     DEFAULT 1 NOT NULL,
                 max_jobs      int(11)               NOT NULL,
                 max_wall_pj   int(11)               NOT NULL,
@@ -44,5 +43,19 @@ def create_db(filepath):
         );"""
     )
     logging.info("Created association_table successfully")
+
+    # Bank Table
+    logging.info("Creating bank_table in DB...")
+    conn.execute(
+        """
+            CREATE TABLE IF NOT EXISTS bank_table (
+                bank            text    NOT NULL,
+                parent_bank     text,
+                shares          int     NOT NULL,
+                PRIMARY KEY     (bank)
+
+        );"""
+    )
+    logging.info("Created bank_table successfully")
 
     conn.close()

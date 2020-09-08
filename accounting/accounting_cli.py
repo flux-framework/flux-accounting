@@ -136,6 +136,48 @@ def main():
         "dbpath", help="specify location of database file", metavar=("DATABASE PATH")
     )
 
+    subparser_add_bank = subparsers.add_parser("add-bank", help="add a new bank")
+    subparser_add_bank.set_defaults(func="add_bank")
+    subparser_add_bank.add_argument(
+        "bank", help="bank name", metavar="BANK",
+    )
+    subparser_add_bank.add_argument(
+        "--parent-bank", help="parent bank name", default="", metavar="PARENT BANK"
+    )
+    subparser_add_bank.add_argument(
+        "shares", help="number of shares to allocate to bank", metavar="SHARES"
+    )
+
+    subparser_view_bank = subparsers.add_parser(
+        "view-bank", help="view bank information"
+    )
+    subparser_view_bank.set_defaults(func="view_bank")
+    subparser_view_bank.add_argument(
+        "bank", help="bank name", metavar="BANK",
+    )
+
+    subparser_delete_bank = subparsers.add_parser("delete-bank", help="remove a bank")
+    subparser_delete_bank.set_defaults(func="delete_bank")
+    subparser_delete_bank.add_argument(
+        "bank", help="bank name", metavar="BANK",
+    )
+
+    subparser_edit_bank = subparsers.add_parser(
+        "edit-bank", help="edit a bank's allocation"
+    )
+    subparser_edit_bank.set_defaults(func="edit_bank")
+    subparser_edit_bank.add_argument(
+        "bank", help="bank", metavar="BANK",
+    )
+    subparser_edit_bank.add_argument(
+        "--shares", help="new shares value", metavar="SHARES",
+    )
+
+    subparser_print_hierarchy = subparsers.add_parser(
+        "print-hierarchy", help="print accounting database"
+    )
+    subparser_print_hierarchy.set_defaults(func="print_hierarchy")
+
     args = parser.parse_args()
 
     # if we are creating the DB for the first time, we need
@@ -164,7 +206,6 @@ def main():
                 args.username,
                 args.admin_level,
                 args.account,
-                args.parent_acct,
                 args.shares,
                 args.max_jobs,
                 args.max_wall_pj,
@@ -181,6 +222,16 @@ def main():
             aclif.view_jobs_after_start_time(conn, args.start_time, args.output_file)
         elif args.func == "view_jobs_before_end_time":
             aclif.view_jobs_before_end_time(conn, args.end_time, args.output_file)
+        elif args.func == "add_bank":
+            aclif.add_bank(conn, args.bank, args.shares, args.parent_bank)
+        elif args.func == "view_bank":
+            aclif.view_bank(conn, args.bank)
+        elif args.func == "delete_bank":
+            aclif.delete_bank(conn, args.bank)
+        elif args.func == "edit_bank":
+            aclif.edit_bank(conn, args.bank, args.shares)
+        elif args.func == "print_hierarchy":
+            aclif.print_hierarchy(conn)
         else:
             print(parser.print_usage())
     finally:
