@@ -105,7 +105,7 @@ Successfully built f29dd2ca5958
 
 ### User Account Information
 
-The accounting table in this database stores information like user name and ID, the account to submit jobs against, an optional parent account, the shares allocated to the user, as well as static limits, including max jobs submitted per user at a given time and max wall time per job per user.
+The accounting table in this database stores information like user name and ID, the account to submit jobs against, the shares allocated to the user, as well as static limits, including max jobs submitted per user at a given time and max wall time per job per user.
 
 ### Interacting With the Accounting DB
 
@@ -119,7 +119,7 @@ Connected to a transient in-memory database.
 Use ".open FILENAME" to reopen on a persistent database.
 
 sqlite> .tables
-association_table
+association_table bank_table
 ```
 
 To get nicely formatted output from queries (like headers for the tables and proper spacing), you can also set the following options in your shell:
@@ -133,9 +133,9 @@ This will output queries like the following:
 
 ```
 sqlite> SELECT * FROM association_table;
-creation_time  mod_time    deleted     user_name   admin_level  account     parent_acct  shares      max_jobs    max_wall_pj
--------------  ----------  ----------  ----------  -----------  ----------  -----------  ----------  ----------  -----------
-1589225734     1589225734  0           fluxuser    1            acct        pacct        10          100         60  
+creation_time  mod_time    deleted     user_name   admin_level  account     shares      max_jobs    max_wall_pj
+-------------  ----------  ----------  ----------  -----------  ----------  ----------  ----------  -----------
+1589225734     1589225734  0           fluxuser    1            acct        10          100         60  
 ```
 
 The second way is to use flux-accounting's command line arguments. You can pass in a path to the database file, or be in the same directory where the database file (**FluxAccounting.db**) is located:
