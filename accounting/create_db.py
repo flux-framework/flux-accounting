@@ -45,15 +45,15 @@ def create_db(filepath):
     logging.info("Created association_table successfully")
 
     # Bank Table
+    # bank_id gets auto-incremented with every new entry
     logging.info("Creating bank_table in DB...")
     conn.execute(
         """
             CREATE TABLE IF NOT EXISTS bank_table (
-                bank            text    NOT NULL,
-                parent_bank     text,
-                shares          int     NOT NULL,
-                PRIMARY KEY     (bank)
-
+                bank_id     integer PRIMARY KEY,
+                bank        text    NOT NULL,
+                parent_bank text,
+                shares      int     NOT NULL
         );"""
     )
     logging.info("Created bank_table successfully")
