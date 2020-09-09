@@ -27,10 +27,9 @@ class TestAccountingCLI(unittest.TestCase):
         global acct_conn
         acct_conn = sqlite3.connect("FluxAccounting.db")
 
-    # remove databases, log file, and output file
     # let's add a top-level account using the add-bank
     # subcommand
-    def test_16_add_bank_success(self):
+    def test_01_add_bank_success(self):
         aclif.add_bank(acct_conn, bank="root", shares=100)
         select_stmt = "SELECT * FROM bank_table WHERE bank='root'"
         dataframe = pd.read_sql_query(select_stmt, acct_conn)
@@ -38,13 +37,13 @@ class TestAccountingCLI(unittest.TestCase):
 
     # let's make sure if we try to add it a second time,
     # it fails gracefully
-    def test_17_add_dup_bank(self):
+    def test_02_add_dup_bank(self):
         aclif.add_bank(acct_conn, bank="root", shares=100)
         self.assertRaises(sqlite3.IntegrityError)
 
     # trying to add a sub account with an invalid parent bank
     # name should result in a failure
-    def test_18_add_with_invalid_parent_bank(self):
+    def test_03_add_with_invalid_parent_bank(self):
         with self.assertRaises(SystemExit) as cm:
             aclif.add_bank(
                 acct_conn,
@@ -57,7 +56,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # now let's add a couple sub accounts whose parent is 'root'
     # and whose total shares equal root's allocation (100 shares)
-    def test_19_add_subaccounts(self):
+    def test_04_add_subaccounts(self):
         aclif.add_bank(acct_conn, bank="sub_account_1", parent_bank="root", shares=50)
         select_stmt = "SELECT * FROM bank_table WHERE bank='sub_account_1'"
         dataframe = pd.read_sql_query(select_stmt, acct_conn)
@@ -68,14 +67,14 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(len(dataframe.index), 1)
 
     # removing a bank currently in the bank_table
-    def test_20_delete_bank_success(self):
+    def test_05_delete_bank_success(self):
         aclif.delete_bank(acct_conn, bank="sub_account_1")
         select_stmt = "SELECT * FROM bank_table WHERE bank='sub_account_1'"
         dataframe = pd.read_sql_query(select_stmt, acct_conn)
         self.assertEqual(len(dataframe.index), 0)
 
     # edit a bank value
-    def test_21_edit_bank_value(self):
+    def test_06_edit_bank_value(self):
         aclif.add_bank(acct_conn, bank="root", shares=100)
         aclif.edit_bank(acct_conn, bank="root", shares=50)
         cursor = acct_conn.cursor()
@@ -86,7 +85,7 @@ class TestAccountingCLI(unittest.TestCase):
     # trying to edit a parent bank's value to be
     # less than the total amount allocated to all of its
     # sub banks should result in a failure message and exit
-    def test_22_edit_parent_bank_failure(self):
+    def test_07_edit_parent_bank_failure(self):
         with self.assertRaises(SystemExit) as cm:
             aclif.add_bank(acct_conn, bank="sub_bank_1", parent_bank="root", shares=25)
             aclif.add_bank(acct_conn, bank="sub_bank_2", parent_bank="root", shares=25)
@@ -95,7 +94,7 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(cm.exception.code, -1)
 
     # edit a parent bank that has sub banks successfully
-    def test_23_edit_parent_bank_success(self):
+    def test_08_edit_parent_bank_success(self):
         aclif.add_bank(acct_conn, bank="sub_bank_1", shares=25)
         aclif.add_bank(
             acct_conn, bank="sub_bank_1_1", parent_bank="sub_bank_1", shares=5
@@ -112,7 +111,7 @@ class TestAccountingCLI(unittest.TestCase):
     # trying to edit a sub bank's shares to be greater
     # than its parent bank's allocation should result
     # in a failure message and exit
-    def test_24_edit_sub_bank_greater_than_parent_bank(self):
+    def test_09_edit_sub_bank_greater_than_parent_bank(self):
         with self.assertRaises(SystemExit) as cm:
             aclif.add_bank(
                 acct_conn, bank="sub_bank_2_1", parent_bank="sub_bank_2", shares=5
@@ -122,7 +121,7 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(cm.exception.code, -1)
 
     # edit the sub bank successfully
-    def test_25_edit_sub_bank_successfully(self):
+    def test_10_edit_sub_bank_successfully(self):
         aclif.add_bank(acct_conn, bank="sub_bank_2_1", shares=26)
         aclif.edit_bank(acct_conn, bank="sub_bank_2_1", shares=24)
         cursor = acct_conn.cursor()
