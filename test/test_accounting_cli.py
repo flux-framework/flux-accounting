@@ -109,53 +109,6 @@ class TestAccountingCLI(unittest.TestCase):
             t_cleanup += 1000
             t_inactive += 1000
 
-    # add a valid user to association_table
-    def test_01_add_valid_user(self):
-        aclif.add_user(acct_conn, "fluxuser", "1", "acct", "10", "100", "60")
-
-        cursor = acct_conn.cursor()
-        num_rows = cursor.execute("DELETE FROM association_table").rowcount
-        self.assertEqual(num_rows, 1)
-
-    # adding a user with the same primary key (user_name, account) should
-    # return an IntegrityError
-    def test_02_add_duplicate_primary_key(self):
-        aclif.add_user(acct_conn, "fluxuser", "1", "acct", "10", "100", "60")
-
-        aclif.add_user(acct_conn, "fluxuser", "1", "acct", "10", "100", "60")
-
-        self.assertRaises(sqlite3.IntegrityError)
-
-    # adding a user with the same username BUT a different account should
-    # succeed
-    def test_03_add_duplicate_user(self):
-        aclif.add_user(acct_conn, "dup_user", "1", "acct", "10", "100", "60")
-        aclif.add_user(acct_conn, "dup_user", "1", "other_acct", "10", "100", "60")
-        cursor = acct_conn.cursor()
-        cursor.execute("SELECT * from association_table where user_name='dup_user'")
-        num_rows = cursor.execute(
-            "DELETE FROM association_table where user_name='dup_user'"
-        ).rowcount
-        self.assertEqual(num_rows, 2)
-
-    # edit a value for a user in the association table
-    def test_04_edit_user_value(self):
-        aclif.edit_user(acct_conn, "fluxuser", "max_jobs", "10000")
-        cursor = acct_conn.cursor()
-        cursor.execute(
-            "SELECT max_jobs FROM association_table where user_name='fluxuser'"
-        )
-
-        self.assertEqual(cursor.fetchone()[0], 10000)
-
-    # trying to edit a field in a column that doesn't
-    # exist should return an OperationalError
-    def test_05_edit_bad_field(self):
-        with self.assertRaises(SystemExit) as cm:
-            aclif.edit_user(acct_conn, "fluxuser", "foo", "bar")
-
-        self.assertEqual(cm.exception.code, 1)
-
     # passing a valid jobid should return
     # its job information
     def test_06_with_jobid_valid(self):
