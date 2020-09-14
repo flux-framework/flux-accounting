@@ -309,43 +309,15 @@ def delete_bank(conn, bank):
 
 
 def edit_bank(conn, bank, shares):
-    total_sub_bank_shares = 0
-    parent_bank = ""
-    parent_bank_shares = 0
     try:
-        # if bank is a parent bank, the new value
-        # should not be less than the total shares
-        # allocated to all sub banks
-        select_stmt = "SELECT shares FROM bank_table WHERE parent_bank=?"
-        dataframe = pd.read_sql_query(select_stmt, conn, params=(bank,))
-        for index, row in dataframe.iterrows():
-            total_sub_bank_shares += row["shares"]
-        if int(shares) < total_sub_bank_shares:
-            print(
-                "New shares amount would be less than total shares allocated to subaccounts"
-            )
-            sys.exit(-1)
-        # if bank is a sub bank, the new value
-        # should not be greater than its parent bank
-        select_stmt = "SELECT parent_bank FROM bank_table WHERE bank=?"
-        dataframe = pd.read_sql_query(select_stmt, conn, params=(bank,))
-        for index, row in dataframe.iterrows():
-            parent_bank = row["parent_bank"]
-        # if bank specified does not have a parent bank, just continue
-        if parent_bank != "":
-            check_parent_bank(conn, shares, parent_bank)
-        else:
-            pass
-
+        # edit value in bank_table
+        conn.execute(
+            "UPDATE bank_table SET shares=? WHERE bank=?", (shares, bank,),
+        )
+        # commit changes
+        conn.commit()
     except pd.io.sql.DatabaseError as e_database_error:
         print(e_database_error)
-
-    # edit value in bank_table
-    conn.execute(
-        "UPDATE bank_table SET shares=? WHERE bank=?", (shares, bank,),
-    )
-    # commit changes
-    conn.commit()
 
 
 def print_hierarchy(conn):
