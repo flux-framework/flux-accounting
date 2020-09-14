@@ -43,8 +43,8 @@ class TestAccountingCLI(unittest.TestCase):
 
     # trying to add a sub account with an invalid parent bank
     # name should result in a failure
-    def test_03_add_with_invalid_parent_bank(self):
-        with self.assertRaises(SystemExit) as cm:
+    def test_18_add_with_invalid_parent_bank(self):
+        with self.assertRaises(Exception) as context:
             aclif.add_bank(
                 acct_conn,
                 bank="bad_subaccount",
@@ -52,7 +52,9 @@ class TestAccountingCLI(unittest.TestCase):
                 shares=1,
             )
 
-        self.assertEqual(cm.exception.code, -1)
+        self.assertTrue(
+            "Parent account not found in bank table" in str(context.exception)
+        )
 
     # now let's add a couple sub accounts whose parent is 'root'
     # and whose total shares equal root's allocation (100 shares)
@@ -81,53 +83,6 @@ class TestAccountingCLI(unittest.TestCase):
         cursor.execute("SELECT shares FROM bank_table where bank='root'")
 
         self.assertEqual(cursor.fetchone()[0], 50)
-
-    # trying to edit a parent bank's value to be
-    # less than the total amount allocated to all of its
-    # sub banks should result in a failure message and exit
-    def test_07_edit_parent_bank_failure(self):
-        with self.assertRaises(SystemExit) as cm:
-            aclif.add_bank(acct_conn, bank="sub_bank_1", parent_bank="root", shares=25)
-            aclif.add_bank(acct_conn, bank="sub_bank_2", parent_bank="root", shares=25)
-            aclif.edit_bank(acct_conn, bank="root", shares=49)
-
-        self.assertEqual(cm.exception.code, -1)
-
-    # edit a parent bank that has sub banks successfully
-    def test_08_edit_parent_bank_success(self):
-        aclif.add_bank(acct_conn, bank="sub_bank_1", shares=25)
-        aclif.add_bank(
-            acct_conn, bank="sub_bank_1_1", parent_bank="sub_bank_1", shares=5
-        )
-        aclif.add_bank(
-            acct_conn, bank="sub_bank_1_2", parent_bank="sub_bank_1", shares=5
-        )
-        aclif.edit_bank(acct_conn, bank="sub_bank_1", shares=11)
-        cursor = acct_conn.cursor()
-        cursor.execute("SELECT shares FROM bank_table where bank='sub_bank_1'")
-
-        self.assertEqual(cursor.fetchone()[0], 11)
-
-    # trying to edit a sub bank's shares to be greater
-    # than its parent bank's allocation should result
-    # in a failure message and exit
-    def test_09_edit_sub_bank_greater_than_parent_bank(self):
-        with self.assertRaises(SystemExit) as cm:
-            aclif.add_bank(
-                acct_conn, bank="sub_bank_2_1", parent_bank="sub_bank_2", shares=5
-            )
-            aclif.edit_bank(acct_conn, bank="sub_bank_2_1", shares=26)
-
-        self.assertEqual(cm.exception.code, -1)
-
-    # edit the sub bank successfully
-    def test_10_edit_sub_bank_successfully(self):
-        aclif.add_bank(acct_conn, bank="sub_bank_2_1", shares=26)
-        aclif.edit_bank(acct_conn, bank="sub_bank_2_1", shares=24)
-        cursor = acct_conn.cursor()
-        cursor.execute("SELECT shares FROM bank_table where bank='sub_bank_2_1'")
-
-        self.assertEqual(cursor.fetchone()[0], 24)
 
     # remove database and log file
     @classmethod
