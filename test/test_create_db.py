@@ -90,6 +90,13 @@ class TestDB(unittest.TestCase):
         dataframe = pd.read_sql_query(select_stmt, conn)
         self.assertEqual(len(dataframe.index), 2)
 
+    # let's make sure the bank id's get autoincremented
+    def test_05_check_bank_ids(self):
+        select_stmt = "SELECT bank_id FROM bank_table;"
+        dataframe = pd.read_sql_query(select_stmt, conn)
+        self.assertEqual(dataframe["bank_id"][0], 1)
+        self.assertEqual(dataframe["bank_id"][1], 2)
+
     # remove database file
     @classmethod
     def tearDownClass(self):
