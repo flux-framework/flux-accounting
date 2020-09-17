@@ -84,6 +84,15 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(cursor.fetchone()[0], 50)
 
+    # trying to edit a bank value <= 0 should raise
+    # an exception
+    def test_07_edit_bank_value_fail(self):
+        with self.assertRaises(Exception) as context:
+            aclif.add_bank(acct_conn, bank="bad_bank", shares=10)
+            aclif.edit_bank(acct_conn, bank="bad_bank", shares=-1)
+
+        self.assertTrue("New shares amount must be >= 0" in str(context.exception))
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):
