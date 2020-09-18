@@ -248,56 +248,16 @@ def view_jobs_before_end_time(conn, time_before, output_file):
     return job_records
 
 
-def check_parent_bank(conn, shares, parent_bank):
-    select_stmt = "SELECT shares FROM bank_table where bank=?"
-    dataframe = pd.read_sql_query(select_stmt, conn, params=(parent_bank,))
-    # if length of dataframe is 0, that means the parent bank wasn't found
-    if len(dataframe.index) == 0:
-        print("Parent account not found in bank table")
-        sys.exit(-1)
-    # fetch parent account from account
-    for index, row in dataframe.iterrows():
-        parent_bank_shares = row["shares"]
-    if int(shares) > int(parent_bank_shares):
-        print("Shares must not be greater than parent account's shares")
-        sys.exit(-1)
-
-    return parent_bank_shares
-
-
 def add_bank(conn, bank, shares, parent_bank=""):
-    parent_bank_shares = 0
-    total_sub_bank_shares = 0
-
     # if the parent bank is not "", that means the account
     # trying to be added wants to be placed under a parent bank
     if parent_bank != "":
         try:
-            parent_bank_shares = check_parent_bank(conn, shares, parent_bank)
-
-            select_stmt = "SELECT shares FROM bank_table where parent_bank=?"
+            select_stmt = "SELECT shares FROM bank_table where bank=?"
             dataframe = pd.read_sql_query(select_stmt, conn, params=(parent_bank,))
-            # if length of dataframe is 0, that means there are no sub banks for
-            # this parent bank
+            # if length of dataframe is 0, that means the parent bank wasn't found
             if len(dataframe.index) == 0:
-                pass
-            # add up all of the shares allocated to this parent's sub banks
-            else:
-                for index, row in dataframe.iterrows():
-                    total_sub_bank_shares += row["shares"]
-            # if the total amount of shares in all the sub banks is
-            # equal to the parent bank's shares, it has already reached
-            # its max allocation, and thus the bank won't be added
-            if int(total_sub_bank_shares) >= int(parent_bank_shares):
-                print("Total shares for parent account are already maxed")
-                sys.exit(-1)
-            # if the current total amount of shares in all the sub banks
-            # PLUS the number of shares trying to be added is greater than the
-            # parent's banks shares, the parent account WILL exceed its max
-            # allocation and thus the account won't be added
-            if int(total_sub_bank_shares) + int(shares) > int(parent_bank_shares):
-                print("Total shares will exceed parent account's allocation")
-                sys.exit(-1)
+                raise Exception("Parent account not found in bank table")
         except pd.io.sql.DatabaseError as e_database_error:
             print(e_database_error)
 
@@ -349,43 +309,20 @@ def delete_bank(conn, bank):
 
 
 def edit_bank(conn, bank, shares):
-    total_sub_bank_shares = 0
-    parent_bank = ""
-    parent_bank_shares = 0
+    print(shares)
+    # if user tries to edit a shares value <= 0,
+    # raise an exception
+    if shares <= 0:
+        raise Exception("New shares amount must be >= 0")
     try:
-        # if bank is a parent bank, the new value
-        # should not be less than the total shares
-        # allocated to all sub banks
-        select_stmt = "SELECT shares FROM bank_table WHERE parent_bank=?"
-        dataframe = pd.read_sql_query(select_stmt, conn, params=(bank,))
-        for index, row in dataframe.iterrows():
-            total_sub_bank_shares += row["shares"]
-        if int(shares) < total_sub_bank_shares:
-            print(
-                "New shares amount would be less than total shares allocated to subaccounts"
-            )
-            sys.exit(-1)
-        # if bank is a sub bank, the new value
-        # should not be greater than its parent bank
-        select_stmt = "SELECT parent_bank FROM bank_table WHERE bank=?"
-        dataframe = pd.read_sql_query(select_stmt, conn, params=(bank,))
-        for index, row in dataframe.iterrows():
-            parent_bank = row["parent_bank"]
-        # if bank specified does not have a parent bank, just continue
-        if parent_bank != "":
-            check_parent_bank(conn, shares, parent_bank)
-        else:
-            pass
-
+        # edit value in bank_table
+        conn.execute(
+            "UPDATE bank_table SET shares=? WHERE bank=?", (shares, bank,),
+        )
+        # commit changes
+        conn.commit()
     except pd.io.sql.DatabaseError as e_database_error:
         print(e_database_error)
-
-    # edit value in bank_table
-    conn.execute(
-        "UPDATE bank_table SET shares=? WHERE bank=?", (shares, bank,),
-    )
-    # commit changes
-    conn.commit()
 
 
 def print_hierarchy(conn):
