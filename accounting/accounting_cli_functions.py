@@ -168,76 +168,50 @@ def add_job_records(dataframe):
     return job_records
 
 
-def view_jobs_run_by_username(conn, username, output_file):
-    # look up userid with username
-    userid = get_uid(username)
-    # get the information pertaining to a user in the jobs DB
-    select_stmt = (
-        "SELECT userid,id,t_submit,t_run,t_inactive,ranks,R FROM jobs where userid=?"
-    )
-    dataframe = pd.read_sql_query(select_stmt, conn, params=(userid,))
-    # if the length of dataframe is 0, that means
-    # the user specified was not found in the table
-    if len(dataframe.index) == 0:
-        return "User not found in jobs table"
-    else:
-        job_records = add_job_records(dataframe)
-        if output_file is None:
-            print_job_records(job_records)
+def view_job_records(conn, output_file, **kwargs):
+    job_records = []
+
+    # find out which args were passed and place them in a dict
+    valid_params = ("user", "after_start_time", "before_end_time", "jobid")
+    params = {}
+    params_list = []
+
+    params = {
+        key: val for (key, val) in kwargs.items() if val != None and key in valid_params
+    }
+
+    select_stmt = "SELECT userid,id,t_submit,t_run,t_inactive,ranks,R FROM jobs "
+    where_stmt = ""
+
+    def append_to_where(where_stmt, conditional):
+        if where_stmt != "":
+            return "{} AND {} ".format(where_stmt, conditional)
         else:
-            write_records_to_file(job_records, output_file)
+            return "WHERE {}".format(conditional)
 
-    return job_records
+    # generate the SELECT statement based on the parameters passed in
+    if "user" in params:
+        params["user"] = get_uid(params["user"])
+        params_list.append(params["user"])
+        where_stmt = append_to_where(where_stmt, "userid=? ")
+    if "after_start_time" in params:
+        params_list.append(params["after_start_time"])
+        where_stmt = append_to_where(where_stmt, "t_run > ? ")
+    if "before_end_time" in params:
+        params_list.append(params["before_end_time"])
+        where_stmt = append_to_where(where_stmt, "t_inactive < ? ")
+    if "jobid" in params:
+        params_list.append(params["jobid"])
+        where_stmt = append_to_where(where_stmt, "id=? ")
 
+    select_stmt += where_stmt
 
-def view_jobs_with_jobid(conn, jobid, output_file):
-    # get the information pertaining to a job in the jobs DB
-    select_stmt = (
-        "SELECT userid,id,t_submit,t_run,t_inactive,ranks,R FROM jobs where id=?"
-    )
-    dataframe = pd.read_sql_query(select_stmt, conn, params=(jobid,))
+    dataframe = pd.read_sql_query(select_stmt, conn, params=((*tuple(params_list),)))
     # if the length of dataframe is 0, that means
-    # the jobid specified was not found in the table
+    # no job records were found in the jobs table,
+    # so just return an empty list
     if len(dataframe.index) == 0:
-        return "Job not found in jobs table"
-    else:
-        job_records = add_job_records(dataframe)
-        if output_file is None:
-            print_job_records(job_records)
-        else:
-            write_records_to_file(job_records, output_file)
-
-    return job_records
-
-
-def view_jobs_after_start_time(conn, time_after, output_file):
-    # get jobs that have completed after a certain time
-    select_stmt = (
-        "SELECT userid,id,t_submit,t_run,t_inactive,ranks,R FROM jobs WHERE t_run > ?"
-    )
-    dataframe = pd.read_sql_query(select_stmt, conn, params=(time_after,))
-    # if the length of dataframe is 0, that means
-    # the time specified resulted in no jobs found
-    if len(dataframe.index) == 0:
-        return "No jobs found after time specified"
-    else:
-        job_records = add_job_records(dataframe)
-        if output_file is None:
-            print_job_records(job_records)
-        else:
-            write_records_to_file(job_records, output_file)
-
-    return job_records
-
-
-def view_jobs_before_end_time(conn, time_before, output_file):
-    # get jobs that have completed before a certain time
-    select_stmt = "SELECT userid,id,t_submit,t_run,t_inactive,ranks,R FROM jobs WHERE t_inactive < ?"
-    dataframe = pd.read_sql_query(select_stmt, conn, params=(time_before,))
-    # if the length of dataframe is 0, that means
-    # the time specified resulted in no jobs found
-    if len(dataframe.index) == 0:
-        return "No jobs found before time specified"
+        return job_records
     else:
         job_records = add_job_records(dataframe)
         if output_file is None:
