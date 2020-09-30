@@ -167,16 +167,18 @@ def edit_user(conn, username, field, new_value):
         "max_jobs",
         "max_wall_pj",
     ]
-    if field in fields:
-        the_field = field
-    else:
-        print("Field not found in association table")
-        sys.exit(1)
+    try:
+        if field in fields:
+            the_field = field
 
-    # edit value in accounting database
-    conn.execute(
-        "UPDATE association_table SET " + the_field + "=? WHERE user_name=?",
-        (new_value, username,),
-    )
-    # commit changes
-    conn.commit()
+            # edit value in accounting database
+            conn.execute(
+                "UPDATE association_table SET " + the_field + "=? WHERE user_name=?",
+                (new_value, username,),
+            )
+            # commit changes
+            conn.commit()
+        else:
+            raise ValueError("Field not found in association table")
+    except Exception as e:
+        print(e)

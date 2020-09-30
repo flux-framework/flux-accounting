@@ -107,12 +107,11 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(cursor.fetchone()[0], 10000)
 
     # trying to edit a field in a column that doesn't
-    # exist should return an OperationalError
+    # exist should return a ValueError
     def test_05_edit_bad_field(self):
-        with self.assertRaises(SystemExit) as cm:
-            aclif.edit_user(acct_conn, "fluxuser", "foo", "bar")
+        aclif.edit_user(acct_conn, "fluxuser", "foo", "bar")
 
-        self.assertEqual(cm.exception.code, 1)
+        self.assertRaises(ValueError)
 
     # remove database and log file
     @classmethod
