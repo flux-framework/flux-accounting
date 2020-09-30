@@ -10,9 +10,7 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import sqlite3
-import argparse
 import time
-import sys
 import pwd
 import csv
 
