@@ -1,3 +1,14 @@
+flux-accounting version 0.3.0 - 2020-09-30
+------------------------------------------
+
+#### Fixes
+
+* `bank_table`'s primary key is now a fixed type (#42)
+
+* `bank_table`'s subcommands no longer impose constraints on values of shares (#44)
+
+* `print-hierarchy`'s format improved to represent a bank and user hierarchy (#51)
+
 flux-accounting version 0.2.0 - 2020-08-31
 ------------------------------------------
 
