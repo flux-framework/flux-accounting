@@ -18,6 +18,7 @@ import pandas as pd
 
 from accounting import accounting_cli_functions as aclif
 from accounting import create_db as c
+from accounting import print_hierarchy as ph
 
 
 def main():
@@ -231,7 +232,7 @@ def main():
         elif args.func == "edit_bank":
             aclif.edit_bank(conn, args.bank, args.shares)
         elif args.func == "print_hierarchy":
-            aclif.print_hierarchy(conn)
+            print(ph.print_full_hierarchy(conn))
         else:
             print(parser.print_usage())
     finally:
