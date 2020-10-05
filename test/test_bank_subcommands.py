@@ -16,6 +16,7 @@ import pandas as pd
 
 from accounting import accounting_cli_functions as aclif
 from accounting import create_db as c
+from accounting import print_hierarchy as p
 
 
 class TestAccountingCLI(unittest.TestCase):
@@ -92,6 +93,79 @@ class TestAccountingCLI(unittest.TestCase):
             aclif.edit_bank(acct_conn, bank="bad_bank", shares=-1)
 
         self.assertTrue("New shares amount must be >= 0" in str(context.exception))
+
+    # print out the full hierarchy of banks along
+    # with their respective associations
+    def test_08_print_hierarchy(self):
+        aclif.delete_bank(acct_conn, "root")
+        aclif.delete_bank(acct_conn, "sub_account_2")
+        aclif.delete_bank(acct_conn, "bad_bank")
+
+        aclif.add_bank(acct_conn, bank="A", shares=1)
+        aclif.add_bank(acct_conn, bank="B", parent_bank="A", shares=1)
+        aclif.add_bank(acct_conn, bank="D", parent_bank="B", shares=1)
+        aclif.add_bank(acct_conn, bank="E", parent_bank="B", shares=1)
+        aclif.add_bank(acct_conn, bank="C", parent_bank="A", shares=1)
+        aclif.add_bank(acct_conn, bank="F", parent_bank="C", shares=1)
+        aclif.add_bank(acct_conn, bank="G", parent_bank="C", shares=1)
+
+        aclif.add_user(
+            acct_conn,
+            username="user1",
+            admin_level=1,
+            account="D",
+            shares=1,
+            max_jobs=100,
+            max_wall_pj=60,
+        )
+
+        aclif.add_user(
+            acct_conn,
+            username="user2",
+            admin_level=1,
+            account="F",
+            shares=1,
+            max_jobs=100,
+            max_wall_pj=60,
+        )
+
+        aclif.add_user(
+            acct_conn,
+            username="user3",
+            admin_level=1,
+            account="F",
+            shares=1,
+            max_jobs=100,
+            max_wall_pj=60,
+        )
+
+        aclif.add_user(
+            acct_conn,
+            username="user4",
+            admin_level=1,
+            account="G",
+            shares=1,
+            max_jobs=100,
+            max_wall_pj=60,
+        )
+
+        test = p.print_full_hierarchy(acct_conn)
+
+        expected = """Bank|User|RawShares
+A||1
+ B||1
+  D||1
+   D|user1|1
+  E||1
+ C||1
+  F||1
+   F|user2|1
+   F|user3|1
+  G||1
+   G|user4|1
+"""
+
+        self.assertEqual(test, expected)
 
     # remove database and log file
     @classmethod
