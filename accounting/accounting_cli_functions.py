@@ -314,7 +314,9 @@ def view_user(conn, user):
         print(e_database_error)
 
 
-def add_user(conn, username, admin_level, account, shares, max_jobs, max_wall_pj):
+def add_user(
+    conn, username, account, admin_level=1, shares=1, max_jobs=1, max_wall_pj=60
+):
 
     # insert the user values into the database
     try:
