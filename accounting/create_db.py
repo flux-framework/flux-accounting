@@ -35,11 +35,11 @@ def create_db(filepath):
                 deleted       tinyint(4)  DEFAULT 0 NOT NULL,
                 user_name     tinytext              NOT NULL,
                 admin_level   smallint(6) DEFAULT 1 NOT NULL,
-                account       tinytext              NOT NULL,
+                bank          tinytext              NOT NULL,
                 shares        int(11)     DEFAULT 1 NOT NULL,
                 max_jobs      int(11)               NOT NULL,
                 max_wall_pj   int(11)               NOT NULL,
-                PRIMARY KEY   (user_name, account)
+                PRIMARY KEY   (user_name, bank)
         );"""
     )
     logging.info("Created association_table successfully")

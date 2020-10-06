@@ -53,9 +53,7 @@ class TestAccountingCLI(unittest.TestCase):
                 shares=1,
             )
 
-        self.assertTrue(
-            "Parent account not found in bank table" in str(context.exception)
-        )
+        self.assertTrue("Parent bank not found in bank table" in str(context.exception))
 
     # now let's add a couple sub accounts whose parent is 'root'
     # and whose total shares equal root's allocation (100 shares)
@@ -113,7 +111,7 @@ class TestAccountingCLI(unittest.TestCase):
             acct_conn,
             username="user1",
             admin_level=1,
-            account="D",
+            bank="D",
             shares=1,
             max_jobs=100,
             max_wall_pj=60,
@@ -123,7 +121,7 @@ class TestAccountingCLI(unittest.TestCase):
             acct_conn,
             username="user2",
             admin_level=1,
-            account="F",
+            bank="F",
             shares=1,
             max_jobs=100,
             max_wall_pj=60,
@@ -133,7 +131,7 @@ class TestAccountingCLI(unittest.TestCase):
             acct_conn,
             username="user3",
             admin_level=1,
-            account="F",
+            bank="F",
             shares=1,
             max_jobs=100,
             max_wall_pj=60,
@@ -143,7 +141,7 @@ class TestAccountingCLI(unittest.TestCase):
             acct_conn,
             username="user4",
             admin_level=1,
-            account="G",
+            bank="G",
             shares=1,
             max_jobs=100,
             max_wall_pj=60,

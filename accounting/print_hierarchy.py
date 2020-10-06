@@ -54,16 +54,16 @@ def print_full_hierarchy(conn):
             select_stmt = """
                 SELECT association_table.user_name,
                 association_table.shares,
-                association_table.account
+                association_table.bank
                 FROM association_table
-                WHERE association_table.account=?
+                WHERE association_table.bank=?
                 """
             dataframe = pd.read_sql_query(select_stmt, conn, params=(row["bank"],))
             for index, association_row in dataframe.iterrows():
                 hierarchy += (
                     " "
                     + indent
-                    + association_row["account"]
+                    + association_row["bank"]
                     + "|"
                     + association_row["user_name"]
                     + "|"
