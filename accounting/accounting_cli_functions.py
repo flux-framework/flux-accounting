@@ -223,7 +223,7 @@ def view_job_records(conn, output_file, **kwargs):
 
 
 def add_bank(conn, bank, shares, parent_bank=""):
-    # if the parent bank is not "", that means the account
+    # if the parent bank is not "", that means the bank
     # trying to be added wants to be placed under a parent bank
     if parent_bank != "":
         try:
@@ -231,7 +231,7 @@ def add_bank(conn, bank, shares, parent_bank=""):
             dataframe = pd.read_sql_query(select_stmt, conn, params=(parent_bank,))
             # if length of dataframe is 0, that means the parent bank wasn't found
             if len(dataframe.index) == 0:
-                raise Exception("Parent account not found in bank table")
+                raise Exception("Parent bank not found in bank table")
         except pd.io.sql.DatabaseError as e_database_error:
             print(e_database_error)
 
@@ -314,7 +314,7 @@ def view_user(conn, user):
         print(e_database_error)
 
 
-def add_user(conn, username, admin_level, account, shares, max_jobs, max_wall_pj):
+def add_user(conn, username, bank, admin_level=1, shares=1, max_jobs=1, max_wall_pj=60):
 
     # insert the user values into the database
     try:
@@ -326,7 +326,7 @@ def add_user(conn, username, admin_level, account, shares, max_jobs, max_wall_pj
                 deleted,
                 user_name,
                 admin_level,
-                account,
+                bank,
                 shares,
                 max_jobs,
                 max_wall_pj
@@ -339,7 +339,7 @@ def add_user(conn, username, admin_level, account, shares, max_jobs, max_wall_pj
                 0,
                 username,
                 admin_level,
-                account,
+                bank,
                 shares,
                 max_jobs,
                 max_wall_pj,
@@ -365,7 +365,7 @@ def edit_user(conn, username, field, new_value):
     fields = [
         "user_name",
         "admin_level",
-        "account",
+        "bank",
         "shares",
         "max_jobs",
         "max_wall_pj",

@@ -50,7 +50,7 @@ class TestDB(unittest.TestCase):
             """
             INSERT INTO association_table
             (creation_time, mod_time, deleted, user_name, admin_level,
-            account, shares, max_jobs, max_wall_pj)
+            bank, shares, max_jobs, max_wall_pj)
             VALUES
             (0, 0, 0, "test user", 1, "test account", 0, 0,
             0)
