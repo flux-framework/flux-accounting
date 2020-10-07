@@ -108,63 +108,105 @@ class TestAccountingCLI(unittest.TestCase):
     # passing a valid jobid should return
     # its job information
     def test_01_with_jobid_valid(self):
-        job_records = aclif.view_jobs_with_jobid(jobs_conn, 102, op)
+        my_dict = {"jobid": 102}
+        job_records = aclif.view_job_records(jobs_conn, op, **my_dict)
         self.assertEqual(len(job_records), 1)
 
     # passing a bad jobid should return a
     # failure message
     def test_02_with_jobid_failure(self):
-        job_records = aclif.view_jobs_with_jobid(jobs_conn, 000, op)
-        self.assertEqual(job_records, "Job not found in jobs table")
+        my_dict = {"jobid": 000}
+        job_records = aclif.view_job_records(jobs_conn, op, **my_dict)
+        self.assertEqual(len(job_records), 0)
 
     # passing a timestamp before the first job to
     # start should return all of the jobs
     def test_03_after_start_time_all(self):
-        job_records = aclif.view_jobs_after_start_time(jobs_conn, 0, op)
+        my_dict = {"after_start_time": 0}
+        job_records = aclif.view_job_records(jobs_conn, op, **my_dict)
         self.assertEqual(len(job_records), 4)
 
     # passing a timestamp in the middle should return
     # only some of the jobs
     def test_04_after_start_time_some(self):
-        job_records = aclif.view_jobs_after_start_time(jobs_conn, 2500, op)
+        my_dict = {"after_start_time": 2500}
+        job_records = aclif.view_job_records(jobs_conn, op, **my_dict)
         self.assertEqual(len(job_records), 2)
 
     # passing a timestamp after all of the start time
     # of all the completed jobs should return a failure message
     def test_05_after_start_time_none(self):
-        job_records = aclif.view_jobs_after_start_time(jobs_conn, 10000, op)
-        self.assertEqual(job_records, "No jobs found after time specified")
+        my_dict = {"after_start_time": 5000}
+        job_records = aclif.view_job_records(jobs_conn, op, **my_dict)
+        self.assertEqual(len(job_records), 0)
 
     # passing a timestamp after the end time of the
     # last job should return all of the jobs
     def test_06_before_end_time_all(self):
-        job_records = aclif.view_jobs_before_end_time(jobs_conn, 5000, op)
+        my_dict = {"before_end_time": 5000}
+        job_records = aclif.view_job_records(jobs_conn, op, **my_dict)
         self.assertEqual(len(job_records), 4)
 
     # passing a timestamp in the middle should return
     # only some of the jobs
     def test_07_before_end_time_some(self):
-        job_records = aclif.view_jobs_before_end_time(jobs_conn, 3000, op)
+        my_dict = {"before_end_time": 3000}
+        job_records = aclif.view_job_records(jobs_conn, op, **my_dict)
         self.assertEqual(len(job_records), 2)
 
     # passing a timestamp before the end time of
     # all the completed jobs should return a failure message
     def test_08_before_end_time_none(self):
-        job_records = aclif.view_jobs_before_end_time(jobs_conn, 0, op)
-        self.assertEqual(job_records, "No jobs found before time specified")
+        my_dict = {"before_end_time": 0}
+        job_records = aclif.view_job_records(jobs_conn, op, **my_dict)
+        self.assertEqual(len(job_records), 0)
 
     # passing a user not in the jobs table
     # should return a failure message
     def test_09_by_user_failure(self):
-        job_records = aclif.view_jobs_run_by_username(jobs_conn, "9999", op)
-        self.assertEqual(job_records, "User not found in jobs table")
+        my_dict = {"user": "9999"}
+        job_records = aclif.view_job_records(jobs_conn, op, **my_dict)
+        self.assertEqual(len(job_records), 0)
 
     # view_jobs_run_by_username() interacts with a
     # passwd file; for the purpose of these tests,
     # just pass the userid
     def test_10_by_user_success(self):
-        job_records = aclif.view_jobs_run_by_username(jobs_conn, "1234", op)
+        my_dict = {"user": "1234"}
+        job_records = aclif.view_job_records(jobs_conn, op, **my_dict)
         self.assertEqual(len(job_records), 1)
+
+    # passing a combination of params should further
+    # refine the query
+    def test_11_multiple_params_1(self):
+        my_dict = {"user": "1234", "after_start_time": 1009}
+        job_records = aclif.view_job_records(jobs_conn, op, **my_dict)
+        self.assertEqual(len(job_records), 1)
+
+    def test_12_multiple_params_2(self):
+        my_dict = {"user": "1234", "before_end_time": 1021}
+        job_records = aclif.view_job_records(jobs_conn, op, **my_dict)
+        self.assertEqual(len(job_records), 1)
+
+    # order of the parameters shouldn't matter
+    def test_13_multiple_params_3(self):
+        my_dict = {"before_end_time": 5000, "user": "1234"}
+        job_records = aclif.view_job_records(jobs_conn, op, **my_dict)
+        self.assertEqual(len(job_records), 1)
+
+    # passing multiple parameters will result in precedence;
+    # the first parameter will be used to filter results
+    def test_14_multiple_params_4(self):
+        my_dict = {"jobid": 102, "after_start_time": 0}
+        job_records = aclif.view_job_records(jobs_conn, op, **my_dict)
+        self.assertEqual(len(job_records), 1)
+
+    # passing no parameters will result in a generic query
+    # returning all results
+    def test_15_no_options_passed(self):
+        my_dict = {}
+        job_records = aclif.view_job_records(jobs_conn, op, **my_dict)
+        self.assertEqual(len(job_records), 4)
 
     # remove database and log file
     @classmethod
