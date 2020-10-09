@@ -17,6 +17,7 @@ import sys
 import pandas as pd
 
 from accounting import accounting_cli_functions as aclif
+from accounting import job_archive_interface as jobs
 from accounting import create_db as c
 from accounting import print_hierarchy as ph
 
@@ -201,7 +202,7 @@ def main():
         elif args.func == "edit_user":
             aclif.edit_user(conn, args.username, args.field, args.new_value)
         elif args.func == "view_job_records":
-            aclif.view_job_records(
+            jobs.view_job_records(
                 conn,
                 output_file,
                 jobid=args.jobid,
