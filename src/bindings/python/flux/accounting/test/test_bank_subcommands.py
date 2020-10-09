@@ -74,8 +74,27 @@ class TestAccountingCLI(unittest.TestCase):
         dataframe = pd.read_sql_query(select_stmt, acct_conn)
         self.assertEqual(len(dataframe.index), 0)
 
+    # deleting a parent bank should remove all of its sub banks
+    def test_06_delete_parent_bank(self):
+        aclif.delete_bank(acct_conn, bank="root")
+        aclif.delete_bank(acct_conn, bank="sub_account_2")
+
+        aclif.add_bank(acct_conn, bank="A", shares=1)
+        aclif.add_bank(acct_conn, bank="B", parent_bank="A", shares=1)
+        aclif.add_bank(acct_conn, bank="D", parent_bank="B", shares=1)
+        aclif.add_bank(acct_conn, bank="E", parent_bank="B", shares=1)
+        aclif.add_bank(acct_conn, bank="C", parent_bank="A", shares=1)
+        aclif.add_bank(acct_conn, bank="F", parent_bank="C", shares=1)
+        aclif.add_bank(acct_conn, bank="G", parent_bank="C", shares=1)
+
+        aclif.delete_bank(acct_conn, bank="A")
+        select_stmt = "SELECT * FROM bank_table"
+        dataframe = pd.read_sql_query(select_stmt, acct_conn)
+
+        self.assertEqual(len(dataframe), 0)
+
     # edit a bank value
-    def test_06_edit_bank_value(self):
+    def test_07_edit_bank_value(self):
         aclif.add_bank(acct_conn, bank="root", shares=100)
         aclif.edit_bank(acct_conn, bank="root", shares=50)
         cursor = acct_conn.cursor()
@@ -85,7 +104,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # trying to edit a bank value <= 0 should raise
     # an exception
-    def test_07_edit_bank_value_fail(self):
+    def test_08_edit_bank_value_fail(self):
         with self.assertRaises(Exception) as context:
             aclif.add_bank(acct_conn, bank="bad_bank", shares=10)
             aclif.edit_bank(acct_conn, bank="bad_bank", shares=-1)
@@ -94,7 +113,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # print out the full hierarchy of banks along
     # with their respective associations
-    def test_08_print_hierarchy(self):
+    def test_09_print_hierarchy(self):
         aclif.delete_bank(acct_conn, "root")
         aclif.delete_bank(acct_conn, "sub_account_2")
         aclif.delete_bank(acct_conn, "bad_bank")
