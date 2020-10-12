@@ -201,7 +201,14 @@ def main():
         elif args.func == "edit_user":
             aclif.edit_user(conn, args.username, args.field, args.new_value)
         elif args.func == "view_job_records":
-            aclif.view_job_records(conn, args.output_file, args)
+            aclif.view_job_records(
+                conn,
+                output_file,
+                jobid=args.jobid,
+                user=args.user,
+                before_end_time=args.before_end_time,
+                after_start_time=args.after_start_time,
+            )
         elif args.func == "add_bank":
             aclif.add_bank(conn, args.bank, args.shares, args.parent_bank)
         elif args.func == "view_bank":
