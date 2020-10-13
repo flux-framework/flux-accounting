@@ -140,11 +140,11 @@ class JobRecord(object):
 
     @property
     def elapsed(self):
-        return time.mktime(self.t_inactive) - time.mktime(self.t_run)
+        return self.t_inactive - self.t_run
 
     @property
     def queued(self):
-        return time.mktime(self.t_run) - time.mktime(self.t_submit)
+        return self.t_run - self.t_submit
 
 
 def add_job_records(dataframe):
