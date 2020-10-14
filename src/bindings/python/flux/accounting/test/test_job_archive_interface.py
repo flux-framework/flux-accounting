@@ -12,6 +12,8 @@
 import unittest
 import os
 import sqlite3
+import time
+
 import pandas as pd
 
 from flux.accounting import job_archive_interface as jobs
@@ -27,6 +29,9 @@ class TestAccountingCLI(unittest.TestCase):
         # create example job-archive database, output file
         global op
         op = "job_records.csv"
+
+        id = 100
+
         jobs_conn = sqlite3.connect("file:jobs.db?mode:rwc", uri=True)
         jobs_conn.execute(
             """
@@ -47,63 +52,72 @@ class TestAccountingCLI(unittest.TestCase):
             );"""
         )
 
-        # add sample jobs to job-archive database
-        id = 100
-        userid = 1234
-        username = "user" + str(userid)
-        t_submit = 1000
-        t_sched = 1005
-        t_run = 1010
-        t_cleanup = 1015
-        t_inactive = 1020
-        for i in range(4):
-            try:
-                jobs_conn.execute(
-                    """
-                    INSERT INTO jobs (
-                        id,
-                        userid,
-                        username,
-                        ranks,
-                        t_submit,
-                        t_sched,
-                        t_run,
-                        t_cleanup,
-                        t_inactive,
-                        eventlog,
-                        jobspec,
-                        R
+        def populate_job_archive_db(jobs_conn, userid, username, ranks, num_entries):
+            nonlocal id
+            nonlocal t_submit
+            nonlocal t_sched
+            nonlocal t_run
+            nonlocal t_cleanup
+            nonlocal t_inactive
+
+            for i in range(num_entries):
+                try:
+                    jobs_conn.execute(
+                        """
+                        INSERT INTO jobs (
+                            id,
+                            userid,
+                            username,
+                            ranks,
+                            t_submit,
+                            t_sched,
+                            t_run,
+                            t_cleanup,
+                            t_inactive,
+                            eventlog,
+                            jobspec,
+                            R
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            id,
+                            userid,
+                            username,
+                            ranks,
+                            time.time() - 2000,
+                            time.time() - 1000,
+                            time.time(),
+                            time.time() + 1000,
+                            time.time() + 2000,
+                            "eventlog",
+                            "jobspec",
+                            '{"version":1,"execution": {"R_lite":[{"rank":"0","children": {"core": "0"}}]}}',
+                        ),
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        id,
-                        userid,
-                        username,
-                        "0",
-                        t_submit,
-                        t_sched,
-                        t_run,
-                        t_cleanup,
-                        t_inactive,
-                        "eventlog",
-                        "jobspec",
-                        '{"version":1,"execution": {"R_lite":[{"rank":"0","children": {"core": "0"}}]}}',
-                    ),
-                )
-                # commit changes
-                jobs_conn.commit()
-            # make sure entry is unique
-            except sqlite3.IntegrityError as integrity_error:
-                print(integrity_error)
-            id += 1
-            userid += 1000
-            username = "user" + str(userid)
-            t_submit += 1000
-            t_sched += 1000
-            t_run += 1000
-            t_cleanup += 1000
-            t_inactive += 1000
+                    # commit changes
+                    jobs_conn.commit()
+                # make sure entry is unique
+                except sqlite3.IntegrityError as integrity_error:
+                    print(integrity_error)
+
+                id += 1
+                t_submit += 1000
+                t_sched += 1000
+                t_run += 1000
+                t_cleanup += 1000
+                t_inactive += 1000
+
+        # populate the job-archive DB with fake job entries
+        populate_job_archive_db(jobs_conn, 1001, "1001", "0", 2)
+
+        populate_job_archive_db(jobs_conn, 1002, "1002", "0-1", 3)
+        populate_job_archive_db(jobs_conn, 1002, "1002", "0", 2)
+
+        populate_job_archive_db(jobs_conn, 1003, "1003", "0-2", 3)
+
+        populate_job_archive_db(jobs_conn, 1004, "1004", "0-3", 4)
+        populate_job_archive_db(jobs_conn, 1004, "1004", "0", 4)
 
     # passing a valid jobid should return
     # its job information
@@ -124,35 +138,21 @@ class TestAccountingCLI(unittest.TestCase):
     def test_03_after_start_time_all(self):
         my_dict = {"after_start_time": 0}
         job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 4)
-
-    # passing a timestamp in the middle should return
-    # only some of the jobs
-    def test_04_after_start_time_some(self):
-        my_dict = {"after_start_time": 2500}
-        job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 2)
+        self.assertEqual(len(job_records), 18)
 
     # passing a timestamp after all of the start time
     # of all the completed jobs should return a failure message
     def test_05_after_start_time_none(self):
-        my_dict = {"after_start_time": 5000}
+        my_dict = {"after_start_time": time.time()}
         job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
         self.assertEqual(len(job_records), 0)
 
     # passing a timestamp after the end time of the
     # last job should return all of the jobs
     def test_06_before_end_time_all(self):
-        my_dict = {"before_end_time": 5000}
+        my_dict = {"before_end_time": time.time() + 10000}
         job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 4)
-
-    # passing a timestamp in the middle should return
-    # only some of the jobs
-    def test_07_before_end_time_some(self):
-        my_dict = {"before_end_time": 3000}
-        job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 2)
+        self.assertEqual(len(job_records), 18)
 
     # passing a timestamp before the end time of
     # all the completed jobs should return a failure message
@@ -172,41 +172,23 @@ class TestAccountingCLI(unittest.TestCase):
     # passwd file; for the purpose of these tests,
     # just pass the userid
     def test_10_by_user_success(self):
-        my_dict = {"user": "1234"}
+        my_dict = {"user": "1001"}
         job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 1)
+        self.assertEqual(len(job_records), 2)
 
     # passing a combination of params should further
     # refine the query
-    def test_11_multiple_params_1(self):
-        my_dict = {"user": "1234", "after_start_time": 1009}
+    def test_11_multiple_params(self):
+        my_dict = {"user": "1001", "after_start_time": time.time() - 1000}
         job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 1)
-
-    def test_12_multiple_params_2(self):
-        my_dict = {"user": "1234", "before_end_time": 1021}
-        job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 1)
-
-    # order of the parameters shouldn't matter
-    def test_13_multiple_params_3(self):
-        my_dict = {"before_end_time": 5000, "user": "1234"}
-        job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 1)
-
-    # passing multiple parameters will result in precedence;
-    # the first parameter will be used to filter results
-    def test_14_multiple_params_4(self):
-        my_dict = {"jobid": 102, "after_start_time": 0}
-        job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 1)
+        self.assertEqual(len(job_records), 2)
 
     # passing no parameters will result in a generic query
     # returning all results
     def test_15_no_options_passed(self):
         my_dict = {}
         job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 4)
+        self.assertEqual(len(job_records), 18)
 
     # remove database and log file
     @classmethod
