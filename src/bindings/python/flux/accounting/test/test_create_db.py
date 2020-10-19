@@ -40,9 +40,13 @@ class TestDB(unittest.TestCase):
             list_of_tables.append(table_name)
             table = pd.read_sql_query("SELECT * from %s" % table_name, conn)
 
-        expected = ["association_table", "bank_table"]
-        test = list_of_tables[:2]
-        self.assertEqual(test, expected)
+        expected = [
+            "association_table",
+            "bank_table",
+            "job_usage_factor_table",
+            "t_half_life_period_table",
+        ]
+        self.assertEqual(list_of_tables, expected)
 
     # add an association to the association_table
     def test_02_create_association(self):
@@ -97,10 +101,61 @@ class TestDB(unittest.TestCase):
         self.assertEqual(dataframe["bank_id"][0], 1)
         self.assertEqual(dataframe["bank_id"][1], 2)
 
+    # if PriorityDecayHalfLife and PriorityUsageResetPeriod
+    # are not specified, the job_usage_factor_table will have
+    # 4 bins, each representing 1 week's worth of jobs
+    def test_06_job_usage_factor_table_default(self):
+        c.create_db("flux_accounting_test_1.db")
+        columns_query = "PRAGMA table_info(job_usage_factor_table)"
+        test_conn = sqlite3.connect("flux_accounting_test_1.db")
+        expected = [
+            "usage_factor_period_0",
+            "usage_factor_period_1",
+            "usage_factor_period_2",
+            "usage_factor_period_3",
+        ]
+        test = []
+        cursor = test_conn.cursor()
+        for row in cursor.execute(columns_query):
+            if "usage_factor" in row[1]:
+                test.append(row[1])
+        self.assertEqual(test, expected)
+
+    # PriorityDecayHalfLife and PriorityUsageResetPeriod should be configurable
+    # to create a custom table spanning a customizable period of time
+    def test_07_job_usage_factor_table_configurable(self):
+        c.create_db(
+            "flux_accounting_test_2.db",
+            priority_usage_reset_period=10,
+            priority_decay_half_life=1,
+        )
+        columns_query = "PRAGMA table_info(job_usage_factor_table)"
+        test_conn = sqlite3.connect("flux_accounting_test_2.db")
+        expected = [
+            "usage_factor_period_0",
+            "usage_factor_period_1",
+            "usage_factor_period_2",
+            "usage_factor_period_3",
+            "usage_factor_period_4",
+            "usage_factor_period_5",
+            "usage_factor_period_6",
+            "usage_factor_period_7",
+            "usage_factor_period_8",
+            "usage_factor_period_9",
+        ]
+        test = []
+        cursor = test_conn.cursor()
+        for row in cursor.execute(columns_query):
+            if "usage_factor" in row[1]:
+                test.append(row[1])
+        self.assertEqual(test, expected)
+
     # remove database file
     @classmethod
     def tearDownClass(self):
         os.remove("FluxAccounting.db")
+        os.remove("flux_accounting_test_1.db")
+        os.remove("flux_accounting_test_2.db")
 
 
 def suite():
@@ -116,4 +171,5 @@ def suite():
 
 if __name__ == "__main__":
     from pycotap import TAPTestRunner
+
     unittest.main(testRunner=TAPTestRunner())

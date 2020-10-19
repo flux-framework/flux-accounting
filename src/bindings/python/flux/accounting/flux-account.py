@@ -11,11 +11,8 @@
 ###############################################################
 import sqlite3
 import argparse
-import time
 import sys
 import os
-
-import pandas as pd
 
 import flux.accounting
 from flux.accounting import accounting_cli_functions as aclif
@@ -32,8 +29,7 @@ def main():
         SQLite instructions for the Flux Accounting Database.
         """
     )
-    subparsers = parser.add_subparsers(help="sub-command help",
-                                       dest="subcommand")
+    subparsers = parser.add_subparsers(help="sub-command help", dest="subcommand")
     subparsers.required = True
 
     parser.add_argument(
@@ -123,6 +119,19 @@ def main():
         "create-db", help="create the flux-accounting database"
     )
     subparser_create_db.set_defaults(func="create_db")
+    subparser_create_db.add_argument(
+        "dbpath", help="specify location of database file", metavar=("DATABASE PATH")
+    )
+    subparser_create_db.add_argument(
+        "--priority-usage-reset-period",
+        help="the number of weeks at which usage information gets reset to 0",
+        metavar=("PRIORITY USAGE RESET PERIOD"),
+    )
+    subparser_create_db.add_argument(
+        "--priority-decay-half-life",
+        help="the contribution of historical usage in weeks on the composite usage value",
+        metavar=("PRIORITY DECAY HALF LIFE"),
+    )
 
     subparser_add_bank = subparsers.add_parser("add-bank", help="add a new bank")
     subparser_add_bank.set_defaults(func="add_bank")
@@ -172,7 +181,9 @@ def main():
     # if we are creating the DB for the first time, we need
     # to ONLY create the DB and then exit out successfully
     if args.func == "create_db":
-        c.create_db(path)
+        c.create_db(
+            args.dbpath, args.priority_usage_reset_period, args.priority_decay_half_life
+        )
         sys.exit(0)
 
     # try to open database file; will exit with -1 if database file not found
@@ -183,6 +194,8 @@ def main():
     db_uri = "file:" + path + "?mode=rw"
     try:
         conn = sqlite3.connect(db_uri, uri=True)
+        # set foreign keys constraint
+        conn.execute("PRAGMA foreign_keys = 1")
     except sqlite3.OperationalError:
         print(f"Unable to open database file: {db_uri}", file=sys.stderr)
         sys.exit(1)

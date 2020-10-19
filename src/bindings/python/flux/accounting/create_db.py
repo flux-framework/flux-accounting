@@ -15,8 +15,64 @@ import logging
 import argparse
 import sys
 import pathlib
+import math
+import time
 
-def create_db(filepath):
+
+def add_usage_columns_to_table(
+    conn, table_name, priority_usage_reset_period=None, priority_decay_half_life=None
+):
+    # the number of columns (or 'bins') holding usage factors is determined by
+    # the following:
+    #
+    # PriorityUsageResetPeriod / PriorityDecayHalfLife
+    #
+    # each parameter represents a number of weeks by which to hold usage
+    # factors up to the time period where jobs no longer play a factor in
+    # calculating a usage factor
+    column_name = "usage_factor_period_0"
+    if priority_decay_half_life != None and priority_usage_reset_period != None:
+        num_columns = math.ceil(
+            int(priority_usage_reset_period) / int(priority_decay_half_life)
+        )
+    else:
+        num_columns = 4
+    for i in range(num_columns):
+        alter_stmt = (
+            "ALTER TABLE "
+            + table_name
+            + " ADD COLUMN "
+            + column_name
+            + " REAL DEFAULT 0.0"
+        )
+        conn.execute(alter_stmt)
+        conn.commit()
+        column_name = "usage_factor_period_" + str(i + 1)
+
+
+def set_half_life_period_end(conn, priority_decay_half_life=None):
+    if priority_decay_half_life != None:
+        # convert number of weeks to seconds; this will be appended
+        # to the current time to represent one 'half-life' period
+        # for the first usage bin
+        half_life_period = int(priority_decay_half_life) * 604800
+        half_life_period_end = time.time() + half_life_period
+    else:
+        half_life_period = 604800
+        half_life_period_end = time.time() + half_life_period
+
+    update_stmt = """
+        UPDATE t_half_life_period_table
+        SET end_half_life_period=?
+        WHERE cluster='cluster'
+        """
+    conn.execute(update_stmt, (str(half_life_period_end),))
+    conn.commit()
+
+
+def create_db(
+    filepath, priority_usage_reset_period=None, priority_decay_half_life=None
+):
     db_dir = pathlib.PosixPath(filepath).parent
     db_dir.mkdir(parents=True, exist_ok=True)
     try:
@@ -60,5 +116,49 @@ def create_db(filepath):
         );"""
     )
     logging.info("Created bank_table successfully")
+
+    # Job Usage Factor Table
+    # stores past job usage factors for users
+    logging.info("Creating job_usage_factor table in DB...")
+    conn.execute(
+        """
+            CREATE TABLE IF NOT EXISTS job_usage_factor_table (
+                username            tinytext                    NOT NULL,
+                bank                tinytext                    NOT NULL,
+                last_job_timestamp  real        DEFAULT 0.0,
+                PRIMARY KEY (username, bank),
+                FOREIGN KEY (username, bank)
+                    REFERENCES association_table (username, bank)
+                        ON UPDATE CASCADE
+                        ON DELETE CASCADE
+        );"""
+    )
+    add_usage_columns_to_table(
+        conn,
+        "job_usage_factor_table",
+        priority_usage_reset_period,
+        priority_decay_half_life,
+    )
+    logging.info("Created job_usage_factor_table successfully")
+
+    # Half Life Timestamp Table
+    # keeps track of current half-life period
+    logging.info("Creating t_half_life_period_table in DB...")
+    conn.execute(
+        """
+            CREATE TABLE IF NOT EXISTS t_half_life_period_table (
+                cluster               tinytext DEFAULT 'cluster',
+                end_half_life_period  real     DEFAULT 0.0
+
+        );"""
+    )
+    conn.execute(
+        """
+            INSERT INTO t_half_life_period_table (cluster, end_half_life_period)
+            VALUES ('cluster', 0.0);
+        """
+    )
+    set_half_life_period_end(conn, priority_decay_half_life)
+    logging.info("Created t_half_life_period_table successfully")
 
     conn.close()
