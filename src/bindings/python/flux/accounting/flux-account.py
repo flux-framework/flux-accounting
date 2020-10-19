@@ -64,7 +64,7 @@ def main():
         "--admin-level", help="admin level", default=1, metavar="ADMIN_LEVEL",
     )
     subparser_add_user.add_argument(
-        "--account", help="account to charge jobs against", metavar="ACCOUNT",
+        "--bank", help="bank to charge jobs against", metavar="BANK",
     )
     subparser_add_user.add_argument(
         "--parent-acct", help="parent account", default="", metavar="PARENT_ACCOUNT",
@@ -197,7 +197,7 @@ def main():
             aclif.add_user(
                 conn,
                 args.username,
-                args.account,
+                args.bank,
                 args.admin_level,
                 args.shares,
                 args.max_jobs,

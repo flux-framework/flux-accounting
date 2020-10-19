@@ -14,10 +14,10 @@ test_expect_success 'create valid flux-accounting DB with a proper hierarchy' '
 	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-bank --parent-bank=A C 1 &&
 	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-bank --parent-bank=C F 1 &&
 	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-bank --parent-bank=C G 1 &&
-	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-user --username=user1 --account=D &&
-	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-user --username=user2 --account=F &&
-	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-user --username=user3 --account=F &&
-	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-user --username=user4 --account=G
+	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-user --username=user1 --bank=D &&
+	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-user --username=user2 --bank=F &&
+	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-user --username=user3 --bank=F &&
+	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-user --username=user4 --bank=G
 '
 
 test_expect_success 'create hierarchy output from Python' '
@@ -33,7 +33,7 @@ test_expect_success 'compare hierarchy outputs' '
 '
 
 test_expect_success 'create valid flux-accounting DB with no entries in bank table' '
-	python3 ${ACCT_CLI} -p ./FluxAccounting-2.db create-db 
+	python3 ${ACCT_CLI} -p ./FluxAccounting-2.db create-db
 '
 
 test_expect_success 'print flux-accounting DB with no entries in bank table' '
