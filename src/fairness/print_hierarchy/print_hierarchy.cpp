@@ -165,7 +165,7 @@ int main(int argc, char** argv) {
   exit = sqlite3_prepare_v2(DB, select_sub_banks_stmt.c_str(), -1, &b_select_sub_banks_stmt, 0);
 
   // SELECT statement to get all associations from a bank
-  std::string select_associations_stmt = "SELECT association_table.user_name, "
+  std::string select_associations_stmt = "SELECT association_table.username, "
                       "association_table.shares, "
                       "association_table.bank "
                       " FROM association_table "
