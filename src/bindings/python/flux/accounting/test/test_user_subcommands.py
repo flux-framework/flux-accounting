@@ -39,9 +39,12 @@ class TestAccountingCLI(unittest.TestCase):
             max_wall_pj="60",
         )
         cursor = acct_conn.cursor()
-        num_rows = cursor.execute("DELETE FROM association_table").rowcount
+        num_rows_assoc_table = cursor.execute("DELETE FROM association_table").rowcount
+        num_rows_job_usage_factor_table = cursor.execute(
+            "DELETE FROM job_usage_factor_table"
+        ).rowcount
 
-        self.assertEqual(num_rows, 1)
+        self.assertEqual(num_rows_assoc_table, num_rows_job_usage_factor_table)
 
     # adding a user with the same primary key (user_name, account) should
     # return an IntegrityError

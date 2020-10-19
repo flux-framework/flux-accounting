@@ -150,8 +150,8 @@ def view_user(conn, user):
 
 def add_user(conn, username, bank, admin_level=1, shares=1, max_jobs=1, max_wall_pj=60):
 
-    # insert the user values into the database
     try:
+        # insert the user values into association_table
         conn.execute(
             """
             INSERT INTO association_table (
@@ -180,6 +180,18 @@ def add_user(conn, username, bank, admin_level=1, shares=1, max_jobs=1, max_wall
             ),
         )
         # commit changes
+        conn.commit()
+        # insert the user values into job_usage_factor_table
+        conn.execute(
+            """
+            INSERT INTO job_usage_factor_table (
+                username,
+                bank
+            )
+            VALUES (?, ?)
+            """,
+            (username, bank,),
+        )
         conn.commit()
     # make sure entry is unique
     except sqlite3.IntegrityError as integrity_error:
