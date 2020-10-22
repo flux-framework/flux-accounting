@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/flux-framework/flux-accounting.svg?branch=master)](https://travis-ci.org/flux-framework/flux-accounting)
+[![codecov](https://codecov.io/gh/flux-framework/flux-accounting/branch/master/graph/badge.svg)](https://codecov.io/gh/flux-framework/flux-accounting)
+
 _NOTE: The interfaces of flux-accounting are being actively developed and are not yet stable. The Github issue tracker is the primary way to communicate with the developers._
 
 ## flux-accounting
