@@ -7,3 +7,4 @@ accounting/db_creation.log
 test/FluxAccounting.db
 build/
 .tox
+src/fairness/print_hierarchy/print_hierarchy
