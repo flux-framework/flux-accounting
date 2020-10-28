@@ -55,9 +55,9 @@ def create_db(filepath):
         """
             CREATE TABLE IF NOT EXISTS bank_table (
                 bank_id     integer PRIMARY KEY,
-                bank        text    NOT NULL,
-                parent_bank text,
-                shares      int     NOT NULL
+                bank        text                NOT NULL,
+                parent_bank text    DEFAULT '',
+                shares      int                 NOT NULL
         );"""
     )
     logging.info("Created bank_table successfully")
