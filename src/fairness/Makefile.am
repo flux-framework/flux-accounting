@@ -1,0 +1,2 @@
+SUBDIRS = weighted_tree
+
