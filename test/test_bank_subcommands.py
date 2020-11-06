@@ -165,12 +165,39 @@ A||1
 
         self.assertEqual(test, expected)
 
+    # having more than one root bank should result
+    # in an exception being thrown
+    def test_09_print_hierarchy_failure_1(self):
+        c.create_db("flux_accounting_failure_1.db")
+        acct_conn = sqlite3.connect("flux_accounting_failure_1.db")
+
+        aclif.add_bank(acct_conn, bank="A", shares=1)
+        aclif.add_bank(acct_conn, bank="B", shares=1)
+
+        with self.assertRaises(SystemExit) as cm:
+            p.print_full_hierarchy(acct_conn)
+
+        self.assertTrue(cm.exception.code, 1)
+
+    # having no root bank should also result in an
+    # exception being thrown
+    def test_10_print_hierarchy_failure_2(self):
+        c.create_db("flux_accounting_failure_2.db")
+        acct_conn = sqlite3.connect("flux_accounting_failure_2.db")
+
+        with self.assertRaises(SystemExit) as cm:
+            p.print_full_hierarchy(acct_conn)
+
+        self.assertTrue(cm.exception.code, 1)
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):
         acct_conn.close()
         os.remove("FluxAccounting.db")
         os.remove("db_creation.log")
+        os.remove("flux_accounting_failure_1.db")
+        os.remove("flux_accounting_failure_2.db")
 
 
 def suite():
