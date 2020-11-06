@@ -179,7 +179,7 @@ def main():
         conn = sqlite3.connect("file:" + path + "?mode=rw", uri=True)
     except sqlite3.OperationalError:
         print("Unable to open database file")
-        sys.exit(-1)
+        sys.exit(1)
 
     # set path for output file
     output_file = args.output_file if args.output_file else None
