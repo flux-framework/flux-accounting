@@ -10,6 +10,7 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import sqlite3
+import sys
 import pandas as pd
 
 # this will print the full hierarchy of banks
@@ -27,10 +28,14 @@ def print_full_hierarchy(conn):
         """
     dataframe = pd.read_sql_query(select_stmt, conn)
 
-    if len(dataframe) == 0:
-        raise Exception("No root bank found")
-    elif len(dataframe) > 1:
-        raise Exception("More than one root bank found")
+    try:
+        if len(dataframe) == 0:
+            raise IndexError("No root bank found")
+        elif len(dataframe) > 1:
+            raise IndexError("More than one root bank found")
+    except IndexError as e:
+        print(e)
+        sys.exit(1)
 
     root = dataframe.iloc[0]
 

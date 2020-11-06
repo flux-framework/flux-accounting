@@ -20,10 +20,14 @@ LOGGER = logging.basicConfig(filename="db_creation.log", level=logging.INFO)
 
 
 def create_db(filepath):
-    # open connection to database
-    logging.info("Creating Flux Accounting DB")
-    conn = sqlite3.connect("file:" + filepath + "?mode:rwc", uri=True)
-    logging.info("Created Flux Accounting DB sucessfully")
+    try:
+        # open connection to database
+        logging.info("Creating Flux Accounting DB")
+        conn = sqlite3.connect("file:" + filepath + "?mode:rwc", uri=True)
+        logging.info("Created Flux Accounting DB successfully")
+    except sqlite3.OperationalError as e:
+        logging.error(e)
+        sys.exit(1)
 
     # Association Table
     logging.info("Creating association_table in DB...")
