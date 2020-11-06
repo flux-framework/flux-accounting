@@ -191,8 +191,8 @@ def main():
             aclif.add_user(
                 conn,
                 args.username,
-                args.admin_level,
                 args.account,
+                args.admin_level,
                 args.shares,
                 args.max_jobs,
                 args.max_wall_pj,
