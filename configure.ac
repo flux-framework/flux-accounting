@@ -17,6 +17,11 @@ LT_INIT([dlopen])
 
 AC_PREFIX_PROGRAM([flux])
 
+##
+# Initialize pkg-config for PKG_CHECK_MODULES to avoid conditional issues
+##
+PKG_PROG_PKG_CONFIG
+
 # Checks for programs.
 AC_DEFINE([_GNU_SOURCE], 1,
           [Define _GNU_SOURCE so that we get all necessary prototypes])
@@ -27,6 +32,7 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AM_PROG_CC_C_O
 AX_CODE_COVERAGE
+PKG_CHECK_MODULES([SQLITE], [sqlite3], [], [])
 
 if test "$GCC" = yes; then
   WARNING_CFLAGS="-Wall -Werror -Werror=missing-field-initializers -Wno-error=deprecated-declarations"
@@ -69,7 +75,8 @@ AC_CONFIG_FILES([Makefile
   src/common/libtap/Makefile
   src/fairness/Makefile
   src/fairness/weighted_tree/Makefile
-  src/fairness/weighted_tree/test/Makefile])
+  src/fairness/weighted_tree/test/Makefile
+  src/fairness/print_hierarchy/Makefile])
 AC_OUTPUT
 
 echo "
