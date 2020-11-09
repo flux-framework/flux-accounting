@@ -1,3 +1,18 @@
+flux-accounting version 0.4.0 - 2020-11-06
+------------------------------------------
+
+#### Fixes
+
+* `view-job-records` subcommand parameters adjusted to be unpacked as a dictionary (#55)
+
+* Move `view_job_records()` and its helper functions into its own Python module (#57)
+
+#### Features
+
+* Add a library that provides a weighted tree-based fairness (#65)
+
+* Add autogen, automake tools to flux-accounting repo (#65)
+
 flux-accounting version 0.3.0 - 2020-09-30
 ------------------------------------------
 
