@@ -16,14 +16,15 @@ SPDX-License-Identifier: LGPL-3.0
 #include <tuple>
 
 std::string hierarchy = "Bank|User|RawShares\n";
-char* messageError;
 
-sqlite3_stmt *b_select_root_bank_stmt;
-sqlite3_stmt *b_select_shares_stmt;
-sqlite3_stmt *b_select_sub_banks_stmt;
-sqlite3_stmt *b_select_associations_stmt;
-
-int get_sub_banks(sqlite3* DB, const std::string& bank_name, const std::string& indent) {
+int get_sub_banks(
+  sqlite3* DB,
+  const std::string& bank_name,
+  const std::string& indent,
+  sqlite3_stmt *b_select_shares_stmt,
+  sqlite3_stmt *b_select_sub_banks_stmt,
+  sqlite3_stmt *b_select_associations_stmt
+) {
   int exit = 0;
 
   // bind parameter to prepared SQL statement
@@ -100,7 +101,14 @@ int get_sub_banks(sqlite3* DB, const std::string& bank_name, const std::string& 
       sqlite3_reset(b_select_sub_banks_stmt);
       sqlite3_clear_bindings(b_select_shares_stmt);
       sqlite3_reset(b_select_shares_stmt);
-      get_sub_banks(DB, b, indent + " ");
+      get_sub_banks(
+        DB,
+        b,
+        indent + " ",
+        b_select_shares_stmt,
+        b_select_sub_banks_stmt,
+        b_select_associations_stmt
+      );
     }
   }
 
@@ -119,6 +127,12 @@ banks, it will print any associations and their corresponding shares under that
 bank.
 */
 int main(int argc, char** argv) {
+  // SQL statements to retrieve data from flux-accounting database
+  sqlite3_stmt *b_select_root_bank_stmt;
+  sqlite3_stmt *b_select_shares_stmt;
+  sqlite3_stmt *b_select_sub_banks_stmt;
+  sqlite3_stmt *b_select_associations_stmt;
+
   std::string indent = "";
 
   // only one argument should be passed in; a filepath to the flux-accounting DB
@@ -158,7 +172,7 @@ int main(int argc, char** argv) {
                       " WHERE association_table.bank=?";
   exit = sqlite3_prepare_v2(DB, select_associations_stmt.c_str(), -1, &b_select_associations_stmt, 0);
 
-  // get the root bank and its shares in the bank table
+  // SELECT statement to get the root bank from the bank table
   std::string select_root_bank_stmt = "SELECT bank_table.bank "
                       "FROM bank_table "
                       "WHERE parent_bank=''";
@@ -170,22 +184,29 @@ int main(int argc, char** argv) {
 
       return 1;
   }
-  exit = sqlite3_step(b_select_root_bank_stmt);
 
+  exit = sqlite3_step(b_select_root_bank_stmt);
   // store root bank name
   std::string root_bank;
   if (exit == SQLITE_ROW) {
       root_bank = reinterpret_cast<char const*> (sqlite3_column_text(b_select_root_bank_stmt, 0));
   }
-  // otherwise, there is either no root bank, or more than one root bank was
-  // found; the program should exit
+  // otherwise, there is either no root bank or more than one
+  // root bank; the program should exit
   else {
     std::cerr << "root bank not found, exiting" << std::endl;
     return 1;
   }
 
   // call recursive function
-  get_sub_banks(DB, root_bank, indent);
+  get_sub_banks(
+    DB,
+    root_bank,
+    indent,
+    b_select_shares_stmt,
+    b_select_sub_banks_stmt,
+    b_select_associations_stmt
+  );
 
   // destroy the prepared SQL statements
   sqlite3_finalize(b_select_root_bank_stmt);
