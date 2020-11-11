@@ -1,5 +1,4 @@
-test/__pycache__/
-accounting/__pycache__/
+__pycache__/
 dist/
 flux_accounting.egg-info
 accounting/FluxAccounting.db
