@@ -30,7 +30,9 @@ def main():
         SQLite instructions for the Flux Accounting Database.
         """
     )
-    subparsers = parser.add_subparsers(help="sub-command help",)
+    subparsers = parser.add_subparsers(help="sub-command help",
+                                       dest="subcommand")
+    subparsers.required = True
 
     parser.add_argument(
         "-p", "--path", dest="path", help="specify location of database file"
