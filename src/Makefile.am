@@ -1,2 +1,2 @@
-SUBDIRS = common fairness
+SUBDIRS = common fairness accounting
 

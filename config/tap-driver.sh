@@ -103,12 +103,12 @@ esac
 
 if test $color_tests = yes; then
   init_colors='
-    color_map["red"]="[0;31m" # Red.
-    color_map["grn"]="[0;32m" # Green.
-    color_map["lgn"]="[1;32m" # Light green.
-    color_map["blu"]="[1;34m" # Blue.
-    color_map["mgn"]="[0;35m" # Magenta.
-    color_map["std"]="[m"     # No color.
+    color_map["red"]="[0;31m" # Red.
+    color_map["grn"]="[0;32m" # Green.
+    color_map["lgn"]="[1;32m" # Light green.
+    color_map["blu"]="[1;34m" # Blue.
+    color_map["mgn"]="[0;35m" # Magenta.
+    color_map["std"]="[m"     # No color.
     color_for_result["ERROR"] = "mgn"
     color_for_result["PASS"]  = "grn"
     color_for_result["XPASS"] = "red"
@@ -144,7 +144,20 @@ fi
     else
       exec 2>&3
     fi
-    "$@"
+    if test -n "${FLUX_TEST_TIMEOUT:-}" ; then
+      if test -z "${FLUX_SOURCE_DIR:-}"; then
+        if test -n "${top_srcdir:-}" ; then
+          FLUX_SOURCE_DIR="$top_srcdir"
+        else
+          SCRIPT=$(readlink -f "$0")
+          SPATH=$(dirname "$SCRIPT")
+          FLUX_SOURCE_DIR="$SPATH"/..
+        fi
+      fi
+      "${PYTHON:-python3}" -S "${FLUX_SOURCE_DIR}/t/scripts/run_timeout.py" "$FLUX_TEST_TIMEOUT" "$@"
+    else
+       "$@"
+    fi
     echo $?
   ) | LC_ALL=C ${AM_TAP_AWK-awk} \
         -v me="$me" \
@@ -160,26 +173,32 @@ fi
 '
 # TODO: the usages of "cat >&3" below could be optimized when using
 #       GNU awk, and/on on systems that supports /dev/fd/.
+
 # Implementation note: in what follows, `result_obj` will be an
 # associative array that (partly) simulates a TAP result object
 # from the `TAP::Parser` perl module.
+
 ## ----------- ##
 ##  FUNCTIONS  ##
 ## ----------- ##
+
 function fatal(msg)
 {
   print me ": " msg | "cat >&2"
   exit 1
 }
+
 function abort(where)
 {
   fatal("internal error " where)
 }
+
 # Convert a boolean to a "yes"/"no" string.
 function yn(bool)
 {
   return bool ? "yes" : "no";
 }
+
 function add_test_result(result)
 {
   if (!test_results_index)
@@ -188,6 +207,7 @@ function add_test_result(result)
   test_results_index += 1
   test_results_seen[result] = 1;
 }
+
 # Whether the test script should be re-run by "make recheck".
 function must_recheck()
 {
@@ -196,6 +216,7 @@ function must_recheck()
       return 1
   return 0
 }
+
 # Whether the content of the log file associated to this test should
 # be copied into the "global" test-suite.log.
 function copy_in_global_log()
@@ -205,6 +226,7 @@ function copy_in_global_log()
       return 1
   return 0
 }
+
 function get_global_test_result()
 {
     if ("ERROR" in test_results_seen)
@@ -219,6 +241,7 @@ function get_global_test_result()
       return "SKIP"
     return "PASS";
 }
+
 function summarize_global_test_result()
 {
     i = 0
@@ -232,20 +255,27 @@ function summarize_global_test_result()
                         totals["XFAIL"])
     return res
 }
+
 function stringify_result_obj(result_obj)
 {
   if (result_obj["is_unplanned"] || result_obj["number"] != testno)
     return "ERROR"
+
   if (plan_seen == LATE_PLAN)
     return "ERROR"
+
   if (result_obj["directive"] == "TODO")
     return result_obj["is_ok"] ? "XPASS" : "XFAIL"
+
   if (result_obj["directive"] == "SKIP")
     return result_obj["is_ok"] ? "SKIP" : COOKED_FAIL;
+
   if (length(result_obj["directive"]))
       abort("in function stringify_result_obj()")
+
   return result_obj["is_ok"] ? COOKED_PASS : COOKED_FAIL
 }
+
 function decorate_result(result)
 {
   color_name = color_for_result[result]
@@ -255,6 +285,7 @@ function decorate_result(result)
   # to colorize the given result, we should return it unchanged.
   return result
 }
+
 function report(result, details)
 {
   if (result ~ /^(X?(PASS|FAIL)|SKIP|ERROR)/)
@@ -279,15 +310,18 @@ function report(result, details)
   # especially true when said result is a TAP error or "Bail out!").
   print result msg | "cat >&3";
 }
+
 function testsuite_error(error_message)
 {
   report("ERROR", "- " error_message)
 }
+
 function handle_tap_result()
 {
   details = result_obj["number"];
   if (length(result_obj["description"]))
     details = details " " result_obj["description"]
+
   if (plan_seen == LATE_PLAN)
     {
       details = details " # AFTER LATE PLAN";
@@ -307,8 +341,10 @@ function handle_tap_result()
       if (length(result_obj["explanation"]))
         details = details " " result_obj["explanation"]
     }
+
   report(stringify_result_obj(result_obj), details)
 }
+
 # `skip_reason` should be empty whenever planned > 0.
 function handle_tap_plan(planned, skip_reason)
 {
@@ -341,6 +377,7 @@ function handle_tap_plan(planned, skip_reason)
       report("SKIP", skip_reason);
     }
 }
+
 function extract_tap_comment(line)
 {
   if (index(line, diag_string) == 1)
@@ -355,6 +392,7 @@ function extract_tap_comment(line)
     }
   return "";
 }
+
 # When this function is called, we know that line is a TAP result line,
 # so that it matches the (perl) RE "^(not )?ok\b".
 function setup_result_obj(line)
@@ -362,6 +400,7 @@ function setup_result_obj(line)
   # Get the result, and remove it from the line.
   result_obj["is_ok"] = (substr(line, 1, 2) == "ok" ? 1 : 0)
   sub("^(not )?ok[ \t]*", "", line)
+
   # If the result has an explicit number, get it and strip it; otherwise,
   # automatically assing the next progresive number to it.
   if (line ~ /^[0-9]+$/ || line ~ /^[0-9]+[^a-zA-Z0-9_]/)
@@ -375,6 +414,7 @@ function setup_result_obj(line)
     {
       result_obj["number"] = testno
     }
+
   if (plan_seen == LATE_PLAN)
     # No further test results are acceptable after a "late" TAP plan
     # has been seen.
@@ -383,24 +423,31 @@ function setup_result_obj(line)
     result_obj["is_unplanned"] = 1
   else
     result_obj["is_unplanned"] = 0
+
   # Strip trailing and leading whitespace.
   sub("^[ \t]*", "", line)
   sub("[ \t]*$", "", line)
+
   # This will have to be corrected if we have a "TODO"/"SKIP" directive.
   result_obj["description"] = line
   result_obj["directive"] = ""
   result_obj["explanation"] = ""
+
   if (index(line, "#") == 0)
     return # No possible directive, nothing more to do.
+
   # Directives are case-insensitive.
   rx = "[ \t]*#[ \t]*([tT][oO][dD][oO]|[sS][kK][iI][pP])[ \t]*"
+
   # See whether we have the directive, and if yes, where.
   pos = match(line, rx "$")
   if (!pos)
     pos = match(line, rx "[^a-zA-Z0-9_]")
+
   # If there was no TAP directive, we have nothing more to do.
   if (!pos)
     return
+
   # Let`s now see if the TAP directive has been escaped.  For example:
   #  escaped:     ok \# SKIP
   #  not escaped: ok \\# SKIP
@@ -414,6 +461,7 @@ function setup_result_obj(line)
       if (bslash_count % 2)
         return # Directive was escaped.
     }
+
   # Strip the directive and its explanation (if any) from the test
   # description.
   result_obj["description"] = substr(line, 1, pos - 1)
@@ -430,6 +478,7 @@ function setup_result_obj(line)
   sub("[ \t]*$", "", line)
   result_obj["explanation"] = line
 }
+
 function get_test_exit_message(status)
 {
   if (status == 0)
@@ -455,6 +504,7 @@ function get_test_exit_message(status)
     exit_details = " (abnormal termination)"
   return sprintf("exited with status %d%s", status, exit_details)
 }
+
 function write_test_results()
 {
   print ":global-test-result: " get_global_test_result() > trs_file
@@ -464,30 +514,41 @@ function write_test_results()
     print ":test-result: " test_results_list[i] > trs_file
   close(trs_file);
 }
+
 BEGIN {
+
 ## ------- ##
 ##  SETUP  ##
 ## ------- ##
+
 '"$init_colors"'
+
 # Properly initialized once the TAP plan is seen.
 planned_tests = 0
+
 COOKED_PASS = expect_failure ? "XPASS": "PASS";
 COOKED_FAIL = expect_failure ? "XFAIL": "FAIL";
+
 # Enumeration-like constants to remember which kind of plan (if any)
 # has been seen.  It is important that NO_PLAN evaluates "false" as
 # a boolean.
 NO_PLAN = 0
 EARLY_PLAN = 1
 LATE_PLAN = 2
+
 testno = 0     # Number of test results seen so far.
 bailed_out = 0 # Whether a "Bail out!" directive has been seen.
+
 # Whether the TAP plan has been seen or not, and if yes, which kind
 # it is ("early" is seen before any test result, "late" otherwise).
 plan_seen = NO_PLAN
+
 ## --------- ##
 ##  PARSING  ##
 ## --------- ##
+
 is_first_read = 1
+
 while (1)
   {
     # Involutions required so that we are able to read the exit status
@@ -518,6 +579,7 @@ while (1)
     # Parsing of TAP input should stop after a "Bail out!" directive.
     if (bailed_out)
       continue
+
     # TAP test result.
     if ($0 ~ /^(not )?ok$/ || $0 ~ /^(not )?ok[^a-zA-Z0-9_]/)
       {
@@ -571,6 +633,7 @@ while (1)
           report("#", comment);
       }
   }
+
 ## -------- ##
 ##  FINISH  ##
 ## -------- ##
@@ -581,6 +644,7 @@ if (quiet) {
             decorate_result(get_global_test_result()),
             summarize_global_test_result())
 }
+
 # A "Bail out!" directive should cause us to ignore any following TAP
 # error, as well as a non-zero exit status from the TAP producer.
 if (!bailed_out)
@@ -603,8 +667,11 @@ if (!bailed_out)
           testsuite_error(exit_message)
       }
   }
+
 write_test_results()
+
 exit 0
+
 } # End of "BEGIN" block.
 '
 

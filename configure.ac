@@ -45,6 +45,19 @@ fi
 
 AX_FLUX_CORE
 
+#  Set PYTHON_VERSION to FLUX_PYTHON_VERSION here
+PYTHON_VERSION=${PYTHON_VERSION:-$FLUX_PYTHON_VERSION}
+AX_PYTHON_DEVEL([>='3.6'])
+
+AM_PATH_PYTHON([$ac_python_version])
+if test "X$PYTHON" = "X"; then
+  AC_MSG_ERROR([could not find python])
+fi
+
+AC_SUBST(PYTHON_LIBRARY, lib${ac_python_library}.so)
+AC_DEFINE_UNQUOTED([PYTHON_INTERPRETER], ["$PYTHON"], [The python interpreter flux is configured with])
+AC_SUBST(PYTHON)
+
 #
 # Project directories
 #
@@ -69,6 +82,16 @@ AC_SUBST(fluxrc1dir)
 AS_VAR_SET(fluxrc3dir, $sysconfdir/flux/rc3.d)
 AC_SUBST(fluxrc3dir)
 
+AS_VAR_SET(fluxpydir, $pyexecdir/flux)
+AC_SUBST(fluxpydir)
+# Target of PYTHONPATH set by flux(1) cmddriver, so flux(1)
+# doesn't inadvertently insert system python paths (or any
+# other python path for that matter) first in PYTHONPATH.
+#
+AS_VAR_SET(fluxpylinkdir, $fluxlibdir/python$PYTHON_VERSION)
+AC_SUBST(fluxpylinkdir)
+
+
 AC_CONFIG_FILES([Makefile
   src/Makefile
   src/common/Makefile
@@ -76,7 +99,9 @@ AC_CONFIG_FILES([Makefile
   src/fairness/Makefile
   src/fairness/weighted_tree/Makefile
   src/fairness/weighted_tree/test/Makefile
-  src/fairness/print_hierarchy/Makefile])
+  src/fairness/print_hierarchy/Makefile
+  src/accounting/Makefile
+  ])
 AC_OUTPUT
 
 echo "
@@ -97,4 +122,5 @@ echo "
   LDFLAGS..........: $LDFLAGS
   LIBS.............: $LIBS
   Linker...........: $LD
+  PYTHON...........: $PYTHON
 "
