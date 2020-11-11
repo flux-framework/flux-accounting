@@ -1,11 +1,6 @@
 __pycache__/
-dist/
-flux_accounting.egg-info
-accounting/FluxAccounting.db
-accounting/db_creation.log
-test/FluxAccounting.db
-build/
-.tox
+FluxAccounting.db
+db_creation.log
 src/fairness/print_hierarchy/print_hierarchy
 
 # http://www.gnu.org/software/automake
