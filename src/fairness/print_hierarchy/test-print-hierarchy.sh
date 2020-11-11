@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# TEST 1: valid flux-accounting DB with a proper hierarchy
+
+echo "test 1: valid flux-accounting DB with a proper hierarchy"
+
 python3 ../../../accounting/accounting_cli.py create-db FluxAccounting.db
 
 python3 ../../../accounting/accounting_cli.py add-bank A 1
@@ -32,6 +36,28 @@ diff py-output.txt cpp-output.txt
 
 RC=$?
 
-rm py-output.txt cpp-output.txt FluxAccounting.db db_creation.log
+if [[ $RC = 0 ]]
+then
+  echo "test 1: success"
+  rm py-output.txt cpp-output.txt FluxAccounting.db db_creation.log
+else
+  exit $RC
+fi
 
-exit $RC
+# TEST 2: valid flux-accounting DB with no entries should exit out
+
+echo "test 2: valid flux-accounting DB with no entries in bank table"
+
+python3 ../../../accounting/accounting_cli.py create-db FluxAccounting.db
+
+./print_hierarchy FluxAccounting.db > error-output.txt 2>&1
+
+file_contents=`cat error-output.txt`
+
+if [[ $file_contents = 'root bank not found, exiting' ]]
+then
+  echo "test 2: success"
+  rm FluxAccounting.db db_creation.log error-output.txt
+else
+  exit 1
+fi
