@@ -16,9 +16,6 @@ import argparse
 import sys
 
 
-LOGGER = logging.basicConfig(filename="db_creation.log", level=logging.INFO)
-
-
 def create_db(filepath):
     try:
         # open connection to database

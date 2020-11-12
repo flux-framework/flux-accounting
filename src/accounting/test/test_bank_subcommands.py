@@ -195,7 +195,6 @@ A||1
     def tearDownClass(self):
         acct_conn.close()
         os.remove("FluxAccounting.db")
-        os.remove("db_creation.log")
         os.remove("flux_accounting_failure_1.db")
         os.remove("flux_accounting_failure_2.db")
 
