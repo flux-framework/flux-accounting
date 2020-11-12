@@ -115,5 +115,5 @@ def suite():
 
 
 if __name__ == "__main__":
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
+    from pycotap import TAPTestRunner
+    unittest.main(testRunner=TAPTestRunner())

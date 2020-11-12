@@ -27,3 +27,22 @@ uninstall-local:
 	$(AM_V_at)target=$(fluxpydir) && f=$${target##*/} && \
 	  echo "Removing $(fluxpylinkdir)/$$f" && \
 	  rm -rf $(fluxpylinkdir)/$$f
+
+TESTSCRIPTS = \
+	test/test_bank_subcommands.py \
+	test/test_create_db.py \
+	test/test_example.py \
+	test/test_job_archive_interface.py \
+	test/test_user_subcommands.py
+
+dist_check_SCRIPTS = \
+	$(TESTSCRIPTS)
+
+TESTS = $(TESTSCRIPTS)
+
+AM_TESTS_ENVIRONMENT = \
+	export PYTHONPATH="$(abs_top_srcdir)/src/:$(abs_top_srcdir)/t/pycotap:$(PYTHON_SITE_PKG):$$PYTHONPATH";\
+	export PYTHON="${PYTHON}";
+
+TEST_EXTENSIONS = .py
+PY_LOG_DRIVER = $(PYTHON) $(top_srcdir)/config/tap-driver.py

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 
 ###############################################################
 # Copyright 2020 Lawrence Livermore National Security, LLC
@@ -20,5 +21,9 @@ class TestExample(unittest.TestCase):
         expected = 1
         test = 1
         self.assertEqual(test, expected)
+
+if __name__ == "__main__":
+    from pycotap import TAPTestRunner
+    unittest.main(testRunner=TAPTestRunner())
 
 # vi: ts=4 sw=4 expandtab

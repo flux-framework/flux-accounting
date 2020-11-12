@@ -2,6 +2,7 @@ __pycache__/
 FluxAccounting.db
 db_creation.log
 src/fairness/print_hierarchy/print_hierarchy
+*.trs
 
 # http://www.gnu.org/software/automake
 
