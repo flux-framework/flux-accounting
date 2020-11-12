@@ -1,4 +1,4 @@
-fluxpy_PYTHON = \
+acctpy_PYTHON = \
 	__init__.py \
 	accounting_cli_functions.py \
 	job_archive_interface.py \
@@ -16,15 +16,15 @@ clean-local:
 
 install-data-hook:
 	$(AM_V_at)echo Linking python modules in non-standard location... && \
-	  $(INSTALL) -d -m 0755 "$(DESTDIR)$(fluxpylinkdir)" && \
-	  target=$(fluxpydir) && \
+	  $(INSTALL) -d -m 0755 "$(fluxpylinkdir)" && \
+	  target=$(acctpydir) && \
 	  f=$${target##*/} && \
-	  cd "$(DESTDIR)$(fluxpylinkdir)" && \
+	  cd "$(fluxpylinkdir)" && \
 	  rm -f $$f && \
 	  $(LN_S) $$target .
 
 uninstall-local:
-	$(AM_V_at)target=$(fluxpydir) && f=$${target##*/} && \
+	$(AM_V_at)target=$(acctpydir) && f=$${target##*/} && \
 	  echo "Removing $(fluxpylinkdir)/$$f" && \
 	  rm -rf $(fluxpylinkdir)/$$f
 

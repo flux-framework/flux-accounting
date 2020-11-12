@@ -84,6 +84,8 @@ AC_SUBST(fluxrc3dir)
 
 AS_VAR_SET(fluxpydir, $pyexecdir/flux)
 AC_SUBST(fluxpydir)
+AS_VAR_SET(acctpydir, $pyexecdir/accounting)
+AC_SUBST(acctpydir)
 # Target of PYTHONPATH set by flux(1) cmddriver, so flux(1)
 # doesn't inadvertently insert system python paths (or any
 # other python path for that matter) first in PYTHONPATH.
