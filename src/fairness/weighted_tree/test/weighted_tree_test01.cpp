@@ -26,6 +26,7 @@
 # include <config.h>
 #endif
 
+#include <cstdlib>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -33,6 +34,8 @@
 #include "src/common/libtap/tap.h"
 
 using namespace Flux::accounting;
+
+std::string accounts_data_dir;
 
 static void test_tree_from_file (const std::string &filename,
                                  const std::vector<std::string> &expected)
@@ -90,7 +93,7 @@ static void test_tree_from_file (const std::string &filename,
 
 static void test_weighted_small_no_tie ()
 {
-    const std::string filename = "./accounts_data/small_no_tie.csv";
+    const std::string filename = accounts_data_dir + "/small_no_tie.csv";
     std::vector<std::string> expected;
     expected.push_back ("leaf.3.1");
     expected.push_back ("leaf.3.2");
@@ -105,7 +108,7 @@ static void test_weighted_small_no_tie ()
 
 static void test_weighted_small_tie ()
 {
-    const std::string filename = "./accounts_data/small_tie.csv";
+    const std::string filename = accounts_data_dir + "/small_tie.csv";
     std::vector<std::string> expected;
     expected.push_back ("leaf.3.1");
     expected.push_back ("leaf.3.2");
@@ -121,7 +124,7 @@ static void test_weighted_small_tie ()
 
 static void test_weighted_small_tie_diff_type ()
 {
-    const std::string filename = "./accounts_data/small_tie_diff_type.csv";
+    const std::string filename = accounts_data_dir + "/small_tie_diff_type.csv";
     std::vector<std::string> expected;
     expected.push_back ("leaf.3.1");
     expected.push_back ("leaf.3.2");
@@ -135,7 +138,7 @@ static void test_weighted_small_tie_diff_type ()
 
 static void test_weighted_small_tie_all ()
 {
-    const std::string filename = "./accounts_data/small_tie_all.csv";
+    const std::string filename = accounts_data_dir + "/small_tie_all.csv";
     std::vector<std::string> expected;
     expected.push_back ("leaf.1.3");
     expected.push_back ("leaf.2.3");
@@ -152,7 +155,7 @@ static void test_weighted_small_tie_all ()
 
 static void test_weighted_small_zero_shares ()
 {
-    const std::string filename = "./accounts_data/small_zero_shares.csv";
+    const std::string filename = accounts_data_dir + "/small_zero_shares.csv";
     std::vector<std::string> expected;
     expected.push_back ("leaf.3.1");
     expected.push_back ("leaf.3.2");
@@ -168,7 +171,7 @@ static void test_weighted_small_zero_shares ()
 
 static void test_weighted_minimal ()
 {
-    const std::string filename = "./accounts_data/minimal.csv";
+    const std::string filename = accounts_data_dir + "/minimal.csv";
     std::vector<std::string> expected;
 
     test_tree_from_file (filename, expected);
@@ -177,6 +180,8 @@ static void test_weighted_minimal ()
 int main (int argc, char *argv[])
 {
     plan (36);
+
+    accounts_data_dir = std::getenv("ACCOUNTS_DATA_DIR");
 
     test_weighted_small_no_tie ();
 

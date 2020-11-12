@@ -21,3 +21,7 @@ clean-local:
 AM_TESTS_ENVIRONMENT = \
 	export PYTHONPATH="$(abs_top_srcdir)/src/:$(abs_top_srcdir)/t/pycotap:$(PYTHON_SITE_PKG):$$PYTHONPATH";\
 	export PYTHON="${PYTHON}";
+
+TEST_EXTENSIONS = .t
+T_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+        $(top_srcdir)/config/tap-driver.sh
