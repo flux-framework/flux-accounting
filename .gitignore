@@ -3,6 +3,7 @@ FluxAccounting.db
 db_creation.log
 src/fairness/print_hierarchy/print_hierarchy
 *.trs
+t/test-results/
 
 # http://www.gnu.org/software/automake
 

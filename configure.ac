@@ -101,6 +101,7 @@ AC_CONFIG_FILES([Makefile
   src/fairness/weighted_tree/test/Makefile
   src/fairness/print_hierarchy/Makefile
   src/accounting/Makefile
+  t/Makefile
   ])
 AC_OUTPUT
 
