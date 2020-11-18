@@ -2,9 +2,7 @@ acctpy_PYTHON = \
 	__init__.py \
 	accounting_cli_functions.py \
 	job_archive_interface.py \
-	create_db.py
-
-dist_noinst_SCRIPTS = \
+	create_db.py \
 	print_hierarchy.py
 
 dist_fluxcmd_SCRIPTS = \
@@ -13,20 +11,6 @@ dist_fluxcmd_SCRIPTS = \
 clean-local:
 	-rm -f *.pyc *.pyo
 	-rm -rf __pycache__
-
-install-data-hook:
-	$(AM_V_at)echo Linking python modules in non-standard location... && \
-	  $(INSTALL) -d -m 0755 "$(fluxpylinkdir)" && \
-	  target=$(acctpydir) && \
-	  f=$${target##*/} && \
-	  cd "$(fluxpylinkdir)" && \
-	  rm -f $$f && \
-	  $(LN_S) $$target .
-
-uninstall-local:
-	$(AM_V_at)target=$(acctpydir) && f=$${target##*/} && \
-	  echo "Removing $(fluxpylinkdir)/$$f" && \
-	  rm -rf $(fluxpylinkdir)/$$f
 
 TESTSCRIPTS = \
 	test/test_bank_subcommands.py \
@@ -41,7 +25,7 @@ dist_check_SCRIPTS = \
 TESTS = $(TESTSCRIPTS)
 
 AM_TESTS_ENVIRONMENT = \
-	export PYTHONPATH="$(abs_top_srcdir)/src/:$(abs_top_srcdir)/t/pycotap:$(PYTHON_SITE_PKG):$$PYTHONPATH";\
+	export PYTHONPATH="$(abs_top_srcdir)/src/bindings/python/:$(abs_top_srcdir)/t/pycotap:$(PYTHON_SITE_PKG):$$PYTHONPATH";\
 	export PYTHON="${PYTHON}";
 
 TEST_EXTENSIONS = .py

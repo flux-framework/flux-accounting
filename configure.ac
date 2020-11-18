@@ -84,15 +84,8 @@ AC_SUBST(fluxrc3dir)
 
 AS_VAR_SET(fluxpydir, $pyexecdir/flux)
 AC_SUBST(fluxpydir)
-AS_VAR_SET(acctpydir, $pyexecdir/accounting)
+AS_VAR_SET(acctpydir, $fluxpydir/accounting)
 AC_SUBST(acctpydir)
-# Target of PYTHONPATH set by flux(1) cmddriver, so flux(1)
-# doesn't inadvertently insert system python paths (or any
-# other python path for that matter) first in PYTHONPATH.
-#
-AS_VAR_SET(fluxpylinkdir, $fluxlibdir/python$PYTHON_VERSION)
-AC_SUBST(fluxpylinkdir)
-
 
 AC_CONFIG_FILES([Makefile
   src/Makefile
@@ -102,7 +95,10 @@ AC_CONFIG_FILES([Makefile
   src/fairness/weighted_tree/Makefile
   src/fairness/weighted_tree/test/Makefile
   src/fairness/print_hierarchy/Makefile
-  src/accounting/Makefile
+  src/bindings/Makefile
+  src/bindings/python/Makefile
+  src/bindings/python/flux/Makefile
+  src/bindings/python/flux/accounting/Makefile
   t/Makefile
   ])
 AC_OUTPUT

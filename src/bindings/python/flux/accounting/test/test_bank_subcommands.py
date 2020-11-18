@@ -14,9 +14,9 @@ import os
 import sqlite3
 import pandas as pd
 
-from accounting import accounting_cli_functions as aclif
-from accounting import create_db as c
-from accounting import print_hierarchy as p
+from flux.accounting import accounting_cli_functions as aclif
+from flux.accounting import create_db as c
+from flux.accounting import print_hierarchy as p
 
 
 class TestAccountingCLI(unittest.TestCase):

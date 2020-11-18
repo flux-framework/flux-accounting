@@ -14,7 +14,7 @@ import os
 import sqlite3
 import pandas as pd
 
-from accounting import create_db as c
+from flux.accounting import create_db as c
 
 
 class TestDB(unittest.TestCase):

@@ -19,7 +19,7 @@ clean-local:
 	rm -fr trash-directory.* test-results .prove *.broker.log */*.broker.log *.output
 
 AM_TESTS_ENVIRONMENT = \
-	export PYTHONPATH="$(abs_top_srcdir)/src/:$(abs_top_srcdir)/t/pycotap:$(PYTHON_SITE_PKG):$$PYTHONPATH";\
+	export PYTHONPATH="$(abs_top_srcdir)/src/bindings/python/:$(abs_top_srcdir)/t/pycotap:$(PYTHON_SITE_PKG):$$PYTHONPATH";\
 	export PYTHON="${PYTHON}";
 
 TEST_EXTENSIONS = .t

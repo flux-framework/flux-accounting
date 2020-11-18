@@ -2,7 +2,7 @@
 
 test_description='Test print-hierarchy command'
 . `dirname $0`/sharness.sh
-ACCT_CLI=${FLUX_SOURCE_DIR}/src/accounting/flux-account.py
+ACCT_CLI=${FLUX_SOURCE_DIR}/src/bindings/python/flux/accounting/flux-account.py
 PRINT_HIERARCHY=${FLUX_BUILD_DIR}/src/fairness/print_hierarchy/print_hierarchy
 
 test_expect_success 'create valid flux-accounting DB with a proper hierarchy' '
