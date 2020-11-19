@@ -44,7 +44,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # trying to add a sub account with an invalid parent bank
     # name should result in a failure
-    def test_18_add_with_invalid_parent_bank(self):
+    def test_03_add_with_invalid_parent_bank(self):
         with self.assertRaises(Exception) as context:
             aclif.add_bank(
                 acct_conn,
