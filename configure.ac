@@ -93,6 +93,10 @@ AC_SUBST(fluxpydir)
 AS_VAR_SET(acctpydir, $fluxpydir/accounting)
 AC_SUBST(acctpydir)
 
+adl_RECURSIVE_EVAL([$localstatedir], acct_db_path)
+AS_VAR_SET(acct_db_path, $acct_db_path)
+AC_SUBST(acct_db_path)
+
 AC_CONFIG_FILES([Makefile
   src/Makefile
   src/common/Makefile
@@ -105,6 +109,7 @@ AC_CONFIG_FILES([Makefile
   src/bindings/python/Makefile
   src/bindings/python/flux/Makefile
   src/bindings/python/flux/accounting/Makefile
+  src/bindings/python/flux/accounting/__init__.py
   t/Makefile
   ])
 AC_OUTPUT

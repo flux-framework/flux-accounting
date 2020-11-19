@@ -16,6 +16,7 @@ import sys
 
 import pandas as pd
 
+import flux.accounting
 from flux.accounting import accounting_cli_functions as aclif
 from flux.accounting import job_archive_interface as jobs
 from flux.accounting import create_db as c
@@ -176,7 +177,7 @@ def main():
         sys.exit(0)
 
     # try to open database file; will exit with -1 if database file not found
-    path = args.path if args.path else "FluxAccounting.db"
+    path = args.path if args.path else flux.accounting.db_path
     try:
         conn = sqlite3.connect("file:" + path + "?mode=rw", uri=True)
     except sqlite3.OperationalError:
