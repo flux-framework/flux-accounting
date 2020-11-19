@@ -123,9 +123,6 @@ def main():
         "create-db", help="create the flux-accounting database"
     )
     subparser_create_db.set_defaults(func="create_db")
-    subparser_create_db.add_argument(
-        "dbpath", help="specify location of database file", metavar=("DATABASE PATH")
-    )
 
     subparser_add_bank = subparsers.add_parser("add-bank", help="add a new bank")
     subparser_add_bank.set_defaults(func="add_bank")
@@ -171,14 +168,14 @@ def main():
 
     args = parser.parse_args()
 
+    path = args.path if args.path else flux.accounting.db_path
     # if we are creating the DB for the first time, we need
     # to ONLY create the DB and then exit out successfully
     if args.func == "create_db":
-        c.create_db(args.dbpath)
+        c.create_db(path)
         sys.exit(0)
 
     # try to open database file; will exit with -1 if database file not found
-    path = args.path if args.path else flux.accounting.db_path
     if not os.path.isfile(path):
         print(f"Database file does not exist: {path}", file=sys.stderr)
         sys.exit(1)

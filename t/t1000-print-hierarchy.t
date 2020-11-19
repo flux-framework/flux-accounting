@@ -6,7 +6,7 @@ ACCT_CLI=${FLUX_SOURCE_DIR}/src/bindings/python/flux/accounting/flux-account.py
 PRINT_HIERARCHY=${FLUX_BUILD_DIR}/src/fairness/print_hierarchy/print_hierarchy
 
 test_expect_success 'create valid flux-accounting DB with a proper hierarchy' '
-	${PYTHON} ${ACCT_CLI} create-db ./FluxAccounting.db &&
+	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db create-db &&
 	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-bank A 1 &&
 	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-bank --parent-bank=A B 1 &&
 	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-bank --parent-bank=B D 1 &&
@@ -33,7 +33,7 @@ test_expect_success 'compare hierarchy outputs' '
 '
 
 test_expect_success 'create valid flux-accounting DB with no entries in bank table' '
-	python3 ${ACCT_CLI} create-db FluxAccounting-2.db
+	python3 ${ACCT_CLI} -p ./FluxAccounting-2.db create-db 
 '
 
 test_expect_success 'print flux-accounting DB with no entries in bank table' '
