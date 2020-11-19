@@ -13,6 +13,7 @@ import sqlite3
 import argparse
 import time
 import sys
+import os
 
 import pandas as pd
 
@@ -178,10 +179,15 @@ def main():
 
     # try to open database file; will exit with -1 if database file not found
     path = args.path if args.path else flux.accounting.db_path
+    if not os.path.isfile(path):
+        print(f"Database file does not exist: {path}", file=sys.stderr)
+        sys.exit(1)
+
+    db_uri = "file:" + path + "?mode=rw"
     try:
-        conn = sqlite3.connect("file:" + path + "?mode=rw", uri=True)
+        conn = sqlite3.connect(db_uri, uri=True)
     except sqlite3.OperationalError:
-        print("Unable to open database file")
+        print(f"Unable to open database file: {db_uri}", file=sys.stderr)
         sys.exit(1)
 
     # set path for output file
