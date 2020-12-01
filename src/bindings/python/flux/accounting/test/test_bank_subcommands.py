@@ -186,7 +186,7 @@ A||1
 
     # having more than one root bank should result
     # in an exception being thrown
-    def test_09_print_hierarchy_failure_1(self):
+    def test_10_print_hierarchy_failure_1(self):
         c.create_db("flux_accounting_failure_1.db")
         acct_conn = sqlite3.connect("flux_accounting_failure_1.db")
 
@@ -200,7 +200,7 @@ A||1
 
     # having no root bank should also result in an
     # exception being thrown
-    def test_10_print_hierarchy_failure_2(self):
+    def test_11_print_hierarchy_failure_2(self):
         c.create_db("flux_accounting_failure_2.db")
         acct_conn = sqlite3.connect("flux_accounting_failure_2.db")
 
@@ -209,6 +209,39 @@ A||1
 
         self.assertTrue(cm.exception.code, 1)
 
+    # removing a bank should remove any sub banks and
+    # associations under those banks
+    def test_12_delete_bank_recursive(self):
+        c.create_db("flux_accounting_delete_bank_1.db")
+        acct_conn = sqlite3.connect("flux_accounting_delete_bank_1.db")
+
+        aclif.add_bank(acct_conn, bank="A", shares=1)
+        aclif.add_bank(acct_conn, parent_bank="A", bank="B", shares=1)
+        aclif.add_bank(acct_conn, parent_bank="A", bank="C", shares=1)
+        aclif.add_bank(acct_conn, parent_bank="C", bank="D", shares=1)
+
+        aclif.add_user(acct_conn, "user1", "B")
+        aclif.add_user(acct_conn, "user2", "B")
+        aclif.add_user(acct_conn, "user3", "B")
+        aclif.add_user(acct_conn, "user4", "B")
+        aclif.add_user(acct_conn, "user5", "D")
+        aclif.add_user(acct_conn, "user6", "D")
+
+        aclif.delete_bank(acct_conn, bank="C")
+
+        test = p.print_full_hierarchy(acct_conn)
+
+        expected = """Bank|User|RawShares
+A||1
+ B||1
+  B|user1|1
+  B|user2|1
+  B|user3|1
+  B|user4|1
+"""
+
+        self.assertEqual(test, expected)
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):
@@ -216,6 +249,7 @@ A||1
         os.remove("FluxAccounting.db")
         os.remove("flux_accounting_failure_1.db")
         os.remove("flux_accounting_failure_2.db")
+        os.remove("flux_accounting_delete_bank_1.db")
 
 
 def suite():
@@ -226,4 +260,5 @@ def suite():
 
 if __name__ == "__main__":
     from pycotap import TAPTestRunner
+
     unittest.main(testRunner=TAPTestRunner())
