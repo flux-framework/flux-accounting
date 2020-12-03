@@ -45,6 +45,25 @@ fi
 
 AX_FLUX_CORE
 
+#  Set PYTHON_VERSION to FLUX_PYTHON_VERSION here
+PYTHON_VERSION=${PYTHON_VERSION:-$FLUX_PYTHON_VERSION}
+AX_PYTHON_DEVEL([>='3.6'])
+
+AM_PATH_PYTHON([$ac_python_version])
+if test "X$PYTHON" = "X"; then
+  AC_MSG_ERROR([could not find python])
+fi
+
+AC_SUBST(PYTHON_LIBRARY, lib${ac_python_library}.so)
+AC_DEFINE_UNQUOTED([PYTHON_INTERPRETER], ["$PYTHON"], [The python interpreter flux is configured with])
+AC_SUBST(PYTHON)
+
+AM_CHECK_PYMOD(pandas,
+               [StrictVersion(pandas.__version__) >= StrictVersion('0.24.1')],
+               ,
+               [AC_MSG_ERROR([could not find python module pandas, version 0.24.1+ required])]
+               )
+
 #
 # Project directories
 #
@@ -69,6 +88,15 @@ AC_SUBST(fluxrc1dir)
 AS_VAR_SET(fluxrc3dir, $sysconfdir/flux/rc3.d)
 AC_SUBST(fluxrc3dir)
 
+AS_VAR_SET(fluxpydir, $pyexecdir/flux)
+AC_SUBST(fluxpydir)
+AS_VAR_SET(acctpydir, $fluxpydir/accounting)
+AC_SUBST(acctpydir)
+
+adl_RECURSIVE_EVAL([$localstatedir], acct_db_path)
+AS_VAR_SET(acct_db_path, $acct_db_path)
+AC_SUBST(acct_db_path)
+
 AC_CONFIG_FILES([Makefile
   src/Makefile
   src/common/Makefile
@@ -76,7 +104,14 @@ AC_CONFIG_FILES([Makefile
   src/fairness/Makefile
   src/fairness/weighted_tree/Makefile
   src/fairness/weighted_tree/test/Makefile
-  src/fairness/print_hierarchy/Makefile])
+  src/fairness/print_hierarchy/Makefile
+  src/bindings/Makefile
+  src/bindings/python/Makefile
+  src/bindings/python/flux/Makefile
+  src/bindings/python/flux/accounting/Makefile
+  src/bindings/python/flux/accounting/__init__.py
+  t/Makefile
+  ])
 AC_OUTPUT
 
 echo "
@@ -97,4 +132,5 @@ echo "
   LDFLAGS..........: $LDFLAGS
   LIBS.............: $LIBS
   Linker...........: $LD
+  PYTHON...........: $PYTHON
 "

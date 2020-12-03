@@ -14,8 +14,8 @@ import os
 import sqlite3
 import pandas as pd
 
-from accounting import job_archive_interface as jobs
-from accounting import create_db as c
+from flux.accounting import job_archive_interface as jobs
+from flux.accounting import create_db as c
 
 
 class TestAccountingCLI(unittest.TestCase):
@@ -223,5 +223,5 @@ def suite():
 
 
 if __name__ == "__main__":
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
+    from pycotap import TAPTestRunner
+    unittest.main(testRunner=TAPTestRunner())

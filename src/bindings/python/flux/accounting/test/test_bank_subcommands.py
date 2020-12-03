@@ -14,9 +14,9 @@ import os
 import sqlite3
 import pandas as pd
 
-from accounting import accounting_cli_functions as aclif
-from accounting import create_db as c
-from accounting import print_hierarchy as p
+from flux.accounting import accounting_cli_functions as aclif
+from flux.accounting import create_db as c
+from flux.accounting import print_hierarchy as p
 
 
 class TestAccountingCLI(unittest.TestCase):
@@ -44,7 +44,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # trying to add a sub account with an invalid parent bank
     # name should result in a failure
-    def test_18_add_with_invalid_parent_bank(self):
+    def test_03_add_with_invalid_parent_bank(self):
         with self.assertRaises(Exception) as context:
             aclif.add_bank(
                 acct_conn,
@@ -195,7 +195,6 @@ A||1
     def tearDownClass(self):
         acct_conn.close()
         os.remove("FluxAccounting.db")
-        os.remove("db_creation.log")
         os.remove("flux_accounting_failure_1.db")
         os.remove("flux_accounting_failure_2.db")
 
@@ -207,5 +206,5 @@ def suite():
 
 
 if __name__ == "__main__":
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
+    from pycotap import TAPTestRunner
+    unittest.main(testRunner=TAPTestRunner())

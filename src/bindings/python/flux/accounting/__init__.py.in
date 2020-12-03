@@ -1,0 +1,4 @@
+db_dir = "@acct_db_path@"
+db_path = "@acct_db_path@/FluxAccounting.db"
+
+__all__ = ["db_dir", "db_path"]

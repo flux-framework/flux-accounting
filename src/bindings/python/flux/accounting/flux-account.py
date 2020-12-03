@@ -13,13 +13,15 @@ import sqlite3
 import argparse
 import time
 import sys
+import os
 
 import pandas as pd
 
-from accounting import accounting_cli_functions as aclif
-from accounting import job_archive_interface as jobs
-from accounting import create_db as c
-from accounting import print_hierarchy as ph
+import flux.accounting
+from flux.accounting import accounting_cli_functions as aclif
+from flux.accounting import job_archive_interface as jobs
+from flux.accounting import create_db as c
+from flux.accounting import print_hierarchy as ph
 
 
 def main():
@@ -30,7 +32,9 @@ def main():
         SQLite instructions for the Flux Accounting Database.
         """
     )
-    subparsers = parser.add_subparsers(help="sub-command help",)
+    subparsers = parser.add_subparsers(help="sub-command help",
+                                       dest="subcommand")
+    subparsers.required = True
 
     parser.add_argument(
         "-p", "--path", dest="path", help="specify location of database file"
@@ -119,9 +123,6 @@ def main():
         "create-db", help="create the flux-accounting database"
     )
     subparser_create_db.set_defaults(func="create_db")
-    subparser_create_db.add_argument(
-        "dbpath", help="specify location of database file", metavar=("DATABASE PATH")
-    )
 
     subparser_add_bank = subparsers.add_parser("add-bank", help="add a new bank")
     subparser_add_bank.set_defaults(func="add_bank")
@@ -167,18 +168,23 @@ def main():
 
     args = parser.parse_args()
 
+    path = args.path if args.path else flux.accounting.db_path
     # if we are creating the DB for the first time, we need
     # to ONLY create the DB and then exit out successfully
     if args.func == "create_db":
-        c.create_db(args.dbpath)
+        c.create_db(path)
         sys.exit(0)
 
     # try to open database file; will exit with -1 if database file not found
-    path = args.path if args.path else "FluxAccounting.db"
+    if not os.path.isfile(path):
+        print(f"Database file does not exist: {path}", file=sys.stderr)
+        sys.exit(1)
+
+    db_uri = "file:" + path + "?mode=rw"
     try:
-        conn = sqlite3.connect("file:" + path + "?mode=rw", uri=True)
+        conn = sqlite3.connect(db_uri, uri=True)
     except sqlite3.OperationalError:
-        print("Unable to open database file")
+        print(f"Unable to open database file: {db_uri}", file=sys.stderr)
         sys.exit(1)
 
     # set path for output file

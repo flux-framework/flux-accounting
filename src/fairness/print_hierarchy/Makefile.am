@@ -21,5 +21,3 @@ print_hierarchy_CXXFLAGS = \
 
 print_hierarchy_LDFLAGS = \
                 $(SQLITE_LIBS)
-
-TESTS = test-print-hierarchy.sh

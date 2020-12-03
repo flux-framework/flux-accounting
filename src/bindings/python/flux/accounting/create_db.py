@@ -14,12 +14,11 @@ import pandas as pd
 import logging
 import argparse
 import sys
-
-
-LOGGER = logging.basicConfig(filename="db_creation.log", level=logging.INFO)
-
+import pathlib
 
 def create_db(filepath):
+    db_dir = pathlib.PosixPath(filepath).parent
+    db_dir.mkdir(parents=True, exist_ok=True)
     try:
         # open connection to database
         logging.info("Creating Flux Accounting DB")
