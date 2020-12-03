@@ -11,10 +11,9 @@ RUN yum -y update \
   && yum install -y python3-pip python3-devel git \
   && cd /usr/local/bin \
   && ln -s /usr/bin/python3 python \
-  && pip3 install --user --upgrade pip \
-  && pip3 install tox
+  && pip3 install --user --upgrade pip
 
 # go into flux-accounting, install dependencies, and run unit tests
 RUN cd src/ \
   && pip3 install --user -r requirements.txt \
-  && tox
+  && python -m unittest discover -b

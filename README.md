@@ -9,68 +9,57 @@ Development for a bank/accounting interface for the Flux resource manager. Write
 
 ### Build Requirements
 
-flux-accounting requires the following packages to build:
+flux-accounting requires the following Python packages to build:
 
-| centos8       | ubuntu      | version |
-| ------        | --------    | ------- |
-| python3-devel | python3-dev | >= 3.6  |
-| python3-pip   | python3-pip | 20.0.2  |
-| tox           | tox         | 3.15.0  |
+| Package Name | Version    |
+| ------------ | ---------- |
+| pandas       | >= 0.24.1  |
 
 ### Install Instructions
 
-You can install the dependencies required by flux-accounting as well as the package itself to be recognized by Flux's command driver `flux(1)` with `make`.
+##### Building From Source
 
-1. Set your **FLUX_INSTALL_PREFIX** environment variable to point to flux-core's installation target:
-
-```
-$ export FLUX_INSTALL_PREFIX = ~/path/to/flux-core/install/
-```
-
-2. Pull down and install the flux-accounting repo:
-
-```
-$ git clone https://github.com/flux-framework/flux-accounting
-$ cd flux-accounting/
-$ make install
+```console
+./autogen.sh
+./configure
+make -j
+make check
 ```
 
-3. Run flux-accounting's commands:
+To configure flux-accounting with a specific version of Python, pass the `PYTHON_VERSION` environment variable on the `./configure` line (_note: flux-accounting needs to be configured against the same version of Python as flux-core that it is configured against; this is the default behavior of `./configure` if you choose the same prefix for flux-core and flux-accounting_):
+
+```console
+PYTHON_VERSION=3.7 ./configure
+```
+
+Run flux-accounting's commands:
 
 ```
-$ flux account -h
-usage: flux-account.py [-h] {view-user,add-user,delete-user,edit-user} ...
+usage: flux-account.py [-h] [-p PATH] [-o OUTPUT_FILE]
+                       {view-user,add-user,delete-user,edit-user,view-job-records,create-db,add-bank,view-bank,delete-bank,edit-bank,print-hierarchy} ...
 
-Description: Translate command line arguments into SQLite instructions for the
-Flux Accounting Database.
+Description: Translate command line arguments into SQLite instructions for the Flux Accounting Database.
 
 positional arguments:
-  {view-user,add-user,delete-user,edit-user}
+  {view-user,add-user,delete-user,edit-user,view-job-records,create-db,add-bank,view-bank,delete-bank,edit-bank,print-hierarchy}
                         sub-command help
     view-user           view a user's information in the accounting database
     add-user            add a user to the accounting database
     delete-user         remove a user from the accounting database
     edit-user           edit a user's value
+    view-job-records    view job records
+    create-db           create the flux-accounting database
+    add-bank            add a new bank
+    view-bank           view bank information
+    delete-bank         remove a bank
+    edit-bank           edit a bank's allocation
+    print-hierarchy     print accounting database
 
 optional arguments:
   -h, --help            show this help message and exit
-```
-
-### Test Instructions
-
-Run the unit tests with `tox` to ensure the correctness of this package on your platform:
-
-```
-$ tox
-python3.6 run-test: commands[0] | python -m unittest discover -b
-....
-----------------------------------------------------------------------
-Ran 4 tests in 0.008s
-
-OK
-_______________________________summary _______________________________
-  python3.6: commands succeeded
-  congratulations :)
+  -p PATH, --path PATH  specify location of database file
+  -o OUTPUT_FILE, --output-file OUTPUT_FILE
+                        specify location of output file
 ```
 
 To run the unit tests in a Docker container, you can use `docker build -f <path/to/Dockerfile> .` from the flux-accounting directory:
@@ -92,23 +81,18 @@ Step 3/5 : ADD . src/
  .
  .
  .
- python3.6 run-test: commands[0] | python -m unittest discover -b
-.........
-----------------------------------------------------------------------
-Ran 9 tests in 0.035s
+ Installing collected packages: pytz, numpy, six, python-dateutil, pandas
+ Successfully installed numpy-1.19.4 pandas-0.25.3 python-dateutil-2.8.1 pytz-2020.4 six-1.15.0
+ .....................................
+ ----------------------------------------------------------------------
+ Ran 37 tests in 0.516s
 
-OK
-___________________________________ summary ____________________________________
-  python3.6: commands succeeded
-  congratulations :)
-Removing intermediate container 45479512d947
- ---> f29dd2ca5958
-Successfully built f29dd2ca5958
+ OK
 ```
 
 ### User Account Information
 
-The accounting table in this database stores information like user name and ID, the account to submit jobs against, the shares allocated to the user, as well as static limits, including max jobs submitted per user at a given time and max wall time per job per user.
+The accounting table in this database stores information like user name and ID, the bank to submit jobs against, the shares allocated to the user, as well as static limits, including max jobs submitted per user at a given time and max wall time per job per user.
 
 ### Interacting With the Accounting DB
 
@@ -136,38 +120,18 @@ This will output queries like the following:
 
 ```
 sqlite> SELECT * FROM association_table;
-creation_time  mod_time    deleted     user_name   admin_level  account     shares      max_jobs    max_wall_pj
+creation_time  mod_time    deleted     username    admin_level  bank        shares      max_jobs    max_wall_pj
 -------------  ----------  ----------  ----------  -----------  ----------  ----------  ----------  -----------
-1589225734     1589225734  0           fluxuser    1            acct        10          100         60  
+1605309320     1605309320  0           fluxuser    1            foo         1           1           60       
 ```
 
-The second way is to use flux-accounting's command line arguments. You can pass in a path to the database file, or be in the same directory where the database file (**FluxAccounting.db**) is located:
-
-```
-$ flux account -h
-
-usage: flux-account.py [-h] {view-user,add-user,delete-user,edit-user} ...
-
-Description: Translate command line arguments into SQLite instructions for the
-Flux Accounting Database.
-
-positional arguments:
-  {view-user,add-user,delete-user,edit-user}
-                        sub-command help
-    view-user           view a user's information in the accounting database
-    add-user            add a user to the accounting database
-    delete-user         remove a user from the accounting database
-    edit-user           edit a user's value
-
-optional arguments:
-  -h, --help            show this help message and exit
-```
+The second way is to use flux-accounting's command line arguments. You can pass in a path to the database file, or it will default to the "compiled-in" path of `${prefix}/var/FluxAccounting.db`.
 
 With flux-accounting's command line tools, you can view a user's account information, add and remove users to the accounting database, and edit an existing user's account information:
 
 ```
 $ flux account view-user fluxuser
 
-creation_time    mod_time  deleted user_name  admin_level     account parent_acct  shares  max_jobs  max_wall_pj
-   1595438356  1595438356        0  fluxuser            1        acct       pacct       1       100           60
+creation_time    mod_time  deleted  username  admin_level   bank   shares  max_jobs  max_wall_pj
+   1595438356  1595438356        0  fluxuser            1    foo        1       100           60
 ```
