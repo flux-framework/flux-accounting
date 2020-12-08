@@ -66,15 +66,54 @@ def view_bank(conn, bank):
 
 
 def delete_bank(conn, bank):
-    last_parent_bank_seen = bank
+    try:
+        # delete the first bank passed in
+        delete_stmt = """
+            DELETE FROM bank_table
+            WHERE bank=?
+            """
+        cursor = conn.cursor()
+        cursor.execute(delete_stmt, (bank,))
 
-    # delete bank from bank_table
-    delete_stmt = "DELETE FROM bank_table WHERE bank=?"
-    cursor = conn.cursor()
-    cursor.execute(delete_stmt, (bank,))
+        # construct a DataFrame object out of the
+        # bank passed in
+        df = pd.DataFrame([bank], columns=["bank"])
+        bank = df.iloc[0]
 
-    # commit changes
-    conn.commit()
+        # helper function to traverse the bank table
+        # and delete all of its sub banks
+        def get_sub_banks(row):
+            select_stmt = """
+                SELECT bank
+                FROM bank_table
+                WHERE parent_bank=?
+                """
+            cursor = conn.cursor()
+            dataframe = pd.read_sql_query(select_stmt, conn, params=(row["bank"],))
+
+            # we've reached a bank with no sub banks
+            if len(dataframe) == 0:
+                select_associations_stmt = """
+                    SELECT user_name, bank
+                    FROM association_table
+                    WHERE bank=?
+                    """
+                for row in cursor.execute(select_associations_stmt, (row["bank"],)):
+                    delete_user(conn, user=row[0], bank=row[1])
+            # else, delete all of its sub banks and continue
+            # traversing
+            else:
+                for index, sub_bank_row in dataframe.iterrows():
+                    cursor.execute(delete_stmt, (sub_bank_row["bank"],))
+                    get_sub_banks(sub_bank_row)
+
+        get_sub_banks(bank)
+    # if an exception occcurs while recursively deleting
+    # the parent banks, then throw the exception and roll
+    # back the changes made to the DB
+    except sqlite3.OperationalError as e:
+        print(e)
+        conn.rollback()
 
 
 def edit_bank(conn, bank, shares):
@@ -147,13 +186,11 @@ def add_user(conn, username, bank, admin_level=1, shares=1, max_jobs=1, max_wall
         print(integrity_error)
 
 
-def delete_user(conn, user):
+def delete_user(conn, user, bank):
     # delete user account from association_table
-    delete_stmt = "DELETE FROM association_table WHERE user_name=?"
+    delete_stmt = "DELETE FROM association_table WHERE user_name=? AND bank=?"
     cursor = conn.cursor()
-    cursor.execute(delete_stmt, (user,))
-    # commit changes
-    conn.commit()
+    cursor.execute(delete_stmt, (user, bank,))
 
 
 def edit_user(conn, username, field, new_value):
