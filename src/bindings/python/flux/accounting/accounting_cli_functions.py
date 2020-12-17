@@ -94,7 +94,7 @@ def delete_bank(conn, bank):
             # we've reached a bank with no sub banks
             if len(dataframe) == 0:
                 select_associations_stmt = """
-                    SELECT user_name, bank
+                    SELECT username, bank
                     FROM association_table
                     WHERE bank=?
                     """
@@ -136,7 +136,7 @@ def edit_bank(conn, bank, shares):
 def view_user(conn, user):
     try:
         # get the information pertaining to a user in the Accounting DB
-        select_stmt = "SELECT * FROM association_table where user_name=?"
+        select_stmt = "SELECT * FROM association_table where username=?"
         dataframe = pd.read_sql_query(select_stmt, conn, params=(user,))
         # if the length of dataframe is 0, that means
         # the user specified was not found in the table
@@ -150,15 +150,15 @@ def view_user(conn, user):
 
 def add_user(conn, username, bank, admin_level=1, shares=1, max_jobs=1, max_wall_pj=60):
 
-    # insert the user values into the database
     try:
+        # insert the user values into association_table
         conn.execute(
             """
             INSERT INTO association_table (
                 creation_time,
                 mod_time,
                 deleted,
-                user_name,
+                username,
                 admin_level,
                 bank,
                 shares,
@@ -181,6 +181,18 @@ def add_user(conn, username, bank, admin_level=1, shares=1, max_jobs=1, max_wall
         )
         # commit changes
         conn.commit()
+        # insert the user values into job_usage_factor_table
+        conn.execute(
+            """
+            INSERT INTO job_usage_factor_table (
+                username,
+                bank
+            )
+            VALUES (?, ?)
+            """,
+            (username, bank,),
+        )
+        conn.commit()
     # make sure entry is unique
     except sqlite3.IntegrityError as integrity_error:
         print(integrity_error)
@@ -188,14 +200,14 @@ def add_user(conn, username, bank, admin_level=1, shares=1, max_jobs=1, max_wall
 
 def delete_user(conn, user, bank):
     # delete user account from association_table
-    delete_stmt = "DELETE FROM association_table WHERE user_name=? AND bank=?"
+    delete_stmt = "DELETE FROM association_table WHERE username=? AND bank=?"
     cursor = conn.cursor()
     cursor.execute(delete_stmt, (user, bank,))
 
 
 def edit_user(conn, username, field, new_value):
     fields = [
-        "user_name",
+        "username",
         "admin_level",
         "bank",
         "shares",
@@ -208,7 +220,7 @@ def edit_user(conn, username, field, new_value):
 
             # edit value in accounting database
             conn.execute(
-                "UPDATE association_table SET " + the_field + "=? WHERE user_name=?",
+                "UPDATE association_table SET " + the_field + "=? WHERE username=?",
                 (new_value, username,),
             )
             # commit changes

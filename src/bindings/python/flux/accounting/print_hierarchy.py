@@ -57,7 +57,7 @@ def print_full_hierarchy(conn):
         # out all associations under this sub bank
         if len(dataframe) == 0:
             select_stmt = """
-                SELECT association_table.user_name,
+                SELECT association_table.username,
                 association_table.shares,
                 association_table.bank
                 FROM association_table
@@ -70,7 +70,7 @@ def print_full_hierarchy(conn):
                     + indent
                     + association_row["bank"]
                     + "|"
-                    + association_row["user_name"]
+                    + association_row["username"]
                     + "|"
                     + str(association_row["shares"])
                     + "\n"

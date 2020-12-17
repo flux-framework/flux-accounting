@@ -39,9 +39,12 @@ class TestAccountingCLI(unittest.TestCase):
             max_wall_pj="60",
         )
         cursor = acct_conn.cursor()
-        num_rows = cursor.execute("DELETE FROM association_table").rowcount
+        num_rows_assoc_table = cursor.execute("DELETE FROM association_table").rowcount
+        num_rows_job_usage_factor_table = cursor.execute(
+            "DELETE FROM job_usage_factor_table"
+        ).rowcount
 
-        self.assertEqual(num_rows, 1)
+        self.assertEqual(num_rows_assoc_table, num_rows_job_usage_factor_table)
 
     # adding a user with the same primary key (user_name, account) should
     # return an IntegrityError
@@ -89,9 +92,9 @@ class TestAccountingCLI(unittest.TestCase):
             max_wall_pj="60",
         )
         cursor = acct_conn.cursor()
-        cursor.execute("SELECT * from association_table where user_name='dup_user'")
+        cursor.execute("SELECT * from association_table where username='dup_user'")
         num_rows = cursor.execute(
-            "DELETE FROM association_table where user_name='dup_user'"
+            "DELETE FROM association_table where username='dup_user'"
         ).rowcount
 
         self.assertEqual(num_rows, 2)
@@ -101,7 +104,7 @@ class TestAccountingCLI(unittest.TestCase):
         aclif.edit_user(acct_conn, "fluxuser", "max_jobs", "10000")
         cursor = acct_conn.cursor()
         cursor.execute(
-            "SELECT max_jobs FROM association_table where user_name='fluxuser'"
+            "SELECT max_jobs FROM association_table where username='fluxuser'"
         )
 
         self.assertEqual(cursor.fetchone()[0], 10000)
