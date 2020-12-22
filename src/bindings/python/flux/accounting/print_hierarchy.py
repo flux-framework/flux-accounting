@@ -9,7 +9,6 @@
 #
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
-import sqlite3
 import sys
 import pandas as pd
 
