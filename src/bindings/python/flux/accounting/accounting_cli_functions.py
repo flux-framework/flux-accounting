@@ -11,8 +11,6 @@
 ###############################################################
 import sqlite3
 import time
-import pwd
-import csv
 
 import pandas as pd
 
