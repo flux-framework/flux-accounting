@@ -81,7 +81,6 @@ def print_job_records(job_records):
     t_inactive_arr = []
     nnodes_arr = []
     R_arr = []
-    hostname_arr = []
 
     for record in job_records:
         userid_arr.append(record.userid)
