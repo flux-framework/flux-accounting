@@ -9,11 +9,9 @@
 #
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
-import sqlite3
 import time
 import pwd
 import csv
-import os
 import math
 
 import pandas as pd
@@ -83,7 +81,6 @@ def print_job_records(job_records):
     t_inactive_arr = []
     nnodes_arr = []
     R_arr = []
-    hostname_arr = []
 
     for record in job_records:
         userid_arr.append(record.userid)
