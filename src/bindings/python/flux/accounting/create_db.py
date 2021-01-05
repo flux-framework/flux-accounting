@@ -128,7 +128,6 @@ def create_db(
                 FOREIGN KEY (username, bank)
                     REFERENCES association_table (username, bank)
                         ON UPDATE CASCADE
-                        ON DELETE CASCADE
         );"""
     )
     add_usage_columns_to_table(
