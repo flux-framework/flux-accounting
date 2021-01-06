@@ -162,7 +162,7 @@ class TestAccountingCLI(unittest.TestCase):
         job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
         self.assertEqual(len(job_records), 0)
 
-    # passing a timestamp after the end time of the
+    # passing a timestamp before the end time of the
     # last job should return all of the jobs
     def test_05_before_end_time_all(self):
         my_dict = {"before_end_time": time.time() + 10000}
@@ -170,14 +170,14 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(len(job_records), 18)
 
     # passing a timestamp before the end time of
-    # all the completed jobs should return a failure message
+    # the first completed jobs should return no jobs
     def test_06_before_end_time_none(self):
         my_dict = {"before_end_time": 0}
         job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
         self.assertEqual(len(job_records), 0)
 
     # passing a user not in the jobs table
-    # should return a failure message
+    # should return no jobs
     def test_07_by_user_failure(self):
         my_dict = {"user": "9999"}
         job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
