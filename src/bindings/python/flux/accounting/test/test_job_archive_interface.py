@@ -103,11 +103,11 @@ class TestAccountingCLI(unittest.TestCase):
                             userid,
                             username,
                             ranks,
-                            time.time() - 2000,
-                            time.time() - 1000,
-                            time.time(),
-                            time.time() + 1000,
-                            time.time() + t_inactive_delta,
+                            (time.time() + interval) - 2000,
+                            (time.time() + interval) - 1000,
+                            (time.time() + interval),
+                            (time.time() + interval) + 1000,
+                            (time.time() + interval) + t_inactive_delta,
                             "eventlog",
                             "jobspec",
                             '{"version":1,"execution": {"R_lite":[{"rank":"0","children": {"core": "0"}}]}}',
@@ -157,6 +157,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # passing a timestamp after all of the start time
     # of all the completed jobs should return a failure message
+    @mock.patch("time.time", mock.MagicMock(return_value=11000000))
     def test_04_after_start_time_none(self):
         my_dict = {"after_start_time": time.time()}
         job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
@@ -164,8 +165,9 @@ class TestAccountingCLI(unittest.TestCase):
 
     # passing a timestamp before the end time of the
     # last job should return all of the jobs
+    @mock.patch("time.time", mock.MagicMock(return_value=11000000))
     def test_05_before_end_time_all(self):
-        my_dict = {"before_end_time": time.time() + 10000}
+        my_dict = {"before_end_time": time.time()}
         job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
         self.assertEqual(len(job_records), 18)
 
@@ -193,10 +195,11 @@ class TestAccountingCLI(unittest.TestCase):
 
     # passing a combination of params should further
     # refine the query
+    @mock.patch("time.time", mock.MagicMock(return_value=10000500))
     def test_09_multiple_params(self):
-        my_dict = {"user": "1001", "after_start_time": time.time() - 1000}
-        job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 2)
+        my_dict = {"user": "1001", "after_start_time": time.time()}
+        job_records = jobs.view_job_records(jobs_conn, "records.csv", **my_dict)
+        self.assertEqual(len(job_records), 1)
 
     # passing no parameters will result in a generic query
     # returning all results
