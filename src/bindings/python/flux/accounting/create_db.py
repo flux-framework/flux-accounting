@@ -107,7 +107,7 @@ def create_db(
     conn.execute(
         """
             CREATE TABLE IF NOT EXISTS bank_table (
-                bank_id     integer PRIMARY KEY,
+                bank_id     integer PRIMARY KEY AUTOINCREMENT,
                 bank        text                NOT NULL,
                 parent_bank text    DEFAULT '',
                 shares      int                 NOT NULL
