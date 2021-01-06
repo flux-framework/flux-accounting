@@ -33,8 +33,6 @@ class TestAccountingCLI(unittest.TestCase):
         global op
         op = "job_records.csv"
 
-        id = 100
-
         jobs_conn = sqlite3.connect("file:jobs.db?mode:rwc", uri=True)
         jobs_conn.execute(
             """
@@ -71,8 +69,13 @@ class TestAccountingCLI(unittest.TestCase):
         aclif.add_user(acct_conn, username="1003", bank="D")
         aclif.add_user(acct_conn, username="1004", bank="D")
 
+        jobid = 100
+        interval = 0  # add to job timestamps to diversify job-archive records
+
+        @mock.patch("time.time", mock.MagicMock(return_value=10000000))
         def populate_job_archive_db(jobs_conn, userid, username, ranks, num_entries):
-            nonlocal id
+            nonlocal jobid
+            nonlocal interval
             t_inactive_delta = 2000
 
             for i in range(num_entries):
@@ -96,7 +99,7 @@ class TestAccountingCLI(unittest.TestCase):
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         (
-                            id,
+                            jobid,
                             userid,
                             username,
                             ranks,
@@ -116,7 +119,8 @@ class TestAccountingCLI(unittest.TestCase):
                 except sqlite3.IntegrityError as integrity_error:
                     print(integrity_error)
 
-                id += 1
+                jobid += 1
+                interval += 10000
                 t_inactive_delta += 100
 
         # populate the job-archive DB with fake job entries
