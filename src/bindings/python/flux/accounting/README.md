@@ -26,8 +26,6 @@ def apply_decay_factor(decay_factor, acct_conn, user=None, bank=None):
 
 After the current usage factor is calculated, it is written to the first usage bin in **job_usage_factor_table** along with the other, older factors. The oldest factor gets removed from the table since it is no longer needed.
 
-Then, a similar process is repeated to calculate the raw usage factor for all of the user's siblings' jobs in that same time period.
-
 ---
 
 ### An example of calculating the job usage factor

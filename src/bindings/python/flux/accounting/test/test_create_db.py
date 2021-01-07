@@ -40,9 +40,12 @@ class TestDB(unittest.TestCase):
             list_of_tables.append(table_name)
             table = pd.read_sql_query("SELECT * from %s" % table_name, conn)
 
+        # sqlite_sequence is an internal table that SQLite
+        # uses to keep track of the largest ROWID
         expected = [
             "association_table",
             "bank_table",
+            "sqlite_sequence",
             "job_usage_factor_table",
             "t_half_life_period_table",
         ]

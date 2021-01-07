@@ -343,6 +343,21 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertGreater(float(new_end_half_life), float(old_end_half_life))
 
+    # removing a user from the flux-accounting DB should NOT remove their job
+    # usage history from the job_usage_factor_table
+    def test_17_keep_job_usage_records_upon_delete(self):
+        aclif.delete_user(acct_conn, user="1001", bank="C")
+
+        select_stmt = """
+            SELECT * FROM
+            job_usage_factor_table
+            WHERE username='1001'
+            AND bank='C'
+            """
+
+        dataframe = pd.read_sql_query(select_stmt, acct_conn)
+        self.assertEqual(len(dataframe), 1)
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):
