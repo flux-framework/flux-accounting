@@ -33,8 +33,6 @@ class TestAccountingCLI(unittest.TestCase):
         global op
         op = "job_records.csv"
 
-        id = 100
-
         jobs_conn = sqlite3.connect("file:jobs.db?mode:rwc", uri=True)
         jobs_conn.execute(
             """
@@ -71,8 +69,13 @@ class TestAccountingCLI(unittest.TestCase):
         aclif.add_user(acct_conn, username="1003", bank="D")
         aclif.add_user(acct_conn, username="1004", bank="D")
 
+        jobid = 100
+        interval = 0  # add to job timestamps to diversify job-archive records
+
+        @mock.patch("time.time", mock.MagicMock(return_value=10000000))
         def populate_job_archive_db(jobs_conn, userid, username, ranks, num_entries):
-            nonlocal id
+            nonlocal jobid
+            nonlocal interval
             t_inactive_delta = 2000
 
             for i in range(num_entries):
@@ -96,15 +99,15 @@ class TestAccountingCLI(unittest.TestCase):
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         (
-                            id,
+                            jobid,
                             userid,
                             username,
                             ranks,
-                            time.time() - 2000,
-                            time.time() - 1000,
-                            time.time(),
-                            time.time() + 1000,
-                            time.time() + t_inactive_delta,
+                            (time.time() + interval) - 2000,
+                            (time.time() + interval) - 1000,
+                            (time.time() + interval),
+                            (time.time() + interval) + 1000,
+                            (time.time() + interval) + t_inactive_delta,
                             "eventlog",
                             "jobspec",
                             '{"version":1,"execution": {"R_lite":[{"rank":"0","children": {"core": "0"}}]}}',
@@ -116,7 +119,8 @@ class TestAccountingCLI(unittest.TestCase):
                 except sqlite3.IntegrityError as integrity_error:
                     print(integrity_error)
 
-                id += 1
+                jobid += 1
+                interval += 10000
                 t_inactive_delta += 100
 
         # populate the job-archive DB with fake job entries
@@ -153,27 +157,29 @@ class TestAccountingCLI(unittest.TestCase):
 
     # passing a timestamp after all of the start time
     # of all the completed jobs should return a failure message
+    @mock.patch("time.time", mock.MagicMock(return_value=11000000))
     def test_04_after_start_time_none(self):
         my_dict = {"after_start_time": time.time()}
         job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
         self.assertEqual(len(job_records), 0)
 
-    # passing a timestamp after the end time of the
+    # passing a timestamp before the end time of the
     # last job should return all of the jobs
+    @mock.patch("time.time", mock.MagicMock(return_value=11000000))
     def test_05_before_end_time_all(self):
-        my_dict = {"before_end_time": time.time() + 10000}
+        my_dict = {"before_end_time": time.time()}
         job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
         self.assertEqual(len(job_records), 18)
 
     # passing a timestamp before the end time of
-    # all the completed jobs should return a failure message
+    # the first completed jobs should return no jobs
     def test_06_before_end_time_none(self):
         my_dict = {"before_end_time": 0}
         job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
         self.assertEqual(len(job_records), 0)
 
     # passing a user not in the jobs table
-    # should return a failure message
+    # should return no jobs
     def test_07_by_user_failure(self):
         my_dict = {"user": "9999"}
         job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
@@ -189,10 +195,11 @@ class TestAccountingCLI(unittest.TestCase):
 
     # passing a combination of params should further
     # refine the query
+    @mock.patch("time.time", mock.MagicMock(return_value=10000500))
     def test_09_multiple_params(self):
-        my_dict = {"user": "1001", "after_start_time": time.time() - 1000}
-        job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 2)
+        my_dict = {"user": "1001", "after_start_time": time.time()}
+        job_records = jobs.view_job_records(jobs_conn, "records.csv", **my_dict)
+        self.assertEqual(len(job_records), 1)
 
     # passing no parameters will result in a generic query
     # returning all results
