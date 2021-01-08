@@ -112,6 +112,10 @@ def delete_bank(conn, bank):
     except sqlite3.OperationalError as e:
         print(e)
         conn.rollback()
+        return 1
+
+    # commit changes
+    conn.commit()
 
 
 def edit_bank(conn, bank, shares):
@@ -207,13 +211,9 @@ def delete_user(conn, user, bank):
     # delete user account from association_table
     delete_stmt = "DELETE FROM association_table WHERE username=? AND bank=?"
     cursor = conn.cursor()
-    cursor.execute(
-        delete_stmt,
-        (
-            user,
-            bank,
-        ),
-    )
+    cursor.execute(delete_stmt, (user, bank,))
+    # commit changes
+    conn.commit()
 
 
 def edit_user(conn, username, field, new_value):
