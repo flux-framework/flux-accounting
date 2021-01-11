@@ -10,8 +10,6 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import unittest
-import sys
-import os
 
 
 class TestExample(unittest.TestCase):
@@ -22,8 +20,11 @@ class TestExample(unittest.TestCase):
         test = 1
         self.assertEqual(test, expected)
 
+
 if __name__ == "__main__":
     from pycotap import TAPTestRunner
+
     unittest.main(testRunner=TAPTestRunner())
+
 
 # vi: ts=4 sw=4 expandtab
