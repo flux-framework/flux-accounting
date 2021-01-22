@@ -23,7 +23,7 @@ namespace accounting {
  */
 class weighted_tree_node_t : public account_t {
 public:
-    weighted_tree_node_t (weighted_tree_node_t *parent,
+    weighted_tree_node_t (std::shared_ptr<weighted_tree_node_t> parent,
                           const std::string &name, bool is_user,
                           uint64_t shares, uint64_t usage);
 
@@ -32,6 +32,7 @@ public:
     uint64_t get_subtree_leaf_size () const;
     double get_weight () const;
     std::shared_ptr<weighted_tree_node_t> get_child (size_t i) const;
+    std::shared_ptr<weighted_tree_node_t> get_parent () const;
 
     bool is_tie_with_next () const;
     bool is_child_weight_equal_to_next (size_t i) const;
@@ -64,7 +65,8 @@ private:
     uint64_t m_subtree_leaf_size = 0;
     double m_weight = 0.0f;
     bool m_tie_with_next = false;
-    weighted_tree_node_t *m_parent = nullptr;
+    std::weak_ptr<weighted_tree_node_t> m_parent =
+                                        std::weak_ptr<weighted_tree_node_t> ();
     std::vector<std::shared_ptr<weighted_tree_node_t>> m_children;
 };
 
