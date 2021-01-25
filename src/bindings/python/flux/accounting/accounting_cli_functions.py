@@ -97,7 +97,7 @@ def delete_bank(conn, bank):
                     WHERE bank=?
                     """
                 for row in cursor.execute(select_associations_stmt, (row["bank"],)):
-                    delete_user(conn, user=row[0], bank=row[1])
+                    delete_user(conn, username=row[0], bank=row[1])
             # else, delete all of its sub banks and continue
             # traversing
             else:
@@ -207,11 +207,17 @@ def add_user(conn, username, bank, admin_level=1, shares=1, max_jobs=1, max_wall
         print(integrity_error)
 
 
-def delete_user(conn, user, bank):
+def delete_user(conn, username, bank):
     # delete user account from association_table
     delete_stmt = "DELETE FROM association_table WHERE username=? AND bank=?"
     cursor = conn.cursor()
-    cursor.execute(delete_stmt, (user, bank,))
+    cursor.execute(
+        delete_stmt,
+        (
+            username,
+            bank,
+        ),
+    )
     # commit changes
     conn.commit()
 

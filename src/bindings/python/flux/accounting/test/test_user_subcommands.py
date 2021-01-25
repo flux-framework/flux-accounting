@@ -126,7 +126,7 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(len(num_rows_before_delete), 1)
 
-        aclif.delete_user(acct_conn, user="fluxuser", bank="acct")
+        aclif.delete_user(acct_conn, username="fluxuser", bank="acct")
 
         cursor.execute(
             "SELECT * FROM association_table WHERE username='fluxuser' AND bank='acct'"

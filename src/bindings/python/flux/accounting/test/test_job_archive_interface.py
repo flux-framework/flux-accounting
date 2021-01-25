@@ -353,7 +353,7 @@ class TestAccountingCLI(unittest.TestCase):
     # removing a user from the flux-accounting DB should NOT remove their job
     # usage history from the job_usage_factor_table
     def test_17_keep_job_usage_records_upon_delete(self):
-        aclif.delete_user(acct_conn, user="1001", bank="C")
+        aclif.delete_user(acct_conn, username="1001", bank="C")
 
         select_stmt = """
             SELECT * FROM
