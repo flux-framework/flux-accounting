@@ -116,6 +116,25 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertRaises(ValueError)
 
+    # delete a user from the association table
+    def test_06_delete_user(self):
+        cursor = acct_conn.cursor()
+        cursor.execute(
+            "SELECT * FROM association_table WHERE username='fluxuser' AND bank='acct'"
+        )
+        num_rows_before_delete = cursor.fetchall()
+
+        self.assertEqual(len(num_rows_before_delete), 1)
+
+        aclif.delete_user(acct_conn, username="fluxuser", bank="acct")
+
+        cursor.execute(
+            "SELECT * FROM association_table WHERE username='fluxuser' AND bank='acct'"
+        )
+        num_rows_after_delete = cursor.fetchall()
+
+        self.assertEqual(len(num_rows_after_delete), 0)
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):

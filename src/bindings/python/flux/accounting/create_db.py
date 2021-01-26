@@ -124,10 +124,7 @@ def create_db(
                 username            tinytext                    NOT NULL,
                 bank                tinytext                    NOT NULL,
                 last_job_timestamp  real        DEFAULT 0.0,
-                PRIMARY KEY (username, bank),
-                FOREIGN KEY (username, bank)
-                    REFERENCES association_table (username, bank)
-                        ON UPDATE CASCADE
+                PRIMARY KEY (username, bank)
         );"""
     )
     add_usage_columns_to_table(

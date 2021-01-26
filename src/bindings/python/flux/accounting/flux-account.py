@@ -101,6 +101,7 @@ def main():
     subparser_delete_user.add_argument(
         "username", help="username", metavar=("USERNAME")
     )
+    subparser_delete_user.add_argument("bank", help="bank", metavar=("BANK"))
 
     subparser_edit_user = subparsers.add_parser("edit-user", help="edit a user's value")
     subparser_edit_user.set_defaults(func="edit_user")
@@ -258,7 +259,7 @@ def main():
                 args.max_wall_pj,
             )
         elif args.func == "delete_user":
-            aclif.delete_user(conn, args.username)
+            aclif.delete_user(conn, args.username, args.bank)
         elif args.func == "edit_user":
             aclif.edit_user(conn, args.username, args.field, args.new_value)
         elif args.func == "view_job_records":
