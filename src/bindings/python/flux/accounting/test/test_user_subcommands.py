@@ -131,4 +131,5 @@ def suite():
 
 if __name__ == "__main__":
     from pycotap import TAPTestRunner
+
     unittest.main(testRunner=TAPTestRunner())

@@ -38,7 +38,6 @@ class TestDB(unittest.TestCase):
         for table_name in tables:
             table_name = table_name[0]
             list_of_tables.append(table_name)
-            table = pd.read_sql_query("SELECT * from %s" % table_name, conn)
 
         # sqlite_sequence is an internal table that SQLite
         # uses to keep track of the largest ROWID
@@ -77,7 +76,6 @@ class TestDB(unittest.TestCase):
             ("root", 100)
             """
         )
-        cursor = conn.cursor()
         select_stmt = "SELECT * FROM bank_table"
         dataframe = pd.read_sql_query(select_stmt, conn)
         self.assertEqual(len(dataframe.index), 1)
@@ -92,7 +90,6 @@ class TestDB(unittest.TestCase):
             ("sub_account_1", "parent_account", 50)
             """
         )
-        cursor = conn.cursor()
         select_stmt = "SELECT * FROM bank_table"
         dataframe = pd.read_sql_query(select_stmt, conn)
         self.assertEqual(len(dataframe.index), 2)

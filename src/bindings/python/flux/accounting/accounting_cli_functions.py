@@ -123,7 +123,11 @@ def edit_bank(conn, bank, shares):
     try:
         # edit value in bank_table
         conn.execute(
-            "UPDATE bank_table SET shares=? WHERE bank=?", (shares, bank,),
+            "UPDATE bank_table SET shares=? WHERE bank=?",
+            (
+                shares,
+                bank,
+            ),
         )
         # commit changes
         conn.commit()
@@ -188,7 +192,10 @@ def add_user(conn, username, bank, admin_level=1, shares=1, max_jobs=1, max_wall
             )
             VALUES (?, ?)
             """,
-            (username, bank,),
+            (
+                username,
+                bank,
+            ),
         )
         conn.commit()
     # make sure entry is unique
@@ -200,7 +207,13 @@ def delete_user(conn, user, bank):
     # delete user account from association_table
     delete_stmt = "DELETE FROM association_table WHERE username=? AND bank=?"
     cursor = conn.cursor()
-    cursor.execute(delete_stmt, (user, bank,))
+    cursor.execute(
+        delete_stmt,
+        (
+            user,
+            bank,
+        ),
+    )
 
 
 def edit_user(conn, username, field, new_value):
@@ -219,7 +232,10 @@ def edit_user(conn, username, field, new_value):
             # edit value in accounting database
             conn.execute(
                 "UPDATE association_table SET " + the_field + "=? WHERE username=?",
-                (new_value, username,),
+                (
+                    new_value,
+                    username,
+                ),
             )
             # commit changes
             conn.commit()

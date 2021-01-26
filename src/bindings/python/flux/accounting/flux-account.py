@@ -54,22 +54,38 @@ def main():
     )
     subparser_add_user.set_defaults(func="add_user")
     subparser_add_user.add_argument(
-        "--username", help="username", metavar="USERNAME",
+        "--username",
+        help="username",
+        metavar="USERNAME",
     )
     subparser_add_user.add_argument(
-        "--admin-level", help="admin level", default=1, metavar="ADMIN_LEVEL",
+        "--admin-level",
+        help="admin level",
+        default=1,
+        metavar="ADMIN_LEVEL",
     )
     subparser_add_user.add_argument(
-        "--bank", help="bank to charge jobs against", metavar="BANK",
+        "--bank",
+        help="bank to charge jobs against",
+        metavar="BANK",
     )
     subparser_add_user.add_argument(
-        "--parent-acct", help="parent account", default="", metavar="PARENT_ACCOUNT",
+        "--parent-acct",
+        help="parent account",
+        default="",
+        metavar="PARENT_ACCOUNT",
     )
     subparser_add_user.add_argument(
-        "--shares", help="shares", default=1, metavar="SHARES",
+        "--shares",
+        help="shares",
+        default=1,
+        metavar="SHARES",
     )
     subparser_add_user.add_argument(
-        "--max-jobs", help="max jobs", default=1, metavar="MAX_JOBS",
+        "--max-jobs",
+        help="max jobs",
+        default=1,
+        metavar="MAX_JOBS",
     )
     subparser_add_user.add_argument(
         "--max-wall-pj",
@@ -89,13 +105,19 @@ def main():
     subparser_edit_user = subparsers.add_parser("edit-user", help="edit a user's value")
     subparser_edit_user.set_defaults(func="edit_user")
     subparser_edit_user.add_argument(
-        "--username", help="username", metavar="USERNAME",
+        "--username",
+        help="username",
+        metavar="USERNAME",
     )
     subparser_edit_user.add_argument(
-        "--field", help="column name", metavar="FIELD",
+        "--field",
+        help="column name",
+        metavar="FIELD",
     )
     subparser_edit_user.add_argument(
-        "--new-value", help="new value", metavar="VALUE",
+        "--new-value",
+        help="new value",
+        metavar="VALUE",
     )
 
     subparser_view_job_records = subparsers.add_parser(
@@ -103,16 +125,25 @@ def main():
     )
     subparser_view_job_records.set_defaults(func="view_job_records")
     subparser_view_job_records.add_argument(
-        "-u", "--user", help="username", metavar="USERNAME",
+        "-u",
+        "--user",
+        help="username",
+        metavar="USERNAME",
     )
     subparser_view_job_records.add_argument(
         "-j", "--jobid", help="jobid", metavar="JOBID"
     )
     subparser_view_job_records.add_argument(
-        "-a", "--after-start-time", help="start time", metavar="START TIME",
+        "-a",
+        "--after-start-time",
+        help="start time",
+        metavar="START TIME",
     )
     subparser_view_job_records.add_argument(
-        "-b", "--before-end-time", help="end time", metavar="END TIME",
+        "-b",
+        "--before-end-time",
+        help="end time",
+        metavar="END TIME",
     )
 
     subparser_create_db = subparsers.add_parser(
@@ -136,7 +167,9 @@ def main():
     subparser_add_bank = subparsers.add_parser("add-bank", help="add a new bank")
     subparser_add_bank.set_defaults(func="add_bank")
     subparser_add_bank.add_argument(
-        "bank", help="bank name", metavar="BANK",
+        "bank",
+        help="bank name",
+        metavar="BANK",
     )
     subparser_add_bank.add_argument(
         "--parent-bank", help="parent bank name", default="", metavar="PARENT BANK"
@@ -150,13 +183,17 @@ def main():
     )
     subparser_view_bank.set_defaults(func="view_bank")
     subparser_view_bank.add_argument(
-        "bank", help="bank name", metavar="BANK",
+        "bank",
+        help="bank name",
+        metavar="BANK",
     )
 
     subparser_delete_bank = subparsers.add_parser("delete-bank", help="remove a bank")
     subparser_delete_bank.set_defaults(func="delete_bank")
     subparser_delete_bank.add_argument(
-        "bank", help="bank name", metavar="BANK",
+        "bank",
+        help="bank name",
+        metavar="BANK",
     )
 
     subparser_edit_bank = subparsers.add_parser(
@@ -164,10 +201,14 @@ def main():
     )
     subparser_edit_bank.set_defaults(func="edit_bank")
     subparser_edit_bank.add_argument(
-        "bank", help="bank", metavar="BANK",
+        "bank",
+        help="bank",
+        metavar="BANK",
     )
     subparser_edit_bank.add_argument(
-        "--shares", help="new shares value", metavar="SHARES",
+        "--shares",
+        help="new shares value",
+        metavar="SHARES",
     )
 
     subparser_print_hierarchy = subparsers.add_parser(

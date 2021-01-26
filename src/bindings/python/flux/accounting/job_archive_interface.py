@@ -223,7 +223,14 @@ def fetch_old_usage_factors(acct_conn, user=None, bank=None):
     past_usage_factors = []
 
     select_stmt = "SELECT * from job_usage_factor_table WHERE username=? AND bank=?"
-    dataframe = pd.read_sql_query(select_stmt, acct_conn, params=(user, bank,))
+    dataframe = pd.read_sql_query(
+        select_stmt,
+        acct_conn,
+        params=(
+            user,
+            bank,
+        ),
+    )
 
     for val in dataframe.iloc[0].values[3:]:
         if isinstance(val, float):
@@ -253,7 +260,14 @@ def apply_decay_factor(decay_factor, acct_conn, user=None, bank=None):
             + str(period)
             + "=? WHERE username=? AND bank=?"
         )
-        acct_conn.execute(update_stmt, (str(usage_factor), user, bank,))
+        acct_conn.execute(
+            update_stmt,
+            (
+                str(usage_factor),
+                user,
+                bank,
+            ),
+        )
         acct_conn.commit()
         period += 1
 
@@ -261,7 +275,11 @@ def apply_decay_factor(decay_factor, acct_conn, user=None, bank=None):
 
 
 def calc_usage_factor(
-    jobs_conn, acct_conn, priority_decay_half_life, user, bank,
+    jobs_conn,
+    acct_conn,
+    priority_decay_half_life,
+    user,
+    bank,
 ):
 
     # half_life_period represents the number of weeks (converted to
@@ -276,7 +294,12 @@ def calc_usage_factor(
         WHERE username=? AND bank=?
         """
     dataframe = pd.read_sql_query(
-        fetch_timestamp_query, acct_conn, params=(user, bank,)
+        fetch_timestamp_query,
+        acct_conn,
+        params=(
+            user,
+            bank,
+        ),
     )
     last_job_timestamp = dataframe.iloc[0]
 
@@ -344,7 +367,12 @@ def calc_usage_factor(
             AND bank=?
             """
         dataframe = pd.read_sql_query(
-            fetch_current_usage_factor, acct_conn, params=(user, bank,)
+            fetch_current_usage_factor,
+            acct_conn,
+            params=(
+                user,
+                bank,
+            ),
         )
         usage_factor_period_0 = dataframe.iloc[0]
 
@@ -372,7 +400,14 @@ def calc_usage_factor(
         WHERE username=?
         AND bank=?
         """
-    acct_conn.execute(update_timestamp_stmt, (last_t_inactive, user, bank,))
+    acct_conn.execute(
+        update_timestamp_stmt,
+        (
+            last_t_inactive,
+            user,
+            bank,
+        ),
+    )
     acct_conn.commit()
 
     # write historical usage to first column in job_usage_factor_table
@@ -382,7 +417,14 @@ def calc_usage_factor(
         WHERE username=?
         AND bank=?
         """
-    acct_conn.execute(update_stmt, (usage_user_historical, user, bank,))
+    acct_conn.execute(
+        update_stmt,
+        (
+            usage_user_historical,
+            user,
+            bank,
+        ),
+    )
     acct_conn.commit()
 
     return usage_user_historical
