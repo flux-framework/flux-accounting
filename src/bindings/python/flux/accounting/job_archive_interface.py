@@ -427,6 +427,23 @@ def calc_usage_factor(
     )
     acct_conn.commit()
 
+    # update job_usage column in association_table
+    update_usage_stmt = """
+        UPDATE association_table
+        SET job_usage=?
+        WHERE username=?
+        AND bank=?
+        """
+    acct_conn.execute(
+        update_usage_stmt,
+        (
+            usage_user_historical,
+            user,
+            bank,
+        ),
+    )
+    acct_conn.commit()
+
     return usage_user_historical
 
 

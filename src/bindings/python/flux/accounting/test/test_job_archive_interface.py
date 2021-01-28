@@ -248,11 +248,19 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(usage_factor, 8500.0)
 
     # make sure usage factor was written to job_usage_factor_table
+    # and association_table
     def test_13_check_usage_factor_in_table(self):
         select_stmt = "SELECT usage_factor_period_0 FROM job_usage_factor_table WHERE username='1002' AND bank='C'"
         dataframe = pd.read_sql_query(select_stmt, acct_conn)
         usage_factor = dataframe.iloc[0]
         self.assertEqual(usage_factor["usage_factor_period_0"], 17044.0)
+
+        select_stmt = (
+            "SELECT job_usage FROM association_table WHERE username='1002' AND bank='C'"
+        )
+        dataframe = pd.read_sql_query(select_stmt, acct_conn)
+        job_usage = dataframe.iloc[0]
+        self.assertEqual(job_usage["job_usage"], 17044.0)
 
     # re-calculating a job usage factor after the end of the last half-life
     # period should create a new usage bin and update t_half_life_period_table
