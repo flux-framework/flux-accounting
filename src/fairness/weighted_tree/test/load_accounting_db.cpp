@@ -33,43 +33,53 @@
 using namespace Flux::accounting;
 
 /*
-bind_select_associations_stmt () will bind the required parameters to the
-prepared SQL statement to find any and all associations under a bank.
+delete_prepared_statement () will delete the prepared SQL statements.
 */
-int bind_select_associations_stmt (int rc,
-                                   const std::string &bank_name,
-                                   sqlite3_stmt *b_select_associations_stmt)
+int delete_prepared_statements (sqlite3_stmt *c_root_bank,
+                                sqlite3_stmt *c_shrs,
+                                sqlite3_stmt *c_sub_banks,
+                                sqlite3_stmt *c_assoc)
 {
-    rc = sqlite3_bind_text (b_select_associations_stmt,
-                            1,
-                            bank_name.c_str (),
-                            -1,
-                            NULL);
+    int rc = 0;
+    std::vector<sqlite3_stmt*> stmts;
+
+    stmts.push_back(c_root_bank);
+    stmts.push_back(c_shrs);
+    stmts.push_back(c_sub_banks);
+    stmts.push_back(c_assoc);
+
+    for (sqlite3_stmt *stmt : stmts) {
+        rc = sqlite3_finalize (stmt);
+        if (rc != SQLITE_OK) {
+            std::cerr << "Failed to delete prepared statement" << std::endl;
+
+            return rc;
+        }
+    }
+
     return rc;
 }
 
 
 /*
-add_child_to_tree () constructs a weighted_tree_node_t object out of a
-association's data retrieved from the SELECT SQL statement and adds it to the
-weighted tree.
+add_assoc () constructs a weighted_tree_node_t object out of a
+association's data and adds it to the weighted tree.
 */
-void add_child_to_tree (std::shared_ptr<weighted_tree_node_t> parent_bank,
-                        const std::string &username,
-                        const std::string &user_shares,
-                        const std::string &user_job_usage,
-                        std::shared_ptr<weighted_tree_node_t> user_node,
-                        std::shared_ptr<weighted_tree_node_t> node)
+void add_assoc (const std::string &username,
+                const std::string &shrs,
+                const std::string &usage,
+                std::shared_ptr<weighted_tree_node_t> user_node,
+                std::shared_ptr<weighted_tree_node_t> node)
 {
     // add user as a child of the node
-    user_node = std::make_shared<weighted_tree_node_t> (
-                                                parent_bank,
-                                                username,
-                                                true,
-                                                std::stoll (user_shares),
-                                                std::stoll (user_job_usage));
+    user_node = std::make_shared<weighted_tree_node_t> (node,
+                                                        username,
+                                                        true,
+                                                        std::stoll (shrs),
+                                                        std::stoll (usage));
     node->add_child (user_node);
 }
+
 
 /*
 aggregate_job_usage () takes the total usage from a leaf bank (i.e a bank with
@@ -77,7 +87,7 @@ associations in it) and adds it to the total usage of its parent bank and so on
 up to the root bank.
 */
 void aggregate_job_usage (std::shared_ptr<weighted_tree_node_t> node,
-                          int leaf_bank_usage)
+                          int bank_usage)
 {
     // aggregate usage from user nodes up to their respective banks
     // and up to the root bank
@@ -85,10 +95,44 @@ void aggregate_job_usage (std::shared_ptr<weighted_tree_node_t> node,
          curr_ancestor != nullptr;
          curr_ancestor = curr_ancestor->get_parent ()) {
 
-        curr_ancestor->set_usage (curr_ancestor->get_usage ()
-                                  + leaf_bank_usage);
+        curr_ancestor->set_usage (curr_ancestor->get_usage () + bank_usage);
     }
 }
+
+
+/*
+reset_and_clear_bindings () will reset the compiled SQL statements.
+*/
+int reset_and_clear_bindings (sqlite3 *DB,
+                              sqlite3_stmt *c_assoc,
+                              sqlite3_stmt *c_sub_banks,
+                              sqlite3_stmt *c_shrs)
+{
+    int rc = 0;
+    std::vector<sqlite3_stmt*> stmts;
+
+    stmts.push_back(c_assoc);
+    stmts.push_back(c_sub_banks);
+    stmts.push_back(c_shrs);
+
+    for (sqlite3_stmt *stmt : stmts) {
+        rc = sqlite3_clear_bindings (stmt);
+        if (rc != SQLITE_OK) {
+            std::cerr << sqlite3_errmsg (DB) << std::endl;
+
+            return rc;
+        }
+        rc = sqlite3_reset (stmt);
+        if (rc != SQLITE_OK) {
+            std::cerr << sqlite3_errmsg (DB) << std::endl;
+
+            return rc;
+        }
+    }
+
+    return rc;
+}
+
 
 /*
 get_sub_banks () performs a depth-first search of the flux-accounting database,
@@ -112,50 +156,42 @@ std::shared_ptr<weighted_tree_node_t> get_sub_banks (
                             sqlite3 *DB,
                             const std::string &bank_name,
                             std::shared_ptr<weighted_tree_node_t> parent_bank,
-                            sqlite3_stmt *b_select_shares_stmt,
-                            sqlite3_stmt *b_select_sub_banks_stmt,
-                            sqlite3_stmt *b_select_associations_stmt)
+                            sqlite3_stmt *c_shrs,
+                            sqlite3_stmt *c_sub_banks,
+                            sqlite3_stmt *c_assoc)
 {
 
     std::shared_ptr<weighted_tree_node_t> node = nullptr;
     std::shared_ptr<weighted_tree_node_t> user_node = nullptr;
-    std::shared_ptr<weighted_tree_node_t> root_ptr = nullptr;
 
-    int rc = 0;
-    int leaf_bank_usage = 0;
+    int rc, bank_usg = 0;
+
+    // vector of strings to hold sub banks
+    std::vector<std::string> banks;
 
     // bind parameter to prepare SQL statement
-    rc = sqlite3_bind_text (b_select_shares_stmt,
-                            1,
-                            bank_name.c_str (),
-                            -1,
-                            NULL);
+    rc = sqlite3_bind_text (c_shrs, 1, bank_name.c_str (), -1, NULL);
     if (rc != SQLITE_OK) {
-        std::cerr
-            << "Failed to fetch data: " << sqlite3_errmsg (DB) << std::endl;
-        sqlite3_close (DB);
+        std::cerr << sqlite3_errmsg (DB) << std::endl;
 
         return nullptr;
     }
-    // execute SQL statement and store result
-    rc = sqlite3_step (b_select_shares_stmt);
-    if (rc == SQLITE_ERROR) {
-        std::cerr
-            << "Failed to fetch data: " << sqlite3_errmsg (DB) << std::endl;
-        sqlite3_close (DB);
+    rc = sqlite3_step (c_shrs);
+    if (rc != SQLITE_ROW) {
+        std::cerr << "Unable to fetch data" << std::endl;
 
         return nullptr;
     }
 
-    std::string bank_shares = reinterpret_cast<char const *> (
-        sqlite3_column_text (b_select_shares_stmt, 0));
+    std::string bank_shrs = reinterpret_cast<char const *> (
+        sqlite3_column_text (c_shrs, 0));
 
     // initialize a weighted tree node
     try {
         node = std::make_shared<weighted_tree_node_t> (parent_bank,
                                                        bank_name,
                                                        false,
-                                                       std::stoll (bank_shares),
+                                                       std::stoll (bank_shrs),
                                                        0);
     }
     catch (const std::invalid_argument &ia) {
@@ -167,75 +203,47 @@ std::shared_ptr<weighted_tree_node_t> get_sub_banks (
         return nullptr;
     }
 
-
-    // if there is no parent bank, then the root pointer points to the root bank
-    if (!parent_bank) {
-        root_ptr = node;
-    } else {
+    // if there is no parent bank, then the node being added is the root bank
+    if (parent_bank)
         parent_bank->add_child (node);
-    }
 
-    rc = sqlite3_bind_text (b_select_sub_banks_stmt,
-                            1,
-                            bank_name.c_str (),
-                            -1,
-                            NULL);
+    rc = sqlite3_bind_text (c_sub_banks, 1, bank_name.c_str (), -1, NULL);
     if (rc != SQLITE_OK) {
-        std::cerr
-            << "Failed to fetch data: " << sqlite3_errmsg (DB) << std::endl;
-        sqlite3_close (DB);
+        std::cerr << sqlite3_errmsg (DB) << std::endl;
 
         return nullptr;
     }
-    rc = sqlite3_step (b_select_sub_banks_stmt);
+    rc = sqlite3_step (c_sub_banks);
     if (rc == SQLITE_ERROR) {
-        std::cerr
-            << "Failed to fetch data: " << sqlite3_errmsg (DB) << std::endl;
-        sqlite3_close (DB);
+        std::cerr << "Unable to fetch data" << std::endl;
 
         return nullptr;
     }
 
-    // vector of strings to hold sub banks
-    std::vector<std::string> banks;
-
-    // we've reached a bank with no sub banks, so add them to the tree
-    // and tally up their usage to be aggregated up to their parent bank
-    // and up to the root bank
+    // we've reached a bank with no sub banks, so add associations to the tree
     if (rc != SQLITE_ROW) {
-        rc = bind_select_associations_stmt (rc,
-                                            bank_name,
-                                            b_select_associations_stmt);
-
+        rc = sqlite3_bind_text (c_assoc, 1, bank_name.c_str (), -1, NULL);
         if (rc != SQLITE_OK) {
-            std::cerr
-                << "Failed to fetch data: " << sqlite3_errmsg (DB) << std::endl;
-            sqlite3_close (DB);
+            std::cerr << sqlite3_errmsg (DB) << std::endl;
 
             return nullptr;
         }
 
         // execute SQL statement
-        rc = sqlite3_step (b_select_associations_stmt);
+        rc = sqlite3_step (c_assoc);
         while (rc == SQLITE_ROW) {
             std::string username = reinterpret_cast<char const *> (
-                sqlite3_column_text (b_select_associations_stmt, 0));
-            std::string user_shares = reinterpret_cast<char const *> (
-                sqlite3_column_text (b_select_associations_stmt, 1));
-            std::string user_job_usage = reinterpret_cast<char const *> (
-                sqlite3_column_text (b_select_associations_stmt, 3));
+                sqlite3_column_text (c_assoc, 0));
+            std::string shrs = reinterpret_cast<char const *> (
+                sqlite3_column_text (c_assoc, 1));
+            std::string usage = reinterpret_cast<char const *> (
+                sqlite3_column_text (c_assoc, 3));
 
             try {
-                // add user as a child of the node
-                add_child_to_tree (parent_bank,
-                                   username,
-                                   user_shares,
-                                   user_job_usage,
-                                   user_node,
-                                   node);
+                // add association as a child of the node
+                add_assoc (username, shrs, usage, user_node, node);
 
-                // add single user's job usage to their bank's total job usage
-                leaf_bank_usage += std::stoi (user_job_usage);
+                bank_usg += std::stoi (usage);
             }
             catch (const std::invalid_argument &ia) {
                 std::cerr << "Invalid argument: " << ia.what() << std::endl;
@@ -246,194 +254,133 @@ std::shared_ptr<weighted_tree_node_t> get_sub_banks (
                 return nullptr;
             }
 
-            rc = sqlite3_step (b_select_associations_stmt);
+            rc = sqlite3_step (c_assoc);
         }
         if (rc == SQLITE_ERROR) {
-            std::cerr
-                << "Failed to fetch data: " << sqlite3_errmsg (DB) << std::endl;
-            sqlite3_close (DB);
+            std::cerr << "Unable to fetch data" << std::endl;
 
             return nullptr;
         }
 
-        aggregate_job_usage(node, leaf_bank_usage);
+        aggregate_job_usage (node, bank_usg);
     } else {
         // otherwise, this bank has sub banks, so call this
         // function again with the first sub bank it found
         parent_bank = node;
         while (rc == SQLITE_ROW) {
-            // execute SQL statement
             std::string bank = reinterpret_cast<char const *> (
-                sqlite3_column_text (b_select_sub_banks_stmt, 0));
+                sqlite3_column_text (c_sub_banks, 0));
+
             banks.push_back (bank);
-            rc = sqlite3_step (b_select_sub_banks_stmt);
+            rc = sqlite3_step (c_sub_banks);
         }
         if (rc == SQLITE_ERROR) {
-            std::cerr
-                << "Failed to fetch data: " << sqlite3_errmsg (DB) << std::endl;
-            sqlite3_close (DB);
+            std::cerr << "Unable to fetch data" << std::endl;
 
             return nullptr;
         }
         for (const std::string &b : banks) {
             // reset the prepared statements back to their initial state and
             // clear their bindings
-            rc = sqlite3_clear_bindings (b_select_associations_stmt);
-            if (rc != SQLITE_OK) {
-                std::cerr << sqlite3_errmsg (DB) << std::endl;
-                sqlite3_close (DB);
-
+            rc = reset_and_clear_bindings (DB, c_assoc, c_sub_banks, c_shrs);
+            if (rc != SQLITE_OK)
                 return nullptr;
-            }
-            rc = sqlite3_reset (b_select_associations_stmt);
-            if (rc != SQLITE_OK) {
-                std::cerr << sqlite3_errmsg (DB) << std::endl;
-                sqlite3_close (DB);
-
-                return nullptr;
-            }
-            rc = sqlite3_clear_bindings (b_select_sub_banks_stmt);
-            if (rc != SQLITE_OK) {
-                std::cerr << sqlite3_errmsg (DB) << std::endl;
-                sqlite3_close (DB);
-
-                return nullptr;
-            }
-            rc = sqlite3_reset (b_select_sub_banks_stmt);
-            if (rc != SQLITE_OK) {
-                std::cerr << sqlite3_errmsg (DB) << std::endl;
-                sqlite3_close (DB);
-
-                return nullptr;
-            }
-            rc = sqlite3_clear_bindings (b_select_shares_stmt);
-            if (rc != SQLITE_OK) {
-                std::cerr << sqlite3_errmsg (DB) << std::endl;
-                sqlite3_close (DB);
-
-                return nullptr;
-            }
-            rc = sqlite3_reset (b_select_shares_stmt);
-            if (rc != SQLITE_OK) {
-                std::cerr << sqlite3_errmsg (DB) << std::endl;
-                sqlite3_close (DB);
-
-                return nullptr;
-            }
 
             if (get_sub_banks (DB,
                                b,
                                parent_bank,
-                               b_select_shares_stmt,
-                               b_select_sub_banks_stmt,
-                               b_select_associations_stmt) == nullptr) {
+                               c_shrs,
+                               c_sub_banks,
+                               c_assoc) == nullptr) {
                 std::cerr << "get_sub_banks () returned a nullptr" << std::endl;
                 return nullptr;
             }
         }
     }
-    return root_ptr;
+    return node;
 }
 
 std::shared_ptr<weighted_tree_node_t> load_accounting_db (
                                                     const std::string &path)
 {
     // SQL statements to retrieve data from flux-accounting database
-    sqlite3_stmt *b_select_root_bank_stmt = nullptr;
-    sqlite3_stmt *b_select_shares_stmt = nullptr;
-    sqlite3_stmt *b_select_sub_banks_stmt = nullptr;
-    sqlite3_stmt *b_select_associations_stmt = nullptr;
+    std::string s_shrs, s_sub_banks, s_assoc, s_root_bank;
+    sqlite3_stmt *c_root_bank = nullptr;
+    sqlite3_stmt *c_shrs = nullptr;
+    sqlite3_stmt *c_sub_banks = nullptr;
+    sqlite3_stmt *c_assoc = nullptr;
 
     sqlite3 *DB = nullptr;
     int rc = 0;
 
-    // open FluxAccounting DB in read-write mode; if it does not exist yet,
-    // create a new database file
+    std::string root_bank;
+    std::shared_ptr<weighted_tree_node_t> root = nullptr;
+
+    // open flux-accounting DB in read-write mode
     rc = sqlite3_open_v2 (path.c_str (), &DB, SQLITE_OPEN_READWRITE, NULL);
     if (rc) {
         std::cerr << "error opening DB: " << sqlite3_errmsg (DB) << std::endl;
         return nullptr;
     }
 
-    // SELECT statement to get the shares of the current bank
-    std::string select_shares_stmt = "SELECT bank_table.shares "
-                                     "FROM bank_table "
-                                     "WHERE bank=?";
-    rc = sqlite3_prepare_v2 (DB,
-                             select_shares_stmt.c_str (),
-                             -1,
-                             &b_select_shares_stmt,
-                             0);
+    s_shrs = "SELECT bank_table.shares FROM bank_table WHERE bank=?";
 
-    // SELECT statement to get all sub banks of the current bank
-    std::string select_sub_banks_stmt = "SELECT bank_table.bank "
-                                        "FROM bank_table "
-                                        "WHERE parent_bank=?";
-    rc = sqlite3_prepare_v2 (DB,
-                             select_sub_banks_stmt.c_str (),
-                             -1,
-                             &b_select_sub_banks_stmt,
-                             0);
+    s_sub_banks = "SELECT bank_table.bank FROM bank_table WHERE parent_bank=?";
 
-    // SELECT statement to get all associations from a bank
-    std::string select_associations_stmt = "SELECT association_table.username, "
-                                           "association_table.shares, "
-                                           "association_table.bank, "
-                                           "association_table.job_usage "
-                                           "FROM association_table "
-                                           "WHERE association_table.bank=?";
-    rc = sqlite3_prepare_v2 (DB,
-                             select_associations_stmt.c_str (),
-                             -1,
-                             &b_select_associations_stmt,
-                             0);
+    s_assoc = "SELECT association_table.username, association_table.shares, "
+              "association_table.bank, association_table.job_usage "
+              "FROM association_table WHERE association_table.bank=?";
 
-    // SELECT statement to get the root bank from the bank table
-    std::string select_root_bank_stmt = "SELECT bank_table.bank "
-                                        "FROM bank_table "
-                                        "WHERE parent_bank=''";
-    // compile SQL statement into byte code
-    rc = sqlite3_prepare_v2 (DB,
-                             select_root_bank_stmt.c_str(),
-                             -1,
-                             &b_select_root_bank_stmt,
-                             0);
+    s_root_bank = "SELECT bank_table.bank FROM bank_table WHERE parent_bank=''";
+
+    // compile SELECT statements into byte code
+    rc = sqlite3_prepare_v2 (DB, s_shrs.c_str (), -1, &c_shrs, 0);
     if (rc != SQLITE_OK) {
-        std::cerr
-            << "Failed to fetch data: " << sqlite3_errmsg (DB) << std::endl;
-        sqlite3_close (DB);
+        std::cerr << sqlite3_errmsg (DB) << std::endl;
 
         return nullptr;
     }
 
-    rc = sqlite3_step (b_select_root_bank_stmt);
-    // store root bank name
-    std::string root_bank;
+    rc = sqlite3_prepare_v2 (DB, s_sub_banks.c_str (), -1, &c_sub_banks, 0);
+    if (rc != SQLITE_OK) {
+        std::cerr << sqlite3_errmsg (DB) << std::endl;
+
+        return nullptr;
+    }
+
+    rc = sqlite3_prepare_v2 (DB, s_assoc.c_str (), -1, &c_assoc, 0);
+    if (rc != SQLITE_OK) {
+        std::cerr << sqlite3_errmsg (DB) << std::endl;
+
+        return nullptr;
+    }
+
+    rc = sqlite3_prepare_v2 (DB, s_root_bank.c_str (), -1, &c_root_bank, 0);
+    if (rc != SQLITE_OK) {
+        std::cerr << sqlite3_errmsg (DB) << std::endl;
+
+        return nullptr;
+    }
+
+    // fetch root bank from flux-accounting database
+    rc = sqlite3_step (c_root_bank);
     if (rc == SQLITE_ROW) {
         root_bank = reinterpret_cast<char const *> (
-            sqlite3_column_text (b_select_root_bank_stmt, 0));
-    }
-    // otherwise, there is either no root bank or more than one
-    // root bank; the program should exit
-    else {
+            sqlite3_column_text (c_root_bank, 0));
+    } else {
+        // otherwise, there is either no root bank or more than one
+        // root bank; the program should return nullptr
         std::cerr << "root bank not found, exiting" << std::endl;
         return nullptr;
     }
 
     // call recursive function
-    std::shared_ptr<weighted_tree_node_t> root = nullptr;
-    root = get_sub_banks (DB,
-                          root_bank,
-                          nullptr,
-                          b_select_shares_stmt,
-                          b_select_sub_banks_stmt,
-                          b_select_associations_stmt);
+    root = get_sub_banks (DB, root_bank, nullptr, c_shrs, c_sub_banks, c_assoc);
 
     // destroy the prepared SQL statements
-    sqlite3_finalize (b_select_root_bank_stmt);
-    sqlite3_finalize (b_select_shares_stmt);
-    sqlite3_finalize (b_select_sub_banks_stmt);
-    sqlite3_finalize (b_select_associations_stmt);
+    rc = delete_prepared_statements (c_root_bank, c_shrs, c_sub_banks, c_assoc);
+    if (rc != SQLITE_OK)
+        return nullptr;
 
     // close DB connection
     sqlite3_close (DB);
