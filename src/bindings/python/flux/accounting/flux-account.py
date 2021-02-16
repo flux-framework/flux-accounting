@@ -18,7 +18,6 @@ import flux.accounting
 from flux.accounting import accounting_cli_functions as aclif
 from flux.accounting import job_archive_interface as jobs
 from flux.accounting import create_db as c
-from flux.accounting import print_hierarchy as ph
 
 
 def main():
@@ -212,11 +211,6 @@ def main():
         metavar="SHARES",
     )
 
-    subparser_print_hierarchy = subparsers.add_parser(
-        "print-hierarchy", help="print accounting database"
-    )
-    subparser_print_hierarchy.set_defaults(func="print_hierarchy")
-
     args = parser.parse_args()
 
     path = args.path if args.path else flux.accounting.db_path
@@ -279,8 +273,6 @@ def main():
             aclif.delete_bank(conn, args.bank)
         elif args.func == "edit_bank":
             aclif.edit_bank(conn, args.bank, args.shares)
-        elif args.func == "print_hierarchy":
-            print(ph.print_full_hierarchy(conn))
         else:
             print(parser.print_usage())
     finally:
