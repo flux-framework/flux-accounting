@@ -10,14 +10,16 @@ SUBDIRS = .
 
 noinst_PROGRAMS = print_hierarchy
 
-print_hierarchy_SOURCES = \
-    print_hierarchy.cpp
+print_hierarchy_SOURCES = print_hierarchy.cpp \
+                          ../weighted_tree/test/load_accounting_db.cpp
+
+print_hierarchy_LDADD = \
+    $(top_builddir)/src/fairness/weighted_tree/libweighted_tree.la
 
 print_hierarchy_CXXFLAGS = \
     $(WARNING_CXXFLAGS) \
     $(CODE_COVERAGE_CFLAGS) \
     $(AM_CXXFLAGS) \
-                $(SQLITE_CFLAGS)
+    $(SQLITE_CFLAGS)
 
-print_hierarchy_LDFLAGS = \
-                $(SQLITE_LIBS)
+print_hierarchy_LDFLAGS = $(SQLITE_LIBS)
