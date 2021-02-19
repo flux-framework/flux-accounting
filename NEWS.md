@@ -1,3 +1,20 @@
+flux-accounting version 0.6.0 - 2020-01-29
+------------------------------------------
+
+#### Fixes
+
+* Unused variables and imports removed, license in `src/fairness/` changed to LGPL (#90)
+
+* Behavior of `delete-user`, `delete-bank` changed to keep job history of a user after they are removed from the flux-accounting DB (#92)
+
+* `bank` argument added to the `delete-user` subcommand (#95)
+
+#### Features
+
+* `unittest.mock()` integrated with job-archive interface unit tests (#93)
+
+* flux-accounting database can be loaded into weighted tree library to generate fairshare values for users (#97)
+
 flux-accounting version 0.5.0 - 2020-12-18
 ------------------------------------------
 
