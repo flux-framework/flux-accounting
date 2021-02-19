@@ -87,18 +87,18 @@ void weighted_tree_node_t::calc_set_children_weight ()
 
 void weighted_tree_node_t::propagate_subtree_size ()
 {
-    if (m_parent == nullptr)
+    if (m_parent.expired ())
         return;
-    m_parent->m_subtree_size++;
-    m_parent->propagate_subtree_size ();
+    m_parent.lock ()->m_subtree_size++;
+    m_parent.lock ()->propagate_subtree_size ();
 }
 
 void weighted_tree_node_t::propagate_subtree_leaf_size ()
 {
-    if (m_parent == nullptr)
+    if (m_parent.expired ())
         return;
-    m_parent->m_subtree_leaf_size++;
-    m_parent->propagate_subtree_leaf_size ();
+    m_parent.lock ()->m_subtree_leaf_size++;
+    m_parent.lock ()->propagate_subtree_leaf_size ();
 }
 
 
@@ -109,7 +109,7 @@ void weighted_tree_node_t::propagate_subtree_leaf_size ()
  ******************************************************************************/
 
 weighted_tree_node_t::weighted_tree_node_t (
-    weighted_tree_node_t *parent, const std::string &name,
+    std::shared_ptr<weighted_tree_node_t> parent, const std::string &name,
     bool is_user, uint64_t shares, uint64_t usage)
     : account_t (name, is_user, shares, usage)
 {
@@ -145,6 +145,12 @@ std::shared_ptr<weighted_tree_node_t> weighted_tree_node_t
     if (i >= m_children.size ())
         return nullptr;
     return m_children[i];
+}
+
+std::shared_ptr<weighted_tree_node_t> weighted_tree_node_t
+                                          ::get_parent () const
+{
+    return m_parent.lock ();
 }
 
 bool weighted_tree_node_t::is_tie_with_next () const
@@ -235,11 +241,11 @@ int weighted_tree_node_t::dprint_csv (std::ostringstream &out,
     int rc = 0;
     try {
         if (is_user ()) {
-            if (!m_parent) {
+            if (m_parent.expired ()) {
                 errno = EINVAL;
                 return -1;
             }
-            out << level << "," << m_parent->get_name () << ","
+            out << level << "," << m_parent.lock ()->get_name () << ","
                 << get_name () << "," << get_shares () << "," << get_usage ();
             if (long_format)
                 out << "," << get_fshare();

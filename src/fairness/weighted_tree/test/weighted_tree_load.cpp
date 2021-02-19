@@ -77,7 +77,7 @@ int load_weighted_tree (const std::string &path,
         }
 
         node = std::make_shared<weighted_tree_node_t> (
-                        ancestors.empty ()? nullptr : ancestors.back ().get (),
+                        ancestors.empty ()? nullptr : ancestors.back (),
                         is_user? result[2] : result[1],
                         is_user,
                         std::stoll (result[3]), std::stoll (result[4]));
