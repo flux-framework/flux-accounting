@@ -32,7 +32,7 @@
 #include <fstream>
 #include <string>
 
-#include "src/fairness/weighted_tree/test/load_accounting_db.hpp"
+#include "src/fairness/reader/data_reader_db.hpp"
 #include "src/common/libtap/tap.h"
 
 using namespace Flux::accounting;
