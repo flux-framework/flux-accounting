@@ -206,7 +206,7 @@ class TestAccountingCLI(unittest.TestCase):
     @mock.patch("time.time", mock.MagicMock(return_value=10000500))
     def test_09_multiple_params(self):
         my_dict = {"user": "1001", "after_start_time": time.time()}
-        job_records = jobs.view_job_records(jobs_conn, "records.csv", **my_dict)
+        job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
         self.assertEqual(len(job_records), 1)
 
     # passing no parameters will result in a generic query
