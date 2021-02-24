@@ -88,7 +88,7 @@ AC_SUBST(fluxrc1dir)
 AS_VAR_SET(fluxrc3dir, $sysconfdir/flux/rc3.d)
 AC_SUBST(fluxrc3dir)
 
-AS_VAR_SET(fluxpydir, $pyexecdir/flux)
+AS_VAR_SET(fluxpydir, $pyexecdir/fluxacct)
 AC_SUBST(fluxpydir)
 AS_VAR_SET(acctpydir, $fluxpydir/accounting)
 AC_SUBST(acctpydir)
@@ -107,9 +107,10 @@ AC_CONFIG_FILES([Makefile
   src/fairness/print_hierarchy/Makefile
   src/bindings/Makefile
   src/bindings/python/Makefile
-  src/bindings/python/flux/Makefile
-  src/bindings/python/flux/accounting/Makefile
-  src/bindings/python/flux/accounting/__init__.py
+  src/bindings/python/fluxacct/Makefile
+  src/bindings/python/fluxacct/accounting/Makefile
+  src/bindings/python/fluxacct/accounting/__init__.py
+  src/cmd/Makefile
   t/Makefile
   ])
 AC_OUTPUT

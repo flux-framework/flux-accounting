@@ -1,2 +1,1 @@
-SUBDIRS = common fairness bindings
-
+SUBDIRS = common cmd fairness bindings

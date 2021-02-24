@@ -5,9 +5,6 @@ acctpy_PYTHON = \
 	create_db.py \
 	print_hierarchy.py
 
-dist_fluxcmd_SCRIPTS = \
-	flux-account.py
-
 clean-local:
 	-rm -f *.pyc *.pyo
 	-rm -rf __pycache__

@@ -1,1 +1,1 @@
-SUBDIRS = flux
+SUBDIRS = fluxacct

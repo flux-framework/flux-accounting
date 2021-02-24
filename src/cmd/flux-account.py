@@ -12,11 +12,11 @@ import argparse
 import sys
 import os
 
-import flux.accounting
-from flux.accounting import accounting_cli_functions as aclif
-from flux.accounting import job_archive_interface as jobs
-from flux.accounting import create_db as c
-from flux.accounting import print_hierarchy as ph
+import fluxacct.accounting
+from fluxacct.accounting import accounting_cli_functions as aclif
+from fluxacct.accounting import job_archive_interface as jobs
+from fluxacct.accounting import create_db as c
+from fluxacct.accounting import print_hierarchy as ph
 
 
 def main():
@@ -217,7 +217,7 @@ def main():
 
     args = parser.parse_args()
 
-    path = args.path if args.path else flux.accounting.db_path
+    path = args.path if args.path else fluxacct.accounting.db_path
     # if we are creating the DB for the first time, we need
     # to ONLY create the DB and then exit out successfully
     if args.func == "create_db":

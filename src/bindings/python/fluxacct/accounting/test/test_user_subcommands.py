@@ -13,8 +13,8 @@ import unittest
 import os
 import sqlite3
 
-from flux.accounting import accounting_cli_functions as aclif
-from flux.accounting import create_db as c
+from fluxacct.accounting import accounting_cli_functions as aclif
+from fluxacct.accounting import create_db as c
 
 
 class TestAccountingCLI(unittest.TestCase):
