@@ -24,9 +24,9 @@ class TestAccountingCLI(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         # create example accounting database
-        c.create_db("FluxAccounting.db")
+        c.create_db("TestBankSubcommands.db")
         global acct_conn
-        acct_conn = sqlite3.connect("FluxAccounting.db")
+        acct_conn = sqlite3.connect("TestBankSubcommands.db")
 
     # let's add a top-level account using the add-bank
     # subcommand
@@ -246,7 +246,7 @@ A||1
     @classmethod
     def tearDownClass(self):
         acct_conn.close()
-        os.remove("FluxAccounting.db")
+        os.remove("TestBankSubcommands.db")
         os.remove("flux_accounting_failure_1.db")
         os.remove("flux_accounting_failure_2.db")
         os.remove("flux_accounting_delete_bank_1.db")

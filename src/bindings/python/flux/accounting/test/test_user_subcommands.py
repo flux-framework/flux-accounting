@@ -22,10 +22,10 @@ class TestAccountingCLI(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         # create example accounting database
-        c.create_db("FluxAccounting.db")
+        c.create_db("TestAcctingSubcommands.db")
         global acct_conn
         global jobs_conn
-        acct_conn = sqlite3.connect("FluxAccounting.db")
+        acct_conn = sqlite3.connect("TestAcctingSubcommands.db")
 
     # add a valid user to association_table
     def test_01_add_valid_user(self):
@@ -139,7 +139,7 @@ class TestAccountingCLI(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         acct_conn.close()
-        os.remove("FluxAccounting.db")
+        os.remove("TestAcctingSubcommands.db")
 
 
 def suite():
