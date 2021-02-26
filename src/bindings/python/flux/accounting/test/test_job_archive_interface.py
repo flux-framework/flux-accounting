@@ -57,6 +57,14 @@ class TestAccountingCLI(unittest.TestCase):
         global acct_conn
         acct_conn = sqlite3.connect("FluxAccountingUsers.db")
 
+        # simulate end of half life period in FluxAccounting database
+        update_stmt = """
+            UPDATE t_half_life_period_table SET end_half_life_period=?
+            WHERE cluster='cluster'
+            """
+        acct_conn.execute(update_stmt, ("10000000",))
+        acct_conn.commit()
+
         # add bank hierarchy
         aclif.add_bank(acct_conn, bank="A", shares=1)
         aclif.add_bank(acct_conn, bank="B", parent_bank="A", shares=1)
@@ -265,6 +273,7 @@ class TestAccountingCLI(unittest.TestCase):
     # re-calculating a job usage factor after the end of the last half-life
     # period should create a new usage bin and update t_half_life_period_table
     # with the new end time of the current half-life period
+    @mock.patch("time.time", mock.MagicMock(return_value=(100000000 + (604800 * 2.1))))
     def test_14_append_jobs_in_diff_half_life_period(self):
         user = "1001"
         bank = "C"
@@ -293,11 +302,11 @@ class TestAccountingCLI(unittest.TestCase):
                     "1001",
                     "1001",
                     "0",
-                    time.time() + 11604800,
-                    time.time() + 11604900,
-                    time.time() + 11605000,
-                    time.time() + 11605100,
-                    time.time() + 11605200,
+                    time.time() + 100,
+                    time.time() + 200,
+                    time.time() + 300,
+                    time.time() + 400,
+                    time.time() + 500,
                     "eventlog",
                     "jobspec",
                     '{"version":1,"execution": {"R_lite":[{"rank":"0","children": {"core": "0"}}]}}',
@@ -317,9 +326,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # simulate a half-life period further; re-calculate
     # usage for user1001 to make sure its value goes down
-    @mock.patch(
-        "time.time", mock.MagicMock(return_value=(time.time() + (604800 * 2.1)))
-    )
+    @mock.patch("time.time", mock.MagicMock(return_value=(10000000 + (604800 * 2.1))))
     def test_15_recalculate_usage_after_half_life_period(self):
         user = "1001"
         bank = "C"
@@ -332,9 +339,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # simulate a half-life period further; assure the new end of the
     # current half-life period gets updated
-    @mock.patch(
-        "time.time", mock.MagicMock(return_value=(time.time() + (604800 * 2.1)))
-    )
+    @mock.patch("time.time", mock.MagicMock(return_value=(10000000 + (604800 * 2.1))))
     def test_16_update_end_half_life_period(self):
         # fetch timestamp of the end of the current half-life period
         fetch_half_life_timestamp_query = """
