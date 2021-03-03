@@ -37,6 +37,22 @@ jobs:
         # return the status of running black formatter
         black . --check
 
+  python-lint:
+    name: python lint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+    - name: install pylint
+      run: python3 -m pip install 'pylint==2.4.4' --force-reinstall
+    - name: run pylint
+      run: ./scripts/pylint
+
   generate-matrix:
     # https://stackoverflow.com/questions/59977364
     name: generate build matrix
