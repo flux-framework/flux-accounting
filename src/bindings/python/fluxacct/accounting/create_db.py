@@ -29,7 +29,7 @@ def add_usage_columns_to_table(
     # factors up to the time period where jobs no longer play a factor in
     # calculating a usage factor
     column_name = "usage_factor_period_0"
-    if priority_decay_half_life != None and priority_usage_reset_period != None:
+    if priority_decay_half_life is not None and priority_usage_reset_period is not None:
         num_columns = math.ceil(
             int(priority_usage_reset_period) / int(priority_decay_half_life)
         )
@@ -49,7 +49,7 @@ def add_usage_columns_to_table(
 
 
 def set_half_life_period_end(conn, priority_decay_half_life=None):
-    if priority_decay_half_life != None:
+    if priority_decay_half_life is not None:
         # convert number of weeks to seconds; this will be appended
         # to the current time to represent one 'half-life' period
         # for the first usage bin
@@ -78,8 +78,8 @@ def create_db(
         logging.info("Creating Flux Accounting DB")
         conn = sqlite3.connect("file:" + filepath + "?mode:rwc", uri=True)
         logging.info("Created Flux Accounting DB successfully")
-    except sqlite3.OperationalError as e:
-        logging.error(e)
+    except sqlite3.OperationalError as exception:
+        logging.error(exception)
         sys.exit(1)
 
     # Association Table

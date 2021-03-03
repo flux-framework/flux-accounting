@@ -75,8 +75,8 @@ def delete_bank(conn, bank):
 
         # construct a DataFrame object out of the
         # bank passed in
-        df = pd.DataFrame([bank], columns=["bank"])
-        bank = df.iloc[0]
+        dataframe = pd.DataFrame([bank], columns=["bank"])
+        bank = dataframe.iloc[0]
 
         # helper function to traverse the bank table
         # and delete all of its sub banks
@@ -96,12 +96,13 @@ def delete_bank(conn, bank):
                     FROM association_table
                     WHERE bank=?
                     """
-                for row in cursor.execute(select_associations_stmt, (row["bank"],)):
-                    delete_user(conn, username=row[0], bank=row[1])
-            # else, delete all of its sub banks and continue
-            # traversing
+                for assoc_row in cursor.execute(
+                    select_associations_stmt, (row["bank"],)
+                ):
+                    delete_user(conn, username=assoc_row[0], bank=assoc_row[1])
+            # else, delete all of its sub banks and continue traversing
             else:
-                for index, sub_bank_row in dataframe.iterrows():
+                for _, sub_bank_row in dataframe.iterrows():
                     cursor.execute(delete_stmt, (sub_bank_row["bank"],))
                     get_sub_banks(sub_bank_row)
 
@@ -109,13 +110,14 @@ def delete_bank(conn, bank):
     # if an exception occcurs while recursively deleting
     # the parent banks, then throw the exception and roll
     # back the changes made to the DB
-    except sqlite3.OperationalError as e:
-        print(e)
+    except sqlite3.OperationalError as exception:
+        print(exception)
         conn.rollback()
         return 1
 
     # commit changes
     conn.commit()
+    return 0
 
 
 def edit_bank(conn, bank, shares):
@@ -231,21 +233,18 @@ def edit_user(conn, username, field, new_value):
         "max_jobs",
         "max_wall_pj",
     ]
-    try:
-        if field in fields:
-            the_field = field
+    if field in fields:
+        the_field = field
 
-            # edit value in accounting database
-            conn.execute(
-                "UPDATE association_table SET " + the_field + "=? WHERE username=?",
-                (
-                    new_value,
-                    username,
-                ),
-            )
-            # commit changes
-            conn.commit()
-        else:
-            raise ValueError("Field not found in association table")
-    except Exception as e:
-        print(e)
+        # edit value in accounting database
+        conn.execute(
+            "UPDATE association_table SET " + the_field + "=? WHERE username=?",
+            (
+                new_value,
+                username,
+            ),
+        )
+        # commit changes
+        conn.commit()
+    else:
+        raise ValueError("Field not found in association table")
