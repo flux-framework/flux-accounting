@@ -14,9 +14,9 @@ import os
 import sqlite3
 import pandas as pd
 
-from flux.accounting import accounting_cli_functions as aclif
-from flux.accounting import create_db as c
-from flux.accounting import print_hierarchy as p
+from fluxacct.accounting import accounting_cli_functions as aclif
+from fluxacct.accounting import create_db as c
+from fluxacct.accounting import print_hierarchy as p
 
 
 class TestAccountingCLI(unittest.TestCase):
@@ -24,9 +24,9 @@ class TestAccountingCLI(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         # create example accounting database
-        c.create_db("FluxAccounting.db")
+        c.create_db("TestBankSubcommands.db")
         global acct_conn
-        acct_conn = sqlite3.connect("FluxAccounting.db")
+        acct_conn = sqlite3.connect("TestBankSubcommands.db")
 
     # let's add a top-level account using the add-bank
     # subcommand
@@ -246,7 +246,7 @@ A||1
     @classmethod
     def tearDownClass(self):
         acct_conn.close()
-        os.remove("FluxAccounting.db")
+        os.remove("TestBankSubcommands.db")
         os.remove("flux_accounting_failure_1.db")
         os.remove("flux_accounting_failure_2.db")
         os.remove("flux_accounting_delete_bank_1.db")

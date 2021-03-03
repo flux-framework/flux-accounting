@@ -2,7 +2,7 @@
 
 test_description='Test print-hierarchy command'
 . `dirname $0`/sharness.sh
-ACCT_CLI=${FLUX_SOURCE_DIR}/src/bindings/python/flux/accounting/flux-account.py
+ACCT_CLI=${FLUX_SOURCE_DIR}/src/cmd/flux-account.py
 PRINT_HIERARCHY=${FLUX_BUILD_DIR}/src/fairness/print_hierarchy/print_hierarchy
 
 test_expect_success 'create valid flux-accounting DB with a proper hierarchy' '
@@ -21,7 +21,7 @@ test_expect_success 'create valid flux-accounting DB with a proper hierarchy' '
 '
 
 test_expect_success 'create hierarchy output from Python' '
-	python3 ${ACCT_CLI} -p ./FluxAccounting.db print-hierarchy > py-output.txt
+	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db print-hierarchy > py-output.txt
 '
 
 test_expect_success 'create hierarchy output from C++' '
@@ -33,7 +33,7 @@ test_expect_success 'compare hierarchy outputs' '
 '
 
 test_expect_success 'create valid flux-accounting DB with no entries in bank table' '
-	python3 ${ACCT_CLI} create-db ./FluxAccounting-2.db
+	${PYTHON} ${ACCT_CLI} create-db ./FluxAccounting-2.db
 '
 
 test_expect_success 'print flux-accounting DB with no entries in bank table' '
