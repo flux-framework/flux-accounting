@@ -1,31 +1,64 @@
-/*****************************************************************************\
- *  Copyright (c) 2020 Lawrence Livermore National Security, LLC.  Produced at
- *  the Lawrence Livermore National Laboratory (cf, AUTHORS, DISCLAIMER.LLNS).
- *  LLNL-CODE-658032 All rights reserved.
+/************************************************************\
+ * Copyright 2021 Lawrence Livermore National Security, LLC
+ * (c.f. AUTHORS, NOTICE.LLNS, COPYING)
  *
- *  This file is part of the Flux resource manager framework.
- *  For details, see https://github.com/flux-framework.
+ * This file is part of the Flux resource manager framework.
+ * For details, see https://github.com/flux-framework.
  *
- *  This program is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License as published by the Free
- *  Software Foundation; either version 2 of the license, or (at your option)
- *  any later version.
- *
- *  Flux is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the terms and conditions of the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
- *  See also:  http://www.gnu.org/licenses/
-\*****************************************************************************/
+ * SPDX-License-Identifier: LGPL-3.0
+\************************************************************/
 #include <sqlite3.h>
+#include <cerrno>
 
 #include "src/fairness/weighted_tree/weighted_walk.hpp"
+#include "src/fairness/reader/data_reader_base.hpp"
 
 using namespace Flux::accounting;
 
-std::shared_ptr<weighted_tree_node_t> load_accounting_db (
+namespace Flux {
+namespace reader {
+
+/*!  Base data reader class.
+ */
+class data_reader_db_t : public data_reader_base_t {
+public:
+    virtual ~data_reader_db_t () = default;
+
+    /*! Load flux-accounting database information into weighted tree.
+     *
+     * \param path      path to a flux-accounting SQLite database
+     * \return          pointer to the root of the weighted tree
+     */
+    std::shared_ptr<weighted_tree_node_t> load_accounting_db (
                                                     const std::string &path);
+
+private:
+    int delete_prepared_statements (sqlite3_stmt *c_root_bank,
+                                    sqlite3_stmt *c_shrs,
+                                    sqlite3_stmt *c_sub_banks,
+                                    sqlite3_stmt *c_assoc);
+
+    int add_assoc (const std::string &username,
+                   const std::string &shrs,
+                   const std::string &usg,
+                   std::shared_ptr<weighted_tree_node_t> &node);
+
+    void aggregate_job_usage (std::shared_ptr<weighted_tree_node_t> node,
+                              int bank_usage);
+
+    int reset_and_clear_bindings (sqlite3 *DB,
+                                  sqlite3_stmt *c_assoc,
+                                  sqlite3_stmt *c_sub_banks,
+                                  sqlite3_stmt *c_shrs);
+
+    std::shared_ptr<weighted_tree_node_t> get_sub_banks (
+                            sqlite3 *DB,
+                            const std::string &bank_name,
+                            std::shared_ptr<weighted_tree_node_t> parent_bank,
+                            sqlite3_stmt *c_shrs,
+                            sqlite3_stmt *c_sub_banks,
+                            sqlite3_stmt *c_assoc);
+};
+
+} // namespace reader
+} // namespace Flux

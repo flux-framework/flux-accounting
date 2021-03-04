@@ -36,14 +36,16 @@
 #include "src/common/libtap/tap.h"
 
 using namespace Flux::accounting;
+using namespace Flux::reader;
 
 static void test_fairshare_order (const std::string &filename,
                                   const std::vector<std::string> &expected)
 {
     bool bo = true;
     std::shared_ptr<weighted_tree_node_t> root;
+    data_reader_db_t data_reader;
 
-    root = load_accounting_db (filename);
+    root = data_reader.load_accounting_db (filename);
 
     weighted_walk_t walker (root);
     walker.run ();
