@@ -19,21 +19,13 @@ from fluxacct.accounting import create_db as c
 from fluxacct.accounting import print_hierarchy as ph
 
 
-def main():
-
-    parser = argparse.ArgumentParser(
-        description="""
-        Description: Translate command line arguments into
-        SQLite instructions for the Flux Accounting Database.
-        """
-    )
-    subparsers = parser.add_subparsers(help="sub-command help", dest="subcommand")
-    subparsers.required = True
-
+def add_path_arg(parser):
     parser.add_argument(
         "-p", "--path", dest="path", help="specify location of database file"
     )
 
+
+def add_output_file_arg(parser):
     parser.add_argument(
         "-o",
         "--output-file",
@@ -41,12 +33,16 @@ def main():
         help="specify location of output file",
     )
 
+
+def add_view_user_arg(subparsers):
     subparser_view_user = subparsers.add_parser(
         "view-user", help="view a user's information in the accounting database"
     )
     subparser_view_user.set_defaults(func="view_user")
     subparser_view_user.add_argument("username", help="username", metavar=("USERNAME"))
 
+
+def add_add_user_arg(subparsers):
     subparser_add_user = subparsers.add_parser(
         "add-user", help="add a user to the accounting database"
     )
@@ -92,6 +88,8 @@ def main():
         metavar="MAX_WALL_PJ",
     )
 
+
+def add_delete_user_arg(subparsers):
     subparser_delete_user = subparsers.add_parser(
         "delete-user", help="remove a user from the accounting database"
     )
@@ -101,6 +99,8 @@ def main():
     )
     subparser_delete_user.add_argument("bank", help="bank", metavar=("BANK"))
 
+
+def add_edit_user_arg(subparsers):
     subparser_edit_user = subparsers.add_parser("edit-user", help="edit a user's value")
     subparser_edit_user.set_defaults(func="edit_user")
     subparser_edit_user.add_argument(
@@ -119,6 +119,8 @@ def main():
         metavar="VALUE",
     )
 
+
+def add_view_job_records_arg(subparsers):
     subparser_view_job_records = subparsers.add_parser(
         "view-job-records", help="view job records"
     )
@@ -145,6 +147,8 @@ def main():
         metavar="END TIME",
     )
 
+
+def add_create_db_arg(subparsers):
     subparser_create_db = subparsers.add_parser(
         "create-db", help="create the flux-accounting database"
     )
@@ -159,10 +163,12 @@ def main():
     )
     subparser_create_db.add_argument(
         "--priority-decay-half-life",
-        help="the contribution of historical usage in weeks on the composite usage value",
+        help="contribution of historical usage in weeks on the composite usage value",
         metavar=("PRIORITY DECAY HALF LIFE"),
     )
 
+
+def add_add_bank_arg(subparsers):
     subparser_add_bank = subparsers.add_parser("add-bank", help="add a new bank")
     subparser_add_bank.set_defaults(func="add_bank")
     subparser_add_bank.add_argument(
@@ -177,6 +183,8 @@ def main():
         "shares", help="number of shares to allocate to bank", metavar="SHARES"
     )
 
+
+def add_view_bank_arg(subparsers):
     subparser_view_bank = subparsers.add_parser(
         "view-bank", help="view bank information"
     )
@@ -187,6 +195,8 @@ def main():
         metavar="BANK",
     )
 
+
+def add_delete_bank_arg(subparsers):
     subparser_delete_bank = subparsers.add_parser("delete-bank", help="remove a bank")
     subparser_delete_bank.set_defaults(func="delete_bank")
     subparser_delete_bank.add_argument(
@@ -195,6 +205,8 @@ def main():
         metavar="BANK",
     )
 
+
+def add_edit_bank_arg(subparsers):
     subparser_edit_bank = subparsers.add_parser(
         "edit-bank", help="edit a bank's allocation"
     )
@@ -210,22 +222,37 @@ def main():
         metavar="SHARES",
     )
 
+
+def add_print_hierarchy_arg(subparsers):
     subparser_print_hierarchy = subparsers.add_parser(
         "print-hierarchy", help="print accounting database"
     )
     subparser_print_hierarchy.set_defaults(func="print_hierarchy")
 
-    args = parser.parse_args()
 
+def add_arguments_to_parser(parser, subparsers):
+    add_path_arg(parser)
+    add_output_file_arg(parser)
+    add_view_user_arg(subparsers)
+    add_add_user_arg(subparsers)
+    add_delete_user_arg(subparsers)
+    add_edit_user_arg(subparsers)
+    add_view_job_records_arg(subparsers)
+    add_create_db_arg(subparsers)
+    add_add_bank_arg(subparsers)
+    add_view_bank_arg(subparsers)
+    add_delete_bank_arg(subparsers)
+    add_edit_bank_arg(subparsers)
+    add_print_hierarchy_arg(subparsers)
+
+
+def set_db_location(args):
     path = args.path if args.path else fluxacct.accounting.db_path
-    # if we are creating the DB for the first time, we need
-    # to ONLY create the DB and then exit out successfully
-    if args.func == "create_db":
-        c.create_db(
-            args.dbpath, args.priority_usage_reset_period, args.priority_decay_half_life
-        )
-        sys.exit(0)
 
+    return path
+
+
+def establish_sqlite_connection(path):
     # try to open database file; will exit with -1 if database file not found
     if not os.path.isfile(path):
         print(f"Database file does not exist: {path}", file=sys.stderr)
@@ -240,47 +267,86 @@ def main():
         print(f"Unable to open database file: {db_uri}", file=sys.stderr)
         sys.exit(1)
 
+    return conn
+
+
+def set_output_file(args):
     # set path for output file
     output_file = args.output_file if args.output_file else None
 
+    return output_file
+
+
+def select_accounting_function(args, conn, output_file, parser):
+    if args.func == "view_user":
+        aclif.view_user(conn, args.username)
+    elif args.func == "add_user":
+        aclif.add_user(
+            conn,
+            args.username,
+            args.bank,
+            args.admin_level,
+            args.shares,
+            args.max_jobs,
+            args.max_wall_pj,
+        )
+    elif args.func == "delete_user":
+        aclif.delete_user(conn, args.username, args.bank)
+    elif args.func == "edit_user":
+        aclif.edit_user(conn, args.username, args.field, args.new_value)
+    elif args.func == "view_job_records":
+        jobs.view_job_records(
+            conn,
+            output_file,
+            jobid=args.jobid,
+            user=args.user,
+            before_end_time=args.before_end_time,
+            after_start_time=args.after_start_time,
+        )
+    elif args.func == "add_bank":
+        aclif.add_bank(conn, args.bank, args.shares, args.parent_bank)
+    elif args.func == "view_bank":
+        aclif.view_bank(conn, args.bank)
+    elif args.func == "delete_bank":
+        aclif.delete_bank(conn, args.bank)
+    elif args.func == "edit_bank":
+        aclif.edit_bank(conn, args.bank, args.shares)
+    elif args.func == "print_hierarchy":
+        print(ph.print_full_hierarchy(conn))
+    else:
+        print(parser.print_usage())
+
+
+def main():
+
+    parser = argparse.ArgumentParser(
+        description="""
+        Description: Translate command line arguments into
+        SQLite instructions for the Flux Accounting Database.
+        """
+    )
+    subparsers = parser.add_subparsers(help="sub-command help", dest="subcommand")
+    subparsers.required = True
+
+    add_arguments_to_parser(parser, subparsers)
+    args = parser.parse_args()
+
+    path = set_db_location(args)
+
+    # if we are creating the DB for the first time, we need
+    # to ONLY create the DB and then exit out successfully
+    if args.func == "create_db":
+        c.create_db(
+            args.dbpath, args.priority_usage_reset_period, args.priority_decay_half_life
+        )
+        sys.exit(0)
+
+    conn = establish_sqlite_connection(path)
+
+    output_file = set_output_file(args)
+
     try:
-        if args.func == "view_user":
-            aclif.view_user(conn, args.username)
-        elif args.func == "add_user":
-            aclif.add_user(
-                conn,
-                args.username,
-                args.bank,
-                args.admin_level,
-                args.shares,
-                args.max_jobs,
-                args.max_wall_pj,
-            )
-        elif args.func == "delete_user":
-            aclif.delete_user(conn, args.username, args.bank)
-        elif args.func == "edit_user":
-            aclif.edit_user(conn, args.username, args.field, args.new_value)
-        elif args.func == "view_job_records":
-            jobs.view_job_records(
-                conn,
-                output_file,
-                jobid=args.jobid,
-                user=args.user,
-                before_end_time=args.before_end_time,
-                after_start_time=args.after_start_time,
-            )
-        elif args.func == "add_bank":
-            aclif.add_bank(conn, args.bank, args.shares, args.parent_bank)
-        elif args.func == "view_bank":
-            aclif.view_bank(conn, args.bank)
-        elif args.func == "delete_bank":
-            aclif.delete_bank(conn, args.bank)
-        elif args.func == "edit_bank":
-            aclif.edit_bank(conn, args.bank, args.shares)
-        elif args.func == "print_hierarchy":
-            print(ph.print_full_hierarchy(conn))
-        else:
-            print(parser.print_usage())
+        select_accounting_function(args, conn, output_file, parser)
     finally:
         conn.close()
 

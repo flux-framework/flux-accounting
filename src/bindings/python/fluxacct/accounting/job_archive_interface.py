@@ -21,8 +21,8 @@ def count_ranks(ranks):
     if "-" in ranks:
         ranks_count = ranks.replace("-", ",").split(",")
         return int(ranks_count[1]) - int(ranks_count[0]) + 1
-    else:
-        return int(ranks) + 1
+
+    return int(ranks) + 1
 
 
 def get_username(userid):
@@ -66,7 +66,7 @@ def write_records_to_file(job_records, output_file):
                     str(record.t_run),
                     str(record.t_inactive),
                     str(record.nnodes),
-                    str(record.R),
+                    str(record.resources),
                 )
             )
 
@@ -80,17 +80,17 @@ def print_job_records(job_records):
     t_run_arr = []
     t_inactive_arr = []
     nnodes_arr = []
-    R_arr = []
+    r_arr = []
 
     for record in job_records:
         userid_arr.append(record.userid)
-        username_arr.append(record.username),
-        jobid_arr.append(record.jobid),
-        t_submit_arr.append(record.t_submit),
-        t_run_arr.append(record.t_run),
-        t_inactive_arr.append(record.t_inactive),
-        nnodes_arr.append(record.nnodes),
-        R_arr.append(record.R),
+        username_arr.append(record.username)
+        jobid_arr.append(record.jobid)
+        t_submit_arr.append(record.t_submit)
+        t_run_arr.append(record.t_run)
+        t_inactive_arr.append(record.t_inactive)
+        nnodes_arr.append(record.nnodes)
+        r_arr.append(record.resources)
 
     records = {
         "UserID": userid_arr,
@@ -100,7 +100,7 @@ def print_job_records(job_records):
         "T_Run": t_run_arr,
         "T_Inactive": t_inactive_arr,
         "Nodes": nnodes_arr,
-        "R": R_arr,
+        "R": r_arr,
     }
 
     dataframe = pd.DataFrame(
@@ -121,12 +121,14 @@ def print_job_records(job_records):
     print(dataframe)
 
 
-class JobRecord(object):
+class JobRecord:
     """
     A record of an individual job.
     """
 
-    def __init__(self, userid, username, jobid, t_submit, t_run, t_inactive, nnodes, R):
+    def __init__(
+        self, userid, _username, jobid, t_submit, t_run, t_inactive, nnodes, resources
+    ):
         self.userid = userid
         self.username = get_username(userid)
         self.jobid = jobid
@@ -134,8 +136,7 @@ class JobRecord(object):
         self.t_run = t_run
         self.t_inactive = t_inactive
         self.nnodes = nnodes
-        self.R = R
-        return None
+        self.resources = resources
 
     @property
     def elapsed(self):
@@ -149,7 +150,7 @@ class JobRecord(object):
 def add_job_records(dataframe):
     job_records = []
 
-    for index, row in dataframe.iterrows():
+    for _, row in dataframe.iterrows():
         job_record = JobRecord(
             row["userid"],
             get_username(row["userid"]),
@@ -174,7 +175,9 @@ def view_job_records(conn, output_file, **kwargs):
     params_list = []
 
     params = {
-        key: val for (key, val) in kwargs.items() if val != None and key in valid_params
+        key: val
+        for (key, val) in kwargs.items()
+        if val is not None and key in valid_params
     }
 
     select_stmt = "SELECT userid,id,t_submit,t_run,t_inactive,ranks,R FROM jobs "
@@ -183,8 +186,8 @@ def view_job_records(conn, output_file, **kwargs):
     def append_to_where(where_stmt, conditional):
         if where_stmt != "":
             return "{} AND {} ".format(where_stmt, conditional)
-        else:
-            return "WHERE {}".format(conditional)
+
+        return "WHERE {}".format(conditional)
 
     # generate the SELECT statement based on the parameters passed in
     if "user" in params:
@@ -209,12 +212,12 @@ def view_job_records(conn, output_file, **kwargs):
     # so just return an empty list
     if len(dataframe.index) == 0:
         return job_records
+
+    job_records = add_job_records(dataframe)
+    if output_file is None:
+        print_job_records(job_records)
     else:
-        job_records = add_job_records(dataframe)
-        if output_file is None:
-            print_job_records(job_records)
-        else:
-            write_records_to_file(job_records, output_file)
+        write_records_to_file(job_records, output_file)
 
     return job_records
 

@@ -30,10 +30,10 @@ def print_full_hierarchy(conn):
     try:
         if len(dataframe) == 0:
             raise IndexError("No root bank found")
-        elif len(dataframe) > 1:
+        if len(dataframe) > 1:
             raise IndexError("More than one root bank found")
-    except IndexError as e:
-        print(e)
+    except IndexError as exception:
+        print(exception)
         sys.exit(1)
 
     root = dataframe.iloc[0]
@@ -63,7 +63,7 @@ def print_full_hierarchy(conn):
                 WHERE association_table.bank=?
                 """
             dataframe = pd.read_sql_query(select_stmt, conn, params=(row["bank"],))
-            for index, association_row in dataframe.iterrows():
+            for _, association_row in dataframe.iterrows():
                 hierarchy += (
                     " "
                     + indent
@@ -77,7 +77,7 @@ def print_full_hierarchy(conn):
         # this bank has sub banks, so call this helper
         # function again with the first sub bank it found
         else:
-            for index, sub_bank_row in dataframe.iterrows():
+            for _, sub_bank_row in dataframe.iterrows():
                 get_sub_banks(sub_bank_row, indent + " ")
 
     get_sub_banks(root)

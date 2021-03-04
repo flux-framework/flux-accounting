@@ -112,9 +112,8 @@ class TestAccountingCLI(unittest.TestCase):
     # trying to edit a field in a column that doesn't
     # exist should return a ValueError
     def test_05_edit_bad_field(self):
-        aclif.edit_user(acct_conn, "fluxuser", "foo", "bar")
-
-        self.assertRaises(ValueError)
+        with self.assertRaises(ValueError):
+            aclif.edit_user(acct_conn, "fluxuser", "foo", "bar")
 
     # delete a user from the association table
     def test_06_delete_user(self):
