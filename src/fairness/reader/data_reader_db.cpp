@@ -1,26 +1,12 @@
-/*****************************************************************************\
- *  Copyright (c) 2020 Lawrence Livermore National Security, LLC.  Produced at
- *  the Lawrence Livermore National Laboratory (cf, AUTHORS, DISCLAIMER.LLNS).
- *  LLNL-CODE-658032 All rights reserved.
+/************************************************************\
+ * Copyright 2021 Lawrence Livermore National Security, LLC
+ * (c.f. AUTHORS, NOTICE.LLNS, COPYING)
  *
- *  This file is part of the Flux resource manager framework.
- *  For details, see https://github.com/flux-framework.
+ * This file is part of the Flux resource manager framework.
+ * For details, see https://github.com/flux-framework.
  *
- *  This program is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License as published by the Free
- *  Software Foundation; either version 2 of the license, or (at your option)
- *  any later version.
- *
- *  Flux is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the terms and conditions of the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
- *  See also:  http://www.gnu.org/licenses/
-\*****************************************************************************/
+ * SPDX-License-Identifier: LGPL-3.0
+\************************************************************/
 
 #include <cstdlib>
 #include <iostream>
@@ -29,17 +15,24 @@
 #include <vector>
 #include <cerrno>
 
-#include "src/fairness/weighted_tree/test/load_accounting_db.hpp"
+#include "src/fairness/reader/data_reader_db.hpp"
 
 using namespace Flux::accounting;
+using namespace Flux::reader;
+
+/******************************************************************************
+ *                                                                            *
+ *                         Private DB Reader API                              *
+ *                                                                            *
+ *****************************************************************************/
 
 /*
 delete_prepared_statement () will delete the prepared SQL statements.
 */
-int delete_prepared_statements (sqlite3_stmt *c_root_bank,
-                                sqlite3_stmt *c_shrs,
-                                sqlite3_stmt *c_sub_banks,
-                                sqlite3_stmt *c_assoc)
+int data_reader_db_t::delete_prepared_statements (sqlite3_stmt *c_root_bank,
+                                                  sqlite3_stmt *c_shrs,
+                                                  sqlite3_stmt *c_sub_banks,
+                                                  sqlite3_stmt *c_assoc)
 {
     int rc = 0;
     std::vector<sqlite3_stmt*> stmts;
@@ -52,7 +45,7 @@ int delete_prepared_statements (sqlite3_stmt *c_root_bank,
     for (sqlite3_stmt *stmt : stmts) {
         rc = sqlite3_finalize (stmt);
         if (rc != SQLITE_OK) {
-            std::cerr << "Failed to delete prepared statement" << std::endl;
+            m_err_msg = "Failed to delete prepared statement";
 
             return rc;
         }
@@ -66,10 +59,10 @@ int delete_prepared_statements (sqlite3_stmt *c_root_bank,
 add_assoc () constructs a weighted_tree_node_t object out of a
 association's data and adds it to the weighted tree.
 */
-int add_assoc (const std::string &username,
-               const std::string &shrs,
-               const std::string &usg,
-               std::shared_ptr<weighted_tree_node_t> &node)
+int data_reader_db_t::add_assoc (const std::string &username,
+                                 const std::string &shrs,
+                                 const std::string &usg,
+                                 std::shared_ptr<weighted_tree_node_t> &node)
 {
     // add user as a child of the node
     auto user_node = std::make_shared<weighted_tree_node_t> (node,
@@ -86,8 +79,9 @@ aggregate_job_usage () takes the total usage from a leaf bank (i.e a bank with
 associations in it) and adds it to the total usage of its parent bank and so on
 up to the root bank.
 */
-void aggregate_job_usage (std::shared_ptr<weighted_tree_node_t> node,
-                          int bank_usage)
+void data_reader_db_t::aggregate_job_usage (
+                                    std::shared_ptr<weighted_tree_node_t> node,
+                                    int bank_usage)
 {
     // aggregate usage from user nodes up to their respective banks
     // and up to the root bank
@@ -103,10 +97,10 @@ void aggregate_job_usage (std::shared_ptr<weighted_tree_node_t> node,
 /*
 reset_and_clear_bindings () will reset the compiled SQL statements.
 */
-int reset_and_clear_bindings (sqlite3 *DB,
-                              sqlite3_stmt *c_assoc,
-                              sqlite3_stmt *c_sub_banks,
-                              sqlite3_stmt *c_shrs)
+int data_reader_db_t::reset_and_clear_bindings (sqlite3 *DB,
+                                                sqlite3_stmt *c_assoc,
+                                                sqlite3_stmt *c_sub_banks,
+                                                sqlite3_stmt *c_shrs)
 {
     int rc = 0;
     std::vector<sqlite3_stmt*> stmts;
@@ -118,13 +112,13 @@ int reset_and_clear_bindings (sqlite3 *DB,
     for (sqlite3_stmt *stmt : stmts) {
         rc = sqlite3_clear_bindings (stmt);
         if (rc != SQLITE_OK) {
-            std::cerr << sqlite3_errmsg (DB) << std::endl;
+            m_err_msg += std::string (sqlite3_errmsg (DB)) + "\n";
 
             return rc;
         }
         rc = sqlite3_reset (stmt);
         if (rc != SQLITE_OK) {
-            std::cerr << sqlite3_errmsg (DB) << std::endl;
+            m_err_msg += std::string (sqlite3_errmsg (DB)) + "\n";
 
             return rc;
         }
@@ -152,7 +146,7 @@ It returns a shared pointer to the root of the subtree.
 If at any point during the depth-first search does an error code get returned
 from any of the SQLite statements or an exception occurs, a nullptr is returned.
 */
-std::shared_ptr<weighted_tree_node_t> get_sub_banks (
+std::shared_ptr<weighted_tree_node_t> data_reader_db_t::get_sub_banks (
                             sqlite3 *DB,
                             const std::string &bank_name,
                             std::shared_ptr<weighted_tree_node_t> parent_bank,
@@ -171,15 +165,15 @@ std::shared_ptr<weighted_tree_node_t> get_sub_banks (
     // bind parameter to prepare SQL statement
     rc = sqlite3_bind_text (c_shrs, 1, bank_name.c_str (), -1, NULL);
     if (rc != SQLITE_OK) {
-        std::cerr << sqlite3_errmsg (DB) << std::endl;
-        errno = EPROTO;
+        m_err_msg += std::string (sqlite3_errmsg (DB)) + "\n";
+        errno = EINVAL;
 
         return nullptr;
     }
     rc = sqlite3_step (c_shrs);
     if (rc != SQLITE_ROW) {
-        std::cerr << "Unable to fetch data" << std::endl;
-        errno = EPROTO;
+        m_err_msg += "Unable to fetch data\n";
+        errno = EINVAL;
 
         return nullptr;
     }
@@ -196,13 +190,13 @@ std::shared_ptr<weighted_tree_node_t> get_sub_banks (
                                                        0);
     }
     catch (const std::invalid_argument &ia) {
-        std::cerr << "Invalid argument: " << ia.what() << std::endl;
+        m_err_msg += "Invalid argument: " + std::string (ia.what ()) + "\n";
         errno = EINVAL;
 
         return nullptr;
     }
     catch (const std::out_of_range &oor) {
-        std::cerr << "Out of range error: " << oor.what() << std::endl;
+        m_err_msg += "Invalid argument: " + std::string (oor.what ()) + "\n";
         errno = EINVAL;
 
         return nullptr;
@@ -214,15 +208,15 @@ std::shared_ptr<weighted_tree_node_t> get_sub_banks (
 
     rc = sqlite3_bind_text (c_sub_banks, 1, bank_name.c_str (), -1, NULL);
     if (rc != SQLITE_OK) {
-        std::cerr << sqlite3_errmsg (DB) << std::endl;
-        errno = EPROTO;
+        m_err_msg += std::string (sqlite3_errmsg (DB)) + "\n";
+        errno = EINVAL;
 
         return nullptr;
     }
     rc = sqlite3_step (c_sub_banks);
     if (rc == SQLITE_ERROR) {
-        std::cerr << "Unable to fetch data" << std::endl;
-        errno = EPROTO;
+        m_err_msg += "Unable to fetch data\n";
+        errno = EINVAL;
 
         return nullptr;
     }
@@ -233,8 +227,8 @@ std::shared_ptr<weighted_tree_node_t> get_sub_banks (
 
         rc = sqlite3_bind_text (c_assoc, 1, bank_name.c_str (), -1, NULL);
         if (rc != SQLITE_OK) {
-            std::cerr << sqlite3_errmsg (DB) << std::endl;
-            errno = EPROTO;
+            m_err_msg += std::string (sqlite3_errmsg (DB)) + "\n";
+            errno = EINVAL;
 
             return nullptr;
         }
@@ -252,8 +246,8 @@ std::shared_ptr<weighted_tree_node_t> get_sub_banks (
             try {
                 // add association as a child of the node
                 if (add_assoc (username, shrs, usage, node) < 0) {
-                    std::cerr << "Failed to add association" << std::endl;
-                    errno = EPROTO;
+                    m_err_msg += "Failed to add association\n";
+                    errno = EINVAL;
 
                     return nullptr;
                 }
@@ -261,13 +255,17 @@ std::shared_ptr<weighted_tree_node_t> get_sub_banks (
                 bank_usg += std::stoi (usage);
             }
             catch (const std::invalid_argument &ia) {
-                std::cerr << "Invalid argument: " << ia.what() << std::endl;
+                m_err_msg += "Invalid argument: "
+                    + std::string (ia.what ())
+                    + "\n";
                 errno = EINVAL;
 
                 return nullptr;
             }
             catch (const std::out_of_range &oor) {
-                std::cerr << "Out of range error: " << oor.what() << std::endl;
+                m_err_msg += "Invalid argument: "
+                    + std::string (oor.what ())
+                    + "\n";
                 errno = EINVAL;
 
                 return nullptr;
@@ -276,8 +274,8 @@ std::shared_ptr<weighted_tree_node_t> get_sub_banks (
             rc = sqlite3_step (c_assoc);
         }
         if (rc == SQLITE_ERROR) {
-            std::cerr << "Unable to fetch data" << std::endl;
-            errno = EPROTO;
+            m_err_msg += "Unable to fetch data\n";
+            errno = EINVAL;
 
             return nullptr;
         }
@@ -295,8 +293,8 @@ std::shared_ptr<weighted_tree_node_t> get_sub_banks (
             rc = sqlite3_step (c_sub_banks);
         }
         if (rc == SQLITE_ERROR) {
-            std::cerr << "Unable to fetch data" << std::endl;
-            errno = EPROTO;
+            m_err_msg += "Unable to fetch data\n";
+            errno = EINVAL;
 
             return nullptr;
         }
@@ -305,7 +303,7 @@ std::shared_ptr<weighted_tree_node_t> get_sub_banks (
             // clear their bindings
             rc = reset_and_clear_bindings (DB, c_assoc, c_sub_banks, c_shrs);
             if (rc != SQLITE_OK) {
-                errno = EPROTO;
+                errno = EINVAL;
 
                 return nullptr;
             }
@@ -316,7 +314,7 @@ std::shared_ptr<weighted_tree_node_t> get_sub_banks (
                                c_shrs,
                                c_sub_banks,
                                c_assoc) == nullptr) {
-                std::cerr << "get_sub_banks () returned a nullptr" << std::endl;
+                m_err_msg += "get_sub_banks () returned a nullptr\n";
                 return nullptr;
             }
         }
@@ -324,8 +322,13 @@ std::shared_ptr<weighted_tree_node_t> get_sub_banks (
     return node;
 }
 
-std::shared_ptr<weighted_tree_node_t> load_accounting_db (
-                                                    const std::string &path)
+/******************************************************************************
+ *                                                                            *
+ *                         Public DB Reader API                               *
+ *                                                                            *
+ *****************************************************************************/
+std::shared_ptr<weighted_tree_node_t> data_reader_db_t::load_accounting_db (
+                                                        const std::string &path)
 {
     // SQL statements to retrieve data from flux-accounting database
     std::string s_shrs, s_sub_banks, s_assoc, s_root_bank;
@@ -343,7 +346,7 @@ std::shared_ptr<weighted_tree_node_t> load_accounting_db (
     // open flux-accounting DB in read-write mode
     rc = sqlite3_open_v2 (path.c_str (), &DB, SQLITE_OPEN_READWRITE, NULL);
     if (rc != SQLITE_OK) {
-        std::cerr << "error opening DB: " << sqlite3_errmsg (DB) << std::endl;
+        m_err_msg = "error opening DB: " + std::string (sqlite3_errmsg (DB));
         errno = EIO;
 
         return nullptr;
@@ -362,29 +365,29 @@ std::shared_ptr<weighted_tree_node_t> load_accounting_db (
     // compile SELECT statements into byte code
     rc = sqlite3_prepare_v2 (DB, s_shrs.c_str (), -1, &c_shrs, 0);
     if (rc != SQLITE_OK) {
-        std::cerr << sqlite3_errmsg (DB) << std::endl;
-        errno = EPROTO;
+        m_err_msg = sqlite3_errmsg (DB);
+        errno = EINVAL;
         goto done;
     }
 
     rc = sqlite3_prepare_v2 (DB, s_sub_banks.c_str (), -1, &c_sub_banks, 0);
     if (rc != SQLITE_OK) {
-        std::cerr << sqlite3_errmsg (DB) << std::endl;
-        errno = EPROTO;
+        m_err_msg = sqlite3_errmsg (DB);
+        errno = EINVAL;
         goto done;
     }
 
     rc = sqlite3_prepare_v2 (DB, s_assoc.c_str (), -1, &c_assoc, 0);
     if (rc != SQLITE_OK) {
-        std::cerr << sqlite3_errmsg (DB) << std::endl;
-        errno = EPROTO;
+        m_err_msg = sqlite3_errmsg (DB);
+        errno = EINVAL;
         goto done;
     }
 
     rc = sqlite3_prepare_v2 (DB, s_root_bank.c_str (), -1, &c_root_bank, 0);
     if (rc != SQLITE_OK) {
-        std::cerr << sqlite3_errmsg (DB) << std::endl;
-        errno = EPROTO;
+        m_err_msg = sqlite3_errmsg (DB);
+        errno = EINVAL;
         goto done;
     }
 
@@ -396,7 +399,7 @@ std::shared_ptr<weighted_tree_node_t> load_accounting_db (
     } else {
         // otherwise, there is either no root bank or more than one
         // root bank; the program should return nullptr
-        std::cerr << "root bank not found, exiting" << std::endl;
+        m_err_msg = "root bank not found, exiting";
         goto done;
     }
 
@@ -412,7 +415,7 @@ done:
     // destroy the prepared SQL statements
     rc = delete_prepared_statements (c_root_bank, c_shrs, c_sub_banks, c_assoc);
     if (rc != SQLITE_OK) {
-        errno = EPROTO;
+        errno = EINVAL;
 
         return nullptr;
     }
