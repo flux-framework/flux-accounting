@@ -8,16 +8,20 @@ AM_CPPFLAGS = $(FLUX_CORE_CFLAGS)
 
 SUBDIRS = .
 
-noinst_PROGRAMS = print_hierarchy
+noinst_PROGRAMS = flux-shares
 
-print_hierarchy_SOURCES = \
-    print_hierarchy.cpp
+flux_shares_SOURCES = flux_shares.cpp
 
-print_hierarchy_CXXFLAGS = \
+flux_shares_LDADD = \
+    $(top_builddir)/src/fairness/weighted_tree/libweighted_tree.la
+
+flux_shares_CXXFLAGS = \
     $(WARNING_CXXFLAGS) \
     $(CODE_COVERAGE_CFLAGS) \
     $(AM_CXXFLAGS) \
-                $(SQLITE_CFLAGS)
+    $(SQLITE_CFLAGS)
 
-print_hierarchy_LDFLAGS = \
-                $(SQLITE_LIBS)
+flux_shares_LDFLAGS = $(SQLITE_LIBS)
+
+dist_fluxcmd_SCRIPTS = \
+    flux-shares

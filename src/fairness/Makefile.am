@@ -1,1 +1,1 @@
-SUBDIRS = weighted_tree print_hierarchy reader
+SUBDIRS = weighted_tree reader print_hierarchy
