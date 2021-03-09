@@ -2,8 +2,7 @@ acctpy_PYTHON = \
 	__init__.py \
 	accounting_cli_functions.py \
 	job_archive_interface.py \
-	create_db.py \
-	print_hierarchy.py
+	create_db.py
 
 clean-local:
 	-rm -f *.pyc *.pyo

@@ -16,7 +16,6 @@ import fluxacct.accounting
 from fluxacct.accounting import accounting_cli_functions as aclif
 from fluxacct.accounting import job_archive_interface as jobs
 from fluxacct.accounting import create_db as c
-from fluxacct.accounting import print_hierarchy as ph
 
 
 def add_path_arg(parser):
@@ -223,13 +222,6 @@ def add_edit_bank_arg(subparsers):
     )
 
 
-def add_print_hierarchy_arg(subparsers):
-    subparser_print_hierarchy = subparsers.add_parser(
-        "print-hierarchy", help="print accounting database"
-    )
-    subparser_print_hierarchy.set_defaults(func="print_hierarchy")
-
-
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_output_file_arg(parser)
@@ -243,7 +235,6 @@ def add_arguments_to_parser(parser, subparsers):
     add_view_bank_arg(subparsers)
     add_delete_bank_arg(subparsers)
     add_edit_bank_arg(subparsers)
-    add_print_hierarchy_arg(subparsers)
 
 
 def set_db_location(args):
@@ -311,8 +302,6 @@ def select_accounting_function(args, conn, output_file, parser):
         aclif.delete_bank(conn, args.bank)
     elif args.func == "edit_bank":
         aclif.edit_bank(conn, args.bank, args.shares)
-    elif args.func == "print_hierarchy":
-        print(ph.print_full_hierarchy(conn))
     else:
         print(parser.print_usage())
 
