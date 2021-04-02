@@ -1,0 +1,5 @@
+usage: flux shares [-P DELIMITER] [-f DB_PATH]
+optional arguments:
+	-h,--help			Show this help message
+	-P DELIMITER		Print the database hierarchy in a parsable format
+	-f DB_PATH			Specify location of the flux-accounting database

@@ -97,6 +97,9 @@ adl_RECURSIVE_EVAL([$localstatedir], acct_db_path)
 AS_VAR_SET(acct_db_path, $acct_db_path)
 AC_SUBST(acct_db_path)
 
+AC_CONFIG_MACRO_DIR([config])
+X_AC_EXPAND_INSTALL_DIRS
+
 AC_CONFIG_FILES([Makefile
   src/Makefile
   src/common/Makefile

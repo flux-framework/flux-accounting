@@ -354,11 +354,13 @@ std::shared_ptr<weighted_tree_node_t> data_reader_db_t::load_accounting_db (
 
     s_shrs = "SELECT bank_table.shares FROM bank_table WHERE bank=?";
 
-    s_sub_banks = "SELECT bank_table.bank FROM bank_table WHERE parent_bank=?";
+    s_sub_banks = "SELECT bank_table.bank FROM bank_table WHERE parent_bank=? "
+                  "ORDER BY bank_table.bank";
 
     s_assoc = "SELECT association_table.username, association_table.shares, "
               "association_table.bank, association_table.job_usage "
-              "FROM association_table WHERE association_table.bank=?";
+              "FROM association_table WHERE association_table.bank=?"
+              "ORDER BY association_table.username";
 
     s_root_bank = "SELECT bank_table.bank FROM bank_table WHERE parent_bank=''";
 

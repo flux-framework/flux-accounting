@@ -1,0 +1,8 @@
+Account                         Username           RawShares            RawUsage
+root                                                       1                   0
+ A                                                         1                   0
+ B                                                         1                   0
+ C                                                         1                   0
+  C                                userA                   1                   0
+  C                                userF                   1                   0
+  C                                userZ                   1                   0

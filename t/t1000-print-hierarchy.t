@@ -2,46 +2,90 @@
 
 test_description='Test print-hierarchy command'
 . `dirname $0`/sharness.sh
-ACCT_CLI=${FLUX_SOURCE_DIR}/src/cmd/flux-account.py
-PRINT_HIERARCHY=${FLUX_BUILD_DIR}/src/fairness/print_hierarchy/print_hierarchy
+PRINT_HIERARCHY=${FLUX_BUILD_DIR}/src/fairness/print_hierarchy/flux-shares
+SMALL_NO_TIE=${FLUX_BUILD_DIR}/src/fairness/reader/test/accounting_db_data/small_no_tie.db
+SMALL_TIE=${FLUX_BUILD_DIR}/src/fairness/reader/test/accounting_db_data/small_tie.db
+SMALL_TIE_ALL=${FLUX_BUILD_DIR}/src/fairness/reader/test/accounting_db_data/small_tie_all.db
+OUT_OF_INSERT_ORDER=${FLUX_BUILD_DIR}/src/fairness/reader/test/accounting_db_data/out_of_insert_order.db
 
-test_expect_success 'create valid flux-accounting DB with a proper hierarchy' '
-	${PYTHON} ${ACCT_CLI} create-db ./FluxAccounting.db &&
-	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-bank A 1 &&
-	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-bank --parent-bank=A B 1 &&
-	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-bank --parent-bank=B D 1 &&
-	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-bank --parent-bank=B E 1 &&
-	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-bank --parent-bank=A C 1 &&
-	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-bank --parent-bank=C F 1 &&
-	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-bank --parent-bank=C G 1 &&
-	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-user --username=user1 --bank=D &&
-	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-user --username=user2 --bank=F &&
-	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-user --username=user3 --bank=F &&
-	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db add-user --username=user4 --bank=G
+test_expect_success 'create hierarchy output from C++ - small_no_tie.db' '
+    ${PRINT_HIERARCHY} -f ${SMALL_NO_TIE} > test_small_no_tie.txt
 '
 
-test_expect_success 'create hierarchy output from Python' '
-	${PYTHON} ${ACCT_CLI} -p ./FluxAccounting.db print-hierarchy > py-output.txt
+test_expect_success 'compare hierarchy outputs - small_no_tie.db' '
+    test_cmp ${FLUX_BUILD_DIR}/t/expected/small_no_tie.txt test_small_no_tie.txt
 '
 
-test_expect_success 'create hierarchy output from C++' '
-	${PRINT_HIERARCHY} FluxAccounting.db > cpp-output.txt
+test_expect_success 'create hierarchy output from C++ - small_tie.db' '
+    ${PRINT_HIERARCHY} -f ${SMALL_TIE} > test_small_tie.txt
 '
 
-test_expect_success 'compare hierarchy outputs' '
-	test_cmp py-output.txt cpp-output.txt
+test_expect_success 'compare hierarchy outputs - small_tie.db' '
+    test_cmp ${FLUX_BUILD_DIR}/t/expected/small_tie.txt test_small_tie.txt
 '
 
-test_expect_success 'create valid flux-accounting DB with no entries in bank table' '
-	${PYTHON} ${ACCT_CLI} create-db ./FluxAccounting-2.db
+test_expect_success 'create hierarchy output from C++ - small_tie_all.db' '
+    ${PRINT_HIERARCHY} -f ${SMALL_TIE_ALL} > test_small_tie_all.txt
 '
 
-test_expect_success 'print flux-accounting DB with no entries in bank table' '
-	test_must_fail ${PRINT_HIERARCHY} FluxAccounting-2.db > error-output.txt 2>&1
+test_expect_success 'compare hierarchy outputs - small_tie_all.db' '
+    test_cmp ${FLUX_BUILD_DIR}/t/expected/small_tie_all.txt test_small_tie_all.txt
 '
 
-test_expect_success 'check print error message on empty DB' '
-	grep -q "root bank not found, exiting" ./error-output.txt
+test_expect_success 'create parsable hierarchy output from C++ - small_no_tie.db' '
+    ${PRINT_HIERARCHY} -P "|" -f ${SMALL_NO_TIE} > test_small_no_tie_parsable.txt
+'
+
+test_expect_success 'compare parsable hierarchy outputs - small_no_tie.db' '
+    test_cmp ${FLUX_BUILD_DIR}/t/expected/small_no_tie_parsable.txt test_small_no_tie_parsable.txt
+'
+
+test_expect_success 'create parsable hierarchy output from C++ - small_tie.db' '
+    ${PRINT_HIERARCHY} -P "|" -f ${SMALL_TIE} > test_small_tie_parsable.txt
+'
+
+test_expect_success 'compare parsable hierarchy outputs - small_tie.db' '
+    test_cmp ${FLUX_BUILD_DIR}/t/expected/small_tie_parsable.txt test_small_tie_parsable.txt
+'
+
+test_expect_success 'create parsable hierarchy output from C++ - small_tie_all.db' '
+    ${PRINT_HIERARCHY} -P "|" -f ${SMALL_TIE_ALL} > test_small_tie_all_parsable.txt
+'
+
+test_expect_success 'compare parsable hierarchy outputs - small_tie_all.db' '
+    test_cmp ${FLUX_BUILD_DIR}/t/expected/small_tie_all_parsable.txt test_small_tie_all_parsable.txt
+'
+
+test_expect_success 'create custom parsable hierarchy output from C++ - small_tie.db' '
+    ${PRINT_HIERARCHY} -P , -f ${SMALL_TIE} > test_custom_small_tie_parsable.txt
+'
+
+test_expect_success 'compare custom parsable hierarchy outputs - small_tie_all.db' '
+    test_cmp ${FLUX_BUILD_DIR}/t/expected/custom_small_tie_parsable.txt test_custom_small_tie_parsable.txt
+'
+
+test_expect_success 'output help message for flux-shares' '
+    ${PRINT_HIERARCHY} -h > test_help_message.txt
+'
+
+test_expect_success 'compare help message for flux-shares' '
+    test_cmp ${FLUX_BUILD_DIR}/t/expected/help_message.txt test_help_message.txt
+'
+
+test_expect_failure 'output help message for flux-shares when a bad argument is passed in' '
+    ${PRINT_HIERARCHY} --bad-arg > test_bad_argument.txt
+'
+
+test_expect_success 'compare help message for flux-shares when a bad argument is passed in' '
+    test_cmp ${FLUX_BUILD_DIR}/t/expected/help_message.txt test_bad_argument.txt
+'
+
+test_expect_success 'create hierarchy output from C++ - out_of_insert_order.db' '
+    ${PRINT_HIERARCHY} -f ${OUT_OF_INSERT_ORDER} > test_out_of_insert_order.txt
+'
+
+test_expect_success 'compare hierarchy outputs - out_of_insert_order.db' '
+    test_cmp ${FLUX_BUILD_DIR}/t/expected/out_of_insert_order.txt test_out_of_insert_order.txt
 '
 
 test_done
