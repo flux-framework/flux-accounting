@@ -1,4 +1,4 @@
-flux-accounting version 0.6.0 - 2020-01-29
+flux-accounting version 0.6.0 - 2021-01-29
 ------------------------------------------
 
 #### Fixes
