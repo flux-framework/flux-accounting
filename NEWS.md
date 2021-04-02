@@ -1,3 +1,20 @@
+flux-accounting version 0.7.0 - 2021-04-02
+------------------------------------------
+
+#### Fixes
+
+* Fixed `ModuleNotFound` error when running Python unit tests on Python `3.6` (#106)
+
+* Removed shebang line from **flux-account.py** to prevent Python version mismatch errors (#101)
+
+#### Features
+
+* Added a new `reader` class which will read flux-accounting information and load it to a `weighted_tree` object (#103)
+
+    * Added a subclass `data_reader_db` which will read and load information from a flux-accounting SQLite database
+
+* Added a new flux subcommand: `flux shares`, which will output a flux-accounting database hierarchy containing user/bank shares and usage information (#109)
+
 flux-accounting version 0.6.0 - 2021-01-29
 ------------------------------------------
 
