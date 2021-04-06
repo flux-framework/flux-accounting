@@ -137,7 +137,6 @@ matrix = BuildMatrix()
 # Ubuntu: coverage
 matrix.add_build(
     name="coverage",
-    env=dict(PYTHON_VERSION="3.7"),
     coverage=True,
     jobs=2,
 )
@@ -146,15 +145,13 @@ matrix.add_build(
 matrix.add_build(
     name="centos8 - py3.6",
     image="centos8",
-    env=dict(PYTHON_VERSION="3.6"),
     docker_tag=True,
 )
 
 # Bionic
 matrix.add_build(
-    name="bionic - py3.7",
+    name="bionic - py3.6",
     image="bionic",
-    env=dict(PYTHON_VERSION="3.7"),
     docker_tag=True,
 )
 
