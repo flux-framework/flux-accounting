@@ -109,6 +109,8 @@ AC_CONFIG_FILES([Makefile
   src/fairness/weighted_tree/test/Makefile
   src/fairness/reader/Makefile
   src/fairness/reader/test/Makefile
+  src/fairness/writer/Makefile
+  src/fairness/writer/test/Makefile
   src/fairness/print_hierarchy/Makefile
   src/bindings/Makefile
   src/bindings/python/Makefile
