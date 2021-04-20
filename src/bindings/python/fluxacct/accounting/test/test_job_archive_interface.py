@@ -80,7 +80,7 @@ class TestAccountingCLI(unittest.TestCase):
         jobid = 100
         interval = 0  # add to job timestamps to diversify job-archive records
 
-        @mock.patch("time.time", mock.MagicMock(return_value=10000000))
+        @mock.patch("time.time", mock.MagicMock(return_value=9000000))
         def populate_job_archive_db(jobs_conn, userid, username, ranks, num_entries):
             nonlocal jobid
             nonlocal interval
@@ -203,7 +203,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # passing a combination of params should further
     # refine the query
-    @mock.patch("time.time", mock.MagicMock(return_value=10000500))
+    @mock.patch("time.time", mock.MagicMock(return_value=9000500))
     def test_09_multiple_params(self):
         my_dict = {"user": "1001", "after_start_time": time.time()}
         job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
@@ -217,6 +217,7 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(len(job_records), 18)
 
     # users that have run a lot of jobs should have a larger usage factor
+    @mock.patch("time.time", mock.MagicMock(return_value=9900000))
     def test_11_calc_usage_factor_many_jobs(self):
         user = "1002"
         bank = "C"
@@ -237,6 +238,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # on the contrary, users that have not run a lot of jobs should have
     # a smaller usage factor
+    @mock.patch("time.time", mock.MagicMock(return_value=9900000))
     def test_12_calc_usage_factor_few_jobs(self):
         user = "1001"
         bank = "C"
@@ -288,8 +290,7 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(job_usage["job_usage"], 17044.0)
 
     # re-calculating a job usage factor after the end of the last half-life
-    # period should create a new usage bin and update t_half_life_period_table
-    # with the new end time of the current half-life period
+    # period should create a new usage bin
     @mock.patch("time.time", mock.MagicMock(return_value=(100000000 + (604800 * 2.1))))
     def test_15_append_jobs_in_diff_half_life_period(self):
         user = "1001"
