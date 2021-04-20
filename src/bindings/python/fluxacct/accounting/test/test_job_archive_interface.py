@@ -278,7 +278,7 @@ class TestAccountingCLI(unittest.TestCase):
         select_stmt = "SELECT usage_factor_period_0 FROM job_usage_factor_table WHERE username='1002' AND bank='C'"
         dataframe = pd.read_sql_query(select_stmt, acct_conn)
         usage_factor = dataframe.iloc[0]
-        self.assertEqual(usage_factor["usage_factor_period_0"], 17044.0)
+        self.assertEqual(usage_factor["usage_factor_period_0"], 16956.0)
 
         select_stmt = (
             "SELECT job_usage FROM association_table WHERE username='1002' AND bank='C'"
@@ -339,7 +339,7 @@ class TestAccountingCLI(unittest.TestCase):
         usage_factor = jobs.calc_usage_factor(
             jobs_conn, acct_conn, pdhl=1, user=user, bank=bank
         )
-        self.assertEqual(usage_factor, 4519.0)
+        self.assertEqual(usage_factor, 4366.0)
 
     # simulate a half-life period further; re-calculate
     # usage for user1001 to make sure its value goes down
@@ -352,7 +352,7 @@ class TestAccountingCLI(unittest.TestCase):
             jobs_conn, acct_conn, pdhl=1, user=user, bank=bank
         )
 
-        self.assertEqual(usage_factor, 2277.00)
+        self.assertEqual(usage_factor, 2199.5)
 
     # simulate a half-life period further; assure the new end of the
     # current half-life period gets updated

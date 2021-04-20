@@ -274,6 +274,38 @@ def fetch_usg_bins(acct_conn, user=None, bank=None):
     return past_usage_factors
 
 
+def update_hist_usg_col(acct_conn, usg_h, user, bank):
+    # update job_usage column in association_table
+    u_usg = """
+        UPDATE association_table SET job_usage=? WHERE username=? AND bank=?
+        """
+    acct_conn.execute(
+        u_usg,
+        (
+            usg_h,
+            user,
+            bank,
+        ),
+    )
+    acct_conn.commit()
+
+
+def update_curr_usg_col(acct_conn, usg_h, user, bank):
+    # write usage to first column in job_usage_factor_table
+    u_usg_factor = """
+        UPDATE job_usage_factor_table SET usage_factor_period_0=? WHERE username=? AND bank=?
+        """
+    acct_conn.execute(
+        u_usg_factor,
+        (
+            usg_h,
+            user,
+            bank,
+        ),
+    )
+    acct_conn.commit()
+
+
 def apply_decay_factor(decay, acct_conn, user=None, bank=None):
     usg_past = []
     usg_past_decay = []
@@ -304,7 +336,9 @@ def apply_decay_factor(decay, acct_conn, user=None, bank=None):
         acct_conn.commit()
         period += 1
 
-    return sum(usg_past_decay)
+    # only return the usage factors up to but not including the oldest one
+    # since it no longer affects a user's historical usage factor
+    return sum(usg_past_decay[:-1])
 
 
 def get_curr_usg_bin(acct_conn, user, bank):
@@ -367,9 +401,9 @@ def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank):
         usg_historical = sum(usg_past)
     elif len(user_jobs) == 0 and (float(end_hl) < (time.time() - hl_period)):
         # no new jobs in the new half-life period
-        usg_past = fetch_old_usage_factors(acct_conn, user, bank)
-
         usg_historical = apply_decay_factor(0.5, acct_conn, user, bank)
+
+        update_hist_usg_col(acct_conn, usg_historical, user, bank)
     elif (last_t_inactive - float(end_hl)) < hl_period:
         # found new jobs in the current half-life period
         usg_current += get_curr_usg_bin(acct_conn, user, bank)
@@ -378,47 +412,18 @@ def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank):
         usg_past = fetch_usg_bins(acct_conn, user, bank)
 
         usg_historical = usg_current + sum(usg_past[1:])
+
+        update_curr_usg_col(acct_conn, usg_current, user, bank)
+        update_hist_usg_col(acct_conn, usg_historical, user, bank)
     else:
         # found new jobs in the new half-life period
 
         # apply decay factor to past usage periods of a user's jobs
         usg_past = apply_decay_factor(0.5, acct_conn, user, bank)
-
         usg_historical = usg_current + usg_past
 
-    # write historical usage to first column in job_usage_factor_table
-    update_stmt = """
-        UPDATE job_usage_factor_table
-        SET usage_factor_period_0=?
-        WHERE username=?
-        AND bank=?
-        """
-    acct_conn.execute(
-        update_stmt,
-        (
-            usg_historical,
-            user,
-            bank,
-        ),
-    )
-    acct_conn.commit()
-
-    # update job_usage column in association_table
-    update_usage_stmt = """
-        UPDATE association_table
-        SET job_usage=?
-        WHERE username=?
-        AND bank=?
-        """
-    acct_conn.execute(
-        update_usage_stmt,
-        (
-            usg_historical,
-            user,
-            bank,
-        ),
-    )
-    acct_conn.commit()
+        update_curr_usg_col(acct_conn, usg_historical, user, bank)
+        update_hist_usg_col(acct_conn, usg_historical, user, bank)
 
     return usg_historical
 
