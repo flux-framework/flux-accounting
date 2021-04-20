@@ -449,3 +449,13 @@ def check_end_hl(acct_conn, pdhl):
             """
         acct_conn.execute(update_timestamp_stmt, ((float(end_hl) + hl_period),))
         acct_conn.commit()
+
+
+def update_job_usage(acct_conn, jobs_conn, pdhl):
+    s_assoc = "SELECT username, bank FROM association_table"
+    dataframe = pd.read_sql_query(s_assoc, acct_conn)
+
+    for _, row in dataframe.iterrows():
+        calc_usage_factor(jobs_conn, acct_conn, pdhl, row["username"], row["bank"])
+
+    check_end_hl(acct_conn, pdhl)
