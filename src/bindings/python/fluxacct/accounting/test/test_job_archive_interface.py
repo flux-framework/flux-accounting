@@ -231,7 +231,7 @@ class TestAccountingCLI(unittest.TestCase):
         acct_conn.commit()
 
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn, acct_conn, priority_decay_half_life=1, user=user, bank=bank
+            jobs_conn, acct_conn, pdhl=1, user=user, bank=bank
         )
         self.assertEqual(usage_factor, 17044.0)
 
@@ -251,7 +251,7 @@ class TestAccountingCLI(unittest.TestCase):
         acct_conn.commit()
 
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn, acct_conn, priority_decay_half_life=1, user=user, bank=bank
+            jobs_conn, acct_conn, pdhl=1, user=user, bank=bank
         )
         self.assertEqual(usage_factor, 8500.0)
 
@@ -320,7 +320,7 @@ class TestAccountingCLI(unittest.TestCase):
 
         # re-calculate usage factor for user1001
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn, acct_conn, priority_decay_half_life=1, user=user, bank=bank
+            jobs_conn, acct_conn, pdhl=1, user=user, bank=bank
         )
         self.assertEqual(usage_factor, 4519.0)
 
@@ -332,7 +332,7 @@ class TestAccountingCLI(unittest.TestCase):
         bank = "C"
 
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn, acct_conn, priority_decay_half_life=1, user=user, bank=bank
+            jobs_conn, acct_conn, pdhl=1, user=user, bank=bank
         )
 
         self.assertEqual(usage_factor, 2277.00)
@@ -342,26 +342,20 @@ class TestAccountingCLI(unittest.TestCase):
     @mock.patch("time.time", mock.MagicMock(return_value=(10000000 + (604800 * 2.1))))
     def test_16_update_end_half_life_period(self):
         # fetch timestamp of the end of the current half-life period
-        fetch_half_life_timestamp_query = """
+        s_end_hl = """
             SELECT end_half_life_period
             FROM t_half_life_period_table
             WHERE cluster='cluster'
             """
-        dataframe = pd.read_sql_query(fetch_half_life_timestamp_query, acct_conn)
-        old_end_half_life = dataframe.iloc[0]
+        dataframe = pd.read_sql_query(s_end_hl, acct_conn)
+        old_hl = dataframe.iloc[0]
 
-        jobs.update_end_half_life_period(acct_conn, priority_decay_half_life=1)
+        jobs.update_end_half_life_period(acct_conn, pdhl=1)
 
-        # fetch timestamp of the end of the new half-life period
-        fetch_half_life_timestamp_query = """
-            SELECT end_half_life_period
-            FROM t_half_life_period_table
-            WHERE cluster='cluster'
-            """
-        dataframe = pd.read_sql_query(fetch_half_life_timestamp_query, acct_conn)
-        new_end_half_life = dataframe.iloc[0]
+        dataframe = pd.read_sql_query(s_end_hl, acct_conn)
+        new_hl = dataframe.iloc[0]
 
-        self.assertGreater(float(new_end_half_life), float(old_end_half_life))
+        self.assertGreater(float(new_hl), float(old_hl))
 
     # removing a user from the flux-accounting DB should NOT remove their job
     # usage history from the job_usage_factor_table
