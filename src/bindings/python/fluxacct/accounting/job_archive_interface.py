@@ -238,6 +238,22 @@ def update_t_inactive(acct_conn, last_t_inactive, user, bank):
     acct_conn.commit()
 
 
+def get_last_job_ts(acct_conn, user, bank):
+    # fetch timestamp of last seen job (gets jobs that have run after this time)
+    s_ts = """
+        SELECT last_job_timestamp FROM job_usage_factor_table WHERE username=? AND bank=?
+        """
+    timestamp = pd.read_sql_query(
+        s_ts,
+        acct_conn,
+        params=(
+            user,
+            bank,
+        ),
+    )
+    return float(timestamp.iloc[0])
+
+
 def fetch_old_usage_factors(acct_conn, user=None, bank=None):
     past_usage_factors = []
 
@@ -313,22 +329,6 @@ def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank):
     # hl_period represents the number of seconds that represent one usage bin
     hl_period = pdhl * 604800
 
-    # fetch timestamp of last seen job (gets jobs that have run after this time)
-    fetch_timestamp_query = """
-        SELECT last_job_timestamp
-        FROM job_usage_factor_table
-        WHERE username=? AND bank=?
-        """
-    dataframe = pd.read_sql_query(
-        fetch_timestamp_query,
-        acct_conn,
-        params=(
-            user,
-            bank,
-        ),
-    )
-    last_job_timestamp = dataframe.iloc[0]
-
     # fetch timestamp of the end of the current half-life period
     s_end_hl = """
         SELECT end_half_life_period FROM t_half_life_period_table WHERE cluster='cluster'
@@ -337,11 +337,12 @@ def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank):
     end_hl = dataframe.iloc[0]
 
     # get jobs that have completed since the last seen completed job
+    last_j_ts = get_last_job_ts(acct_conn, user, bank)
     user_jobs = view_job_records(
         jobs_conn,
         output_file=None,
         user=user,
-        after_start_time=float(last_job_timestamp),
+        after_start_time=last_j_ts,
     )
 
     last_t_inactive = 0.0
