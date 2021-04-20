@@ -355,10 +355,26 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(usage_factor, 2199.5)
 
+    # calling update_job_usage() in the same half-life period should NOT
+    # update usage factors for users
+    @mock.patch("time.time", mock.MagicMock(return_value=(10000000 + (604799))))
+    def test_17_update_job_usage_same_half_life_period(self):
+        s_stmt = """
+            SELECT job_usage FROM association_table
+            WHERE username='1002' AND bank='C'
+            """
+        dataframe = pd.read_sql_query(s_stmt, acct_conn)
+        self.assertEqual(float(dataframe.iloc[0]), 17044.0)
+
+        jobs.update_job_usage(acct_conn, jobs_conn, pdhl=1)
+
+        dataframe = pd.read_sql_query(s_stmt, acct_conn)
+        self.assertEqual(float(dataframe.iloc[0]), 17044.0)
+
     # simulate a half-life period further; assure the new end of the
     # current half-life period gets updated
     @mock.patch("time.time", mock.MagicMock(return_value=(10000000 + (604800 * 2.1))))
-    def test_17_update_end_half_life_period(self):
+    def test_18_update_end_half_life_period(self):
         # fetch timestamp of the end of the current half-life period
         s_end_hl = """
             SELECT end_half_life_period
@@ -377,7 +393,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # removing a user from the flux-accounting DB should NOT remove their job
     # usage history from the job_usage_factor_table
-    def test_18_keep_job_usage_records_upon_delete(self):
+    def test_19_keep_job_usage_records_upon_delete(self):
         aclif.delete_user(acct_conn, username="1001", bank="C")
 
         select_stmt = """
@@ -389,6 +405,22 @@ class TestAccountingCLI(unittest.TestCase):
 
         dataframe = pd.read_sql_query(select_stmt, acct_conn)
         self.assertEqual(len(dataframe), 1)
+
+    # calling update_job_usage in the next half-life period should update usage
+    # factors for users
+    @mock.patch("time.time", mock.MagicMock(return_value=(10000000 + (604800 * 2.1))))
+    def test_20_update_job_usage_next_half_life_period(self):
+        s_stmt = """
+            SELECT job_usage FROM association_table
+            WHERE username='1002' AND bank='C'
+            """
+        dataframe = pd.read_sql_query(s_stmt, acct_conn)
+        self.assertEqual(float(dataframe.iloc[0]), 17044.0)
+
+        jobs.update_job_usage(acct_conn, jobs_conn, pdhl=1)
+
+        dataframe = pd.read_sql_query(s_stmt, acct_conn)
+        self.assertEqual(float(dataframe.iloc[0]), 8496.0)
 
     # remove database and log file
     @classmethod
