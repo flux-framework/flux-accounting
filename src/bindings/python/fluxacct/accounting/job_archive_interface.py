@@ -285,12 +285,10 @@ def calc_usage_factor(
     bank,
 ):
 
-    # half_life_period represents the number of weeks (converted to
-    # seconds) that represents one usage bin
+    # half_life_period represents the number of seconds that represent one usage bin
     half_life_period = priority_decay_half_life * 604800
 
-    # fetch timestamp of last seen job (will fetch jobs that
-    # have run after this time)
+    # fetch timestamp of last seen job (gets jobs that have run after this time)
     fetch_timestamp_query = """
         SELECT last_job_timestamp
         FROM job_usage_factor_table
@@ -314,9 +312,7 @@ def calc_usage_factor(
     dataframe = pd.read_sql_query(fetch_half_life_timestamp_query, acct_conn)
     t_end_half_life_period = dataframe.iloc[0]
 
-    # get the total number of nodes and time elapsed across
-    # all of a user's jobs that completed since the last completed
-    # job that was retrieved
+    # get jobs that have completed since the last seen completed job
     job_totals_user = view_job_records(
         jobs_conn,
         output_file=None,
@@ -328,11 +324,8 @@ def calc_usage_factor(
     usage_user_current = 0.0
 
     if len(job_totals_user) > 0:
-        # sort jobs by job.t_inactive
         job_totals_user.sort(key=lambda job: job.t_inactive)
 
-        # one per job factor = nnodes * t_elapsed
-        # usage factors = total(nnodes * t_elapsed)
         per_job_factors = []
         for job in job_totals_user:
             per_job_factors.append(round((job.nnodes * job.elapsed), 5))
@@ -340,29 +333,24 @@ def calc_usage_factor(
         last_t_inactive = job_totals_user[-1].t_inactive
         usage_user_current = sum(per_job_factors)
 
-    # if no new jobs were found and we are still in the same half-life
-    # period, then the current usage remains the same
     if len(job_totals_user) == 0 and (
         float(t_end_half_life_period) > (time.time() - half_life_period)
     ):
-        # fetch past usage factors
+        # no new jobs in the current half-life period
         past_usage_factors = fetch_old_usage_factors(acct_conn, user, bank)
 
         usage_user_historical = sum(past_usage_factors)
-    # if no new jobs were found but we are past the most recent half-life
-    # period, then the current usage needs to have a decay factor applied
-    # to it
     elif len(job_totals_user) == 0 and (
         float(t_end_half_life_period) < (time.time() - half_life_period)
     ):
-        # fetch past usage factors
+        # no new jobs in the new half-life period
         past_usage_factors = fetch_old_usage_factors(acct_conn, user, bank)
 
         usage_user_historical = apply_decay_factor(0.5, acct_conn, user, bank)
-    # if last_t_inactive - t_end_half_life_period < half_life_period,
-    # append newly found jobs to the most recent usage factor
     elif (last_t_inactive - float(t_end_half_life_period)) < half_life_period:
-        # append current usage to first usage factor bin
+        # found new jobs in the current half-life period
+
+        # append current usage to the first usage factor bin
         fetch_current_usage_factor = """
             SELECT usage_factor_period_0
             FROM job_usage_factor_table
@@ -381,20 +369,16 @@ def calc_usage_factor(
 
         usage_user_current += float(usage_factor_period_0)
 
-        # usage_user_past will just be the sum of the older factors since
-        # they will already had their decay factor applied to them in this
-        # current half-life period
+        # usage_user_past = sum of the older usage factors
         usage_user_past = fetch_old_usage_factors(acct_conn, user, bank)
 
-        # calculate historical usage factor for user
         usage_user_historical = usage_user_current + sum(usage_user_past[1:])
-    # else, create a new bin, move the older factors (and throw out the oldest
-    # one), and set a new end timestamp for the next half-life period
     else:
+        # found new jobs in the new half-life period
+
         # apply decay factor to past usage periods of a user's jobs
         usage_user_past = apply_decay_factor(0.5, acct_conn, user, bank)
 
-        # calculate historical usage factor for user
         usage_user_historical = usage_user_current + usage_user_past
 
     # write last t_inactive to last_job_timestamp for user
@@ -451,8 +435,6 @@ def calc_usage_factor(
 
 
 def update_end_half_life_period(acct_conn, priority_decay_half_life):
-    # half_life_period represents the number of weeks (converted to
-    # seconds) that represents one usage bin
     half_life_period = priority_decay_half_life * 604800
 
     # fetch timestamp of the end of the current half-life period
@@ -464,9 +446,6 @@ def update_end_half_life_period(acct_conn, priority_decay_half_life):
     dataframe = pd.read_sql_query(fetch_half_life_timestamp_query, acct_conn)
     t_end_half_life_period = dataframe.iloc[0]
 
-    # check to see if we are still in the same half-life period;
-    # if not, we need to update the end_half_life_period timestamp
-    # with a new timestamp value
     if float(t_end_half_life_period) < (time.time() - half_life_period):
         # update new end of half-life period timestamp
         update_timestamp_stmt = """
