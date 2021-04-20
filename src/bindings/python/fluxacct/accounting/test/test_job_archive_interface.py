@@ -255,9 +255,26 @@ class TestAccountingCLI(unittest.TestCase):
         )
         self.assertEqual(usage_factor, 8500.0)
 
-    # make sure usage factor was written to job_usage_factor_table
-    # and association_table
-    def test_13_check_usage_factor_in_table(self):
+    # make sure update_t_inactive() updates the last seen job timestamp
+    def test_13_update_t_inactive_success(self):
+        s_ts = "SELECT last_job_timestamp FROM job_usage_factor_table WHERE username='1003' AND bank='D'"
+        dataframe = pd.read_sql_query(s_ts, acct_conn)
+        ts_old = float(dataframe.iloc[0])
+
+        self.assertEqual(ts_old, 0.0)
+
+        usage_factor = jobs.calc_usage_factor(
+            jobs_conn, acct_conn, pdhl=1, user="1003", bank="D"
+        )
+
+        dataframe = pd.read_sql_query(s_ts, acct_conn)
+        ts_new = float(dataframe.iloc[0])
+
+        self.assertEqual(ts_new, 9092200.0)
+
+    # make sure current usage factor was written to job_usage_factor_table, but
+    # historical usage factor was written to association_table
+    def test_14_check_usage_factor_in_tables(self):
         select_stmt = "SELECT usage_factor_period_0 FROM job_usage_factor_table WHERE username='1002' AND bank='C'"
         dataframe = pd.read_sql_query(select_stmt, acct_conn)
         usage_factor = dataframe.iloc[0]
@@ -274,7 +291,7 @@ class TestAccountingCLI(unittest.TestCase):
     # period should create a new usage bin and update t_half_life_period_table
     # with the new end time of the current half-life period
     @mock.patch("time.time", mock.MagicMock(return_value=(100000000 + (604800 * 2.1))))
-    def test_14_append_jobs_in_diff_half_life_period(self):
+    def test_15_append_jobs_in_diff_half_life_period(self):
         user = "1001"
         bank = "C"
 
@@ -327,7 +344,7 @@ class TestAccountingCLI(unittest.TestCase):
     # simulate a half-life period further; re-calculate
     # usage for user1001 to make sure its value goes down
     @mock.patch("time.time", mock.MagicMock(return_value=(10000000 + (604800 * 2.1))))
-    def test_15_recalculate_usage_after_half_life_period(self):
+    def test_16_recalculate_usage_after_half_life_period(self):
         user = "1001"
         bank = "C"
 
@@ -340,7 +357,7 @@ class TestAccountingCLI(unittest.TestCase):
     # simulate a half-life period further; assure the new end of the
     # current half-life period gets updated
     @mock.patch("time.time", mock.MagicMock(return_value=(10000000 + (604800 * 2.1))))
-    def test_16_update_end_half_life_period(self):
+    def test_17_update_end_half_life_period(self):
         # fetch timestamp of the end of the current half-life period
         s_end_hl = """
             SELECT end_half_life_period
@@ -359,7 +376,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # removing a user from the flux-accounting DB should NOT remove their job
     # usage history from the job_usage_factor_table
-    def test_17_keep_job_usage_records_upon_delete(self):
+    def test_18_keep_job_usage_records_upon_delete(self):
         aclif.delete_user(acct_conn, username="1001", bank="C")
 
         select_stmt = """

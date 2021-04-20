@@ -222,6 +222,22 @@ def view_job_records(conn, output_file, **kwargs):
     return job_records
 
 
+def update_t_inactive(acct_conn, last_t_inactive, user, bank):
+    # write last seen t_inactive to last_job_timestamp for user
+    u_ts = """
+        UPDATE job_usage_factor_table SET last_job_timestamp=? WHERE username=? AND bank=?
+        """
+    acct_conn.execute(
+        u_ts,
+        (
+            last_t_inactive,
+            user,
+            bank,
+        ),
+    )
+    acct_conn.commit()
+
+
 def fetch_old_usage_factors(acct_conn, user=None, bank=None):
     past_usage_factors = []
 
@@ -324,6 +340,8 @@ def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank):
         last_t_inactive = user_jobs[-1].t_inactive
         usg_current = sum(per_job_factors)
 
+        update_t_inactive(acct_conn, last_t_inactive, user, bank)
+
     if len(user_jobs) == 0 and (float(end_hl) > (time.time() - hl_period)):
         # no new jobs in the current half-life period
         usg_past = fetch_old_usage_factors(acct_conn, user, bank)
@@ -367,22 +385,6 @@ def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank):
         usg_past = apply_decay_factor(0.5, acct_conn, user, bank)
 
         usg_historical = usg_current + usg_past
-
-    # write last t_inactive to last_job_timestamp for user
-    update_timestamp_stmt = """
-        UPDATE job_usage_factor_table SET last_job_timestamp=?
-        WHERE username=?
-        AND bank=?
-        """
-    acct_conn.execute(
-        update_timestamp_stmt,
-        (
-            last_t_inactive,
-            user,
-            bank,
-        ),
-    )
-    acct_conn.commit()
 
     # write historical usage to first column in job_usage_factor_table
     update_stmt = """
