@@ -291,6 +291,23 @@ def apply_decay_factor(decay, acct_conn, user=None, bank=None):
     return sum(usg_past_decay)
 
 
+def get_curr_usg_bin(acct_conn, user, bank):
+    # append current usage to the first usage factor bin
+    s_usg = """
+        SELECT usage_factor_period_0 FROM job_usage_factor_table
+        WHERE username=? AND bank=?
+        """
+    dataframe = pd.read_sql_query(
+        s_usg,
+        acct_conn,
+        params=(
+            user,
+            bank,
+        ),
+    )
+    return float(dataframe.iloc[0])
+
+
 def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank):
 
     # hl_period represents the number of seconds that represent one usage bin
@@ -354,25 +371,7 @@ def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank):
         usg_historical = apply_decay_factor(0.5, acct_conn, user, bank)
     elif (last_t_inactive - float(end_hl)) < hl_period:
         # found new jobs in the current half-life period
-
-        # append current usage to the first usage factor bin
-        fetch_current_usage_factor = """
-            SELECT usage_factor_period_0
-            FROM job_usage_factor_table
-            WHERE username=?
-            AND bank=?
-            """
-        dataframe = pd.read_sql_query(
-            fetch_current_usage_factor,
-            acct_conn,
-            params=(
-                user,
-                bank,
-            ),
-        )
-        usage_factor_period_0 = dataframe.iloc[0]
-
-        usg_current += float(usage_factor_period_0)
+        usg_current += get_curr_usg_bin(acct_conn, user, bank)
 
         # usage_user_past = sum of the older usage factors
         usg_past = fetch_old_usage_factors(acct_conn, user, bank)
