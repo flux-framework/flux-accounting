@@ -5,7 +5,7 @@ pull_request_rules:
       - status-success="validate commits"
       - status-success="python format"
       - status-success="centos8 - py3.6"
-      - status-success="bionic - py3.7"
+      - status-success="bionic - py3.6"
       - status-success="python lint"
       - status-success="coverage"
       - label="merge-when-passing"
