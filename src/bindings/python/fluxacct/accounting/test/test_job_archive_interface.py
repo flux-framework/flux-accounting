@@ -350,7 +350,7 @@ class TestAccountingCLI(unittest.TestCase):
         dataframe = pd.read_sql_query(s_end_hl, acct_conn)
         old_hl = dataframe.iloc[0]
 
-        jobs.update_end_half_life_period(acct_conn, pdhl=1)
+        jobs.check_end_hl(acct_conn, pdhl=1)
 
         dataframe = pd.read_sql_query(s_end_hl, acct_conn)
         new_hl = dataframe.iloc[0]

@@ -421,7 +421,7 @@ def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank):
     return usg_historical
 
 
-def update_end_half_life_period(acct_conn, pdhl):
+def check_end_hl(acct_conn, pdhl):
     hl_period = pdhl * 604800
 
     # fetch timestamp of the end of the current half-life period
