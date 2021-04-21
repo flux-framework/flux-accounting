@@ -254,7 +254,7 @@ def get_last_job_ts(acct_conn, user, bank):
     return float(timestamp.iloc[0])
 
 
-def fetch_old_usage_factors(acct_conn, user=None, bank=None):
+def fetch_usg_bins(acct_conn, user=None, bank=None):
     past_usage_factors = []
 
     select_stmt = "SELECT * from job_usage_factor_table WHERE username=? AND bank=?"
@@ -278,7 +278,7 @@ def apply_decay_factor(decay, acct_conn, user=None, bank=None):
     usg_past = []
     usg_past_decay = []
 
-    usg_past = fetch_old_usage_factors(acct_conn, user, bank)
+    usg_past = fetch_usg_bins(acct_conn, user, bank)
 
     # apply decay factor to past usage periods of a user's jobs
     for power, usage_factor in enumerate(usg_past, start=1):
@@ -362,7 +362,7 @@ def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank):
 
     if len(user_jobs) == 0 and (float(end_hl) > (time.time() - hl_period)):
         # no new jobs in the current half-life period
-        usg_past = fetch_old_usage_factors(acct_conn, user, bank)
+        usg_past = fetch_usg_bins(acct_conn, user, bank)
 
         usg_historical = sum(usg_past)
     elif len(user_jobs) == 0 and (float(end_hl) < (time.time() - hl_period)):
@@ -375,7 +375,7 @@ def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank):
         usg_current += get_curr_usg_bin(acct_conn, user, bank)
 
         # usage_user_past = sum of the older usage factors
-        usg_past = fetch_old_usage_factors(acct_conn, user, bank)
+        usg_past = fetch_usg_bins(acct_conn, user, bank)
 
         usg_historical = usg_current + sum(usg_past[1:])
     else:
