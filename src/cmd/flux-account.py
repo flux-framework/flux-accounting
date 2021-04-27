@@ -222,6 +222,23 @@ def add_edit_bank_arg(subparsers):
     )
 
 
+def add_update_usage_arg(subparsers):
+    subparser_update_usage = subparsers.add_parser(
+        "update-usage", help="update usage factors for associations"
+    )
+    subparser_update_usage.set_defaults(func="update_usage")
+    subparser_update_usage.add_argument(
+        "job_archive_db_path",
+        help="job-archive DB location",
+        metavar="JOB-ARCHIVE_DB_PATH",
+    )
+    subparser_update_usage.add_argument(
+        "--priority-decay-half-life",
+        help="contribution of historical usage in weeks on the composite usage value",
+        metavar="PRIORITY DECAY HALF LIFE",
+    )
+
+
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_output_file_arg(parser)
@@ -235,6 +252,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_view_bank_arg(subparsers)
     add_delete_bank_arg(subparsers)
     add_edit_bank_arg(subparsers)
+    add_update_usage_arg(subparsers)
 
 
 def set_db_location(args):
@@ -302,6 +320,9 @@ def select_accounting_function(args, conn, output_file, parser):
         aclif.delete_bank(conn, args.bank)
     elif args.func == "edit_bank":
         aclif.edit_bank(conn, args.bank, args.shares)
+    elif args.func == "update_usage":
+        jobs_conn = establish_sqlite_connection(args.job_archive_db_path)
+        jobs.update_job_usage(conn, jobs_conn, args.priority_decay_half_life)
     else:
         print(parser.print_usage())
 

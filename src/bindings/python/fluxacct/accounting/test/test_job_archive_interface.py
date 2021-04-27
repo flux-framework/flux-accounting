@@ -80,7 +80,7 @@ class TestAccountingCLI(unittest.TestCase):
         jobid = 100
         interval = 0  # add to job timestamps to diversify job-archive records
 
-        @mock.patch("time.time", mock.MagicMock(return_value=10000000))
+        @mock.patch("time.time", mock.MagicMock(return_value=9000000))
         def populate_job_archive_db(jobs_conn, userid, username, ranks, num_entries):
             nonlocal jobid
             nonlocal interval
@@ -203,7 +203,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # passing a combination of params should further
     # refine the query
-    @mock.patch("time.time", mock.MagicMock(return_value=10000500))
+    @mock.patch("time.time", mock.MagicMock(return_value=9000500))
     def test_09_multiple_params(self):
         my_dict = {"user": "1001", "after_start_time": time.time()}
         job_records = jobs.view_job_records(jobs_conn, op, **my_dict)
@@ -217,6 +217,7 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(len(job_records), 18)
 
     # users that have run a lot of jobs should have a larger usage factor
+    @mock.patch("time.time", mock.MagicMock(return_value=9900000))
     def test_11_calc_usage_factor_many_jobs(self):
         user = "1002"
         bank = "C"
@@ -231,12 +232,13 @@ class TestAccountingCLI(unittest.TestCase):
         acct_conn.commit()
 
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn, acct_conn, priority_decay_half_life=1, user=user, bank=bank
+            jobs_conn, acct_conn, pdhl=1, user=user, bank=bank
         )
         self.assertEqual(usage_factor, 17044.0)
 
     # on the contrary, users that have not run a lot of jobs should have
     # a smaller usage factor
+    @mock.patch("time.time", mock.MagicMock(return_value=9900000))
     def test_12_calc_usage_factor_few_jobs(self):
         user = "1001"
         bank = "C"
@@ -251,17 +253,34 @@ class TestAccountingCLI(unittest.TestCase):
         acct_conn.commit()
 
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn, acct_conn, priority_decay_half_life=1, user=user, bank=bank
+            jobs_conn, acct_conn, pdhl=1, user=user, bank=bank
         )
         self.assertEqual(usage_factor, 8500.0)
 
-    # make sure usage factor was written to job_usage_factor_table
-    # and association_table
-    def test_13_check_usage_factor_in_table(self):
+    # make sure update_t_inactive() updates the last seen job timestamp
+    def test_13_update_t_inactive_success(self):
+        s_ts = "SELECT last_job_timestamp FROM job_usage_factor_table WHERE username='1003' AND bank='D'"
+        dataframe = pd.read_sql_query(s_ts, acct_conn)
+        ts_old = float(dataframe.iloc[0])
+
+        self.assertEqual(ts_old, 0.0)
+
+        usage_factor = jobs.calc_usage_factor(
+            jobs_conn, acct_conn, pdhl=1, user="1003", bank="D"
+        )
+
+        dataframe = pd.read_sql_query(s_ts, acct_conn)
+        ts_new = float(dataframe.iloc[0])
+
+        self.assertEqual(ts_new, 9092200.0)
+
+    # make sure current usage factor was written to job_usage_factor_table, but
+    # historical usage factor was written to association_table
+    def test_14_check_usage_factor_in_tables(self):
         select_stmt = "SELECT usage_factor_period_0 FROM job_usage_factor_table WHERE username='1002' AND bank='C'"
         dataframe = pd.read_sql_query(select_stmt, acct_conn)
         usage_factor = dataframe.iloc[0]
-        self.assertEqual(usage_factor["usage_factor_period_0"], 17044.0)
+        self.assertEqual(usage_factor["usage_factor_period_0"], 16956.0)
 
         select_stmt = (
             "SELECT job_usage FROM association_table WHERE username='1002' AND bank='C'"
@@ -271,10 +290,9 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(job_usage["job_usage"], 17044.0)
 
     # re-calculating a job usage factor after the end of the last half-life
-    # period should create a new usage bin and update t_half_life_period_table
-    # with the new end time of the current half-life period
+    # period should create a new usage bin
     @mock.patch("time.time", mock.MagicMock(return_value=(100000000 + (604800 * 2.1))))
-    def test_14_append_jobs_in_diff_half_life_period(self):
+    def test_15_append_jobs_in_diff_half_life_period(self):
         user = "1001"
         bank = "C"
 
@@ -320,52 +338,62 @@ class TestAccountingCLI(unittest.TestCase):
 
         # re-calculate usage factor for user1001
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn, acct_conn, priority_decay_half_life=1, user=user, bank=bank
+            jobs_conn, acct_conn, pdhl=1, user=user, bank=bank
         )
-        self.assertEqual(usage_factor, 4519.0)
+        self.assertEqual(usage_factor, 4366.0)
 
     # simulate a half-life period further; re-calculate
     # usage for user1001 to make sure its value goes down
     @mock.patch("time.time", mock.MagicMock(return_value=(10000000 + (604800 * 2.1))))
-    def test_15_recalculate_usage_after_half_life_period(self):
+    def test_16_recalculate_usage_after_half_life_period(self):
         user = "1001"
         bank = "C"
 
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn, acct_conn, priority_decay_half_life=1, user=user, bank=bank
+            jobs_conn, acct_conn, pdhl=1, user=user, bank=bank
         )
 
-        self.assertEqual(usage_factor, 2277.00)
+        self.assertEqual(usage_factor, 2199.5)
+
+    # calling update_job_usage() in the same half-life period should NOT
+    # update usage factors for users
+    @mock.patch("time.time", mock.MagicMock(return_value=(10000000 + (604799))))
+    def test_17_update_job_usage_same_half_life_period(self):
+        s_stmt = """
+            SELECT job_usage FROM association_table
+            WHERE username='1002' AND bank='C'
+            """
+        dataframe = pd.read_sql_query(s_stmt, acct_conn)
+        self.assertEqual(float(dataframe.iloc[0]), 17044.0)
+
+        jobs.update_job_usage(acct_conn, jobs_conn, pdhl=1)
+
+        dataframe = pd.read_sql_query(s_stmt, acct_conn)
+        self.assertEqual(float(dataframe.iloc[0]), 17044.0)
 
     # simulate a half-life period further; assure the new end of the
     # current half-life period gets updated
     @mock.patch("time.time", mock.MagicMock(return_value=(10000000 + (604800 * 2.1))))
-    def test_16_update_end_half_life_period(self):
+    def test_18_update_end_half_life_period(self):
         # fetch timestamp of the end of the current half-life period
-        fetch_half_life_timestamp_query = """
+        s_end_hl = """
             SELECT end_half_life_period
             FROM t_half_life_period_table
             WHERE cluster='cluster'
             """
-        dataframe = pd.read_sql_query(fetch_half_life_timestamp_query, acct_conn)
-        old_end_half_life = dataframe.iloc[0]
+        dataframe = pd.read_sql_query(s_end_hl, acct_conn)
+        old_hl = dataframe.iloc[0]
 
-        jobs.update_end_half_life_period(acct_conn, priority_decay_half_life=1)
+        jobs.check_end_hl(acct_conn, pdhl=1)
 
-        # fetch timestamp of the end of the new half-life period
-        fetch_half_life_timestamp_query = """
-            SELECT end_half_life_period
-            FROM t_half_life_period_table
-            WHERE cluster='cluster'
-            """
-        dataframe = pd.read_sql_query(fetch_half_life_timestamp_query, acct_conn)
-        new_end_half_life = dataframe.iloc[0]
+        dataframe = pd.read_sql_query(s_end_hl, acct_conn)
+        new_hl = dataframe.iloc[0]
 
-        self.assertGreater(float(new_end_half_life), float(old_end_half_life))
+        self.assertGreater(float(new_hl), float(old_hl))
 
     # removing a user from the flux-accounting DB should NOT remove their job
     # usage history from the job_usage_factor_table
-    def test_17_keep_job_usage_records_upon_delete(self):
+    def test_19_keep_job_usage_records_upon_delete(self):
         aclif.delete_user(acct_conn, username="1001", bank="C")
 
         select_stmt = """
@@ -377,6 +405,22 @@ class TestAccountingCLI(unittest.TestCase):
 
         dataframe = pd.read_sql_query(select_stmt, acct_conn)
         self.assertEqual(len(dataframe), 1)
+
+    # calling update_job_usage in the next half-life period should update usage
+    # factors for users
+    @mock.patch("time.time", mock.MagicMock(return_value=(10000000 + (604800 * 2.1))))
+    def test_20_update_job_usage_next_half_life_period(self):
+        s_stmt = """
+            SELECT job_usage FROM association_table
+            WHERE username='1002' AND bank='C'
+            """
+        dataframe = pd.read_sql_query(s_stmt, acct_conn)
+        self.assertEqual(float(dataframe.iloc[0]), 17044.0)
+
+        jobs.update_job_usage(acct_conn, jobs_conn, pdhl=1)
+
+        dataframe = pd.read_sql_query(s_stmt, acct_conn)
+        self.assertEqual(float(dataframe.iloc[0]), 8496.0)
 
     # remove database and log file
     @classmethod
