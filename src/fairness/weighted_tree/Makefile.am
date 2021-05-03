@@ -14,7 +14,8 @@ noinst_HEADERS = \
     weighted_tree.hpp \
     weighted_walk.hpp \
     ../reader/data_reader_db.hpp \
-    ../writer/data_writer_db.hpp
+    ../writer/data_writer_db.hpp \
+    ../writer/data_writer_stdout.hpp
 
 libweighted_tree_la_SOURCES = \
     ../account/account.cpp \
@@ -22,11 +23,13 @@ libweighted_tree_la_SOURCES = \
     weighted_walk.cpp \
     ../reader/data_reader_db.cpp \
     ../writer/data_writer_db.cpp \
+    ../writer/data_writer_stdout.cpp \
     ../account/account.hpp \
     weighted_tree.hpp \
     weighted_walk.hpp \
     ../reader/data_reader_db.hpp \
-    ../writer/data_writer_db.hpp
+    ../writer/data_writer_db.hpp \
+    ../writer/data_writer_stdout.hpp
 
 libweighted_tree_la_CXXFLAGS = \
     $(WARNING_CXXFLAGS) \
