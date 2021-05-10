@@ -267,7 +267,7 @@ def fetch_usg_bins(acct_conn, user=None, bank=None):
         ),
     )
 
-    for val in dataframe.iloc[0].values[3:]:
+    for val in dataframe.iloc[0].values[4:]:
         if isinstance(val, float):
             past_usage_factors.append(val)
 
