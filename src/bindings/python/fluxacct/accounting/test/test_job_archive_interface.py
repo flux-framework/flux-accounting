@@ -73,10 +73,10 @@ class TestAccountingCLI(unittest.TestCase):
         b.add_bank(acct_conn, bank="D", parent_bank="B", shares=1)
 
         # add users
-        u.add_user(acct_conn, username="1001", bank="C")
-        u.add_user(acct_conn, username="1002", bank="C")
-        u.add_user(acct_conn, username="1003", bank="D")
-        u.add_user(acct_conn, username="1004", bank="D")
+        u.add_user(acct_conn, username="1001", uid="1001", bank="C")
+        u.add_user(acct_conn, username="1002", uid="1002", bank="C")
+        u.add_user(acct_conn, username="1003", uid="1003", bank="D")
+        u.add_user(acct_conn, username="1004", uid="1004", bank="D")
 
         jobid = 100
         interval = 0  # add to job timestamps to diversify job-archive records
