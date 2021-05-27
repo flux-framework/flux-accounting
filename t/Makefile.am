@@ -1,7 +1,8 @@
 # This list is included in both TESTS and dist_check_SCRIPTS.
 TESTSCRIPTS = \
 	t0000-sharness.t \
-	t1000-print-hierarchy.t
+	t1000-print-hierarchy.t \
+	t1001-mf-priority.t
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
