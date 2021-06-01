@@ -1,4 +1,4 @@
-FROM fluxrm/flux-core:bionic
+FROM fluxrm/flux-core:bionic-v0.28.0
 
 ARG USER=flux
 ARG UID=1000
