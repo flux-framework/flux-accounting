@@ -1,1 +1,1 @@
-SUBDIRS = common cmd fairness bindings
+SUBDIRS = common cmd fairness bindings plugins

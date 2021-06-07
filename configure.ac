@@ -107,6 +107,9 @@ AC_SUBST(acct_db_path)
 AC_CONFIG_MACRO_DIR([config])
 X_AC_EXPAND_INSTALL_DIRS
 
+fluxplugin_ldflags="-avoid-version -export-symbols-regex '^flux_plugin_init\$\$' --disable-static -shared -export-dynamic"
+AC_SUBST(fluxplugin_ldflags)
+
 AC_CONFIG_FILES([Makefile
   src/Makefile
   src/common/Makefile
@@ -125,6 +128,7 @@ AC_CONFIG_FILES([Makefile
   src/bindings/python/fluxacct/accounting/Makefile
   src/bindings/python/fluxacct/accounting/__init__.py
   src/cmd/Makefile
+  src/plugins/Makefile
   t/Makefile
   ])
 AC_OUTPUT
