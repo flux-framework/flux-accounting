@@ -35,8 +35,6 @@ class TestAccountingCLI(unittest.TestCase):
             admin_level="1",
             bank="acct",
             shares="10",
-            max_jobs="100",
-            max_wall_pj="60",
         )
         cursor = acct_conn.cursor()
         num_rows_assoc_table = cursor.execute("DELETE FROM association_table").rowcount
@@ -55,8 +53,6 @@ class TestAccountingCLI(unittest.TestCase):
             admin_level="1",
             bank="acct",
             shares="10",
-            max_jobs="100",
-            max_wall_pj="60",
         )
         aclif.add_user(
             acct_conn,
@@ -64,8 +60,6 @@ class TestAccountingCLI(unittest.TestCase):
             admin_level="1",
             bank="acct",
             shares="10",
-            max_jobs="100",
-            max_wall_pj="60",
         )
 
         self.assertRaises(sqlite3.IntegrityError)
@@ -79,8 +73,6 @@ class TestAccountingCLI(unittest.TestCase):
             admin_level="1",
             bank="acct",
             shares="10",
-            max_jobs="100",
-            max_wall_pj="60",
         )
         aclif.add_user(
             acct_conn,
@@ -88,8 +80,6 @@ class TestAccountingCLI(unittest.TestCase):
             admin_level="1",
             bank="other_acct",
             shares="10",
-            max_jobs="100",
-            max_wall_pj="60",
         )
         cursor = acct_conn.cursor()
         cursor.execute("SELECT * from association_table where username='dup_user'")
@@ -101,11 +91,9 @@ class TestAccountingCLI(unittest.TestCase):
 
     # edit a value for a user in the association table
     def test_04_edit_user_value(self):
-        aclif.edit_user(acct_conn, "fluxuser", "max_jobs", "10000")
+        aclif.edit_user(acct_conn, "fluxuser", "shares", "10000")
         cursor = acct_conn.cursor()
-        cursor.execute(
-            "SELECT max_jobs FROM association_table where username='fluxuser'"
-        )
+        cursor.execute("SELECT shares FROM association_table where username='fluxuser'")
 
         self.assertEqual(cursor.fetchone()[0], 10000)
 
