@@ -94,8 +94,6 @@ def create_db(
                 admin_level   smallint(6) DEFAULT 1   NOT NULL,
                 bank          tinytext                NOT NULL,
                 shares        int(11)     DEFAULT 1   NOT NULL,
-                max_jobs      int(11)                 NOT NULL,
-                max_wall_pj   int(11)                 NOT NULL,
                 job_usage     real        DEFAULT 0.0 NOT NULL,
                 fairshare     real        DEFAULT 0.0 NOT NULL,
                 PRIMARY KEY   (username, bank)
