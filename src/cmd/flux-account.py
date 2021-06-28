@@ -13,7 +13,8 @@ import sys
 import os
 
 import fluxacct.accounting
-from fluxacct.accounting import accounting_cli_functions as aclif
+from fluxacct.accounting import user_subcommands as u
+from fluxacct.accounting import bank_subcommands as b
 from fluxacct.accounting import job_archive_interface as jobs
 from fluxacct.accounting import create_db as c
 
@@ -288,9 +289,9 @@ def set_output_file(args):
 
 def select_accounting_function(args, conn, output_file, parser):
     if args.func == "view_user":
-        aclif.view_user(conn, args.username)
+        u.view_user(conn, args.username)
     elif args.func == "add_user":
-        aclif.add_user(
+        u.add_user(
             conn,
             args.username,
             args.bank,
@@ -300,9 +301,9 @@ def select_accounting_function(args, conn, output_file, parser):
             args.max_wall_pj,
         )
     elif args.func == "delete_user":
-        aclif.delete_user(conn, args.username, args.bank)
+        u.delete_user(conn, args.username, args.bank)
     elif args.func == "edit_user":
-        aclif.edit_user(conn, args.username, args.field, args.new_value)
+        u.edit_user(conn, args.username, args.field, args.new_value)
     elif args.func == "view_job_records":
         jobs.view_job_records(
             conn,
@@ -313,13 +314,13 @@ def select_accounting_function(args, conn, output_file, parser):
             after_start_time=args.after_start_time,
         )
     elif args.func == "add_bank":
-        aclif.add_bank(conn, args.bank, args.shares, args.parent_bank)
+        b.add_bank(conn, args.bank, args.shares, args.parent_bank)
     elif args.func == "view_bank":
-        aclif.view_bank(conn, args.bank)
+        b.view_bank(conn, args.bank)
     elif args.func == "delete_bank":
-        aclif.delete_bank(conn, args.bank)
+        b.delete_bank(conn, args.bank)
     elif args.func == "edit_bank":
-        aclif.edit_bank(conn, args.bank, args.shares)
+        b.edit_bank(conn, args.bank, args.shares)
     elif args.func == "update_usage":
         jobs_conn = establish_sqlite_connection(args.job_archive_db_path)
         jobs.update_job_usage(conn, jobs_conn, args.priority_decay_half_life)
