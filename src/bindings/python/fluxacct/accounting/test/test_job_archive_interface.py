@@ -20,7 +20,8 @@ from unittest import mock
 
 from fluxacct.accounting import job_archive_interface as jobs
 from fluxacct.accounting import create_db as c
-from fluxacct.accounting import accounting_cli_functions as aclif
+from fluxacct.accounting import user_subcommands as u
+from fluxacct.accounting import bank_subcommands as b
 
 
 class TestAccountingCLI(unittest.TestCase):
@@ -66,16 +67,16 @@ class TestAccountingCLI(unittest.TestCase):
         acct_conn.commit()
 
         # add bank hierarchy
-        aclif.add_bank(acct_conn, bank="A", shares=1)
-        aclif.add_bank(acct_conn, bank="B", parent_bank="A", shares=1)
-        aclif.add_bank(acct_conn, bank="C", parent_bank="B", shares=1)
-        aclif.add_bank(acct_conn, bank="D", parent_bank="B", shares=1)
+        b.add_bank(acct_conn, bank="A", shares=1)
+        b.add_bank(acct_conn, bank="B", parent_bank="A", shares=1)
+        b.add_bank(acct_conn, bank="C", parent_bank="B", shares=1)
+        b.add_bank(acct_conn, bank="D", parent_bank="B", shares=1)
 
         # add users
-        aclif.add_user(acct_conn, username="1001", bank="C")
-        aclif.add_user(acct_conn, username="1002", bank="C")
-        aclif.add_user(acct_conn, username="1003", bank="D")
-        aclif.add_user(acct_conn, username="1004", bank="D")
+        u.add_user(acct_conn, username="1001", bank="C")
+        u.add_user(acct_conn, username="1002", bank="C")
+        u.add_user(acct_conn, username="1003", bank="D")
+        u.add_user(acct_conn, username="1004", bank="D")
 
         jobid = 100
         interval = 0  # add to job timestamps to diversify job-archive records
@@ -394,7 +395,7 @@ class TestAccountingCLI(unittest.TestCase):
     # removing a user from the flux-accounting DB should NOT remove their job
     # usage history from the job_usage_factor_table
     def test_19_keep_job_usage_records_upon_delete(self):
-        aclif.delete_user(acct_conn, username="1001", bank="C")
+        u.delete_user(acct_conn, username="1001", bank="C")
 
         select_stmt = """
             SELECT * FROM

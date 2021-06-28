@@ -13,7 +13,7 @@ import unittest
 import os
 import sqlite3
 
-from fluxacct.accounting import accounting_cli_functions as aclif
+from fluxacct.accounting import user_subcommands as u
 from fluxacct.accounting import create_db as c
 
 
@@ -29,7 +29,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # add a valid user to association_table
     def test_01_add_valid_user(self):
-        aclif.add_user(
+        u.add_user(
             acct_conn,
             username="fluxuser",
             admin_level="1",
@@ -47,14 +47,14 @@ class TestAccountingCLI(unittest.TestCase):
     # adding a user with the same primary key (user_name, account) should
     # return an IntegrityError
     def test_02_add_duplicate_primary_key(self):
-        aclif.add_user(
+        u.add_user(
             acct_conn,
             username="fluxuser",
             admin_level="1",
             bank="acct",
             shares="10",
         )
-        aclif.add_user(
+        u.add_user(
             acct_conn,
             username="fluxuser",
             admin_level="1",
@@ -67,14 +67,14 @@ class TestAccountingCLI(unittest.TestCase):
     # adding a user with the same username BUT a different account should
     # succeed
     def test_03_add_duplicate_user(self):
-        aclif.add_user(
+        u.add_user(
             acct_conn,
             username="dup_user",
             admin_level="1",
             bank="acct",
             shares="10",
         )
-        aclif.add_user(
+        u.add_user(
             acct_conn,
             username="dup_user",
             admin_level="1",
@@ -91,7 +91,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # edit a value for a user in the association table
     def test_04_edit_user_value(self):
-        aclif.edit_user(acct_conn, "fluxuser", "shares", "10000")
+        u.edit_user(acct_conn, "fluxuser", "shares", "10000")
         cursor = acct_conn.cursor()
         cursor.execute("SELECT shares FROM association_table where username='fluxuser'")
 
@@ -101,7 +101,7 @@ class TestAccountingCLI(unittest.TestCase):
     # exist should return a ValueError
     def test_05_edit_bad_field(self):
         with self.assertRaises(ValueError):
-            aclif.edit_user(acct_conn, "fluxuser", "foo", "bar")
+            u.edit_user(acct_conn, "fluxuser", "foo", "bar")
 
     # delete a user from the association table
     def test_06_delete_user(self):
@@ -113,7 +113,7 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(len(num_rows_before_delete), 1)
 
-        aclif.delete_user(acct_conn, username="fluxuser", bank="acct")
+        u.delete_user(acct_conn, username="fluxuser", bank="acct")
 
         cursor.execute(
             "SELECT * FROM association_table WHERE username='fluxuser' AND bank='acct'"
