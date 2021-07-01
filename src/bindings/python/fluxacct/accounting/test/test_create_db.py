@@ -56,10 +56,9 @@ class TestDB(unittest.TestCase):
             """
             INSERT INTO association_table
             (creation_time, mod_time, deleted, username, admin_level,
-            bank, shares, max_jobs, max_wall_pj)
+            bank, shares)
             VALUES
-            (0, 0, 0, "test user", 1, "test account", 0, 0,
-            0)
+            (0, 0, 0, "test user", 1, "test account", 0)
             """
         )
         cursor = conn.cursor()

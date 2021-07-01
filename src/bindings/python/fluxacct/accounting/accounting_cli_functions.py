@@ -156,7 +156,7 @@ def view_user(conn, user):
         print(e_database_error)
 
 
-def add_user(conn, username, bank, admin_level=1, shares=1, max_jobs=1, max_wall_pj=60):
+def add_user(conn, username, bank, admin_level=1, shares=1):
 
     try:
         # insert the user values into association_table
@@ -169,11 +169,9 @@ def add_user(conn, username, bank, admin_level=1, shares=1, max_jobs=1, max_wall
                 username,
                 admin_level,
                 bank,
-                shares,
-                max_jobs,
-                max_wall_pj
+                shares
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 int(time.time()),
@@ -183,8 +181,6 @@ def add_user(conn, username, bank, admin_level=1, shares=1, max_jobs=1, max_wall
                 admin_level,
                 bank,
                 shares,
-                max_jobs,
-                max_wall_pj,
             ),
         )
         # commit changes
@@ -230,8 +226,6 @@ def edit_user(conn, username, field, new_value):
         "admin_level",
         "bank",
         "shares",
-        "max_jobs",
-        "max_wall_pj",
     ]
     if field in fields:
         the_field = field
