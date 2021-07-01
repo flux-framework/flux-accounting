@@ -1,6 +1,7 @@
 acctpy_PYTHON = \
 	__init__.py \
-	accounting_cli_functions.py \
+	user_subcommands.py \
+	bank_subcommands.py \
 	job_archive_interface.py \
 	create_db.py
 

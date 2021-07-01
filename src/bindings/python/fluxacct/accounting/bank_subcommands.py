@@ -10,9 +10,9 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import sqlite3
-import time
-
 import pandas as pd
+
+from fluxacct.accounting import user_subcommands as u
 
 
 def add_bank(conn, bank, shares, parent_bank=""):
@@ -99,7 +99,7 @@ def delete_bank(conn, bank):
                 for assoc_row in cursor.execute(
                     select_associations_stmt, (row["bank"],)
                 ):
-                    delete_user(conn, username=assoc_row[0], bank=assoc_row[1])
+                    u.delete_user(conn, username=assoc_row[0], bank=assoc_row[1])
             # else, delete all of its sub banks and continue traversing
             else:
                 for _, sub_bank_row in dataframe.iterrows():
@@ -139,106 +139,3 @@ def edit_bank(conn, bank, shares):
         conn.commit()
     except pd.io.sql.DatabaseError as e_database_error:
         print(e_database_error)
-
-
-def view_user(conn, user):
-    try:
-        # get the information pertaining to a user in the Accounting DB
-        select_stmt = "SELECT * FROM association_table where username=?"
-        dataframe = pd.read_sql_query(select_stmt, conn, params=(user,))
-        # if the length of dataframe is 0, that means
-        # the user specified was not found in the table
-        if len(dataframe.index) == 0:
-            print("User not found in association_table")
-        else:
-            print(dataframe)
-    except pd.io.sql.DatabaseError as e_database_error:
-        print(e_database_error)
-
-
-def add_user(conn, username, bank, admin_level=1, shares=1):
-
-    try:
-        # insert the user values into association_table
-        conn.execute(
-            """
-            INSERT INTO association_table (
-                creation_time,
-                mod_time,
-                deleted,
-                username,
-                admin_level,
-                bank,
-                shares
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                int(time.time()),
-                int(time.time()),
-                0,
-                username,
-                admin_level,
-                bank,
-                shares,
-            ),
-        )
-        # commit changes
-        conn.commit()
-        # insert the user values into job_usage_factor_table
-        conn.execute(
-            """
-            INSERT INTO job_usage_factor_table (
-                username,
-                bank
-            )
-            VALUES (?, ?)
-            """,
-            (
-                username,
-                bank,
-            ),
-        )
-        conn.commit()
-    # make sure entry is unique
-    except sqlite3.IntegrityError as integrity_error:
-        print(integrity_error)
-
-
-def delete_user(conn, username, bank):
-    # delete user account from association_table
-    delete_stmt = "DELETE FROM association_table WHERE username=? AND bank=?"
-    cursor = conn.cursor()
-    cursor.execute(
-        delete_stmt,
-        (
-            username,
-            bank,
-        ),
-    )
-    # commit changes
-    conn.commit()
-
-
-def edit_user(conn, username, field, new_value):
-    fields = [
-        "username",
-        "admin_level",
-        "bank",
-        "shares",
-    ]
-    if field in fields:
-        the_field = field
-
-        # edit value in accounting database
-        conn.execute(
-            "UPDATE association_table SET " + the_field + "=? WHERE username=?",
-            (
-                new_value,
-                username,
-            ),
-        )
-        # commit changes
-        conn.commit()
-    else:
-        raise ValueError("Field not found in association table")
