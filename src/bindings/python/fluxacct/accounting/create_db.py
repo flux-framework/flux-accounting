@@ -87,15 +87,16 @@ def create_db(
     conn.execute(
         """
             CREATE TABLE IF NOT EXISTS association_table (
-                creation_time bigint(20)              NOT NULL,
-                mod_time      bigint(20)  DEFAULT 0   NOT NULL,
-                deleted       tinyint(4)  DEFAULT 0   NOT NULL,
-                username      tinytext                NOT NULL,
-                admin_level   smallint(6) DEFAULT 1   NOT NULL,
-                bank          tinytext                NOT NULL,
-                shares        int(11)     DEFAULT 1   NOT NULL,
-                job_usage     real        DEFAULT 0.0 NOT NULL,
-                fairshare     real        DEFAULT 0.0 NOT NULL,
+                creation_time bigint(20)                NOT NULL,
+                mod_time      bigint(20)  DEFAULT 0     NOT NULL,
+                deleted       tinyint(4)  DEFAULT 0     NOT NULL,
+                username      tinytext                  NOT NULL,
+                userid        int(11)     DEFAULT 65534 NOT NULL,
+                admin_level   smallint(6) DEFAULT 1     NOT NULL,
+                bank          tinytext                  NOT NULL,
+                shares        int(11)     DEFAULT 1     NOT NULL,
+                job_usage     real        DEFAULT 0.0   NOT NULL,
+                fairshare     real        DEFAULT 0.5   NOT NULL,
                 PRIMARY KEY   (username, bank)
         );"""
     )
@@ -122,6 +123,7 @@ def create_db(
         """
             CREATE TABLE IF NOT EXISTS job_usage_factor_table (
                 username            tinytext                    NOT NULL,
+                userid              int(11)                     NOT NULL,
                 bank                tinytext                    NOT NULL,
                 last_job_timestamp  real        DEFAULT 0.0,
                 PRIMARY KEY (username, bank)

@@ -53,6 +53,11 @@ def add_add_user_arg(subparsers):
         metavar="USERNAME",
     )
     subparser_add_user.add_argument(
+        "--userid",
+        help="userid",
+        metavar="USERID",
+    )
+    subparser_add_user.add_argument(
         "--admin-level",
         help="admin level",
         default=1,
@@ -295,6 +300,7 @@ def select_accounting_function(args, conn, output_file, parser):
             conn,
             args.username,
             args.bank,
+            args.userid,
             args.admin_level,
             args.shares,
             args.max_jobs,

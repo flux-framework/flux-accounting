@@ -106,3 +106,8 @@ jobs:
     - name: coverage report
       if: success() && matrix.coverage
       run: DOCKER_REPO= bash <(curl -s https://codecov.io/bash)
+
+    - name: annotate errors
+      if: failure() || cancelled()
+      env: ${{matrix.env}}
+      run: src/test/checks-annotate.sh

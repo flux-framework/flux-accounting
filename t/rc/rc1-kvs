@@ -1,0 +1,16 @@
+#!/bin/bash -e
+
+RANK=$(flux getattr rank)
+
+# Usage: modload {all|<rank>} modname [args ...]
+modload() {
+    local where=$1; shift
+    if test "$where" = "all" || test $where -eq $RANK; then
+        flux module load $*
+    fi
+}
+
+modload 0 content-sqlite
+modload all kvs
+modload all kvs-watch
+modload 0 heartbeat

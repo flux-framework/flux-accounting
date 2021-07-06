@@ -11,6 +11,7 @@
 ###############################################################
 import sqlite3
 import time
+import pwd
 
 import pandas as pd
 
@@ -30,7 +31,32 @@ def view_user(conn, user):
         print(e_database_error)
 
 
-def add_user(conn, username, bank, admin_level=1, shares=1):
+def get_uid(username):
+    try:
+        return pwd.getpwnam(username).pw_uid
+    except KeyError:
+        return str(username)
+
+
+def add_user(
+    conn,
+    username,
+    bank,
+    uid=65534,
+    admin_level=1,
+    shares=1,
+):
+
+    # get uid of user
+    fetched_uid = get_uid(username)
+
+    try:
+        if isinstance(fetched_uid, int):
+            uid = fetched_uid
+        else:
+            raise KeyError
+    except KeyError as key_error:
+        print(key_error)
 
     try:
         # insert the user values into association_table
@@ -41,17 +67,19 @@ def add_user(conn, username, bank, admin_level=1, shares=1):
                 mod_time,
                 deleted,
                 username,
+                userid,
                 admin_level,
                 bank,
                 shares
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 int(time.time()),
                 int(time.time()),
                 0,
                 username,
+                uid,
                 admin_level,
                 bank,
                 shares,
@@ -64,12 +92,14 @@ def add_user(conn, username, bank, admin_level=1, shares=1):
             """
             INSERT INTO job_usage_factor_table (
                 username,
+                userid,
                 bank
             )
-            VALUES (?, ?)
+            VALUES (?, ?, ?)
             """,
             (
                 username,
+                uid,
                 bank,
             ),
         )

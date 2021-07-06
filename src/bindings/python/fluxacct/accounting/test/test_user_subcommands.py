@@ -32,6 +32,7 @@ class TestAccountingCLI(unittest.TestCase):
         u.add_user(
             acct_conn,
             username="fluxuser",
+            uid="1234",
             admin_level="1",
             bank="acct",
             shares="10",
@@ -44,12 +45,13 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(num_rows_assoc_table, num_rows_job_usage_factor_table)
 
-    # adding a user with the same primary key (user_name, account) should
+    # adding a user with the same primary key (username, account) should
     # return an IntegrityError
     def test_02_add_duplicate_primary_key(self):
         u.add_user(
             acct_conn,
             username="fluxuser",
+            uid="1234",
             admin_level="1",
             bank="acct",
             shares="10",
@@ -57,6 +59,7 @@ class TestAccountingCLI(unittest.TestCase):
         u.add_user(
             acct_conn,
             username="fluxuser",
+            uid="1234",
             admin_level="1",
             bank="acct",
             shares="10",
@@ -70,6 +73,7 @@ class TestAccountingCLI(unittest.TestCase):
         u.add_user(
             acct_conn,
             username="dup_user",
+            uid="5678",
             admin_level="1",
             bank="acct",
             shares="10",
@@ -77,6 +81,7 @@ class TestAccountingCLI(unittest.TestCase):
         u.add_user(
             acct_conn,
             username="dup_user",
+            uid="5678",
             admin_level="1",
             bank="other_acct",
             shares="10",
