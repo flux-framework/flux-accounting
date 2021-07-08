@@ -1,10 +1,9 @@
 #!/bin/bash
 
-test_description='Test multi-factor priority plugin'
+test_description='Test multi-factor priority plugin with a single user'
 
 . `dirname $0`/sharness.sh
 MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
-# BULK_UPDATE=${FLUX_BUILD_DIR}/t/scripts/send_fake_payloads.py
 
 export TEST_UNDER_FLUX_NO_JOB_EXEC=y
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
