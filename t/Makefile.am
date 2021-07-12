@@ -2,7 +2,10 @@
 TESTSCRIPTS = \
 	t0000-sharness.t \
 	t1000-print-hierarchy.t \
-	t1001-mf-priority.t
+	t1001-mf-priority-basic.t \
+	t1002-mf-priority-small-no-tie.t \
+	t1003-mf-priority-small-tie.t \
+	t1004-mf-priority-small-tie-all.t
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
