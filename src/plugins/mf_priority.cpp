@@ -96,11 +96,12 @@ static void rec_update_cb (flux_t *h,
                            const flux_msg_t *msg,
                            void *arg)
 {
-    char *uid, *fshare, *bank;
+    char *uid, *fshare, *bank, *default_bank;
 
-    if (flux_request_unpack (msg, NULL, "{s:s, s:s, s:s}",
+    if (flux_request_unpack (msg, NULL, "{s:s, s:s, s:s, s:s}",
                              "userid", &uid,
                              "bank", &bank,
+                             "default_bank", &default_bank,
                              "fairshare", &fshare) < 0) {
         flux_log_error (h, "failed to unpack custom_priority.trigger msg");
         goto error;
@@ -109,9 +110,7 @@ static void rec_update_cb (flux_t *h,
     if (flux_respond (h, msg, NULL) < 0)
         flux_log_error (h, "flux_respond");
 
-    // if the user being added to the does not yet have any entries in the map,
-    // treat their first bank as the "default" bank
-    if (users.count (std::atoi (uid)) == 0)
+    if (strcmp (bank, default_bank) == 0)
         users[std::atoi (uid)]["default"] = std::stod (fshare);
 
     users[std::atoi (uid)][bank] = std::stod (fshare);
