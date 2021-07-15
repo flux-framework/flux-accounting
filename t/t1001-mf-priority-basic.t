@@ -45,9 +45,9 @@ test_expect_success 'create fake_payload.py' '
 	username = getpass.getuser()
 	userid = pwd.getpwnam(username).pw_uid
 	# create a JSON payload
-	data = {"userid": str(userid), "bank": "account3", "default_bank": "account3", "fairshare": "0.45321"}
+	data = {"userid": str(userid), "bank": "account3", "default_bank": "account3", "fairshare": "0.45321", "max_jobs": "10"}
 	flux.Flux().rpc("job-manager.mf_priority.rec_update", data).get()
-	data = {"userid": str(userid), "bank": "account2", "default_bank": "account3", "fairshare": "0.11345"}
+	data = {"userid": str(userid), "bank": "account2", "default_bank": "account3", "fairshare": "0.11345", "max_jobs": "10"}
 	flux.Flux().rpc("job-manager.mf_priority.rec_update", data).get()
 	EOF
 '
