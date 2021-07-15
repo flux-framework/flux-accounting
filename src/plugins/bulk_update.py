@@ -48,7 +48,7 @@ def bulk_update(path):
 
     # fetch all rows from association_table (will print out tuples)
     for row in cur.execute(
-        "SELECT userid, bank, default_bank, fairshare FROM association_table"
+        "SELECT userid, bank, default_bank, fairshare, max_jobs FROM association_table"
     ):
         # create a JSON payload with the results of the query
         data = {
@@ -56,6 +56,7 @@ def bulk_update(path):
             "bank": str(row[1]),
             "default_bank": str(row[2]),
             "fairshare": str(row[3]),
+            "max_jobs": str(row[4]),
         }
 
         flux.Flux().rpc("job-manager.mf_priority.rec_update", data).get()
