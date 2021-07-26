@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: LGPL-3.0
 \************************************************************/
 
-/* mycpppriority.cpp - custom basic job priority plugin
+/* mf_priority.cpp - custom basic job priority plugin
  *
  */
 
@@ -123,8 +123,8 @@ error:
 
 
 /*
- * Unpack the urgency and userid from a submitted job and call calc_priority (),
- * which will return a new job priority to be packed.
+ * Unpack the urgency and userid from a submitted job and call
+ * priority_calculation (), which will return a new job priority to be packed.
  */
 static int priority_cb (flux_plugin_t *p,
                         const char *topic,
