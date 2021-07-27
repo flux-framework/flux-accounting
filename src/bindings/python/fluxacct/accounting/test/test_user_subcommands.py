@@ -127,6 +127,46 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(len(num_rows_after_delete), 0)
 
+    # check for a new user's default bank
+    def test_07_check_default_bank_new_user(self):
+        u.add_user(
+            acct_conn,
+            username="test_user1",
+            uid="5000",
+            bank="test_bank",
+        )
+        cursor = acct_conn.cursor()
+        cursor.execute(
+            "SELECT default_bank FROM association_table WHERE username='test_user1'"
+        )
+
+        self.assertEqual(cursor.fetchone()[0], "test_bank")
+
+    # check for an existing user's default bank
+    def test_08_check_default_bank_existing_user(self):
+        u.add_user(
+            acct_conn,
+            username="test_user1",
+            uid="5000",
+            bank="other_test_bank",
+        )
+        cursor = acct_conn.cursor()
+        cursor.execute(
+            "SELECT default_bank FROM association_table WHERE username='test_user1'"
+        )
+
+        self.assertEqual(cursor.fetchone()[0], "test_bank")
+
+    # check that we can successfully edit the default bank for a user
+    def test_09_edit_default_bank(self):
+        u.edit_user(acct_conn, "test_user1", "default_bank", "other_test_bank")
+        cursor = acct_conn.cursor()
+        cursor.execute(
+            "SELECT default_bank FROM association_table WHERE username='test_user1'"
+        )
+
+        self.assertEqual(cursor.fetchone()[0], "other_test_bank")
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):

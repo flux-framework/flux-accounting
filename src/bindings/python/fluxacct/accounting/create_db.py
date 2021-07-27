@@ -94,6 +94,7 @@ def create_db(
                 userid        int(11)     DEFAULT 65534 NOT NULL,
                 admin_level   smallint(6) DEFAULT 1     NOT NULL,
                 bank          tinytext                  NOT NULL,
+                default_bank  tinytext                  NOT NULL,
                 shares        int(11)     DEFAULT 1     NOT NULL,
                 job_usage     real        DEFAULT 0.0   NOT NULL,
                 fairshare     real        DEFAULT 0.5   NOT NULL,

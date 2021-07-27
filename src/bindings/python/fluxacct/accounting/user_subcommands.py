@@ -58,6 +58,18 @@ def add_user(
     except KeyError as key_error:
         print(key_error)
 
+    # check for a default bank of the user being added; if the user is new, set
+    # the first bank they were added to as their default bank
+    cur = conn.cursor()
+    select_stmt = "SELECT default_bank FROM association_table WHERE username=?"
+    cur.execute(select_stmt, (username,))
+    row = cur.fetchone()
+
+    if row is None:
+        default_bank = bank
+    else:
+        default_bank = row[0]
+
     try:
         # insert the user values into association_table
         conn.execute(
@@ -70,9 +82,10 @@ def add_user(
                 userid,
                 admin_level,
                 bank,
+                default_bank,
                 shares
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 int(time.time()),
@@ -82,6 +95,7 @@ def add_user(
                 uid,
                 admin_level,
                 bank,
+                default_bank,
                 shares,
             ),
         )
@@ -129,6 +143,7 @@ def edit_user(conn, username, field, new_value):
         "username",
         "admin_level",
         "bank",
+        "default_bank",
         "shares",
         "max_jobs",
         "max_wall_pj",
