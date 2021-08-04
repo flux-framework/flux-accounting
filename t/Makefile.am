@@ -7,6 +7,7 @@ TESTSCRIPTS = \
 	t1003-mf-priority-small-tie.t \
 	t1004-mf-priority-small-tie-all.t \
 	t1005-max-jobs-limits.t \
+	t1006-update-fshare.t \
 	t1007-flux-account.t
 
 dist_check_SCRIPTS = \
