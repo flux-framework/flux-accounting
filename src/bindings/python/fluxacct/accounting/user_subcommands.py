@@ -13,21 +13,20 @@ import sqlite3
 import time
 import pwd
 
-import pandas as pd
-
 
 def view_user(conn, user):
+    cur = conn.cursor()
     try:
-        # get the information pertaining to a user in the Accounting DB
-        select_stmt = "SELECT * FROM association_table where username=?"
-        dataframe = pd.read_sql_query(select_stmt, conn, params=(user,))
-        # if the length of dataframe is 0, that means
-        # the user specified was not found in the table
-        if len(dataframe.index) == 0:
+        # get the information pertaining to a user in the DB
+        cur.execute("SELECT * FROM association_table where username=?", (user,))
+        row = cur.fetchone()
+        if row is None:
             print("User not found in association_table")
         else:
-            print(dataframe)
-    except pd.io.sql.DatabaseError as e_database_error:
+            col_headers = [description[0] for description in cur.description]
+            for key, val in zip(col_headers, row):
+                print(key + ": " + str(val))
+    except sqlite3.OperationalError as e_database_error:
         print(e_database_error)
 
 
