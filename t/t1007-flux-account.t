@@ -31,8 +31,10 @@ test_expect_success 'trying to view a bank that does not exist in the DB should 
 
 test_expect_success 'trying to view a bank that does exist in the DB should return some information' '
 	cat <<-EOF >good_bank.expected &&
-		   bank_id bank parent_bank  shares
-	0        2    A        root       1
+	bank_id: 2
+	bank: A
+	parent_bank: root
+	shares: 1
 	EOF
 	flux python ${FLUX_ACCOUNT} -p ${DB_PATH} view-bank A > good_bank.test &&
 	test_cmp good_bank.expected good_bank.test
@@ -55,8 +57,10 @@ test_expect_success 'edit a field in a user account' '
 test_expect_success 'edit a field in a bank account' '
 	flux python ${FLUX_ACCOUNT} -p ${DB_PATH} edit-bank C --shares=50 &&
 	cat <<-EOF >edited_bank.expected &&
-		   bank_id bank parent_bank  shares
-	0        4    C        root      50
+	bank_id: 4
+	bank: C
+	parent_bank: root
+	shares: 50
 	EOF
 	flux python ${FLUX_ACCOUNT} -p ${DB_PATH} view-bank C > edited_bank.test &&
 	test_cmp edited_bank.expected edited_bank.test
