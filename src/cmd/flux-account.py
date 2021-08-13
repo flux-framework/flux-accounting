@@ -87,12 +87,6 @@ def add_add_user_arg(subparsers):
         default=1,
         metavar="MAX_JOBS",
     )
-    subparser_add_user.add_argument(
-        "--max-wall-pj",
-        help="max wall time per job",
-        default=60,
-        metavar="MAX_WALL_PJ",
-    )
 
 
 def add_delete_user_arg(subparsers):
@@ -305,7 +299,6 @@ def select_accounting_function(args, conn, output_file, parser):
             args.admin_level,
             args.shares,
             args.max_jobs,
-            args.max_wall_pj,
         )
     elif args.func == "delete_user":
         u.delete_user(conn, args.username, args.bank)

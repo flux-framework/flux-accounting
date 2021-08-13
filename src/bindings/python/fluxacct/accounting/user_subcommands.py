@@ -149,7 +149,6 @@ def edit_user(conn, username, field, new_value):
         "default_bank",
         "shares",
         "max_jobs",
-        "max_wall_pj",
     ]
     if field in fields:
         the_field = field
