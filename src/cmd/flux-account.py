@@ -84,7 +84,7 @@ def add_add_user_arg(subparsers):
     subparser_add_user.add_argument(
         "--max-jobs",
         help="max jobs",
-        default=1,
+        default=5,
         metavar="MAX_JOBS",
     )
 
