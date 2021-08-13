@@ -14,8 +14,6 @@ import pwd
 import csv
 import math
 
-import pandas as pd
-
 
 def count_ranks(ranks):
     if "-" in ranks:
@@ -72,40 +70,8 @@ def write_records_to_file(job_records, output_file):
 
 
 def print_job_records(job_records):
-    records = {}
-    userid_arr = []
-    username_arr = []
-    jobid_arr = []
-    t_submit_arr = []
-    t_run_arr = []
-    t_inactive_arr = []
-    nnodes_arr = []
-    r_arr = []
-
-    for record in job_records:
-        userid_arr.append(record.userid)
-        username_arr.append(record.username)
-        jobid_arr.append(record.jobid)
-        t_submit_arr.append(record.t_submit)
-        t_run_arr.append(record.t_run)
-        t_inactive_arr.append(record.t_inactive)
-        nnodes_arr.append(record.nnodes)
-        r_arr.append(record.resources)
-
-    records = {
-        "UserID": userid_arr,
-        "Username": username_arr,
-        "JobID": jobid_arr,
-        "T_Submit": t_submit_arr,
-        "T_Run": t_run_arr,
-        "T_Inactive": t_inactive_arr,
-        "Nodes": nnodes_arr,
-        "R": r_arr,
-    }
-
-    dataframe = pd.DataFrame(
-        records,
-        columns=[
+    print(
+        "{:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10}".format(
             "UserID",
             "Username",
             "JobID",
@@ -114,11 +80,21 @@ def print_job_records(job_records):
             "T_Inactive",
             "Nodes",
             "R",
-        ],
+        )
     )
-    pd.set_option("max_colwidth", 100)
-    pd.set_option("display.float_format", lambda x: "%.5f" % x)
-    print(dataframe)
+    for record in job_records:
+        print(
+            "{:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10}".format(
+                record.userid,
+                record.username,
+                record.jobid,
+                record.t_submit,
+                record.t_run,
+                record.t_inactive,
+                record.nnodes,
+                record.resources,
+            )
+        )
 
 
 class JobRecord:
@@ -147,19 +123,19 @@ class JobRecord:
         return self.t_run - self.t_submit
 
 
-def add_job_records(dataframe):
+def add_job_records(rows):
     job_records = []
 
-    for _, row in dataframe.iterrows():
+    for row in rows:
         job_record = JobRecord(
-            row["userid"],
-            get_username(row["userid"]),
-            row["id"],
-            row["t_submit"],
-            row["t_run"],
-            row["t_inactive"],
-            count_ranks(row["ranks"]),
-            row["R"],
+            row[0],  # userid
+            get_username(row[0]),  # username
+            row[1],  # jobid
+            row[2],  # t_submit
+            row[3],  # t_run
+            row[4],  # t_inactive
+            count_ranks(row[5]),  # nnodes
+            row[6],  # resources
         )
         job_records.append(job_record)
 
@@ -206,14 +182,16 @@ def view_job_records(conn, output_file, **kwargs):
 
     select_stmt += where_stmt
 
-    dataframe = pd.read_sql_query(select_stmt, conn, params=((*tuple(params_list),)))
+    cur = conn.cursor()
+    cur.execute(select_stmt, (*tuple(params_list),))
+    rows = cur.fetchall()
     # if the length of dataframe is 0, that means
     # no job records were found in the jobs table,
     # so just return an empty list
-    if len(dataframe.index) == 0:
+    if len(rows) == 0:
         return job_records
 
-    job_records = add_job_records(dataframe)
+    job_records = add_job_records(rows)
     if output_file is None:
         print_job_records(job_records)
     else:
@@ -243,31 +221,33 @@ def get_last_job_ts(acct_conn, user, bank):
     s_ts = """
         SELECT last_job_timestamp FROM job_usage_factor_table WHERE username=? AND bank=?
         """
-    timestamp = pd.read_sql_query(
+    cur = acct_conn.cursor()
+    cur.execute(
         s_ts,
-        acct_conn,
-        params=(
+        (
             user,
             bank,
         ),
     )
-    return float(timestamp.iloc[0])
+    row = cur.fetchone()
+    return float(row[0])
 
 
 def fetch_usg_bins(acct_conn, user=None, bank=None):
     past_usage_factors = []
 
     select_stmt = "SELECT * from job_usage_factor_table WHERE username=? AND bank=?"
-    dataframe = pd.read_sql_query(
+    cur = acct_conn.cursor()
+    cur.execute(
         select_stmt,
-        acct_conn,
-        params=(
+        (
             user,
             bank,
         ),
     )
+    row = cur.fetchone()
 
-    for val in dataframe.iloc[0].values[4:]:
+    for val in row[4:]:
         if isinstance(val, float):
             past_usage_factors.append(val)
 
@@ -347,15 +327,16 @@ def get_curr_usg_bin(acct_conn, user, bank):
         SELECT usage_factor_period_0 FROM job_usage_factor_table
         WHERE username=? AND bank=?
         """
-    dataframe = pd.read_sql_query(
+    cur = acct_conn.cursor()
+    cur.execute(
         s_usg,
-        acct_conn,
-        params=(
+        (
             user,
             bank,
         ),
     )
-    return float(dataframe.iloc[0])
+    row = cur.fetchone()
+    return float(row[0])
 
 
 def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank):
@@ -363,12 +344,15 @@ def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank):
     # hl_period represents the number of seconds that represent one usage bin
     hl_period = pdhl * 604800
 
+    acct_cur = acct_conn.cursor()
+
     # fetch timestamp of the end of the current half-life period
     s_end_hl = """
         SELECT end_half_life_period FROM t_half_life_period_table WHERE cluster='cluster'
         """
-    dataframe = pd.read_sql_query(s_end_hl, acct_conn)
-    end_hl = dataframe.iloc[0]
+    acct_cur.execute(s_end_hl)
+    row = acct_cur.fetchone()
+    end_hl = row[0]
 
     # get jobs that have completed since the last seen completed job
     last_j_ts = get_last_job_ts(acct_conn, user, bank)
@@ -431,14 +415,17 @@ def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank):
 def check_end_hl(acct_conn, pdhl):
     hl_period = pdhl * 604800
 
+    cur = acct_conn.cursor()
+
     # fetch timestamp of the end of the current half-life period
     s_end_hl = """
         SELECT end_half_life_period
         FROM t_half_life_period_table
         WHERE cluster='cluster'
         """
-    dataframe = pd.read_sql_query(s_end_hl, acct_conn)
-    end_hl = dataframe.iloc[0]
+    cur.execute(s_end_hl)
+    row = cur.fetchone()
+    end_hl = row[0]
 
     if float(end_hl) < (time.time() - hl_period):
         # update new end of half-life period timestamp
@@ -453,9 +440,11 @@ def check_end_hl(acct_conn, pdhl):
 
 def update_job_usage(acct_conn, jobs_conn, pdhl):
     s_assoc = "SELECT username, bank FROM association_table"
-    dataframe = pd.read_sql_query(s_assoc, acct_conn)
+    cur = acct_conn.cursor()
+    cur.execute(s_assoc)
+    rows = cur.fetchall()
 
-    for _, row in dataframe.iterrows():
-        calc_usage_factor(jobs_conn, acct_conn, pdhl, row["username"], row["bank"])
+    for row in rows:
+        calc_usage_factor(jobs_conn, acct_conn, pdhl, row[0], row[1])
 
     check_end_hl(acct_conn, pdhl)

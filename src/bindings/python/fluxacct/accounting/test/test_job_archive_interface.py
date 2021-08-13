@@ -13,8 +13,7 @@ import unittest
 import os
 import sqlite3
 import time
-
-import pandas as pd
+import sys
 
 from unittest import mock
 
@@ -29,6 +28,8 @@ class TestAccountingCLI(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         global jobs_conn
+        global acct_conn
+        global cur
 
         # create example job-archive database, output file
         global op
@@ -55,8 +56,12 @@ class TestAccountingCLI(unittest.TestCase):
         )
 
         c.create_db("FluxAccountingUsers.db")
-        global acct_conn
-        acct_conn = sqlite3.connect("FluxAccountingUsers.db")
+        try:
+            acct_conn = sqlite3.connect("file:FluxAccountingUsers.db?mode=rw", uri=True)
+            cur = acct_conn.cursor()
+        except sqlite3.OperationalError:
+            print(f"Unable to open test database file", file=sys.stderr)
+            sys.exit(-1)
 
         # simulate end of half life period in FluxAccounting database
         update_stmt = """
@@ -261,8 +266,8 @@ class TestAccountingCLI(unittest.TestCase):
     # make sure update_t_inactive() updates the last seen job timestamp
     def test_13_update_t_inactive_success(self):
         s_ts = "SELECT last_job_timestamp FROM job_usage_factor_table WHERE username='1003' AND bank='D'"
-        dataframe = pd.read_sql_query(s_ts, acct_conn)
-        ts_old = float(dataframe.iloc[0])
+        cur.execute(s_ts)
+        ts_old = float(cur.fetchone()[0])
 
         self.assertEqual(ts_old, 0.0)
 
@@ -270,8 +275,8 @@ class TestAccountingCLI(unittest.TestCase):
             jobs_conn, acct_conn, pdhl=1, user="1003", bank="D"
         )
 
-        dataframe = pd.read_sql_query(s_ts, acct_conn)
-        ts_new = float(dataframe.iloc[0])
+        cur.execute(s_ts)
+        ts_new = float(cur.fetchone()[0])
 
         self.assertEqual(ts_new, 9092200.0)
 
@@ -279,16 +284,16 @@ class TestAccountingCLI(unittest.TestCase):
     # historical usage factor was written to association_table
     def test_14_check_usage_factor_in_tables(self):
         select_stmt = "SELECT usage_factor_period_0 FROM job_usage_factor_table WHERE username='1002' AND bank='C'"
-        dataframe = pd.read_sql_query(select_stmt, acct_conn)
-        usage_factor = dataframe.iloc[0]
-        self.assertEqual(usage_factor["usage_factor_period_0"], 16956.0)
+        cur.execute(select_stmt)
+        usage_factor = cur.fetchone()[0]
+        self.assertEqual(usage_factor, 16956.0)
 
         select_stmt = (
             "SELECT job_usage FROM association_table WHERE username='1002' AND bank='C'"
         )
-        dataframe = pd.read_sql_query(select_stmt, acct_conn)
-        job_usage = dataframe.iloc[0]
-        self.assertEqual(job_usage["job_usage"], 17044.0)
+        cur.execute(select_stmt)
+        job_usage = cur.fetchone()[0]
+        self.assertEqual(job_usage, 17044.0)
 
     # re-calculating a job usage factor after the end of the last half-life
     # period should create a new usage bin
@@ -364,13 +369,16 @@ class TestAccountingCLI(unittest.TestCase):
             SELECT job_usage FROM association_table
             WHERE username='1002' AND bank='C'
             """
-        dataframe = pd.read_sql_query(s_stmt, acct_conn)
-        self.assertEqual(float(dataframe.iloc[0]), 17044.0)
+
+        cur.execute(s_stmt)
+        job_usage = cur.fetchone()[0]
+        self.assertEqual(job_usage, 17044.0)
 
         jobs.update_job_usage(acct_conn, jobs_conn, pdhl=1)
 
-        dataframe = pd.read_sql_query(s_stmt, acct_conn)
-        self.assertEqual(float(dataframe.iloc[0]), 17044.0)
+        cur.execute(s_stmt)
+        job_usage = cur.fetchone()[0]
+        self.assertEqual(job_usage, 17044.0)
 
     # simulate a half-life period further; assure the new end of the
     # current half-life period gets updated
@@ -382,15 +390,15 @@ class TestAccountingCLI(unittest.TestCase):
             FROM t_half_life_period_table
             WHERE cluster='cluster'
             """
-        dataframe = pd.read_sql_query(s_end_hl, acct_conn)
-        old_hl = dataframe.iloc[0]
+        cur.execute(s_end_hl)
+        old_hl = cur.fetchone()[0]
 
         jobs.check_end_hl(acct_conn, pdhl=1)
 
-        dataframe = pd.read_sql_query(s_end_hl, acct_conn)
-        new_hl = dataframe.iloc[0]
+        cur.execute(s_end_hl)
+        new_hl = cur.fetchone()[0]
 
-        self.assertGreater(float(new_hl), float(old_hl))
+        self.assertGreater(new_hl, old_hl)
 
     # removing a user from the flux-accounting DB should NOT remove their job
     # usage history from the job_usage_factor_table
@@ -403,9 +411,10 @@ class TestAccountingCLI(unittest.TestCase):
             WHERE username='1001'
             AND bank='C'
             """
+        cur.execute(select_stmt)
+        records = len(cur.fetchall())
 
-        dataframe = pd.read_sql_query(select_stmt, acct_conn)
-        self.assertEqual(len(dataframe), 1)
+        self.assertEqual(records, 1)
 
     # calling update_job_usage in the next half-life period should update usage
     # factors for users
@@ -415,13 +424,16 @@ class TestAccountingCLI(unittest.TestCase):
             SELECT job_usage FROM association_table
             WHERE username='1002' AND bank='C'
             """
-        dataframe = pd.read_sql_query(s_stmt, acct_conn)
-        self.assertEqual(float(dataframe.iloc[0]), 17044.0)
+        cur.execute(s_stmt)
+        job_usage = cur.fetchone()[0]
+
+        self.assertEqual(job_usage, 17044.0)
 
         jobs.update_job_usage(acct_conn, jobs_conn, pdhl=1)
 
-        dataframe = pd.read_sql_query(s_stmt, acct_conn)
-        self.assertEqual(float(dataframe.iloc[0]), 8496.0)
+        cur.execute(s_stmt)
+        job_usage = cur.fetchone()[0]
+        self.assertEqual(job_usage, 8496.0)
 
     # remove database and log file
     @classmethod
