@@ -6,7 +6,8 @@ TESTSCRIPTS = \
 	t1002-mf-priority-small-no-tie.t \
 	t1003-mf-priority-small-tie.t \
 	t1004-mf-priority-small-tie-all.t \
-	t1005-max-jobs-limits.t
+	t1005-max-jobs-limits.t \
+	t1007-flux-account.t
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
