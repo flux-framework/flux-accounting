@@ -55,6 +55,7 @@ def add_add_user_arg(subparsers):
     subparser_add_user.add_argument(
         "--userid",
         help="userid",
+        default=65534,
         metavar="USERID",
     )
     subparser_add_user.add_argument(
