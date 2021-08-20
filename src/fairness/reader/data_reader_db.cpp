@@ -62,6 +62,7 @@ association's data and adds it to the weighted tree.
 int data_reader_db_t::add_assoc (const std::string &username,
                                  const std::string &shrs,
                                  const std::string &usg,
+                                 double fshare,
                                  std::shared_ptr<weighted_tree_node_t> &node)
 {
     // add user as a child of the node
@@ -70,6 +71,7 @@ int data_reader_db_t::add_assoc (const std::string &username,
                                                              true,
                                                              std::stoll (shrs),
                                                              std::stoll (usg));
+    user_node->set_fshare (fshare);
     return node->add_child (user_node);
 }
 
@@ -242,10 +244,11 @@ std::shared_ptr<weighted_tree_node_t> data_reader_db_t::get_sub_banks (
                 sqlite3_column_text (c_assoc, 1));
             std::string usage = reinterpret_cast<char const *> (
                 sqlite3_column_text (c_assoc, 3));
+            double fshare = sqlite3_column_double (c_assoc, 4);
 
             try {
                 // add association as a child of the node
-                if (add_assoc (username, shrs, usage, node) < 0) {
+                if (add_assoc (username, shrs, usage, fshare, node) < 0) {
                     m_err_msg += "Failed to add association\n";
                     errno = EINVAL;
 
@@ -358,7 +361,8 @@ std::shared_ptr<weighted_tree_node_t> data_reader_db_t::load_accounting_db (
                   "ORDER BY bank_table.bank";
 
     s_assoc = "SELECT association_table.username, association_table.shares, "
-              "association_table.bank, association_table.job_usage "
+              "association_table.bank, association_table.job_usage, "
+              "association_table.fairshare "
               "FROM association_table WHERE association_table.bank=?"
               "ORDER BY association_table.username";
 
