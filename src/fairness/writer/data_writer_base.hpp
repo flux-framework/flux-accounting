@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: LGPL-3.0
 \************************************************************/
+#include "src/fairness/weighted_tree/weighted_tree.hpp"
 
 using namespace Flux::accounting;
 

@@ -9,6 +9,8 @@
 \************************************************************/
 #include "src/fairness/reader/data_reader_base.hpp"
 
+using namespace Flux::reader;
+
 /******************************************************************************
  *                                                                            *
  *                         Public Base Reader API                             *

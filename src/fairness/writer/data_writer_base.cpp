@@ -7,8 +7,9 @@
  *
  * SPDX-License-Identifier: LGPL-3.0
 \************************************************************/
-
 #include "src/fairness/writer/data_writer_base.hpp"
+
+using namespace Flux::writer;
 
 /******************************************************************************
  *                                                                            *
