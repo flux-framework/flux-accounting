@@ -124,7 +124,7 @@ def edit_bank(conn, bank, shares):
     print(shares)
     # if user tries to edit a shares value <= 0,
     # raise an exception
-    if shares <= 0:
+    if int(shares) <= 0:
         raise Exception("New shares amount must be >= 0")
     try:
         # edit value in bank_table
