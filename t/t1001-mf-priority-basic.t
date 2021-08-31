@@ -45,9 +45,9 @@ test_expect_success 'create fake_payload.py' '
 	username = getpass.getuser()
 	userid = pwd.getpwnam(username).pw_uid
 	# create a JSON payload
-	data = {"userid": str(userid), "bank": "account3", "default_bank": "account3", "fairshare": "0.45321"}
+	data = {"userid": str(userid), "bank": "account3", "default_bank": "account3", "fairshare": "0.45321", "max_jobs": "10"}
 	flux.Flux().rpc("job-manager.mf_priority.rec_update", data).get()
-	data = {"userid": str(userid), "bank": "account2", "default_bank": "account3", "fairshare": "0.11345"}
+	data = {"userid": str(userid), "bank": "account2", "default_bank": "account3", "fairshare": "0.11345", "max_jobs": "10"}
 	flux.Flux().rpc("job-manager.mf_priority.rec_update", data).get()
 	EOF
 '
@@ -121,6 +121,30 @@ test_expect_success 'reject job when invalid bank format is passed in' '
 	test_must_fail flux mini submit --setattr=system.bank=1 -n1 hostname > invalid_fmt.out 2>&1 &&
 	test_debug "cat invalid_fmt.out" &&
 	grep "unable to unpack bank arg" invalid_fmt.out
+'
+
+test_expect_success 'create a fake payload with an empty fairshare key-value pair' '
+	cat <<-EOF >empty_fairshare.py
+	import flux
+	import pwd
+	import getpass
+
+	username = getpass.getuser()
+	userid = pwd.getpwnam(username).pw_uid
+	# create a JSON payload
+	data = {"userid": str(userid), "bank": "account4", "default_bank": "account3", "fairshare": "", "max_jobs": "10"}
+	flux.Flux().rpc("job-manager.mf_priority.rec_update", data).get()
+	EOF
+'
+
+test_expect_success 'update plugin with sample test data' '
+	flux python empty_fairshare.py
+'
+
+test_expect_success 'submit a job with new bank and 0 fairshare should result in a job rejection' '
+	test_must_fail flux mini submit --setattr=system.bank=account4 hostname > zero_fairshare.out 2>&1 &&
+	test_debug "zero_fairshare.out" &&
+	grep "user fairshare value is 0" zero_fairshare.out
 '
 
 test_done

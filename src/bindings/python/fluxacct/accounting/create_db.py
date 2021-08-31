@@ -98,6 +98,7 @@ def create_db(
                 shares        int(11)     DEFAULT 1     NOT NULL,
                 job_usage     real        DEFAULT 0.0   NOT NULL,
                 fairshare     real        DEFAULT 0.5   NOT NULL,
+                max_jobs      int(11)     DEFAULT 5     NOT NULL,
                 PRIMARY KEY   (username, bank)
         );"""
     )
