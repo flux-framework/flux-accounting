@@ -45,6 +45,7 @@ def add_user(
     uid=65534,
     admin_level=1,
     shares=1,
+    max_jobs=5,
 ):
 
     # get uid of user
@@ -83,9 +84,10 @@ def add_user(
                 admin_level,
                 bank,
                 default_bank,
-                shares
+                shares,
+                max_jobs
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 int(time.time()),
@@ -97,6 +99,7 @@ def add_user(
                 bank,
                 default_bank,
                 shares,
+                max_jobs,
             ),
         )
         # commit changes
@@ -146,7 +149,6 @@ def edit_user(conn, username, field, new_value):
         "default_bank",
         "shares",
         "max_jobs",
-        "max_wall_pj",
     ]
     if field in fields:
         the_field = field
