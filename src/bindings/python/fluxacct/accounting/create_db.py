@@ -99,6 +99,7 @@ def create_db(
                 job_usage     real        DEFAULT 0.0   NOT NULL,
                 fairshare     real        DEFAULT 0.5   NOT NULL,
                 max_jobs      int(11)     DEFAULT 5     NOT NULL,
+                qos           tinytext    DEFAULT ''    NOT NULL,
                 PRIMARY KEY   (username, bank)
         );"""
     )
