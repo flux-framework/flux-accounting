@@ -253,6 +253,39 @@ def add_update_usage_arg(subparsers):
     )
 
 
+def add_add_qos_arg(subparsers):
+    subparser_add_qos = subparsers.add_parser("add-qos", help="add a new qos")
+
+    subparser_add_qos.set_defaults(func="add_qos")
+    subparser_add_qos.add_argument("--qos", help="QOS name", metavar="QOS")
+    subparser_add_qos.add_argument(
+        "--priority", help="QOS priority", metavar="PRIORITY"
+    )
+
+
+def add_view_qos_arg(subparsers):
+    subparser_view_qos = subparsers.add_parser("view-qos", help="view QOS information")
+
+    subparser_view_qos.set_defaults(func="view_qos")
+    subparser_view_qos.add_argument("--qos", help="QOS name", metavar="QOS")
+
+
+def add_edit_qos_arg(subparsers):
+    subparser_edit_qos = subparsers.add_parser("edit-qos", help="edit a QOS' priority")
+
+    subparser_edit_qos.set_defaults(func="edit_qos")
+    subparser_edit_qos.add_argument("--qos", help="qos name", metavar="QOS")
+    subparser_edit_qos.add_argument(
+        "--priority", help="new priority", metavar="PRIORITY"
+    )
+
+
+def add_delete_qos_arg(subparsers):
+    subparser_delete_qos = subparsers.add_parser("delete-qos", help="remove a QOS")
+    subparser_delete_qos.set_defaults(func="delete_qos")
+    subparser_delete_qos.add_argument("--qos", help="QOS name", metavar="QOS")
+
+
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_output_file_arg(parser)
@@ -267,6 +300,10 @@ def add_arguments_to_parser(parser, subparsers):
     add_delete_bank_arg(subparsers)
     add_edit_bank_arg(subparsers)
     add_update_usage_arg(subparsers)
+    add_add_qos_arg(subparsers)
+    add_view_qos_arg(subparsers)
+    add_edit_qos_arg(subparsers)
+    add_delete_qos_arg(subparsers)
 
 
 def set_db_location(args):
@@ -338,6 +375,14 @@ def select_accounting_function(args, conn, output_file, parser):
     elif args.func == "update_usage":
         jobs_conn = establish_sqlite_connection(args.job_archive_db_path)
         jobs.update_job_usage(conn, jobs_conn, args.priority_decay_half_life)
+    elif args.func == "add_qos":
+        q.add_qos(conn, args.qos, args.priority)
+    elif args.func == "view_qos":
+        q.view_qos(conn, args.qos)
+    elif args.func == "edit_qos":
+        q.edit_qos(conn, args.qos, args.priority)
+    elif args.func == "delete_qos":
+        q.delete_qos(conn, args.qos)
     else:
         print(parser.print_usage())
 
