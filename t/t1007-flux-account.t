@@ -24,6 +24,44 @@ test_expect_success 'add some users to the DB' '
 	flux python ${FLUX_ACCOUNT} -p ${DB_PATH} add-user --username=user5014 --userid=5014 --bank=C
 '
 
+test_expect_success 'add some QOS to the DB' '
+	flux python ${FLUX_ACCOUNT} -p ${DB_PATH} add-qos --qos=standby --priority=0 &&
+	flux python ${FLUX_ACCOUNT} -p ${DB_PATH} add-qos --qos=expedite --priority=10000
+	flux python ${FLUX_ACCOUNT} -p ${DB_PATH} add-qos --qos=special --priority=99999
+'
+
+test_expect_success 'add a QOS to an existing user account' '
+	flux python ${FLUX_ACCOUNT} -p ${DB_PATH} edit-user --username=user5011 --field=qos --new-value="expedite"
+'
+
+test_expect_success 'trying to add a non-existent QOS to a user account should return an error' '
+	flux python ${FLUX_ACCOUNT} -p ${DB_PATH} edit-user --username=user5011 --field=qos --new-value="foo" > bad_qos.out &&
+	grep "QOS specified does not exist in qos_table" bad_qos.out
+'
+
+test_expect_success 'trying to add a user with a non-existent QOS should also return an error' '
+	flux python ${FLUX_ACCOUNT} -p ${DB_PATH} add-user --username=user5015 --userid=5015 --bank=A --qos="foo" > bad_qos2.out &&
+	grep "QOS specified does not exist in qos_table" bad_qos2.out
+'
+
+test_expect_success 'add multiple QOS to an existing user account' '
+	flux python ${FLUX_ACCOUNT} -p ${DB_PATH} edit-user --username=user5012 --field=qos --new-value="expedite,standby" &&
+	flux python ${FLUX_ACCOUNT} -p ${DB_PATH} view-user user5012 > user5012.out &&
+	grep "expedite,standby" user5012.out
+'
+
+test_expect_success 'edit a QOS priority' '
+	flux python ${FLUX_ACCOUNT} -p ${DB_PATH} edit-qos --qos=expedite --priority=20000 &&
+	flux python ${FLUX_ACCOUNT} -p ${DB_PATH} view-qos --qos=expedite > edited_qos.out &&
+	grep "20000" edited_qos.out
+'
+
+test_expect_success 'remove a QOS' '
+	flux python ${FLUX_ACCOUNT} -p ${DB_PATH} delete-qos --qos=special &&
+	flux python ${FLUX_ACCOUNT} -p ${DB_PATH} view-qos --qos=special > deleted_qos.out &&
+	grep "QOS not found in qos_table" deleted_qos.out
+'
+
 test_expect_success 'trying to view a bank that does not exist in the DB should return an error message' '
 	flux python ${FLUX_ACCOUNT} -p ${DB_PATH} view-bank foo > bad_bank.out &&
 	grep "Bank not found in bank_table" bad_bank.out
