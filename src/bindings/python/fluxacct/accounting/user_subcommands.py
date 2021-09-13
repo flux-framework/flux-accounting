@@ -45,6 +45,7 @@ def add_user(
     admin_level=1,
     shares=1,
     max_jobs=5,
+    qos="",
 ):
 
     # get uid of user
@@ -84,9 +85,10 @@ def add_user(
                 bank,
                 default_bank,
                 shares,
-                max_jobs
+                max_jobs,
+                qos
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 int(time.time()),
@@ -99,6 +101,7 @@ def add_user(
                 default_bank,
                 shares,
                 max_jobs,
+                qos,
             ),
         )
         # commit changes
