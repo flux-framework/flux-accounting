@@ -15,6 +15,7 @@ import os
 import fluxacct.accounting
 from fluxacct.accounting import user_subcommands as u
 from fluxacct.accounting import bank_subcommands as b
+from fluxacct.accounting import qos_subcommands as q
 from fluxacct.accounting import job_archive_interface as jobs
 from fluxacct.accounting import create_db as c
 
@@ -86,6 +87,12 @@ def add_add_user_arg(subparsers):
         help="max jobs",
         default=5,
         metavar="MAX_JOBS",
+    )
+    subparser_add_user.add_argument(
+        "--qos",
+        help="quality of service",
+        default="",
+        metavar="QUALITY OF SERVICE",
     )
 
 
@@ -305,6 +312,7 @@ def select_accounting_function(args, conn, output_file, parser):
             args.admin_level,
             args.shares,
             args.max_jobs,
+            args.qos,
         )
     elif args.func == "delete_user":
         u.delete_user(conn, args.username, args.bank)
