@@ -53,6 +53,7 @@ class TestDB(unittest.TestCase):
             "sqlite_sequence",
             "job_usage_factor_table",
             "t_half_life_period_table",
+            "qos_table",
         ]
         self.assertEqual(list_of_tables, expected)
 
