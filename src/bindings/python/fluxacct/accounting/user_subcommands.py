@@ -140,7 +140,7 @@ def delete_user(conn, username, bank):
     conn.commit()
 
 
-def edit_user(conn, username, field, new_value):
+def edit_user(conn, username, field, new_value, bank=""):
     fields = [
         "username",
         "admin_level",
@@ -152,14 +152,33 @@ def edit_user(conn, username, field, new_value):
     if field in fields:
         the_field = field
 
-        # edit value in accounting database
-        conn.execute(
-            "UPDATE association_table SET " + the_field + "=? WHERE username=?",
-            (
-                new_value,
-                username,
-            ),
-        )
+        if bank != "":
+            update_stmt = (
+                "UPDATE association_table SET "
+                + the_field
+                + "=? WHERE username=? AND bank=?"
+            )
+            # edit value in accounting database
+            conn.execute(
+                update_stmt,
+                (
+                    new_value,
+                    username,
+                    bank,
+                ),
+            )
+        else:
+            update_stmt = (
+                "UPDATE association_table SET " + the_field + "=? WHERE username=?"
+            )
+            conn.execute(
+                update_stmt,
+                (
+                    new_value,
+                    username,
+                ),
+            )
+
         # commit changes
         conn.commit()
     else:

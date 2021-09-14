@@ -109,6 +109,12 @@ def add_edit_user_arg(subparsers):
         metavar="USERNAME",
     )
     subparser_edit_user.add_argument(
+        "--bank",
+        help="bank",
+        default="",
+        metavar="BANK",
+    )
+    subparser_edit_user.add_argument(
         "--field",
         help="column name",
         metavar="FIELD",
@@ -303,7 +309,7 @@ def select_accounting_function(args, conn, output_file, parser):
     elif args.func == "delete_user":
         u.delete_user(conn, args.username, args.bank)
     elif args.func == "edit_user":
-        u.edit_user(conn, args.username, args.field, args.new_value)
+        u.edit_user(conn, args.username, args.field, args.new_value, args.bank)
     elif args.func == "view_job_records":
         jobs.view_job_records(
             conn,
