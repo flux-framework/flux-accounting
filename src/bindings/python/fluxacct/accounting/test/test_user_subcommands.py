@@ -46,6 +46,7 @@ class TestAccountingCLI(unittest.TestCase):
             admin_level="1",
             bank="acct",
             shares="10",
+            qos="",
         )
         cursor = acct_conn.cursor()
         num_rows_assoc_table = cursor.execute("DELETE FROM association_table").rowcount
@@ -65,6 +66,7 @@ class TestAccountingCLI(unittest.TestCase):
             admin_level="1",
             bank="acct",
             shares="10",
+            qos="",
         )
         u.add_user(
             acct_conn,
@@ -73,6 +75,7 @@ class TestAccountingCLI(unittest.TestCase):
             admin_level="1",
             bank="acct",
             shares="10",
+            qos="",
         )
 
         self.assertRaises(sqlite3.IntegrityError)
@@ -87,6 +90,7 @@ class TestAccountingCLI(unittest.TestCase):
             admin_level="1",
             bank="acct",
             shares="10",
+            qos="",
         )
         u.add_user(
             acct_conn,
@@ -95,6 +99,7 @@ class TestAccountingCLI(unittest.TestCase):
             admin_level="1",
             bank="other_acct",
             shares="10",
+            qos="",
         )
         cursor = acct_conn.cursor()
         cursor.execute("SELECT * from association_table where username='dup_user'")
