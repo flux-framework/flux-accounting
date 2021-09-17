@@ -58,12 +58,6 @@ AC_SUBST(PYTHON_LIBRARY, lib${ac_python_library}.so)
 AC_DEFINE_UNQUOTED([PYTHON_INTERPRETER], ["$PYTHON"], [The python interpreter flux is configured with])
 AC_SUBST(PYTHON)
 
-AM_CHECK_PYMOD(pandas,
-               [StrictVersion(pandas.__version__) >= StrictVersion('0.24.1')],
-               ,
-               [AC_MSG_ERROR([could not find python module pandas, version 0.24.1+ required])]
-               )
-
 #
 # Project directories
 #
