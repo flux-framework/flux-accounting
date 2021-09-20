@@ -13,8 +13,5 @@ RUN \
    && sudo usermod -G wheel $USER; \
  fi
 
-RUN \
- sudo pip3 install pandas==0.24.1
-
 USER $USER
 WORKDIR /home/$USER

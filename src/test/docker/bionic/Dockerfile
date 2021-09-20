@@ -17,8 +17,5 @@ RUN \
    && sudo adduser $USER sudo ; \
  fi
 
-RUN \
- sudo pip3 install pandas==0.24.1
-
 USER $USER
 WORKDIR /home/$USER
