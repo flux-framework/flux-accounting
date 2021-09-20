@@ -12,7 +12,7 @@
 import unittest
 import os
 import sqlite3
-import pandas as pd
+import sys
 
 from fluxacct.accounting import create_db as c
 
@@ -23,7 +23,13 @@ class TestDB(unittest.TestCase):
     def setUpClass(self):
         c.create_db("FluxAccounting.db")
         global conn
-        conn = sqlite3.connect("FluxAccounting.db")
+        global cur
+        try:
+            conn = sqlite3.connect("file:FluxAccounting.db?mode=rw", uri=True)
+            cur = conn.cursor()
+        except sqlite3.OperationalError:
+            print(f"Unable to open test database file", file=sys.stderr)
+            sys.exit(-1)
 
     # create database and make sure it exists
     def test_00_test_create_db(self):
@@ -76,8 +82,8 @@ class TestDB(unittest.TestCase):
             """
         )
         select_stmt = "SELECT * FROM bank_table"
-        dataframe = pd.read_sql_query(select_stmt, conn)
-        self.assertEqual(len(dataframe.index), 1)
+        cur.execute(select_stmt)
+        self.assertEqual(len(cur.fetchall()), 1)
 
     # let's add a sub account under root
     def test_04_create_sub_account(self):
@@ -90,15 +96,15 @@ class TestDB(unittest.TestCase):
             """
         )
         select_stmt = "SELECT * FROM bank_table"
-        dataframe = pd.read_sql_query(select_stmt, conn)
-        self.assertEqual(len(dataframe.index), 2)
+        cur.execute(select_stmt)
+        self.assertEqual(len(cur.fetchall()), 2)
 
     # let's make sure the bank id's get autoincremented
     def test_05_check_bank_ids(self):
         select_stmt = "SELECT bank_id FROM bank_table;"
-        dataframe = pd.read_sql_query(select_stmt, conn)
-        self.assertEqual(dataframe["bank_id"][0], 1)
-        self.assertEqual(dataframe["bank_id"][1], 2)
+        cur.execute(select_stmt)
+        self.assertEqual(cur.fetchone()[0], 1)
+        self.assertEqual(cur.fetchone()[0], 2)
 
     # if PriorityDecayHalfLife and PriorityUsageResetPeriod
     # are not specified, the job_usage_factor_table will have
