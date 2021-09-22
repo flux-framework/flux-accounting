@@ -7,14 +7,6 @@ _NOTE: The interfaces of flux-accounting are being actively developed and are no
 
 Development for a bank/accounting interface for the Flux resource manager. Writes and saves user account information to persistent storage using Python's SQLite3 API.
 
-### Build Requirements
-
-flux-accounting requires the following Python packages to build:
-
-| Package Name | Version    |
-| ------------ | ---------- |
-| pandas       | >= 0.24.1  |
-
 ### Install Instructions
 
 ##### Building From Source

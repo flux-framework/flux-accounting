@@ -12,6 +12,10 @@
 import unittest
 import os
 import sqlite3
+import io
+import sys
+
+from unittest import mock
 
 from fluxacct.accounting import user_subcommands as u
 from fluxacct.accounting import create_db as c
@@ -24,8 +28,14 @@ class TestAccountingCLI(unittest.TestCase):
         # create example accounting database
         c.create_db("TestAcctingSubcommands.db")
         global acct_conn
-        global jobs_conn
-        acct_conn = sqlite3.connect("TestAcctingSubcommands.db")
+        try:
+            acct_conn = sqlite3.connect(
+                "file:TestAcctingSubcommands.db?mode=rw", uri=True
+            )
+            cur = acct_conn.cursor()
+        except sqlite3.OperationalError:
+            print(f"Unable to open test database file", file=sys.stderr)
+            sys.exit(-1)
 
     # add a valid user to association_table
     def test_01_add_valid_user(self):
@@ -166,6 +176,12 @@ class TestAccountingCLI(unittest.TestCase):
         )
 
         self.assertEqual(cursor.fetchone()[0], "other_test_bank")
+
+    @unittest.mock.patch("sys.stdout", new_callable=io.StringIO)
+    def test_10_view_nonexistent_user(self, mock_stdout):
+        u.view_user(acct_conn, "foo")
+        expected_output = "User not found in association_table\n"
+        self.assertEqual(mock_stdout.getvalue(), expected_output)
 
     # remove database and log file
     @classmethod

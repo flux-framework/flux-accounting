@@ -10,22 +10,21 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import sqlite3
-import pandas as pd
 
 from fluxacct.accounting import user_subcommands as u
 
 
 def add_bank(conn, bank, shares, parent_bank=""):
+    cur = conn.cursor()
     # if the parent bank is not "", that means the bank
     # trying to be added wants to be placed under a parent bank
     if parent_bank != "":
         try:
-            select_stmt = "SELECT shares FROM bank_table where bank=?"
-            dataframe = pd.read_sql_query(select_stmt, conn, params=(parent_bank,))
-            # if length of dataframe is 0, that means the parent bank wasn't found
-            if len(dataframe.index) == 0:
+            cur.execute("SELECT shares FROM bank_table WHERE bank=?", (parent_bank,))
+            row = cur.fetchone()
+            if row is None:
                 raise Exception("Parent bank not found in bank table")
-        except pd.io.sql.DatabaseError as e_database_error:
+        except sqlite3.OperationalError as e_database_error:
             print(e_database_error)
 
     # insert the bank values into the database
@@ -49,62 +48,46 @@ def add_bank(conn, bank, shares, parent_bank=""):
 
 
 def view_bank(conn, bank):
+    cur = conn.cursor()
     try:
         # get the information pertaining to a bank in the Accounting DB
-        select_stmt = "SELECT * FROM bank_table where bank=?"
-        dataframe = pd.read_sql_query(select_stmt, conn, params=(bank,))
-        # if the length of dataframe is 0, that means
-        # the bank specified was not found in the table
-        if len(dataframe.index) == 0:
+        cur.execute("SELECT * FROM bank_table WHERE bank=?", (bank,))
+        row = cur.fetchone()
+        if row is None:
             print("Bank not found in bank_table")
         else:
-            print(dataframe)
-    except pd.io.sql.DatabaseError as e_database_error:
+            col_headers = [description[0] for description in cur.description]
+            for key, val in zip(col_headers, row):
+                print(key + ": " + str(val))
+    except sqlite3.OperationalError as e_database_error:
         print(e_database_error)
 
 
 def delete_bank(conn, bank):
+    cursor = conn.cursor()
+
     try:
-        # delete the first bank passed in
-        delete_stmt = """
-            DELETE FROM bank_table
-            WHERE bank=?
-            """
-        cursor = conn.cursor()
-        cursor.execute(delete_stmt, (bank,))
+        cursor.execute("DELETE FROM bank_table WHERE bank=?", (bank,))
 
-        # construct a DataFrame object out of the
-        # bank passed in
-        dataframe = pd.DataFrame([bank], columns=["bank"])
-        bank = dataframe.iloc[0]
-
-        # helper function to traverse the bank table
-        # and delete all of its sub banks
-        def get_sub_banks(row):
-            select_stmt = """
-                SELECT bank
-                FROM bank_table
-                WHERE parent_bank=?
-                """
-            cursor = conn.cursor()
-            dataframe = pd.read_sql_query(select_stmt, conn, params=(row["bank"],))
+        # helper function to traverse the bank table and delete all of its sub banks
+        def get_sub_banks(bank):
+            select_stmt = "SELECT bank FROM bank_table WHERE parent_bank=?"
+            cursor.execute(select_stmt, (bank,))
+            rows = cursor.fetchall()
 
             # we've reached a bank with no sub banks
-            if len(dataframe) == 0:
-                select_associations_stmt = """
+            if len(rows) == 0:
+                select_assoc_stmt = """
                     SELECT username, bank
-                    FROM association_table
-                    WHERE bank=?
+                    FROM association_table WHERE bank=?
                     """
-                for assoc_row in cursor.execute(
-                    select_associations_stmt, (row["bank"],)
-                ):
+                for assoc_row in cursor.execute(select_assoc_stmt, (bank,)):
                     u.delete_user(conn, username=assoc_row[0], bank=assoc_row[1])
             # else, delete all of its sub banks and continue traversing
             else:
-                for _, sub_bank_row in dataframe.iterrows():
-                    cursor.execute(delete_stmt, (sub_bank_row["bank"],))
-                    get_sub_banks(sub_bank_row)
+                for row in rows:
+                    cursor.execute("DELETE FROM bank_table WHERE bank=?", (row[0],))
+                    get_sub_banks(row[0])
 
         get_sub_banks(bank)
     # if an exception occcurs while recursively deleting
@@ -137,5 +120,5 @@ def edit_bank(conn, bank, shares):
         )
         # commit changes
         conn.commit()
-    except pd.io.sql.DatabaseError as e_database_error:
+    except sqlite3.OperationalError as e_database_error:
         print(e_database_error)
