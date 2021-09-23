@@ -99,6 +99,7 @@ def create_db(
                 job_usage     real        DEFAULT 0.0   NOT NULL,
                 fairshare     real        DEFAULT 0.5   NOT NULL,
                 max_jobs      int(11)     DEFAULT 5     NOT NULL,
+                qos           tinytext    DEFAULT ''    NOT NULL,
                 PRIMARY KEY   (username, bank)
         );"""
     )
@@ -158,5 +159,16 @@ def create_db(
     )
     set_half_life_period_end(conn, priority_decay_half_life)
     logging.info("Created t_half_life_period_table successfully")
+
+    # QOS Table
+    # keeps track of what QOS' are defined and their associated priority
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS qos_table (
+            qos         tinytext        NOT NULL,
+            priority    int(11)         NOT NULL,
+            PRIMARY KEY (qos)
+        );"""
+    )
 
     conn.close()

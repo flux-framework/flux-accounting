@@ -46,6 +46,7 @@ class TestAccountingCLI(unittest.TestCase):
             admin_level="1",
             bank="acct",
             shares="10",
+            qos="",
         )
         cursor = acct_conn.cursor()
         num_rows_assoc_table = cursor.execute("DELETE FROM association_table").rowcount
@@ -65,6 +66,7 @@ class TestAccountingCLI(unittest.TestCase):
             admin_level="1",
             bank="acct",
             shares="10",
+            qos="",
         )
         u.add_user(
             acct_conn,
@@ -73,6 +75,7 @@ class TestAccountingCLI(unittest.TestCase):
             admin_level="1",
             bank="acct",
             shares="10",
+            qos="",
         )
 
         self.assertRaises(sqlite3.IntegrityError)
@@ -87,6 +90,7 @@ class TestAccountingCLI(unittest.TestCase):
             admin_level="1",
             bank="acct",
             shares="10",
+            qos="",
         )
         u.add_user(
             acct_conn,
@@ -95,6 +99,7 @@ class TestAccountingCLI(unittest.TestCase):
             admin_level="1",
             bank="other_acct",
             shares="10",
+            qos="",
         )
         cursor = acct_conn.cursor()
         cursor.execute("SELECT * from association_table where username='dup_user'")
@@ -106,7 +111,13 @@ class TestAccountingCLI(unittest.TestCase):
 
     # edit a value for a user in the association table
     def test_04_edit_user_value(self):
-        u.edit_user(acct_conn, "fluxuser", "shares", "10000")
+        u.edit_user(
+            acct_conn,
+            username="fluxuser",
+            bank="acct",
+            field="shares",
+            new_value="10000",
+        )
         cursor = acct_conn.cursor()
         cursor.execute("SELECT shares FROM association_table where username='fluxuser'")
 
@@ -116,7 +127,13 @@ class TestAccountingCLI(unittest.TestCase):
     # exist should return a ValueError
     def test_05_edit_bad_field(self):
         with self.assertRaises(ValueError):
-            u.edit_user(acct_conn, "fluxuser", "foo", "bar")
+            u.edit_user(
+                acct_conn,
+                username="fluxuser",
+                bank="acct",
+                field="foo",
+                new_value="bar",
+            )
 
     # delete a user from the association table
     def test_06_delete_user(self):
@@ -169,7 +186,12 @@ class TestAccountingCLI(unittest.TestCase):
 
     # check that we can successfully edit the default bank for a user
     def test_09_edit_default_bank(self):
-        u.edit_user(acct_conn, "test_user1", "default_bank", "other_test_bank")
+        u.edit_user(
+            acct_conn,
+            username="test_user1",
+            field="default_bank",
+            new_value="other_test_bank",
+        )
         cursor = acct_conn.cursor()
         cursor.execute(
             "SELECT default_bank FROM association_table WHERE username='test_user1'"

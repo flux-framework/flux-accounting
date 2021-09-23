@@ -37,6 +37,17 @@ def get_uid(username):
         return str(username)
 
 
+def validate_qos(conn, qos):
+    cur = conn.cursor()
+    qos_list = qos.split(",")
+
+    for service in qos_list:
+        cur.execute("SELECT qos FROM qos_table WHERE qos=?", (service,))
+        row = cur.fetchone()
+        if row is None:
+            raise ValueError("QOS specified does not exist in qos_table")
+
+
 def add_user(
     conn,
     username,
@@ -45,6 +56,7 @@ def add_user(
     admin_level=1,
     shares=1,
     max_jobs=5,
+    qos="",
 ):
 
     # get uid of user
@@ -70,6 +82,14 @@ def add_user(
     else:
         default_bank = row[0]
 
+    # validate the qos specified if any were passed in
+    if qos != "":
+        try:
+            validate_qos(conn, qos)
+        except ValueError as err:
+            print(err)
+            return -1
+
     try:
         # insert the user values into association_table
         conn.execute(
@@ -84,9 +104,10 @@ def add_user(
                 bank,
                 default_bank,
                 shares,
-                max_jobs
+                max_jobs,
+                qos
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 int(time.time()),
@@ -99,6 +120,7 @@ def add_user(
                 default_bank,
                 shares,
                 max_jobs,
+                qos,
             ),
         )
         # commit changes
@@ -123,6 +145,9 @@ def add_user(
     # make sure entry is unique
     except sqlite3.IntegrityError as integrity_error:
         print(integrity_error)
+        return -1
+
+    return 0
 
 
 def delete_user(conn, username, bank):
@@ -140,7 +165,7 @@ def delete_user(conn, username, bank):
     conn.commit()
 
 
-def edit_user(conn, username, field, new_value):
+def edit_user(conn, username, field, new_value, bank=""):
     fields = [
         "username",
         "admin_level",
@@ -148,19 +173,48 @@ def edit_user(conn, username, field, new_value):
         "default_bank",
         "shares",
         "max_jobs",
+        "qos",
     ]
     if field in fields:
         the_field = field
 
-        # edit value in accounting database
-        conn.execute(
-            "UPDATE association_table SET " + the_field + "=? WHERE username=?",
-            (
-                new_value,
-                username,
-            ),
-        )
+        if the_field == "qos":
+            try:
+                validate_qos(conn, new_value)
+            except ValueError as err:
+                print(err)
+                return -1
+
+        if bank != "":
+            update_stmt = (
+                "UPDATE association_table SET "
+                + the_field
+                + "=? WHERE username=? AND bank=?"
+            )
+            # edit value in accounting database
+            conn.execute(
+                update_stmt,
+                (
+                    new_value,
+                    username,
+                    bank,
+                ),
+            )
+        else:
+            update_stmt = (
+                "UPDATE association_table SET " + the_field + "=? WHERE username=?"
+            )
+            conn.execute(
+                update_stmt,
+                (
+                    new_value,
+                    username,
+                ),
+            )
+
         # commit changes
         conn.commit()
     else:
         raise ValueError("Field not found in association table")
+
+    return 0
