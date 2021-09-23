@@ -10,6 +10,8 @@
 #include <sqlite3.h>
 #include <cerrno>
 
+#include "src/fairness/weighted_tree/weighted_tree.hpp"
+
 using namespace Flux::accounting;
 
 namespace Flux {
