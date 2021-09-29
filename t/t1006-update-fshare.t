@@ -17,7 +17,7 @@ test_expect_success 'trying to run update-fshare with bad DBPATH should return a
 '
 
 test_expect_success 'create t_small_no_tie.db' '
-	flux python ${CREATE_TEST_DB}
+	flux python ${CREATE_TEST_DB} ${FLUX_BUILD_DIR}/t/expected/t_small_no_tie.db
 '
 
 test_expect_success 'create hierarchy output from t_small_no_tie.db' '

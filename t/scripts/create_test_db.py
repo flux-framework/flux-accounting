@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import sqlite3
+import sys
 
 import fluxacct.accounting
 from fluxacct.accounting import user_subcommands as u
@@ -30,7 +31,11 @@ def edit_usage_col(conn, username, value):
 
 
 def main():
-    filename = "/usr/src/t/expected/t_small_no_tie.db"
+    if len(sys.argv) < 2:
+        print("You must pass a path to the flux-accounting DB")
+        sys.exit(-1)
+
+    filename = sys.argv[1]
     c.create_db(filename)
     conn = sqlite3.connect(filename)
 
