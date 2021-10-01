@@ -4,8 +4,8 @@ test_description='Test multi-factor priority plugin with many ties'
 
 . `dirname $0`/sharness.sh
 MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
-SUBMIT_AS=${FLUX_BUILD_DIR}/t/scripts/submit_as.py
-SEND_PAYLOAD=${FLUX_BUILD_DIR}/t/scripts/send_payload.py
+SUBMIT_AS=${SHARNESS_TEST_SRCDIR}/scripts/submit_as.py
+SEND_PAYLOAD=${SHARNESS_TEST_SRCDIR}/scripts/send_payload.py
 
 export TEST_UNDER_FLUX_NO_JOB_EXEC=y
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"

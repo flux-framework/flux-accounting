@@ -5,10 +5,10 @@ test_description='Test print-hierarchy command'
 PRINT_HIERARCHY=${FLUX_BUILD_DIR}/src/fairness/print_hierarchy/flux-shares
 UPDATE_FSHARE=${FLUX_BUILD_DIR}/src/cmd/flux-update-fshare
 
-CREATE_TEST_DB=${FLUX_BUILD_DIR}/t/scripts/create_test_db.py
-UPDATE_USAGE_COL=${FLUX_BUILD_DIR}/t/scripts/update_usage_column.py
+CREATE_TEST_DB=${SHARNESS_TEST_SRCDIR}/scripts/create_test_db.py
+UPDATE_USAGE_COL=${SHARNESS_TEST_SRCDIR}/scripts/update_usage_column.py
 
-T_SMALL_NO_TIE=${FLUX_BUILD_DIR}/t/expected/t_small_no_tie.db
+T_SMALL_NO_TIE=${SHARNESS_TEST_SRCDIR}/expected/t_small_no_tie.db
 
 test_expect_success 'trying to run update-fshare with bad DBPATH should return an error' '
 	test_must_fail ${UPDATE_FSHARE} -f foo.db > failure.out 2>&1 &&
