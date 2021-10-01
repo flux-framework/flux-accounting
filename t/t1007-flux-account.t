@@ -2,12 +2,11 @@
 
 test_description='Test flux-account commands'
 . `dirname $0`/sharness.sh
-PRINT_HIERARCHY=${FLUX_BUILD_DIR}/src/fairness/print_hierarchy/flux-shares
-FLUX_ACCOUNT=${FLUX_BUILD_DIR}/src/cmd/flux-account.py
-DB_PATH=${SHARNESS_TEST_SRCDIR}/FluxAccountingTest.db
+FLUX_ACCOUNT=${SHARNESS_TEST_SRCDIR}/../src/cmd/flux-account.py
+DB_PATH=$(pwd)/FluxAccountingTest.db
 
 test_expect_success 'create flux-accounting DB' '
-	flux python ${FLUX_ACCOUNT} create-db ${SHARNESS_TEST_SRCDIR}/FluxAccountingTest.db
+	flux python ${FLUX_ACCOUNT} create-db $(pwd)/FluxAccountingTest.db
 '
 
 test_expect_success 'add some banks to the DB' '
@@ -125,7 +124,7 @@ test_expect_success 'make sure the user is successfully removed from the DB' '
 '
 
 test_expect_success 'remove flux-accounting DB' '
-	rm ${SHARNESS_TEST_SRCDIR}/FluxAccountingTest.db
+	rm $(pwd)/FluxAccountingTest.db
 '
 
 test_done
