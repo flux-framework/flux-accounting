@@ -8,8 +8,6 @@ UPDATE_FSHARE=${FLUX_BUILD_DIR}/src/cmd/flux-update-fshare
 CREATE_TEST_DB=${SHARNESS_TEST_SRCDIR}/scripts/create_test_db.py
 UPDATE_USAGE_COL=${SHARNESS_TEST_SRCDIR}/scripts/update_usage_column.py
 
-T_SMALL_NO_TIE=${SHARNESS_TEST_SRCDIR}/expected/t_small_no_tie.db
-
 test_expect_success 'trying to run update-fshare with bad DBPATH should return an error' '
 	test_must_fail ${UPDATE_FSHARE} -f foo.db > failure.out 2>&1 &&
 	test_debug "cat failure.out" &&
@@ -17,19 +15,19 @@ test_expect_success 'trying to run update-fshare with bad DBPATH should return a
 '
 
 test_expect_success 'create t_small_no_tie.db' '
-	flux python ${CREATE_TEST_DB} ${FLUX_BUILD_DIR}/t/expected/t_small_no_tie.db
+	flux python ${CREATE_TEST_DB} $(pwd)/t_small_no_tie.db
 '
 
 test_expect_success 'create hierarchy output from t_small_no_tie.db' '
-	${PRINT_HIERARCHY} -f ${T_SMALL_NO_TIE}
+	${PRINT_HIERARCHY} -f $(pwd)/t_small_no_tie.db
 '
 
 test_expect_success 'run update fshare script - small_no_tie.db' '
-	${UPDATE_FSHARE} -f ${T_SMALL_NO_TIE}
+	${UPDATE_FSHARE} -f $(pwd)/t_small_no_tie.db
 '
 
 test_expect_success 'create hierarchy output from C++ - small_no_tie.db' '
-	${PRINT_HIERARCHY} -f ${T_SMALL_NO_TIE} > pre_fshare_update.test
+	${PRINT_HIERARCHY} -f $(pwd)/t_small_no_tie.db > pre_fshare_update.test
 '
 
 test_expect_success 'compare hierarchy outputs' '
@@ -37,15 +35,15 @@ test_expect_success 'compare hierarchy outputs' '
 '
 
 test_expect_success 'update usage column in t_small_no_tie.db' '
-	flux python ${UPDATE_USAGE_COL} ${T_SMALL_NO_TIE} leaf.2.1 55
+	flux python ${UPDATE_USAGE_COL} $(pwd)/t_small_no_tie.db leaf.2.1 55
 '
 
 test_expect_success 'run update fshare script - small_no_tie.db' '
-	${UPDATE_FSHARE} -f ${T_SMALL_NO_TIE}
+	${UPDATE_FSHARE} -f $(pwd)/t_small_no_tie.db
 '
 
 test_expect_success 'create hierarchy output from C++ - small_no_tie.db' '
-	${PRINT_HIERARCHY} -f ${T_SMALL_NO_TIE} > post_fshare_update.test
+	${PRINT_HIERARCHY} -f $(pwd)/t_small_no_tie.db > post_fshare_update.test
 '
 
 test_expect_success 'compare hierarchy outputs' '
@@ -53,7 +51,7 @@ test_expect_success 'compare hierarchy outputs' '
 '
 
 test_expect_success 'delete t_small_no_tie.db' '
-	rm ${T_SMALL_NO_TIE}
+	rm $(pwd)/t_small_no_tie.db
 '
 
 test_done
