@@ -33,7 +33,7 @@ test_expect_success 'create hierarchy output from C++ - small_no_tie.db' '
 '
 
 test_expect_success 'compare hierarchy outputs' '
-	test_cmp ${FLUX_BUILD_DIR}/t/expected/pre_fshare_update.expected pre_fshare_update.test
+	test_cmp ${SHARNESS_TEST_SRCDIR}/expected/pre_fshare_update.expected pre_fshare_update.test
 '
 
 test_expect_success 'update usage column in t_small_no_tie.db' '
@@ -49,7 +49,7 @@ test_expect_success 'create hierarchy output from C++ - small_no_tie.db' '
 '
 
 test_expect_success 'compare hierarchy outputs' '
-	test_cmp ${FLUX_BUILD_DIR}/t/expected/post_fshare_update.expected post_fshare_update.test
+	test_cmp ${SHARNESS_TEST_SRCDIR}/expected/post_fshare_update.expected post_fshare_update.test
 '
 
 test_expect_success 'delete t_small_no_tie.db' '
