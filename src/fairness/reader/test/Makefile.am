@@ -24,4 +24,4 @@ data_reader_db_test01_t_LDADD = \
     $(top_builddir)/src/common/libtap/libtap.la
 
 AM_TESTS_ENVIRONMENT = \
-	export ACCOUNTING_DB_DATA_DIR="$(abs_top_srcdir)/src/fairness/weighted_tree/test/accounting_db_data";
+	export ACCOUNTING_DB_DATA_DIR="$(abs_top_srcdir)/t/expected/test_dbs";
