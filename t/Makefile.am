@@ -20,7 +20,8 @@ TESTS = $(TESTSCRIPTS)
 EXTRA_DIST= \
 	aggregate-results.sh \
 	sharness.sh \
-	sharness.d
+	sharness.d \
+	rc
 
 clean-local:
 	rm -fr trash-directory.* test-results .prove *.broker.log */*.broker.log *.output
