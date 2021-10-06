@@ -1,3 +1,22 @@
+flux-accounting version 0.10.0 - 2021-09-30
+-------------------------------------------
+
+#### Fixes
+
+* Fix bug in add-user where wrong number of arguments were passed to function (#140)
+
+* Fix bug in edit-user to ensure an edit made in one user/bank row was only made in just that one row instead of in multiple rows in the flux-accounting database (#140)
+
+#### Features
+
+* Add a new front-end update script that will re-calculate users' fairshare values and update them in the flux-accounting database (#138)
+
+* Add new Quality of Service table in the flux-accounting database, which will hold Quality of Services and their associated priorities (#143)
+
+* Add new sharness tests for Python subcommands (#140)
+
+* Remove pandas dependency from flux-accounting, which was required to build/install (#144)
+
 flux-accounting version 0.9.0 - 2021-09-07
 ------------------------------------------
 
