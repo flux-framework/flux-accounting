@@ -2,13 +2,15 @@ AM_CXXFLAGS = \
     $(WARNING_CXXFLAGS) \
     $(CODE_COVERAGE_CXXFLAGS)
 
-AM_LDFLAGS = $(CODE_COVERAGE_LDFLAGS)
+AM_LDFLAGS = $(CODE_COVERAGE_LDFLAGS) $(SQLITE_LIBS)
 
-AM_CPPFLAGS = $(FLUX_CORE_CFLAGS)
+AM_CPPFLAGS = -I$(top_srcdir) $(FLUX_CORE_CFLAGS)
 
 SUBDIRS = .
 
 noinst_PROGRAMS = flux-shares
+noinst_HEADERS = \
+	../writer/data_writer_stdout.hpp
 
 flux_shares_SOURCES = flux_shares.cpp
 

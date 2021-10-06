@@ -2,13 +2,16 @@ AM_CXXFLAGS = \
     $(WARNING_CXXFLAGS) \
     $(CODE_COVERAGE_CXXFLAGS)
 
-AM_LDFLAGS = $(CODE_COVERAGE_LDFLAGS)
+AM_LDFLAGS = $(CODE_COVERAGE_LDFLAGS) $(SQLITE_LIBS)
 
-AM_CPPFLAGS = $(FLUX_CORE_CFLAGS)
+AM_CPPFLAGS = -I$(top_srcdir) $(FLUX_CORE_CFLAGS)
 
 SUBDIRS = .
 
 noinst_PROGRAMS = flux-update-fshare
+noinst_HEADERS = \
+	../fairness/reader/data_reader_db.hpp \
+	../fairness/writer/data_writer_db.hpp
 
 flux_update_fshare_SOURCES = flux_update_fshare.cpp
 

@@ -20,7 +20,24 @@ TESTS = $(TESTSCRIPTS)
 EXTRA_DIST= \
 	aggregate-results.sh \
 	sharness.sh \
-	sharness.d
+	sharness.d \
+	rc \
+	expected/custom_small_tie_parsable.txt \
+	expected/help_message.txt \
+	expected/out_of_insert_order.txt \
+	expected/post_fshare_update.expected \
+	expected/pre_fshare_update.expected \
+	expected/small_no_tie_parsable.txt \
+	expected/small_no_tie.txt \
+	expected/small_tie_all_parsable.txt \
+	expected/small_tie_all.txt \
+	expected/small_tie_parsable.txt \
+	expected/small_tie.txt \
+	expected/test_dbs/out_of_insert_order.db \
+	expected/test_dbs/small_no_tie.db \
+	expected/test_dbs/small_tie_all.db \
+	expected/test_dbs/small_tie_zero_shares.db \
+	expected/test_dbs/small_tie.db
 
 clean-local:
 	rm -fr trash-directory.* test-results .prove *.broker.log */*.broker.log *.output
