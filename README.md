@@ -24,7 +24,39 @@ To configure flux-accounting with a specific version of Python, pass the `PYTHON
 PYTHON_VERSION=3.7 ./configure
 ```
 
-Run flux-accounting's commands:
+### Configuring flux-accounting background scripts
+
+There are a number of scripts that run in the background to update both job usage and fairshare values. These require configuration upon setup of flux-accounting. The first thing to configure when first setting up the flux-accounting database is to set the PriorityUsageResetPeriod and PriorityDecayHalfLife parameters. Both of these parameters represent a number of weeks by which to hold usage factors up to the time period where jobs no longer play a factor in calculating a usage factor. If these parameters are not passed when creating the DB, PriorityDecayHalfLife is set to 1 week and PriorityUsageResetPeriod is set to 4 weeks, i.e the flux-accounting database will store up to a month's worth of jobs broken up into one week chunks:
+
+```
+flux account create-db --priority-decay-half-life=2 --priority-usage-reset-period=8 path/to/DB
+```
+
+The other component to load is the multi-factor priority plugin, which can be loaded with `flux jobtap load`:
+
+```
+flux jobtap load mf_priority.so
+```
+
+After the DB and job priority plugin are set up, the `update-usage` subcommand should be set up to run as a cron job. This subcommand fetches the most recent job records for every user in the flux-accounting DB and calculates a new job usage value. This subcommand takes one optional argument, `--priority-decay-half-life`, which, like the parameter set in the database creation step above, represents the number of weeks to hold one job usage "chunk." If not specified, this optional argument also defaults to 1 week.
+
+```
+flux account update-usage --priority-decay-half-life=2 path/to/DB
+```
+
+After the job usage values are re-calculated and updated, the fairshare values for each user also need to be updated. This can be accomplished by configuring the `flux-update-fshare` script to also run as a cron job. This fetches user account data from the flux-accounting DB and recalculates and writes the updated fairshare values back to the DB.
+
+```
+flux update-fshare -f path/to/DB
+```
+
+Once the fairshare values for all of the users in the flux-accounting DB get updated, this updated information will be sent to the priority plugin. This script can be also be configured to run as a cron job:
+
+```
+flux python bulk_update.py -p path/to/DB
+```
+
+### Run flux-accounting's commands:
 
 ```
 usage: flux-account.py [-h] [-p PATH] [-o OUTPUT_FILE]
