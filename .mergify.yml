@@ -1,12 +1,12 @@
-pull_request_rules:
-  - name: rebase and merge when passing all checks
+queue_rules:
+  - name: default
     conditions:
       - base=master
       - status-success="validate commits"
       - status-success="python format"
-      - status-success="centos8 - py3.6"
-      - status-success="bionic - py3.6"
       - status-success="python lint"
+      - status-success="bionic - py3.6"
+      - status-success="centos8 - py3.6"
       - status-success="coverage"
       - label="merge-when-passing"
       - label!="work-in-progress"
@@ -16,8 +16,21 @@ pull_request_rules:
       - "#approved-reviews-by>0"
       - "#changes-requested-reviews-by=0"
       - -title~=^\[*[Ww][Ii][Pp]
+
+pull_request_rules:
+  - name: default
+    conditions:
+      - base=master
+      - label="merge-when-passing"
+      - label!="work-in-progress"
+      - or:
+          - "approved-reviews-by=@flux-framework/core"
+          - "approved-reviews-by=@flux-framework/accounting"
+      - "#approved-reviews-by>0"
+      - "#changes-requested-reviews-by=0"
+      - -title~=^\[*[Ww][Ii][Pp]
     actions:
-      merge:
-        method: merge
-        strict: smart
-        strict_method: rebase
+      queue:
+        name: default
+        method: rebase
+        update_method: rebase
