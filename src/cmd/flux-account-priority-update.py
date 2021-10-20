@@ -9,11 +9,12 @@
 #
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
-import flux
 import argparse
 import sys
 import os
 import sqlite3
+
+import flux
 
 import fluxacct.accounting
 

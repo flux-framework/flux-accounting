@@ -28,4 +28,5 @@ flux_update_fshare_LDFLAGS = $(SQLITE_LIBS)
 
 dist_fluxcmd_SCRIPTS = \
 	flux-account.py \
-	flux-update-fshare
+	flux-update-fshare \
+	flux-account-priority-update.py
