@@ -1,3 +1,24 @@
+flux-accounting version 0.11.0 - 2021-10-29
+-------------------------------------------
+
+#### Fixes
+
+* Replace the "strict" merge mode with queue+rebase in Mergify (#158)
+
+* Add missing installation of the Python bulk update script that sends updated database information to the priority plugin (#162)
+
+* Change names of all automatic update scripts to fall under one prefix called "account" (#162)
+
+* Change the default DB path for all flux-accounting subcommands (#170)
+
+* Remove the positional argument for the `create-db` subcommand (#170)
+
+* Unify the optional database path arguments for all of the `flux account` commands (#171)
+
+#### Features
+
+* Add new instructions to the top-level README on setting up the flux-accounting database, loading the priority plugin, and configuring the automatic update scripts (#157)
+
 flux-accounting version 0.10.0 - 2021-09-30
 -------------------------------------------
 
