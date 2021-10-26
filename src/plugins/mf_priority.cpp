@@ -26,14 +26,16 @@ extern "C" {
 #include <cassert>
 #include <algorithm>
 #include <cinttypes>
+#include <vector>
 
 std::map<int, std::map<std::string, struct bank_info>> users;
 std::map<int, std::string> users_def_bank;
 
 struct bank_info {
     double fairshare;
-    int max_jobs;
+    int max_running_jobs;
     int current_jobs;
+    std::vector<long int> held_jobs;
 };
 
 /******************************************************************************
@@ -138,7 +140,7 @@ static void rec_update_cb (flux_t *h,
         b = &users[uid][bank];
 
         b->fairshare = fshare;
-        b->max_jobs = max_jobs;
+        b->max_running_jobs = max_jobs;
 
         users_def_bank[uid] = def_bank;
     }
@@ -161,6 +163,7 @@ static int priority_cb (flux_plugin_t *p,
     int urgency, userid;
     char *bank = NULL;
     int64_t priority;
+    struct bank_info *b;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
@@ -190,6 +193,18 @@ static int priority_cb (flux_plugin_t *p,
                   flux_plugin_arg_strerror (args));
         return -1;
     }
+
+    b = static_cast<bank_info *> (flux_jobtap_job_aux_get (
+                                                    p,
+                                                    FLUX_JOBTAP_CURRENT_JOB,
+                                                    "mf_priority:bank_info"));
+
+    if (b == NULL)
+        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "plugin",
+                                     3, "mf_priority: bank info is missing");
+
+    b->current_jobs++;
+
     return 0;
 }
 
@@ -243,7 +258,7 @@ static int validate_cb (flux_plugin_t *p,
                                      "user/default bank entry does not exist");
     }
 
-    max_jobs = bank_it->second.max_jobs;
+    max_jobs = bank_it->second.max_running_jobs;
     current_jobs = bank_it->second.current_jobs;
     fairshare = bank_it->second.fairshare;
 
@@ -252,11 +267,6 @@ static int validate_cb (flux_plugin_t *p,
     if (fairshare == 0)
         return flux_jobtap_reject_job (p, args, "user fairshare value is 0");
 
-    // make sure user has not already hit their max active jobs count
-    if (max_jobs > 0 && current_jobs >= max_jobs)
-        return flux_jobtap_reject_job (p, args,
-                                       "user has max number of jobs submitted");
-
     if (flux_jobtap_job_aux_set (p,
                                  FLUX_JOBTAP_CURRENT_JOB,
                                  "mf_priority:bank_info",
@@ -264,7 +274,55 @@ static int validate_cb (flux_plugin_t *p,
                                  NULL) < 0)
         flux_log_error (h, "flux_jobtap_job_aux_set");
 
-    bank_it->second.current_jobs++;
+    return 0;
+}
+
+
+static int depend_cb (flux_plugin_t *p,
+                      const char *topic,
+                      flux_plugin_arg_t *args,
+                      void *data)
+{
+    int userid;
+    long int id;
+    struct bank_info *b;
+
+    flux_t *h = flux_jobtap_get_flux (p);
+    if (flux_plugin_arg_unpack (args,
+                                FLUX_PLUGIN_ARG_IN,
+                                "{s:i, s:I}",
+                                "userid", &userid, "id", &id) < 0) {
+        flux_log (h,
+                  LOG_ERR,
+                  "flux_plugin_arg_unpack: %s",
+                  flux_plugin_arg_strerror (args));
+        return -1;
+    }
+
+    b = static_cast<bank_info *> (flux_jobtap_job_aux_get (
+                                                    p,
+                                                    FLUX_JOBTAP_CURRENT_JOB,
+                                                    "mf_priority:bank_info"));
+
+    if (b == NULL) {
+        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "plugin",
+                                     3, "mf_priority: bank info is missing");
+
+        return -1;
+    }
+
+    // if user has already hit their max running jobs count, add a job
+    // dependency to hold job until an already running job has finished
+    if ((b->max_running_jobs > 0) && (b->current_jobs == b->max_running_jobs)) {
+        if (flux_jobtap_dependency_add (p, id, "max-jobs-limit") < 0) {
+            flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "plugin",
+                                         3, "mf_priority: failed to add " \
+                                         "job dependency");
+
+            return -1;
+        }
+        b->held_jobs.push_back (id);
+    }
 
     return 0;
 }
@@ -301,6 +359,19 @@ static int inactive_cb (flux_plugin_t *p,
 
     b->current_jobs--;
 
+    // if the user/bank combo has any currently held jobs and the user is now
+    // under their max jobs limit, remove the dependency from first held job
+    if ((b->held_jobs.size () > 0) && (b->current_jobs < b->max_running_jobs)) {
+        long int jobid = b->held_jobs.front ();
+
+        if (flux_jobtap_dependency_remove (p, jobid, "max-jobs-limit") < 0)
+            flux_jobtap_raise_exception (p, jobid, "plugin",
+                                         3, "mf_priority: failed to remove" \
+                                         "job dependency");
+
+        b->held_jobs.erase (b->held_jobs.begin ());
+    }
+
     return 0;
 }
 
@@ -310,6 +381,7 @@ static const struct flux_plugin_handler tab[] = {
     { "job.state.priority", priority_cb, NULL },
     { "job.priority.get", priority_cb, NULL },
     { "job.state.inactive", inactive_cb, NULL },
+    { "job.state.depend", depend_cb, NULL },
     { 0 },
 };
 
