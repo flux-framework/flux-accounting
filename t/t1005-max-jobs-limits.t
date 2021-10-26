@@ -25,8 +25,8 @@ test_expect_success 'create fake_user.json' '
 	cat <<-EOF >fake_user.json
 	{
 		"data" : [
-			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_jobs": 3},
-			{"userid": 5011, "bank": "account2", "def_bank": "account3", "fairshare": 0.11345, "max_jobs": 2}
+			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_jobs": 2},
+			{"userid": 5011, "bank": "account2", "def_bank": "account3", "fairshare": 0.11345, "max_jobs": 1}
 		]
 	}
 	EOF
@@ -36,73 +36,67 @@ test_expect_success 'update plugin with sample test data' '
 	flux python ${SEND_PAYLOAD} fake_user.json
 '
 
-test_expect_success 'stop the queue' '
-	flux queue stop
-'
-
 test_expect_success 'submit max number of jobs' '
 	jobid1=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
-	jobid2=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
-	jobid3=$(flux python ${SUBMIT_AS} 5011 sleep 60)
+	jobid2=$(flux python ${SUBMIT_AS} 5011 sleep 60)
 '
 
-test_expect_success 'submit a job while already having max number of active jobs' '
-	test_must_fail flux python ${SUBMIT_AS} 5011 sleep 60 > max_jobs.out 2>&1 &&
-	test_debug "cat max_jobs.out" &&
-	grep "user has max number of jobs submitted" max_jobs.out &&
+test_expect_success 'submit job while already having max number of running jobs' '
+	jobid3=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
+	test $(flux jobs -no {state} ${jobid3}) = DEPEND
+'
+
+test_expect_success 'a job transitioning to job.state.inactive should release a held job (if any)' '
 	flux job cancel $jobid1 &&
+	test $(flux jobs -no {state} ${jobid3}) = RUN &&
 	flux job cancel $jobid2 &&
 	flux job cancel $jobid3
 '
 
 test_expect_success 'submit max number of jobs with other bank' '
-	jobid1=$(flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account2 sleep 60) &&
-	jobid2=$(flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account2 sleep 60)
+	jobid1=$(flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account2 sleep 60)
 '
 
-test_expect_success 'submit a job while already having max number of active jobs' '
-	test_must_fail flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account2 sleep 60 > max_jobs.out 2>&1 &&
-	test_debug "cat max_jobs.out" &&
-	grep "user has max number of jobs submitted" max_jobs.out &&
+test_expect_success 'submit a job while already having max number of running jobs' '
+	jobid2=$(flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account2 sleep 60)
+	test $(flux jobs -no {state} ${jobid2}) = DEPEND &&
 	flux job cancel $jobid1 &&
 	flux job cancel $jobid2
 '
 
 test_expect_success 'submit max number of jobs with a mix of default bank and explicity set bank' '
 	jobid1=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
-	jobid2=$(flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account3 sleep 60) &&
-	jobid3=$(flux python ${SUBMIT_AS} 5011 sleep 60)
+	jobid2=$(flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account3 -n 1 sleep 60)
 '
 
-test_expect_success 'submit a job while already having max number of active jobs' '
-	test_must_fail flux python ${SUBMIT_AS} 5011 sleep 60 > max_jobs.out 2>&1 &&
-	test_debug "cat max_jobs.out" &&
-	grep "user has max number of jobs submitted" max_jobs.out
+test_expect_success 'submit a job while already having max number of running jobs' '
+	jobid3=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
+	test $(flux jobs -no {state} ${jobid3}) = DEPEND &&
+	flux job cancel $jobid3
 '
 
 test_expect_success 'increase the max jobs count of the user' '
 	cat <<-EOF >new_max_jobs_limit.json
 	{
 		"data" : [
-			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_jobs": 4}
+			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_jobs": 3}
 		]
 	}
 	EOF
 '
 
-test_expect_success 'update plugin with same sample test data; this should not reset current jobs count' '
+test_expect_success 'update plugin with same new sample test data' '
 	flux python ${SEND_PAYLOAD} new_max_jobs_limit.json
 '
 
-test_expect_success 'submit a job successfully under the new max jobs limit' '
-	jobid4=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
-	test_must_fail flux python ${SUBMIT_AS} 5011 sleep 60 > max_jobs.out 2>&1 &&
-	test_debug "cat max_jobs.out" &&
-	grep "user has max number of jobs submitted" max_jobs.out &&
-	flux job cancel $jobid1 &&
-	flux job cancel $jobid2 &&
-	flux job cancel $jobid3 &&
-	flux job cancel $jobid4
+test_expect_success 'make sure jobs are still running' '
+	test $(flux jobs -no {state} ${jobid1}) = RUN &&
+	test $(flux jobs -no {state} ${jobid2}) = RUN
+'
+
+test_expect_success 'cancel all remaining jobs' '
+	flux job cancel ${jobid1} &&
+	flux job cancel ${jobid2}
 '
 
 test_done
