@@ -41,14 +41,18 @@ test_expect_success 'create fake_payload.py' '
 	import flux
 	import pwd
 	import getpass
+	import json
 
 	username = getpass.getuser()
 	userid = pwd.getpwnam(username).pw_uid
-	# create a JSON payload
-	data = {"userid": str(userid), "bank": "account3", "default_bank": "account3", "fairshare": "0.45321", "max_jobs": "10"}
-	flux.Flux().rpc("job-manager.mf_priority.rec_update", data).get()
-	data = {"userid": str(userid), "bank": "account2", "default_bank": "account3", "fairshare": "0.11345", "max_jobs": "10"}
-	flux.Flux().rpc("job-manager.mf_priority.rec_update", data).get()
+	# create an array of JSON payloads
+	bulk_update_data = {
+		"data" : [
+			{"userid": userid, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_jobs": 10},
+			{"userid": userid, "bank": "account2", "def_bank": "account3", "fairshare": 0.11345, "max_jobs": 10}
+		]
+	}
+	flux.Flux().rpc("job-manager.mf_priority.rec_update", json.dumps(bulk_update_data)).get()
 	EOF
 '
 
@@ -123,17 +127,22 @@ test_expect_success 'reject job when invalid bank format is passed in' '
 	grep "unable to unpack bank arg" invalid_fmt.out
 '
 
-test_expect_success 'create a fake payload with an empty fairshare key-value pair' '
+test_expect_success 'create a fake payload with a 0 fairshare key-value pair' '
 	cat <<-EOF >empty_fairshare.py
 	import flux
 	import pwd
 	import getpass
+	import json
 
 	username = getpass.getuser()
 	userid = pwd.getpwnam(username).pw_uid
-	# create a JSON payload
-	data = {"userid": str(userid), "bank": "account4", "default_bank": "account3", "fairshare": "", "max_jobs": "10"}
-	flux.Flux().rpc("job-manager.mf_priority.rec_update", data).get()
+	# create an array of JSON payloads
+	bulk_update_data = {
+		"data" : [
+			{"userid": userid, "bank": "account4", "def_bank": "account3", "fairshare": 0.0, "max_jobs": 10}
+		]
+	}
+	flux.Flux().rpc("job-manager.mf_priority.rec_update", json.dumps(bulk_update_data)).get()
 	EOF
 '
 
@@ -146,5 +155,6 @@ test_expect_success 'submit a job with new bank and 0 fairshare should result in
 	test_debug "zero_fairshare.out" &&
 	grep "user fairshare value is 0" zero_fairshare.out
 '
+
 
 test_done

@@ -24,14 +24,14 @@ test_expect_success 'check that mf_priority plugin is loaded' '
 test_expect_success 'create a group of users with unique fairshare values' '
 	cat <<-EOF >fake_small_no_tie.json
 	{
-		"users" : [
-			{"userid": "5011", "bank": "account1", "default_bank": "account1", "fairshare": "0.285714", "max_jobs": "5"},
-			{"userid": "5012", "bank": "account1", "default_bank": "account1", "fairshare": "0.142857", "max_jobs": "5"},
-			{"userid": "5013", "bank": "account1", "default_bank": "account1", "fairshare": "0.428571", "max_jobs": "5"},
-			{"userid": "5021", "bank": "account2", "default_bank": "account2", "fairshare": "0.714286", "max_jobs": "5"},
-			{"userid": "5022", "bank": "account2", "default_bank": "account2", "fairshare": "0.571429", "max_jobs": "5"},
-			{"userid": "5031", "bank": "account3", "default_bank": "account3", "fairshare": "1.0", "max_jobs": "5"},
-			{"userid": "5032", "bank": "account3", "default_bank": "account3", "fairshare": "0.857143", "max_jobs": "5"}
+		"data" : [
+			{"userid": 5011, "bank": "account1", "def_bank": "account1", "fairshare": 0.285714, "max_jobs": 5},
+			{"userid": 5012, "bank": "account1", "def_bank": "account1", "fairshare": 0.142857, "max_jobs": 5},
+			{"userid": 5013, "bank": "account1", "def_bank": "account1", "fairshare": 0.428571, "max_jobs": 5},
+			{"userid": 5021, "bank": "account2", "def_bank": "account2", "fairshare": 0.714286, "max_jobs": 5},
+			{"userid": 5022, "bank": "account2", "def_bank": "account2", "fairshare": 0.571429, "max_jobs": 5},
+			{"userid": 5031, "bank": "account3", "def_bank": "account3", "fairshare": 1.0, "max_jobs": 5},
+			{"userid": 5032, "bank": "account3", "def_bank": "account3", "fairshare": 0.857143, "max_jobs": 5}
 		]
 	}
 	EOF
