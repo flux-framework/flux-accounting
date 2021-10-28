@@ -3,7 +3,7 @@
 test_description='Test print-hierarchy command'
 . `dirname $0`/sharness.sh
 PRINT_HIERARCHY=${FLUX_BUILD_DIR}/src/fairness/print_hierarchy/flux-shares
-UPDATE_FSHARE=${FLUX_BUILD_DIR}/src/cmd/flux-update-fshare
+UPDATE_FSHARE=${FLUX_BUILD_DIR}/src/cmd/flux-account-update-fshare
 
 CREATE_TEST_DB=${SHARNESS_TEST_SRCDIR}/scripts/create_test_db.py
 UPDATE_USAGE_COL=${SHARNESS_TEST_SRCDIR}/scripts/update_usage_column.py
