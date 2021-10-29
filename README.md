@@ -47,13 +47,13 @@ flux account update-usage --priority-decay-half-life=2 path/to/DB
 After the job usage values are re-calculated and updated, the fairshare values for each user also need to be updated. This can be accomplished by configuring the `flux-update-fshare` script to also run as a cron job. This fetches user account data from the flux-accounting DB and recalculates and writes the updated fairshare values back to the DB.
 
 ```
-flux update-fshare -f path/to/DB
+flux account-update-fshare -f path/to/DB
 ```
 
 Once the fairshare values for all of the users in the flux-accounting DB get updated, this updated information will be sent to the priority plugin. This script can be also be configured to run as a cron job:
 
 ```
-flux python bulk_update.py -p path/to/DB
+flux account-priority-update -p path/to/DB
 ```
 
 ### Run flux-accounting's commands:
