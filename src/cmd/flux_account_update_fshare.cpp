@@ -44,8 +44,6 @@ int main (int argc, char** argv)
     std::string filepath;
     int rc;
 
-    // const std::string *err_msg;
-
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         if (arg == "-p") {
