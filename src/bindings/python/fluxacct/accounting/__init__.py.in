@@ -1,4 +1,4 @@
-db_dir = "@acct_db_path@"
-db_path = "@acct_db_path@/FluxAccounting.db"
+db_dir = "@X_LOCALSTATEDIR@/lib/flux/"
+db_path = "@X_LOCALSTATEDIR@/lib/flux/FluxAccounting.db"
 
 __all__ = ["db_dir", "db_path"]
