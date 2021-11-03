@@ -19,7 +19,7 @@ test_expect_success 'create t_small_no_tie.db' '
 '
 
 test_expect_success 'create hierarchy output from t_small_no_tie.db' '
-	${PRINT_HIERARCHY} -f $(pwd)/t_small_no_tie.db
+	${PRINT_HIERARCHY} -p $(pwd)/t_small_no_tie.db
 '
 
 test_expect_success 'run update fshare script - small_no_tie.db' '
@@ -27,7 +27,7 @@ test_expect_success 'run update fshare script - small_no_tie.db' '
 '
 
 test_expect_success 'create hierarchy output from C++ - small_no_tie.db' '
-	${PRINT_HIERARCHY} -f $(pwd)/t_small_no_tie.db > pre_fshare_update.test
+	${PRINT_HIERARCHY} -p $(pwd)/t_small_no_tie.db > pre_fshare_update.test
 '
 
 test_expect_success 'compare hierarchy outputs' '
@@ -43,7 +43,7 @@ test_expect_success 'run update fshare script - small_no_tie.db' '
 '
 
 test_expect_success 'create hierarchy output from C++ - small_no_tie.db' '
-	${PRINT_HIERARCHY} -f $(pwd)/t_small_no_tie.db > post_fshare_update.test
+	${PRINT_HIERARCHY} -p $(pwd)/t_small_no_tie.db > post_fshare_update.test
 '
 
 test_expect_success 'compare hierarchy outputs' '

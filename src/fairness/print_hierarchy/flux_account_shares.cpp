@@ -23,12 +23,12 @@ using namespace Flux::writer;
 
 static void show_usage ()
 {
-    std::cout << "usage: flux shares [-P DELIMITER] [-f DB_PATH]\n"
+    std::cout << "usage: flux shares [-P DELIMITER] [-p DB_PATH]\n"
               << "optional arguments:\n"
               << "\t-h,--help\t\t\tShow this help message\n"
               << "\t-P DELIMITER"
               << "\t\tPrint the database hierarchy in a parsable format\n"
-              << "\t-f DB_PATH"
+              << "\t-p DB_PATH"
               << "\t\t\tSpecify location of the flux-accounting database"
               << std::endl;
 }
@@ -44,7 +44,7 @@ int main (int argc, char** argv)
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
-        if (arg == "-f") {
+        if (arg == "-p") {
             filepath = argv[i + 1];
             i++;
         } else if (arg == "-P") {
