@@ -27,10 +27,10 @@ const std::string DBPATH = std::string (X_LOCALSTATEDIR) + "/FluxAccounting.db";
 
 static void show_usage ()
 {
-    std::cout << "usage: flux update-fshare [-f DB_PATH]\n"
+    std::cout << "usage: flux update-fshare [-p DB_PATH]\n"
               << "optional arguments:\n"
               << "\t-h,--help\t\t\tShow this help message\n"
-              << "\t-f DB_PATH"
+              << "\t-p DB_PATH"
               << "\t\t\tSpecify location of the flux-accounting database"
               << std::endl;
 }
@@ -44,11 +44,9 @@ int main (int argc, char** argv)
     std::string filepath;
     int rc;
 
-    // const std::string *err_msg;
-
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
-        if (arg == "-f") {
+        if (arg == "-p") {
             filepath = argv[i + 1];
             i++;
         } else {
