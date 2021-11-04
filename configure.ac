@@ -47,16 +47,11 @@ AX_FLUX_CORE
 
 #  Set PYTHON_VERSION to FLUX_PYTHON_VERSION here
 PYTHON_VERSION=${PYTHON_VERSION:-$FLUX_PYTHON_VERSION}
-AX_PYTHON_DEVEL([>='3.6'])
 
-AM_PATH_PYTHON([$ac_python_version])
+AM_PATH_PYTHON([$PYTHON_VERSION])
 if test "X$PYTHON" = "X"; then
   AC_MSG_ERROR([could not find python])
 fi
-
-AC_SUBST(PYTHON_LIBRARY, lib${ac_python_library}.so)
-AC_DEFINE_UNQUOTED([PYTHON_INTERPRETER], ["$PYTHON"], [The python interpreter flux is configured with])
-AC_SUBST(PYTHON)
 
 #
 # Project directories
