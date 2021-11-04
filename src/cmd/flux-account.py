@@ -167,9 +167,6 @@ def add_create_db_arg(subparsers):
     )
     subparser_create_db.set_defaults(func="create_db")
     subparser_create_db.add_argument(
-        "path", help="specify location of database file", metavar=("DATABASE PATH")
-    )
-    subparser_create_db.add_argument(
         "--priority-usage-reset-period",
         help="the number of weeks at which usage information gets reset to 0",
         metavar=("PRIORITY USAGE RESET PERIOD"),
@@ -407,7 +404,7 @@ def main():
     # to ONLY create the DB and then exit out successfully
     if args.func == "create_db":
         c.create_db(
-            args.path, args.priority_usage_reset_period, args.priority_decay_half_life
+            path, args.priority_usage_reset_period, args.priority_decay_half_life
         )
         sys.exit(0)
 
