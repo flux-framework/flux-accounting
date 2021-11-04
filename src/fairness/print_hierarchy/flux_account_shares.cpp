@@ -21,6 +21,9 @@ extern "C" {
 using namespace Flux::accounting;
 using namespace Flux::writer;
 
+const std::string DBPATH = std::string (X_LOCALSTATEDIR)
+                                                + "/lib/flux/FluxAccounting.db";
+
 static void show_usage ()
 {
     std::cout << "usage: flux shares [-P DELIMITER] [-p DB_PATH]\n"
@@ -64,6 +67,9 @@ int main (int argc, char** argv)
             return rc;
         }
     }
+
+    if (filepath == "")
+        filepath = DBPATH;
 
     data_writer_stdout_t data_writer (indent, parsable, delimiter);
     rc = data_writer.write_acct_info (filepath, root);

@@ -23,7 +23,8 @@ using namespace Flux::accounting;
 using namespace Flux::reader;
 using namespace Flux::writer;
 
-const std::string DBPATH = std::string (X_LOCALSTATEDIR) + "/FluxAccounting.db";
+const std::string DBPATH = std::string (X_LOCALSTATEDIR)
+                                                + "/lib/flux/FluxAccounting.db";
 
 static void show_usage ()
 {

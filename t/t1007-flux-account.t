@@ -6,7 +6,7 @@ FLUX_ACCOUNT=${SHARNESS_TEST_SRCDIR}/../src/cmd/flux-account.py
 DB_PATH=$(pwd)/FluxAccountingTest.db
 
 test_expect_success 'create flux-accounting DB' '
-	flux python ${FLUX_ACCOUNT} create-db $(pwd)/FluxAccountingTest.db
+	flux python ${FLUX_ACCOUNT} -p $(pwd)/FluxAccountingTest.db create-db
 '
 
 test_expect_success 'add some banks to the DB' '
