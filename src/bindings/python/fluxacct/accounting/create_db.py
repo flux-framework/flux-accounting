@@ -171,4 +171,18 @@ def create_db(
         );"""
     )
 
+    # Queue Table
+    # stores queue limit information
+    logging.info("Creating queue_table in DB...")
+    conn.execute(
+        """
+            CREATE TABLE IF NOT EXISTS queue_table (
+                queue               tinytext                NOT NULL,
+                min_nodes_per_job   int(11),
+                max_nodes_per_job   int(11),
+                max_time_per_job    int(11),
+                PRIMARY KEY (queue)
+            );"""
+    )
+
     conn.close()
