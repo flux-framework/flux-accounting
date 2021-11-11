@@ -123,6 +123,37 @@ test_expect_success 'make sure the user is successfully removed from the DB' '
 	grep "User not found in association_table" deleted_user.out
 '
 
+test_expect_success 'add a queue with no optional args to the queue_table' '
+	flux account -p ${DB_PATH} add-queue queue_1
+'
+
+test_expect_success 'add a queue with some optional args' '
+	flux account -p ${DB_PATH} add-queue queue_2 --min-nodes-per-job=1 --max-nodes-per-job=10 --max-time-per-job=120
+'
+
+test_expect_success 'edit some queue information' '
+	flux account -p ${DB_PATH} edit-queue --max-nodes-per-job 100 queue_1
+'
+
+test_expect_success 'edit multiple columns for one queue' '
+	flux account -p ${DB_PATH} edit-queue queue_1 --min-nodes-per-job 1 --max-nodes-per-job 128
+'
+
+test_expect_success 'reset a queue limit' '
+	flux account -p ${DB_PATH} edit-queue queue_1 --max-nodes-per-job -1 &&
+	flux account -p ${DB_PATH} view-queue queue_1 > reset_limit.test &&
+	grep "max_nodes_per_job: " reset_limit.test
+'
+
+test_expect_success 'remove a queue from the queue_table' '
+	flux account -p ${DB_PATH} delete-queue queue_2
+'
+
+test_expect_success 'make sure the queue is successfully removed from the DB' '
+	flux account -p ${DB_PATH} view-queue queue_2 > deleted_queue.out &&
+	grep "queue not found in queue_table" deleted_queue.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
