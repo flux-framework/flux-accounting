@@ -159,3 +159,9 @@ $ flux account view-user fluxuser
 creation_time    mod_time  deleted  username  admin_level   bank   shares  max_jobs  max_wall_pj
    1595438356  1595438356        0  fluxuser            1    foo        1       100           60
 ```
+
+#### Release
+
+SPDX-License-Identifier: LGPL-3.0
+
+LLNL-CODE-764420
