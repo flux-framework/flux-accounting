@@ -13,6 +13,7 @@ import argparse
 import sys
 import os
 import sqlite3
+import json
 
 import flux
 
@@ -47,20 +48,26 @@ def bulk_update(path):
     conn = est_sqlite_conn(path)
     cur = conn.cursor()
 
+    data = {}
+    bulk_user_data = []
+
     # fetch all rows from association_table (will print out tuples)
     for row in cur.execute(
         "SELECT userid, bank, default_bank, fairshare, max_jobs FROM association_table"
     ):
         # create a JSON payload with the results of the query
-        data = {
-            "userid": str(row[0]),
+        single_user_data = {
+            "userid": int(row[0]),
             "bank": str(row[1]),
-            "default_bank": str(row[2]),
-            "fairshare": str(row[3]),
-            "max_jobs": str(row[4]),
+            "def_bank": str(row[2]),
+            "fairshare": float(row[3]),
+            "max_jobs": int(row[4]),
         }
+        bulk_user_data.append(single_user_data)
 
-        flux.Flux().rpc("job-manager.mf_priority.rec_update", data).get()
+    data = {"data": bulk_user_data}
+
+    flux.Flux().rpc("job-manager.mf_priority.rec_update", json.dumps(data)).get()
 
 
 def main():

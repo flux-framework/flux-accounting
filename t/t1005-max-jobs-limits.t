@@ -24,9 +24,9 @@ test_expect_success 'check that mf_priority plugin is loaded' '
 test_expect_success 'create fake_user.json' '
 	cat <<-EOF >fake_user.json
 	{
-		"users" : [
-			{"userid": "5011", "bank": "account3", "default_bank": "account3", "fairshare": "0.45321", "max_jobs": "3"},
-			{"userid": "5011", "bank": "account2", "default_bank": "account3", "fairshare": "0.11345", "max_jobs": "2"}
+		"data" : [
+			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_jobs": 3},
+			{"userid": 5011, "bank": "account2", "def_bank": "account3", "fairshare": 0.11345, "max_jobs": 2}
 		]
 	}
 	EOF
@@ -83,8 +83,8 @@ test_expect_success 'submit a job while already having max number of active jobs
 test_expect_success 'increase the max jobs count of the user' '
 	cat <<-EOF >new_max_jobs_limit.json
 	{
-		"users" : [
-			{"userid": "5011", "bank": "account3", "default_bank": "account3", "fairshare": "0.45321", "max_jobs": "4"}
+		"data" : [
+			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_jobs": 4}
 		]
 	}
 	EOF

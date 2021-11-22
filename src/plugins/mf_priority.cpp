@@ -19,6 +19,7 @@ extern "C" {
 }
 #include <flux/core.h>
 #include <flux/jobtap.h>
+#include <jansson.h>
 #include <map>
 #include <iterator>
 #include <cmath>
@@ -101,14 +102,14 @@ static void rec_update_cb (flux_t *h,
                            const flux_msg_t *msg,
                            void *arg)
 {
-    char *uid, *fshare, *bank, *default_bank, *max_jobs;
+    char *bank, *def_bank = NULL;
+    int uid, max_jobs = 0;
+    double fshare = 0.0;
+    json_t *data, *jtemp = NULL;
+    json_error_t error;
+    int num_data = 0;
 
-    if (flux_request_unpack (msg, NULL, "{s:s, s:s, s:s, s:s, s:s}",
-                             "userid", &uid,
-                             "bank", &bank,
-                             "default_bank", &default_bank,
-                             "fairshare", &fshare,
-                             "max_jobs", &max_jobs) < 0) {
+    if (flux_request_unpack (msg, NULL, "{s:o}", "data", &data) < 0) {
         flux_log_error (h, "failed to unpack custom_priority.trigger msg");
         goto error;
     }
@@ -116,13 +117,31 @@ static void rec_update_cb (flux_t *h,
     if (flux_respond (h, msg, NULL) < 0)
         flux_log_error (h, "flux_respond");
 
-    struct bank_info *b;
-    b = &users[std::atoi(uid)][bank];
+    if (!data || !json_is_array (data)) {
+        flux_log (h, LOG_ERR, "mf_priority: invalid bulk_update payload");
+        goto error;
+    }
+    num_data = json_array_size (data);
 
-    b->fairshare = std::atof (fshare);
-    b->max_jobs = std::atoi (max_jobs);
+    for (int i = 0; i < num_data; i++) {
+        json_t *el = json_array_get(data, i);
 
-    users_def_bank[std::atoi (uid)] = default_bank;
+        if (json_unpack_ex (el, &error, 0, "{s:i, s:s, s:s, s:F, s:i}",
+                            "userid", &uid,
+                            "bank", &bank,
+                            "def_bank", &def_bank,
+                            "fairshare", &fshare,
+                            "max_jobs", &max_jobs) < 0)
+            flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
+
+        struct bank_info *b;
+        b = &users[uid][bank];
+
+        b->fairshare = fshare;
+        b->max_jobs = max_jobs;
+
+        users_def_bank[uid] = def_bank;
+    }
 
     return;
 error:
