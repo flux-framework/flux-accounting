@@ -18,6 +18,7 @@ from fluxacct.accounting import bank_subcommands as b
 from fluxacct.accounting import qos_subcommands as q
 from fluxacct.accounting import job_archive_interface as jobs
 from fluxacct.accounting import create_db as c
+from fluxacct.accounting import queue_subcommands as qu
 
 
 def add_path_arg(parser):
@@ -283,6 +284,76 @@ def add_delete_qos_arg(subparsers):
     subparser_delete_qos.add_argument("--qos", help="QOS name", metavar="QOS")
 
 
+def add_add_queue_arg(subparsers):
+    subparser_add_queue = subparsers.add_parser("add-queue", help="add a new queue")
+
+    subparser_add_queue.set_defaults(func="add_queue")
+    subparser_add_queue.add_argument("queue", help="queue name", metavar="QUEUE")
+    subparser_add_queue.add_argument(
+        "--min-nodes-per-job",
+        help="min nodes per job",
+        default="",
+        metavar="MIN NODES PER JOB",
+    )
+    subparser_add_queue.add_argument(
+        "--max-nodes-per-job",
+        help="max nodes per job",
+        default="",
+        metavar="MAX NODES PER JOB",
+    )
+    subparser_add_queue.add_argument(
+        "--max-time-per-job",
+        help="max time per job",
+        default="",
+        metavar="MAX TIME PER JOB",
+    )
+
+
+def add_view_queue_arg(subparsers):
+    subparser_view_queue = subparsers.add_parser(
+        "view-queue", help="view queue information"
+    )
+
+    subparser_view_queue.set_defaults(func="view_queue")
+    subparser_view_queue.add_argument("queue", help="queue name", metavar="QUEUE")
+
+
+def add_edit_queue_arg(subparsers):
+    subparser_edit_queue = subparsers.add_parser(
+        "edit-queue", help="edit a queue's priority"
+    )
+
+    subparser_edit_queue.set_defaults(func="edit_queue")
+    subparser_edit_queue.add_argument("queue", help="queue name", metavar="QUEUE")
+    subparser_edit_queue.add_argument(
+        "--min-nodes-per-job",
+        help="min nodes per job",
+        default=None,
+        metavar="MIN NODES PER JOB",
+    )
+    subparser_edit_queue.add_argument(
+        "--max-nodes-per-job",
+        help="max nodes per job",
+        default=None,
+        metavar="MAX NODES PER JOB",
+    )
+    subparser_edit_queue.add_argument(
+        "--max-time-per-job",
+        help="max time per job",
+        default=None,
+        metavar="MAX TIME PER JOB",
+    )
+
+
+def add_delete_queue_arg(subparsers):
+    subparser_delete_queue = subparsers.add_parser(
+        "delete-queue", help="remove a queue"
+    )
+
+    subparser_delete_queue.set_defaults(func="delete_queue")
+    subparser_delete_queue.add_argument("queue", help="queue name", metavar="QUEUE")
+
+
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_output_file_arg(parser)
@@ -301,6 +372,10 @@ def add_arguments_to_parser(parser, subparsers):
     add_view_qos_arg(subparsers)
     add_edit_qos_arg(subparsers)
     add_delete_qos_arg(subparsers)
+    add_add_queue_arg(subparsers)
+    add_view_queue_arg(subparsers)
+    add_edit_queue_arg(subparsers)
+    add_delete_queue_arg(subparsers)
 
 
 def set_db_location(args):
@@ -380,6 +455,26 @@ def select_accounting_function(args, conn, output_file, parser):
         q.edit_qos(conn, args.qos, args.priority)
     elif args.func == "delete_qos":
         q.delete_qos(conn, args.qos)
+    elif args.func == "add_queue":
+        qu.add_queue(
+            conn,
+            args.queue,
+            args.min_nodes_per_job,
+            args.max_nodes_per_job,
+            args.max_time_per_job,
+        )
+    elif args.func == "view_queue":
+        qu.view_queue(conn, args.queue)
+    elif args.func == "delete_queue":
+        qu.delete_queue(conn, args.queue)
+    elif args.func == "edit_queue":
+        qu.edit_queue(
+            conn,
+            args.queue,
+            args.min_nodes_per_job,
+            args.max_nodes_per_job,
+            args.max_time_per_job,
+        )
     else:
         print(parser.print_usage())
 
