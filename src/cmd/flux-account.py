@@ -66,12 +66,6 @@ def add_add_user_arg(subparsers):
         metavar="BANK",
     )
     subparser_add_user.add_argument(
-        "--parent-acct",
-        help="parent account",
-        default="",
-        metavar="PARENT_ACCOUNT",
-    )
-    subparser_add_user.add_argument(
         "--shares",
         help="shares",
         default=1,
