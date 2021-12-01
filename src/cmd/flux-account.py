@@ -106,25 +106,39 @@ def add_edit_user_arg(subparsers):
     subparser_edit_user = subparsers.add_parser("edit-user", help="edit a user's value")
     subparser_edit_user.set_defaults(func="edit_user")
     subparser_edit_user.add_argument(
-        "--username",
+        "username",
         help="username",
         metavar="USERNAME",
     )
     subparser_edit_user.add_argument(
         "--bank",
-        help="bank",
-        default="",
+        help="bank to charge jobs against",
+        default=None,
         metavar="BANK",
     )
     subparser_edit_user.add_argument(
-        "--field",
-        help="column name",
-        metavar="FIELD",
+        "--default-bank",
+        help="default bank",
+        default=None,
+        metavar="DEFAULT_BANK",
     )
     subparser_edit_user.add_argument(
-        "--new-value",
-        help="new value",
-        metavar="VALUE",
+        "--shares",
+        help="shares",
+        default=None,
+        metavar="SHARES",
+    )
+    subparser_edit_user.add_argument(
+        "--max-jobs",
+        help="max jobs",
+        default=None,
+        metavar="MAX_JOBS",
+    )
+    subparser_edit_user.add_argument(
+        "--qos",
+        help="quality of service",
+        default=None,
+        metavar="QUALITY OF SERVICE",
     )
 
 
@@ -419,7 +433,15 @@ def select_accounting_function(args, conn, output_file, parser):
     elif args.func == "delete_user":
         u.delete_user(conn, args.username, args.bank)
     elif args.func == "edit_user":
-        u.edit_user(conn, args.username, args.field, args.new_value, args.bank)
+        u.edit_user(
+            conn,
+            args.username,
+            args.bank,
+            args.default_bank,
+            args.shares,
+            args.max_jobs,
+            args.qos,
+        )
     elif args.func == "view_job_records":
         jobs.view_job_records(
             conn,

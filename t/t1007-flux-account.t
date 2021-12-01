@@ -50,11 +50,11 @@ test_expect_success 'view some user information' '
 '
 
 test_expect_success 'add a QOS to an existing user account' '
-	flux account -p ${DB_PATH} edit-user --username=user5011 --field=qos --new-value="expedite"
+	flux account -p ${DB_PATH} edit-user user5011 --qos="expedite"
 '
 
 test_expect_success 'trying to add a non-existent QOS to a user account should return an error' '
-	flux account -p ${DB_PATH} edit-user --username=user5011 --field=qos --new-value="foo" > bad_qos.out &&
+	flux account -p ${DB_PATH} edit-user user5011 --qos="foo" > bad_qos.out &&
 	grep "QOS specified does not exist in qos_table" bad_qos.out
 '
 
@@ -64,7 +64,7 @@ test_expect_success 'trying to add a user with a non-existent QOS should also re
 '
 
 test_expect_success 'add multiple QOS to an existing user account' '
-	flux account -p ${DB_PATH} edit-user --username=user5012 --field=qos --new-value="expedite,standby" &&
+	flux account -p ${DB_PATH} edit-user user5012 --qos="expedite,standby" &&
 	flux account -p ${DB_PATH} view-user user5012 > user5012.out &&
 	grep "expedite,standby" user5012.out
 '
@@ -112,7 +112,7 @@ test_expect_success 'trying to view a user that does exist in the DB should retu
 '
 
 test_expect_success 'edit a field in a user account' '
-	flux account -p ${DB_PATH} edit-user --username=user5011 --field=shares --new-value=50
+	flux account -p ${DB_PATH} edit-user user5011 --shares 50
 '
 
 test_expect_success 'edit a field in a bank account' '
