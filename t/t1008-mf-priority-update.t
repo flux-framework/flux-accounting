@@ -5,7 +5,6 @@ test_description='Test multi-factor priority plugin order with no ties'
 . `dirname $0`/sharness.sh
 MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
 SUBMIT_AS=${SHARNESS_TEST_SRCDIR}/scripts/submit_as.py
-FLUX_EXEC_PATH=${SHARNESS_TEST_SRCDIR}/../src/cmd:${FLUX_EXEC_PATH}
 DB_PATH=$(pwd)/FluxAccountingTest.db
 
 export TEST_UNDER_FLUX_NO_JOB_EXEC=y
