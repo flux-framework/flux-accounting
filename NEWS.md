@@ -1,3 +1,18 @@
+flux-accounting version 0.12.0 - 2021-12-03
+-------------------------------------------
+
+#### Fixes
+
+* Improve bulk update script by reducing number of sent payloads to just one payload containing all required data needed by multi-factor priority plugin (#167)
+
+* Drop `ax_python_devel.m4` and adjust `configure.ac` since flux-accounting does not use `PYTHON_CFLAGS` or `PYTHON_LIBS` and rejects python `3.10.0` as too old (#173)
+
+* Add LLNL code release number to flux-accounting (#175)
+
+#### Features
+
+* Add support for defining, configuring, and editing queues and its various limits within the flux-accounting database (#176)
+
 flux-accounting version 0.11.0 - 2021-10-29
 -------------------------------------------
 
