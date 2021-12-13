@@ -155,4 +155,14 @@ matrix.add_build(
     docker_tag=True,
 )
 
+# Ubuntu: gcc-8, distcheck
+matrix.add_build(
+    name="el8 - distcheck",
+    image="el8",
+    args=" --localstatedir=/var",
+    env=dict(
+        DISTCHECK="t",
+    ),
+)
+
 print(matrix)
