@@ -81,6 +81,9 @@ int64_t priority_calculation (flux_plugin_t *p,
 
     fshare_factor = b->fairshare;
 
+    if (fshare_factor == 0.00000)
+        return FLUX_JOB_PRIORITY_MIN;
+
     priority = (fshare_weight * fshare_factor) + (urgency - 16);
 
     return abs (round (priority));
@@ -246,11 +249,6 @@ static int validate_cb (flux_plugin_t *p,
     max_jobs = bank_it->second.max_jobs;
     current_jobs = bank_it->second.current_jobs;
     fairshare = bank_it->second.fairshare;
-
-    // if a user's fairshare value is 0, that means they shouldn't be able
-    // to run jobs on a system
-    if (fairshare == 0)
-        return flux_jobtap_reject_job (p, args, "user fairshare value is 0");
 
     // make sure user has not already hit their max active jobs count
     if (max_jobs > 0 && current_jobs >= max_jobs)
