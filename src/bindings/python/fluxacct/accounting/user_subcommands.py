@@ -16,16 +16,36 @@ import pwd
 
 def view_user(conn, user):
     cur = conn.cursor()
+    headers = [
+        "creation_time",
+        "mod_time",
+        "deleted",
+        "username",
+        "userid",
+        "admin_level",
+        "bank",
+        "default_bank",
+        "shares",
+        "job_usage",
+        "fairshare",
+        "max_jobs",
+        "qos",
+    ]
     try:
         # get the information pertaining to a user in the DB
         cur.execute("SELECT * FROM association_table where username=?", (user,))
-        row = cur.fetchone()
-        if row is None:
+        rows = cur.fetchall()
+        if not rows:
             print("User not found in association_table")
         else:
-            col_headers = [description[0] for description in cur.description]
-            for key, val in zip(col_headers, row):
-                print(key + ": " + str(val))
+            # print column names of association_table
+            for header in headers:
+                print(header.ljust(15), end=" ")
+            print()
+            for row in rows:
+                for col in list(row):
+                    print(str(col).ljust(15), end=" ")
+                print()
     except sqlite3.OperationalError as e_database_error:
         print(e_database_error)
 
