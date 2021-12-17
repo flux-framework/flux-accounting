@@ -40,6 +40,15 @@ test_expect_success 'add some QOS to the DB' '
 	flux account -p ${DB_PATH} add-qos --qos=special --priority=99999
 '
 
+test_expect_success 'view some user information' '
+	flux account -p ${DB_PATH} view-user user5011 > user_info.out &&
+	grep -c "user5011" user_info.out > num_rows.test &&
+	cat <<-EOF >num_rows.expected &&
+	1
+	EOF
+	test_cmp num_rows.expected num_rows.test
+'
+
 test_expect_success 'add a QOS to an existing user account' '
 	flux account -p ${DB_PATH} edit-user --username=user5011 --field=qos --new-value="expedite"
 '
