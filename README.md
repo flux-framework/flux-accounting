@@ -120,6 +120,10 @@ The accounting table in this database stores information like user name and ID, 
 
 ### Interacting With the Accounting DB
 
+In order to add, edit, or remove information from the flux-accounting database, you must also have read/write access to the directory that the DB file resides in. The [SQLite documentation](https://sqlite.org/omitted.html) states:
+
+> Since SQLite reads and writes an ordinary disk file, the only access permissions that can be applied are the normal file access permissions of the underlying operating system.
+
 There are two ways you can interact with the tables contained in the Accounting DB. The first way is to launch into an interactive SQLite shell. From there, you can open the database file and interface with any of the tables using SQLite commands:
 
 ```
@@ -144,9 +148,9 @@ This will output queries like the following:
 
 ```
 sqlite> SELECT * FROM association_table;
-creation_time  mod_time    deleted     username    admin_level  bank        shares      max_jobs    max_wall_pj
--------------  ----------  ----------  ----------  -----------  ----------  ----------  ----------  -----------
-1605309320     1605309320  0           fluxuser    1            foo         1           1           60       
+creation_time  mod_time    deleted     username    bank        shares      max_jobs    max_wall_pj
+-------------  ----------  ----------  ----------  ----------  ----------  ----------  -----------
+1605309320     1605309320  0           fluxuser    foo         1           1           60       
 ```
 
 The second way is to use flux-accounting's command line arguments. You can pass in a path to the database file, or it will default to the "compiled-in" path of `${prefix}/var/FluxAccounting.db`.
@@ -156,8 +160,8 @@ With flux-accounting's command line tools, you can view a user's account informa
 ```
 $ flux account view-user fluxuser
 
-creation_time    mod_time  deleted  username  admin_level   bank   shares  max_jobs  max_wall_pj
-   1595438356  1595438356        0  fluxuser            1    foo        1       100           60
+creation_time    mod_time  deleted  username  bank   shares  max_jobs  max_wall_pj
+   1595438356  1595438356        0  fluxuser  foo         1       100           60
 ```
 
 #### Release

@@ -73,7 +73,6 @@ def add_user(
     username,
     bank,
     uid=65534,
-    admin_level=1,
     shares=1,
     max_jobs=5,
     qos="",
@@ -120,14 +119,13 @@ def add_user(
                 deleted,
                 username,
                 userid,
-                admin_level,
                 bank,
                 default_bank,
                 shares,
                 max_jobs,
                 qos
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 int(time.time()),
@@ -135,7 +133,6 @@ def add_user(
                 0,
                 username,
                 uid,
-                admin_level,
                 bank,
                 default_bank,
                 shares,
@@ -188,7 +185,6 @@ def delete_user(conn, username, bank):
 def edit_user(conn, username, field, new_value, bank=""):
     fields = [
         "username",
-        "admin_level",
         "bank",
         "default_bank",
         "shares",
