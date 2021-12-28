@@ -13,6 +13,67 @@ import sqlite3
 
 from fluxacct.accounting import user_subcommands as u
 
+# helper function to print user information in a table format
+def print_user_rows(rows, bank):
+    print("\nUsers Under Bank {bank_name}:\n".format(bank_name=bank))
+    user_headers = [
+        "username",
+        "userid",
+        "default_bank",
+        "shares",
+        "job_usage",
+        "fairshare",
+        "max_jobs",
+        "qos",
+    ]
+    # print column names of association_table
+    for header in user_headers:
+        print(header.ljust(15), end=" ")
+    print()
+    for row in rows:
+        for col in list(row):
+            print(str(col).ljust(15), end=" ")
+        print()
+
+
+# helper function to print bank information in a table format
+def print_bank_row(rows, bank):
+    bank_headers = [
+        "bank_id",
+        "bank",
+        "parent_bank",
+        "shares",
+    ]
+    # bank has sub banks, so list them
+    for header in bank_headers:
+        print(header.ljust(15), end=" ")
+    print()
+    for row in rows:
+        for col in list(row):
+            print(str(col).ljust(15), end=" ")
+        print()
+
+
+# helper function to traverse the bank table and delete all sub banks and users
+def print_sub_banks(conn, bank, indent=""):
+    select_stmt = "SELECT bank FROM bank_table WHERE parent_bank=?"
+    cur = conn.cursor()
+    cur.execute(select_stmt, (bank,))
+    rows = cur.fetchall()
+
+    # we've reached a bank with no sub banks
+    if len(rows) == 0:
+        cur.execute("SELECT username FROM association_table WHERE bank=?", (bank,))
+        rows = cur.fetchall()
+        if rows:
+            for row in rows:
+                print(indent, row[0])
+    # else, delete all of its sub banks and continue traversing
+    else:
+        for row in rows:
+            print(indent, row[0])
+            print_sub_banks(conn, row[0], indent + " ")
+
 
 def add_bank(conn, bank, shares, parent_bank=""):
     cur = conn.cursor()
@@ -50,15 +111,37 @@ def add_bank(conn, bank, shares, parent_bank=""):
 def view_bank(conn, bank):
     cur = conn.cursor()
     try:
-        # get the information pertaining to a bank in the Accounting DB
         cur.execute("SELECT * FROM bank_table WHERE bank=?", (bank,))
-        row = cur.fetchone()
-        if row is None:
-            print("Bank not found in bank_table")
+        rows = cur.fetchall()
+
+        if rows:
+            print_bank_row(rows, bank)
         else:
-            col_headers = [description[0] for description in cur.description]
-            for key, val in zip(col_headers, row):
-                print(key + ": " + str(val))
+            print("Bank not found in bank_table")
+            return
+
+        # get all potential sub banks
+        cur.execute("SELECT * FROM bank_table WHERE parent_bank=?", (bank,))
+        rows = cur.fetchall()
+
+        if not rows:
+            # no sub banks exist, so print all users under bank (if any)
+            select_stmt = """
+                        SELECT username,userid,default_bank,shares,job_usage,
+                        fairshare,max_jobs,qos FROM association_table
+                        WHERE bank=?
+                        """
+            cur.execute(
+                select_stmt,
+                (bank,),
+            )
+            rows = cur.fetchall()
+            if rows:
+                print_user_rows(rows, bank)
+        else:
+            # sub banks exist, so print all sub banks & users in a hierarchical format
+            print("\n{bank_name}".format(bank_name=bank))
+            print_sub_banks(conn, bank, "")
     except sqlite3.OperationalError as e_database_error:
         print(e_database_error)
 
