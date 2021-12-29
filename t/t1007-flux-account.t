@@ -12,10 +12,6 @@ test_under_flux 1 job
 
 flux setattr log-stderr-level 1
 
-# test_expect_success 'create flux-accounting DB' '
-# 	flux python ${FLUX_ACCOUNT} -p $(pwd)/FluxAccountingTest.db create-db
-# '
-
 test_expect_success 'create flux-accounting DB' '
 	flux account -p $(pwd)/FluxAccountingTest.db create-db
 '
