@@ -5,6 +5,7 @@ test_description='Test flux-account commands'
 FLUX_ACCOUNT=${SHARNESS_TEST_SRCDIR}/../src/cmd/flux-account.py
 FLUX_EXEC_PATH=${SHARNESS_TEST_SRCDIR}/../src/cmd:${FLUX_EXEC_PATH}
 DB_PATH=$(pwd)/FluxAccountingTest.db
+EXPECTED_FILES=${SHARNESS_TEST_SRCDIR}/expected/flux_account
 
 export TEST_UNDER_FLUX_NO_JOB_EXEC=y
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
@@ -20,7 +21,10 @@ test_expect_success 'add some banks to the DB' '
 	flux account -p ${DB_PATH} add-bank root 1 &&
 	flux account -p ${DB_PATH} add-bank --parent-bank=root A 1 &&
 	flux account -p ${DB_PATH} add-bank --parent-bank=root B 1 &&
-	flux account -p ${DB_PATH} add-bank --parent-bank=root C 1
+	flux account -p ${DB_PATH} add-bank --parent-bank=root C 1 &&
+	flux account -p ${DB_PATH} add-bank --parent-bank=root D 1 &&
+	flux account -p ${DB_PATH} add-bank --parent-bank=D E 1
+	flux account -p ${DB_PATH} add-bank --parent-bank=D F 1
 '
 
 test_expect_success 'add some users to the DB' '
@@ -82,15 +86,19 @@ test_expect_success 'trying to view a bank that does not exist in the DB should 
 	grep "Bank not found in bank_table" bad_bank.out
 '
 
-test_expect_success 'trying to view a bank that does exist in the DB should return some information' '
-	cat <<-EOF >good_bank.expected &&
-	bank_id: 2
-	bank: A
-	parent_bank: root
-	shares: 1
-	EOF
-	flux account -p ${DB_PATH} view-bank A > good_bank.test &&
-	test_cmp good_bank.expected good_bank.test
+test_expect_success 'viewing the root bank should show the entire hierarchy' '
+	flux account -p ${DB_PATH} view-bank root > full_hierarchy.test &&
+	test_cmp ${EXPECTED_FILES}/full_hierarchy.expected full_hierarchy.test
+'
+
+test_expect_success 'viewing a bank with users in it should print all user info under that bank as well' '
+	flux account -p ${DB_PATH} view-bank A > A_bank.test &&
+	test_cmp ${EXPECTED_FILES}/A_bank.expected A_bank.test
+'
+
+test_expect_success 'viewing a bank with sub banks should return a smaller hierarchy tree' '
+	flux account -p ${DB_PATH} view-bank D > D_bank.test &&
+	test_cmp ${EXPECTED_FILES}/D_bank.expected D_bank.test
 '
 
 test_expect_success 'trying to view a user who does not exist in the DB should return an error message' '
@@ -109,14 +117,8 @@ test_expect_success 'edit a field in a user account' '
 
 test_expect_success 'edit a field in a bank account' '
 	flux account -p ${DB_PATH} edit-bank C --shares=50 &&
-	cat <<-EOF >edited_bank.expected &&
-	bank_id: 4
-	bank: C
-	parent_bank: root
-	shares: 50
-	EOF
 	flux account -p ${DB_PATH} view-bank C > edited_bank.test &&
-	test_cmp edited_bank.expected edited_bank.test
+	grep "50" edited_bank.test
 '
 
 test_expect_success 'remove a bank (and any corresponding users that belong to that bank)' '
