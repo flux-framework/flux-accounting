@@ -108,7 +108,7 @@ def add_bank(conn, bank, shares, parent_bank=""):
         print(integrity_error)
 
 
-def view_bank(conn, bank):
+def view_bank(conn, bank, tree=False, users=False):
     cur = conn.cursor()
     try:
         cur.execute("SELECT * FROM bank_table WHERE bank=?", (bank,))
@@ -120,12 +120,20 @@ def view_bank(conn, bank):
             print("Bank not found in bank_table")
             return
 
-        # get all potential sub banks
-        cur.execute("SELECT * FROM bank_table WHERE parent_bank=?", (bank,))
-        rows = cur.fetchall()
+        # print out the hierarchy view with the specified bank as the root of the tree
+        if tree is True:
+            # get all potential sub banks
+            cur.execute("SELECT * FROM bank_table WHERE parent_bank=?", (bank,))
+            rows = cur.fetchall()
 
-        if not rows:
-            # no sub banks exist, so print all users under bank (if any)
+            if rows:
+                print("\n{bank_name}".format(bank_name=bank))
+                print_sub_banks(conn, bank, "")
+            else:
+                print("\nNo sub banks under {bank_name}".format(bank_name=bank))
+
+        # if users is passed in, print out all potential users under passed in bank
+        if users is True:
             select_stmt = """
                         SELECT username,userid,default_bank,shares,job_usage,
                         fairshare,max_jobs,qos FROM association_table
@@ -136,12 +144,11 @@ def view_bank(conn, bank):
                 (bank,),
             )
             rows = cur.fetchall()
+
             if rows:
                 print_user_rows(rows, bank)
-        else:
-            # sub banks exist, so print all sub banks & users in a hierarchical format
-            print("\n{bank_name}".format(bank_name=bank))
-            print_sub_banks(conn, bank, "")
+            else:
+                print("\nNo users under {bank_name}".format(bank_name=bank))
     except sqlite3.OperationalError as e_database_error:
         print(e_database_error)
 

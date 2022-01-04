@@ -86,18 +86,23 @@ test_expect_success 'trying to view a bank that does not exist in the DB should 
 	grep "Bank not found in bank_table" bad_bank.out
 '
 
-test_expect_success 'viewing the root bank should show the entire hierarchy' '
-	flux account -p ${DB_PATH} view-bank root > full_hierarchy.test &&
+test_expect_success 'viewing the root bank with no optional args should show just the bank info' '
+	flux account -p ${DB_PATH} view-bank root > root_bank.test &&
+	test_cmp ${EXPECTED_FILES}/root_bank.expected root_bank.test
+'
+
+test_expect_success 'viewing the root bank with -t should show the entire hierarchy' '
+	flux account -p ${DB_PATH} view-bank root -t > full_hierarchy.test &&
 	test_cmp ${EXPECTED_FILES}/full_hierarchy.expected full_hierarchy.test
 '
 
 test_expect_success 'viewing a bank with users in it should print all user info under that bank as well' '
-	flux account -p ${DB_PATH} view-bank A > A_bank.test &&
+	flux account -p ${DB_PATH} view-bank A -u > A_bank.test &&
 	test_cmp ${EXPECTED_FILES}/A_bank.expected A_bank.test
 '
 
 test_expect_success 'viewing a bank with sub banks should return a smaller hierarchy tree' '
-	flux account -p ${DB_PATH} view-bank D > D_bank.test &&
+	flux account -p ${DB_PATH} view-bank D -t > D_bank.test &&
 	test_cmp ${EXPECTED_FILES}/D_bank.expected D_bank.test
 '
 
