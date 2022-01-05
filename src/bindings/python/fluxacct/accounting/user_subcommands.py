@@ -99,18 +99,9 @@ def add_user(
         # insert the user values into association_table
         conn.execute(
             """
-            INSERT INTO association_table (
-                creation_time,
-                mod_time,
-                deleted,
-                username,
-                userid,
-                bank,
-                default_bank,
-                shares,
-                max_jobs,
-                qos
-            )
+            INSERT INTO association_table (creation_time, mod_time, deleted,
+                                           username, userid, bank, default_bank,
+                                           shares, max_jobs, qos)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
@@ -131,11 +122,7 @@ def add_user(
         # insert the user values into job_usage_factor_table
         conn.execute(
             """
-            INSERT INTO job_usage_factor_table (
-                username,
-                userid,
-                bank
-            )
+            INSERT INTO job_usage_factor_table (username, userid, bank)
             VALUES (?, ?, ?)
             """,
             (
