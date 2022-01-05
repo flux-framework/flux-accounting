@@ -16,25 +16,11 @@ import pwd
 
 def view_user(conn, user):
     cur = conn.cursor()
-    headers = [
-        "creation_time",
-        "mod_time",
-        "deleted",
-        "username",
-        "userid",
-        "admin_level",
-        "bank",
-        "default_bank",
-        "shares",
-        "job_usage",
-        "fairshare",
-        "max_jobs",
-        "qos",
-    ]
     try:
         # get the information pertaining to a user in the DB
         cur.execute("SELECT * FROM association_table where username=?", (user,))
         rows = cur.fetchall()
+        headers = [description[0] for description in cur.description]
         if not rows:
             print("User not found in association_table")
         else:
