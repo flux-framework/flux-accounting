@@ -122,7 +122,7 @@ def add_user(
         # insert the user values into job_usage_factor_table
         conn.execute(
             """
-            INSERT INTO job_usage_factor_table (username, userid, bank)
+            INSERT OR IGNORE INTO job_usage_factor_table (username, userid, bank)
             VALUES (?, ?, ?)
             """,
             (
