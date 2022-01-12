@@ -14,6 +14,24 @@ import time
 import pwd
 
 
+def get_uid(username):
+    try:
+        return pwd.getpwnam(username).pw_uid
+    except KeyError:
+        return str(username)
+
+
+def validate_qos(conn, qos):
+    cur = conn.cursor()
+    qos_list = qos.split(",")
+
+    for service in qos_list:
+        cur.execute("SELECT qos FROM qos_table WHERE qos=?", (service,))
+        row = cur.fetchone()
+        if row is None:
+            raise ValueError("QOS specified does not exist in qos_table")
+
+
 def view_user(conn, user):
     cur = conn.cursor()
     try:
@@ -34,24 +52,6 @@ def view_user(conn, user):
                 print()
     except sqlite3.OperationalError as e_database_error:
         print(e_database_error)
-
-
-def get_uid(username):
-    try:
-        return pwd.getpwnam(username).pw_uid
-    except KeyError:
-        return str(username)
-
-
-def validate_qos(conn, qos):
-    cur = conn.cursor()
-    qos_list = qos.split(",")
-
-    for service in qos_list:
-        cur.execute("SELECT qos FROM qos_table WHERE qos=?", (service,))
-        row = cur.fetchone()
-        if row is None:
-            raise ValueError("QOS specified does not exist in qos_table")
 
 
 def add_user(
