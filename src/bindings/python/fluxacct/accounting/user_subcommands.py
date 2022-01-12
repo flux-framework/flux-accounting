@@ -201,7 +201,21 @@ def edit_user(
 
             conn.execute(update_stmt, tup)
 
-            # commit changes
-            conn.commit()
+    # update mod_time column
+    mod_time_tup = (
+        int(time.time()),
+        username,
+    )
+    if bank is not None:
+        update_stmt = """UPDATE association_table SET mod_time=?
+                         WHERE username=? AND bank=?"""
+        mod_time_tup = mod_time_tup + (bank,)
+    else:
+        update_stmt = "UPDATE association_table SET mod_time=? WHERE username=?"
+
+    conn.execute(update_stmt, mod_time_tup)
+
+    # commit changes
+    conn.commit()
 
     return 0
