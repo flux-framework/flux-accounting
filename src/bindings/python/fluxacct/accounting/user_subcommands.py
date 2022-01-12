@@ -182,8 +182,17 @@ def delete_user(conn, username, bank):
     conn.commit()
 
 
-def edit_user(conn, username, field, new_value, bank=""):
-    fields = [
+def edit_user(
+    conn,
+    username,
+    bank=None,
+    default_bank=None,
+    shares=None,
+    max_jobs=None,
+    qos=None,
+):
+    params = locals()
+    editable_fields = [
         "username",
         "bank",
         "default_bank",
@@ -191,46 +200,35 @@ def edit_user(conn, username, field, new_value, bank=""):
         "max_jobs",
         "qos",
     ]
-    if field in fields:
-        the_field = field
+    for field in editable_fields:
+        if params[field] is not None:
+            if field == "qos":
+                try:
+                    validate_qos(conn, params[field])
+                except ValueError as err:
+                    print(err)
+                    return -1
 
-        if the_field == "qos":
-            try:
-                validate_qos(conn, new_value)
-            except ValueError as err:
-                print(err)
-                return -1
+            update_stmt = "UPDATE association_table SET " + field
 
-        if bank != "":
-            update_stmt = (
-                "UPDATE association_table SET "
-                + the_field
-                + "=? WHERE username=? AND bank=?"
-            )
-            # edit value in accounting database
-            conn.execute(
-                update_stmt,
-                (
-                    new_value,
+            # passing -1 will reset the column to its default value
+            if params[field] == "-1":
+                update_stmt += "=NULL WHERE username=?"
+                tup = (username,)
+            else:
+                update_stmt += "=? WHERE username=?"
+                tup = (
+                    params[field],
                     username,
-                    bank,
-                ),
-            )
-        else:
-            update_stmt = (
-                "UPDATE association_table SET " + the_field + "=? WHERE username=?"
-            )
-            conn.execute(
-                update_stmt,
-                (
-                    new_value,
-                    username,
-                ),
-            )
+                )
 
-        # commit changes
-        conn.commit()
-    else:
-        raise ValueError("Field not found in association table")
+            if bank is not None:
+                update_stmt += " AND BANK=?"
+                tup = tup + (bank,)
+
+            conn.execute(update_stmt, tup)
+
+            # commit changes
+            conn.commit()
 
     return 0

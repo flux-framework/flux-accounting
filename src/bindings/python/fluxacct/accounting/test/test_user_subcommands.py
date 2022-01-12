@@ -110,25 +110,25 @@ class TestAccountingCLI(unittest.TestCase):
             acct_conn,
             username="fluxuser",
             bank="acct",
-            field="shares",
-            new_value="10000",
+            shares=10000,
         )
         cursor = acct_conn.cursor()
         cursor.execute("SELECT shares FROM association_table where username='fluxuser'")
 
         self.assertEqual(cursor.fetchone()[0], 10000)
 
-    # trying to edit a field in a column that doesn't
-    # exist should return a ValueError
-    def test_05_edit_bad_field(self):
-        with self.assertRaises(ValueError):
-            u.edit_user(
-                acct_conn,
-                username="fluxuser",
-                bank="acct",
-                field="foo",
-                new_value="bar",
-            )
+    # edit a value for a user in the association table
+    def test_05_edit_reset_user_value(self):
+        u.edit_user(
+            acct_conn,
+            username="fluxuser",
+            bank="acct",
+            shares="-1",
+        )
+        cursor = acct_conn.cursor()
+        cursor.execute("SELECT shares FROM association_table where username='fluxuser'")
+
+        self.assertEqual(cursor.fetchone()[0], 1)
 
     # delete a user from the association table
     def test_06_delete_user(self):
@@ -184,8 +184,7 @@ class TestAccountingCLI(unittest.TestCase):
         u.edit_user(
             acct_conn,
             username="test_user1",
-            field="default_bank",
-            new_value="other_test_bank",
+            default_bank="other_test_bank",
         )
         cursor = acct_conn.cursor()
         cursor.execute(

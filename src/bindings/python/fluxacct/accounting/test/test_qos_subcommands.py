@@ -67,7 +67,7 @@ class TestAccountingCLI(unittest.TestCase):
     # trying to edit a user with a bad QoS should also raise a ValueError
     def test_06_edit_user_with_bad_qos(self):
         u.add_user(acct_conn, username="u5011", uid="5011", bank="acct")
-        u.edit_user(acct_conn, username="u5011", field="qos", new_value="foo")
+        u.edit_user(acct_conn, username="u5011", qos="foo")
 
         self.assertRaises(ValueError)
 
@@ -81,8 +81,7 @@ class TestAccountingCLI(unittest.TestCase):
         u.edit_user(
             acct_conn,
             username="u5011",
-            field="qos",
-            new_value="standby,expedite,special",
+            qos="standby,expedite,special",
         )
         cur.execute("SELECT qos FROM association_table WHERE username='u5011'")
 
