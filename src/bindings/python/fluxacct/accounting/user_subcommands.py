@@ -64,16 +64,17 @@ def add_user(
     qos="",
 ):
 
-    # get uid of user
-    fetched_uid = get_uid(username)
+    if uid == 65534:
+        # get uid of user
+        fetched_uid = get_uid(username)
 
-    try:
-        if isinstance(fetched_uid, int):
-            uid = fetched_uid
-        else:
-            raise KeyError
-    except KeyError as key_error:
-        print(key_error)
+        try:
+            if isinstance(fetched_uid, int):
+                uid = fetched_uid
+            else:
+                raise KeyError
+        except KeyError:
+            print("could not find UID for user; adding default UID")
 
     # check for a default bank of the user being added; if the user is new, set
     # the first bank they were added to as their default bank
