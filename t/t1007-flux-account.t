@@ -71,13 +71,13 @@ test_expect_success 'add multiple QOS to an existing user account' '
 
 test_expect_success 'edit a QOS priority' '
 	flux account -p ${DB_PATH} edit-qos --qos=expedite --priority=20000 &&
-	flux account -p ${DB_PATH} view-qos --qos=expedite > edited_qos.out &&
+	flux account -p ${DB_PATH} view-qos expedite > edited_qos.out &&
 	grep "20000" edited_qos.out
 '
 
 test_expect_success 'remove a QOS' '
-	flux account -p ${DB_PATH} delete-qos --qos=special &&
-	flux account -p ${DB_PATH} view-qos --qos=special > deleted_qos.out &&
+	flux account -p ${DB_PATH} delete-qos special &&
+	flux account -p ${DB_PATH} view-qos special > deleted_qos.out &&
 	grep "QOS not found in qos_table" deleted_qos.out
 '
 
