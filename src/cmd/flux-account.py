@@ -267,7 +267,7 @@ def add_view_qos_arg(subparsers):
     subparser_view_qos = subparsers.add_parser("view-qos", help="view QOS information")
 
     subparser_view_qos.set_defaults(func="view_qos")
-    subparser_view_qos.add_argument("--qos", help="QOS name", metavar="QOS")
+    subparser_view_qos.add_argument("qos", help="QOS name", metavar="QOS")
 
 
 def add_edit_qos_arg(subparsers):
@@ -282,8 +282,9 @@ def add_edit_qos_arg(subparsers):
 
 def add_delete_qos_arg(subparsers):
     subparser_delete_qos = subparsers.add_parser("delete-qos", help="remove a QOS")
+
     subparser_delete_qos.set_defaults(func="delete_qos")
-    subparser_delete_qos.add_argument("--qos", help="QOS name", metavar="QOS")
+    subparser_delete_qos.add_argument("qos", help="QOS name", metavar="QOS")
 
 
 def add_add_queue_arg(subparsers):

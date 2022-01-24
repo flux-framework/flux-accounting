@@ -14,42 +14,6 @@ import time
 import pwd
 
 
-def view_user(conn, user):
-    cur = conn.cursor()
-    headers = [
-        "creation_time",
-        "mod_time",
-        "deleted",
-        "username",
-        "userid",
-        "admin_level",
-        "bank",
-        "default_bank",
-        "shares",
-        "job_usage",
-        "fairshare",
-        "max_jobs",
-        "qos",
-    ]
-    try:
-        # get the information pertaining to a user in the DB
-        cur.execute("SELECT * FROM association_table where username=?", (user,))
-        rows = cur.fetchall()
-        if not rows:
-            print("User not found in association_table")
-        else:
-            # print column names of association_table
-            for header in headers:
-                print(header.ljust(15), end=" ")
-            print()
-            for row in rows:
-                for col in list(row):
-                    print(str(col).ljust(15), end=" ")
-                print()
-    except sqlite3.OperationalError as e_database_error:
-        print(e_database_error)
-
-
 def get_uid(username):
     try:
         return pwd.getpwnam(username).pw_uid
@@ -66,6 +30,28 @@ def validate_qos(conn, qos):
         row = cur.fetchone()
         if row is None:
             raise ValueError("QOS specified does not exist in qos_table")
+
+
+def view_user(conn, user):
+    cur = conn.cursor()
+    try:
+        # get the information pertaining to a user in the DB
+        cur.execute("SELECT * FROM association_table where username=?", (user,))
+        rows = cur.fetchall()
+        headers = [description[0] for description in cur.description]
+        if not rows:
+            print("User not found in association_table")
+        else:
+            # print column names of association_table
+            for header in headers:
+                print(header.ljust(15), end=" ")
+            print()
+            for row in rows:
+                for col in list(row):
+                    print(str(col).ljust(15), end=" ")
+                print()
+    except sqlite3.OperationalError as e_database_error:
+        print(e_database_error)
 
 
 def add_user(
@@ -113,18 +99,9 @@ def add_user(
         # insert the user values into association_table
         conn.execute(
             """
-            INSERT INTO association_table (
-                creation_time,
-                mod_time,
-                deleted,
-                username,
-                userid,
-                bank,
-                default_bank,
-                shares,
-                max_jobs,
-                qos
-            )
+            INSERT INTO association_table (creation_time, mod_time, deleted,
+                                           username, userid, bank, default_bank,
+                                           shares, max_jobs, qos)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
@@ -145,11 +122,7 @@ def add_user(
         # insert the user values into job_usage_factor_table
         conn.execute(
             """
-            INSERT INTO job_usage_factor_table (
-                username,
-                userid,
-                bank
-            )
+            INSERT OR IGNORE INTO job_usage_factor_table (username, userid, bank)
             VALUES (?, ?, ?)
             """,
             (
@@ -228,7 +201,21 @@ def edit_user(
 
             conn.execute(update_stmt, tup)
 
-            # commit changes
-            conn.commit()
+    # update mod_time column
+    mod_time_tup = (
+        int(time.time()),
+        username,
+    )
+    if bank is not None:
+        update_stmt = """UPDATE association_table SET mod_time=?
+                         WHERE username=? AND bank=?"""
+        mod_time_tup = mod_time_tup + (bank,)
+    else:
+        update_stmt = "UPDATE association_table SET mod_time=? WHERE username=?"
+
+    conn.execute(update_stmt, mod_time_tup)
+
+    # commit changes
+    conn.commit()
 
     return 0
