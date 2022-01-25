@@ -199,9 +199,12 @@ static int priority_cb (flux_plugin_t *p,
                                                     FLUX_JOBTAP_CURRENT_JOB,
                                                     "mf_priority:bank_info"));
 
-    if (b == NULL)
+    if (b == NULL) {
         flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "plugin",
                                      3, "mf_priority: bank info is missing");
+
+        return -1;
+    }
 
     b->current_jobs++;
 
@@ -353,9 +356,12 @@ static int inactive_cb (flux_plugin_t *p,
                                                     FLUX_JOBTAP_CURRENT_JOB,
                                                     "mf_priority:bank_info"));
 
-    if (b == NULL)
+    if (b == NULL) {
         flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "plugin",
                                      3, "mf_priority: bank info is missing");
+
+        return -1;
+    }
 
     b->current_jobs--;
 
