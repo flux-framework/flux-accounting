@@ -75,10 +75,10 @@ int64_t priority_calculation (flux_plugin_t *p,
                                                     "mf_priority:bank_info"));
 
     if (b == NULL) {
-        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "plugin",
-                                     3, "mf_priority: bank info is missing; "
-                                        "holding job");
-        return 0;
+        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "mf_priority",
+                                     0, "job.state.priority: bank info is " \
+                                     "missing");
+        return -1;
     }
 
     fshare_factor = b->fairshare;
@@ -200,8 +200,9 @@ static int priority_cb (flux_plugin_t *p,
                                                     "mf_priority:bank_info"));
 
     if (b == NULL) {
-        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "plugin",
-                                     3, "mf_priority: bank info is missing");
+        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "mf_priority",
+                                     0, "job.state.priority: bank info is " \
+                                     "missing");
 
         return -1;
     }
@@ -270,6 +271,20 @@ static int validate_cb (flux_plugin_t *p,
     if (fairshare == 0)
         return flux_jobtap_reject_job (p, args, "user fairshare value is 0");
 
+    // special case where the user/bank bank_info struct is set to NULL; used
+    // for testing the "if (b == NULL)" checks
+    if (max_jobs == -1) {
+        if (flux_jobtap_job_aux_set (p,
+                                     FLUX_JOBTAP_CURRENT_JOB,
+                                     "mf_priority:bank_info",
+                                     NULL,
+                                     NULL) < 0)
+            flux_log_error (h, "flux_jobtap_job_aux_set");
+
+        return 0;
+    }
+
+
     if (flux_jobtap_job_aux_set (p,
                                  FLUX_JOBTAP_CURRENT_JOB,
                                  "mf_priority:bank_info",
@@ -308,8 +323,9 @@ static int depend_cb (flux_plugin_t *p,
                                                     "mf_priority:bank_info"));
 
     if (b == NULL) {
-        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "plugin",
-                                     3, "mf_priority: bank info is missing");
+        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "mf_priority",
+                                     0, "job.state.depend: bank info is " \
+                                     "missing");
 
         return -1;
     }
@@ -318,8 +334,8 @@ static int depend_cb (flux_plugin_t *p,
     // dependency to hold job until an already running job has finished
     if ((b->max_running_jobs > 0) && (b->current_jobs == b->max_running_jobs)) {
         if (flux_jobtap_dependency_add (p, id, "max-jobs-limit") < 0) {
-            flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "plugin",
-                                         3, "mf_priority: failed to add " \
+            flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                         "mf_priority", 0, "failed to add " \
                                          "job dependency");
 
             return -1;
@@ -357,8 +373,9 @@ static int inactive_cb (flux_plugin_t *p,
                                                     "mf_priority:bank_info"));
 
     if (b == NULL) {
-        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "plugin",
-                                     3, "mf_priority: bank info is missing");
+        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "mf_priority",
+                                     0, "job.state.inactive: bank info is " \
+                                     "missing");
 
         return -1;
     }
@@ -371,9 +388,8 @@ static int inactive_cb (flux_plugin_t *p,
         long int jobid = b->held_jobs.front ();
 
         if (flux_jobtap_dependency_remove (p, jobid, "max-jobs-limit") < 0)
-            flux_jobtap_raise_exception (p, jobid, "plugin",
-                                         3, "mf_priority: failed to remove" \
-                                         "job dependency");
+            flux_jobtap_raise_exception (p, jobid, "mf_priority",
+                                         0, "failed to remove job dependency");
 
         b->held_jobs.erase (b->held_jobs.begin ());
     }
