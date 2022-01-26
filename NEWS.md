@@ -1,3 +1,32 @@
+flux-accounting version 0.13.0 - 2022-01-31
+-------------------------------------------
+
+#### Fixes
+
+* Improve sharness tests to use `flux account` commands directly in tests (#180)
+
+* Change positional and optional arguments in `edit-user` command to align with other `edit-*` commands (#181)
+
+* Fix bug in `view-user` preventing the ability to view more than one row if a user belonged to more than one bank (#187)
+
+* Remove outdated `admin_level` column from association_table in flux-accounting database (#188)
+
+* Fix incorrect listing of association_table headers in the `view-user` command (#193)
+
+* Fix `UNIQUE constraint` failure when re-adding a previously deleted user to the same bank in the flux-accounting database (#193)
+
+* Convert the `qos` argument into positional arguments for both the `view-qos` and `edit-qos` commands (#193)
+
+#### Features
+
+* Add new enforcement policy in multi-factor priority plugin to only count running jobs towards an "active" jobs counter (#177)
+
+* Add section to top-level README on flux-accounting database permissions (#188)
+
+* Add new optional arguments to `view-bank` command to view sub bank hierarchy trees or users belonging to a specific bank (#194)
+
+* Add bulk database populate tool to upload multiple user or bank rows at one time via `.csv` file (#195)
+
 flux-accounting version 0.12.0 - 2021-12-03
 -------------------------------------------
 
