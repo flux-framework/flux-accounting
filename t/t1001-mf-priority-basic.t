@@ -4,6 +4,8 @@ test_description='Test multi-factor priority plugin with a single user'
 
 . `dirname $0`/sharness.sh
 MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
+SUBMIT_AS=${SHARNESS_TEST_SRCDIR}/scripts/submit_as.py
+SEND_PAYLOAD=${SHARNESS_TEST_SRCDIR}/scripts/send_payload.py
 
 export TEST_UNDER_FLUX_NO_JOB_EXEC=y
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
@@ -156,5 +158,41 @@ test_expect_success 'submit a job with new bank and 0 fairshare should result in
 	grep "user fairshare value is 0" zero_fairshare.out
 '
 
+test_expect_success 'pass special key to user/bank struct to nullify information' '
+	cat <<-EOF >null_struct.json
+	{
+		"data" : [
+			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_jobs": -1}
+		]
+	}
+	EOF
+	flux python ${SEND_PAYLOAD} null_struct.json
+'
+
+test_expect_success 'submit job with NULL user/bank information' '
+	jobid1=$(flux python ${SUBMIT_AS} 5011 sleep 10)
+'
+
+test_expect_success 'ensure exception was raised in job.state.depend and job is canceled' '
+	flux job wait-event -v ${jobid1} exception > exception.test &&
+	grep "job.state.depend: bank info is missing" exception.test
+'
+
+test_expect_success 'resend user/bank information with valid data and successfully submit a job' '
+	cat <<-EOF >valid_info.json
+	{
+		"data" : [
+			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_jobs": 2}
+		]
+	}
+	EOF
+	flux python ${SEND_PAYLOAD} valid_info.json &&
+	jobid2=$(flux python ${SUBMIT_AS} 5011 sleep 10)
+	flux job wait-event -f json $jobid2 priority | jq '.context.priority' > job2.test &&
+	cat <<-EOF >job2.expected &&
+	45321
+	EOF
+	test_cmp job2.expected job2.test
+'
 
 test_done
