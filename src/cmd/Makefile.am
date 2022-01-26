@@ -46,4 +46,5 @@ dist_fluxcmd_SCRIPTS = \
 	flux-account.py \
 	flux-account-update-fshare \
 	flux-account-priority-update.py \
-	flux-account-shares
+	flux-account-shares \
+	flux-account-pop-db.py
