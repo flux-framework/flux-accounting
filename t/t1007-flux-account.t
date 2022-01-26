@@ -1,17 +1,10 @@
 #!/bin/bash
 
 test_description='Test flux-account commands'
+
 . `dirname $0`/sharness.sh
-FLUX_ACCOUNT=${SHARNESS_TEST_SRCDIR}/../src/cmd/flux-account.py
-FLUX_EXEC_PATH=${SHARNESS_TEST_SRCDIR}/../src/cmd:${FLUX_EXEC_PATH}
 DB_PATH=$(pwd)/FluxAccountingTest.db
 EXPECTED_FILES=${SHARNESS_TEST_SRCDIR}/expected/flux_account
-
-export TEST_UNDER_FLUX_NO_JOB_EXEC=y
-export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
-test_under_flux 1 job
-
-flux setattr log-stderr-level 1
 
 test_expect_success 'create flux-accounting DB' '
 	flux account -p $(pwd)/FluxAccountingTest.db create-db
