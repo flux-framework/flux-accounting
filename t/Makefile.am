@@ -39,7 +39,13 @@ EXTRA_DIST= \
 	expected/test_dbs/small_no_tie.db \
 	expected/test_dbs/small_tie_all.db \
 	expected/test_dbs/small_tie_zero_shares.db \
-	expected/test_dbs/small_tie.db
+	expected/test_dbs/small_tie.db \
+	expected/flux_account/A_bank.expected \
+	expected/flux_account/D_bank.expected \
+	expected/flux_account/full_hierarchy.expected \
+	expected/flux_account/root_bank.expected \
+	expected/pop_db/db_hierarchy_base.expected \
+	expected/pop_db/db_hierarchy_new_users.expected
 
 clean-local:
 	rm -fr trash-directory.* test-results .prove *.broker.log */*.broker.log *.output
