@@ -25,15 +25,15 @@ test_expect_success 'create a group of users with many ties in fairshare values'
 	cat <<-EOF >fake_small_tie_all.json
 	{
 	    "data" : [
-	        {"userid": 5011, "bank": "account1", "def_bank": "account1", "fairshare": 0.666667, "max_jobs": 5},
-	        {"userid": 5012, "bank": "account1", "def_bank": "account1", "fairshare": 0.666667, "max_jobs": 5},
-	        {"userid": 5013, "bank": "account1", "def_bank": "account1", "fairshare": 1, "max_jobs": 5},
-	        {"userid": 5021, "bank": "account2", "def_bank": "account2", "fairshare": 0.666667, "max_jobs": 5},
-	        {"userid": 5022, "bank": "account2", "def_bank": "account2", "fairshare": 0.666667, "max_jobs": 5},
-	        {"userid": 5023, "bank": "account2", "def_bank": "account2", "fairshare": 1, "max_jobs": 5},
-	        {"userid": 5031, "bank": "account3", "def_bank": "account3", "fairshare": 0.666667, "max_jobs": 5},
-	        {"userid": 5032, "bank": "account3", "def_bank": "account3", "fairshare": 0.666667, "max_jobs": 5},
-	        {"userid": 5033, "bank": "account3", "def_bank": "account3", "fairshare": 1, "max_jobs": 5}
+	        {"userid": 5011, "bank": "account1", "def_bank": "account1", "fairshare": 0.666667, "max_jobs": 5, "max_active_jobs": 7},
+	        {"userid": 5012, "bank": "account1", "def_bank": "account1", "fairshare": 0.666667, "max_jobs": 5, "max_active_jobs": 7},
+	        {"userid": 5013, "bank": "account1", "def_bank": "account1", "fairshare": 1, "max_jobs": 5, "max_active_jobs": 7},
+	        {"userid": 5021, "bank": "account2", "def_bank": "account2", "fairshare": 0.666667, "max_jobs": 5, "max_active_jobs": 7},
+	        {"userid": 5022, "bank": "account2", "def_bank": "account2", "fairshare": 0.666667, "max_jobs": 5, "max_active_jobs": 7},
+	        {"userid": 5023, "bank": "account2", "def_bank": "account2", "fairshare": 1, "max_jobs": 5, "max_active_jobs": 7},
+	        {"userid": 5031, "bank": "account3", "def_bank": "account3", "fairshare": 0.666667, "max_jobs": 5, "max_active_jobs": 7},
+	        {"userid": 5032, "bank": "account3", "def_bank": "account3", "fairshare": 0.666667, "max_jobs": 5, "max_active_jobs": 7},
+	        {"userid": 5033, "bank": "account3", "def_bank": "account3", "fairshare": 1, "max_jobs": 5, "max_active_jobs": 7}
 	    ]
 	}
 	EOF
