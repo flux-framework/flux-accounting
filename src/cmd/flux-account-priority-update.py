@@ -53,7 +53,8 @@ def bulk_update(path):
 
     # fetch all rows from association_table (will print out tuples)
     for row in cur.execute(
-        "SELECT userid, bank, default_bank, fairshare, max_jobs FROM association_table"
+        """SELECT userid, bank, default_bank,
+           fairshare, max_jobs, max_active_jobs FROM association_table"""
     ):
         # create a JSON payload with the results of the query
         single_user_data = {
@@ -62,6 +63,7 @@ def bulk_update(path):
             "def_bank": str(row[2]),
             "fairshare": float(row[3]),
             "max_jobs": int(row[4]),
+            "max_active_jobs": int(row[5]),
         }
         bulk_user_data.append(single_user_data)
 
