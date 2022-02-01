@@ -141,10 +141,10 @@ matrix.add_build(
     jobs=2,
 )
 
-# Centos8
+# el8
 matrix.add_build(
-    name="centos8 - py3.6",
-    image="centos8",
+    name="el8 - py3.6",
+    image="el8",
     docker_tag=True,
 )
 
