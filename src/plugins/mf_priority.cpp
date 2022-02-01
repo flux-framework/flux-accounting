@@ -33,8 +33,8 @@ std::map<int, std::string> users_def_bank;
 
 struct bank_info {
     double fairshare;
-    int max_running_jobs;
-    int current_jobs;
+    int max_run_jobs;
+    int cur_run_jobs;
     std::vector<long int> held_jobs;
 };
 
@@ -140,7 +140,7 @@ static void rec_update_cb (flux_t *h,
         b = &users[uid][bank];
 
         b->fairshare = fshare;
-        b->max_running_jobs = max_running_jobs;
+        b->max_run_jobs = max_running_jobs;
 
         users_def_bank[uid] = def_bank;
     }
@@ -207,7 +207,7 @@ static int priority_cb (flux_plugin_t *p,
         return -1;
     }
 
-    b->current_jobs++;
+    b->cur_run_jobs++;
 
     return 0;
 }
@@ -225,7 +225,7 @@ static int validate_cb (flux_plugin_t *p,
 {
     int userid;
     char *bank = NULL;
-    int current_jobs, max_jobs = 0;
+    int max_run_jobs = 0;
     double fairshare = 0.0;
 
     std::map<int, std::map<std::string, struct bank_info>>::iterator it;
@@ -262,8 +262,7 @@ static int validate_cb (flux_plugin_t *p,
                                      "user/default bank entry does not exist");
     }
 
-    max_jobs = bank_it->second.max_running_jobs;
-    current_jobs = bank_it->second.current_jobs;
+    max_run_jobs = bank_it->second.max_run_jobs;
     fairshare = bank_it->second.fairshare;
 
     // if a user's fairshare value is 0, that means they shouldn't be able
@@ -273,7 +272,7 @@ static int validate_cb (flux_plugin_t *p,
 
     // special case where the user/bank bank_info struct is set to NULL; used
     // for testing the "if (b == NULL)" checks
-    if (max_jobs == -1) {
+    if (max_run_jobs == -1) {
         if (flux_jobtap_job_aux_set (p,
                                      FLUX_JOBTAP_CURRENT_JOB,
                                      "mf_priority:bank_info",
@@ -332,7 +331,7 @@ static int depend_cb (flux_plugin_t *p,
 
     // if user has already hit their max running jobs count, add a job
     // dependency to hold job until an already running job has finished
-    if ((b->max_running_jobs > 0) && (b->current_jobs == b->max_running_jobs)) {
+    if ((b->max_run_jobs > 0) && (b->cur_run_jobs == b->max_run_jobs)) {
         if (flux_jobtap_dependency_add (p, id, "max-jobs-limit") < 0) {
             flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
                                          "mf_priority", 0, "failed to add " \
@@ -380,11 +379,11 @@ static int inactive_cb (flux_plugin_t *p,
         return -1;
     }
 
-    b->current_jobs--;
+    b->cur_run_jobs--;
 
     // if the user/bank combo has any currently held jobs and the user is now
     // under their max jobs limit, remove the dependency from first held job
-    if ((b->held_jobs.size () > 0) && (b->current_jobs < b->max_running_jobs)) {
+    if ((b->held_jobs.size () > 0) && (b->cur_run_jobs < b->max_run_jobs)) {
         long int jobid = b->held_jobs.front ();
 
         if (flux_jobtap_dependency_remove (p, jobid, "max-jobs-limit") < 0)
