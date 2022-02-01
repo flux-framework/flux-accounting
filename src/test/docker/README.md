@@ -6,7 +6,7 @@ Docker is used under CI to speed up deployment of an environment with correct bu
 
 ### Local Testing
 
-Developers can test the docker images themselves. If new dependencies are needed, they can update the `$image` Dockerfiles manually (where `$image` is one of `bionic` or `centos8`). To run inside a local Docker image, run the command:
+Developers can test the docker images themselves. If new dependencies are needed, they can update the `$image` Dockerfiles manually (where `$image` is one of `bionic` or `el8`). To run inside a local Docker image, run the command:
 
 ```console
 docker-run-checks.sh -i $image [options] -- [arguments]
