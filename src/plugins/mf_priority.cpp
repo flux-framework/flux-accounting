@@ -35,6 +35,8 @@ struct bank_info {
     double fairshare;
     int max_run_jobs;
     int cur_run_jobs;
+    int max_active_jobs;
+    int cur_active_jobs;
     std::vector<long int> held_jobs;
 };
 
@@ -105,7 +107,7 @@ static void rec_update_cb (flux_t *h,
                            void *arg)
 {
     char *bank, *def_bank = NULL;
-    int uid, max_jobs = 0;
+    int uid, max_jobs, max_active_jobs = 0;
     double fshare = 0.0;
     json_t *data, *jtemp = NULL;
     json_error_t error;
@@ -128,12 +130,13 @@ static void rec_update_cb (flux_t *h,
     for (int i = 0; i < num_data; i++) {
         json_t *el = json_array_get(data, i);
 
-        if (json_unpack_ex (el, &error, 0, "{s:i, s:s, s:s, s:F, s:i}",
+        if (json_unpack_ex (el, &error, 0, "{s:i, s:s, s:s, s:F, s:i, s:i}",
                             "userid", &uid,
                             "bank", &bank,
                             "def_bank", &def_bank,
                             "fairshare", &fshare,
-                            "max_jobs", &max_jobs) < 0)
+                            "max_jobs", &max_jobs,
+                            "max_active_jobs", &max_active_jobs) < 0)
             flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
 
         struct bank_info *b;
@@ -141,6 +144,7 @@ static void rec_update_cb (flux_t *h,
 
         b->fairshare = fshare;
         b->max_run_jobs = max_jobs;
+        b->max_active_jobs = max_active_jobs;
 
         users_def_bank[uid] = def_bank;
     }
@@ -225,7 +229,7 @@ static int validate_cb (flux_plugin_t *p,
 {
     int userid;
     char *bank = NULL;
-    int max_run_jobs = 0;
+    int max_run_jobs, cur_active_jobs, max_active_jobs = 0;
     double fairshare = 0.0;
 
     std::map<int, std::map<std::string, struct bank_info>>::iterator it;
@@ -264,11 +268,18 @@ static int validate_cb (flux_plugin_t *p,
 
     max_run_jobs = bank_it->second.max_run_jobs;
     fairshare = bank_it->second.fairshare;
+    cur_active_jobs = bank_it->second.cur_active_jobs;
+    max_active_jobs = bank_it->second.max_active_jobs;
 
     // if a user's fairshare value is 0, that means they shouldn't be able
     // to run jobs on a system
     if (fairshare == 0)
         return flux_jobtap_reject_job (p, args, "user fairshare value is 0");
+
+    // if a user/bank has reached their max_active_jobs limit, subsequently
+    // submitted jobs will be rejected
+    if (max_run_jobs > 0 && cur_active_jobs >= max_active_jobs)
+        return flux_jobtap_reject_job (p, args, "user has max submitted jobs");
 
     // special case where the user/bank bank_info struct is set to NULL; used
     // for testing the "if (b == NULL)" checks
@@ -290,6 +301,8 @@ static int validate_cb (flux_plugin_t *p,
                                  &bank_it->second,
                                  NULL) < 0)
         flux_log_error (h, "flux_jobtap_job_aux_set");
+
+    bank_it->second.cur_active_jobs++;
 
     return 0;
 }
@@ -380,6 +393,7 @@ static int inactive_cb (flux_plugin_t *p,
     }
 
     b->cur_run_jobs--;
+    b->cur_active_jobs--;
 
     // if the user/bank combo has any currently held jobs and the user is now
     // under their max jobs limit, remove the dependency from first held job
