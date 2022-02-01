@@ -61,6 +61,7 @@ def add_user(
     uid=65534,
     shares=1,
     max_jobs=5,
+    max_active_jobs=7,
     qos="",
 ):
 
@@ -102,8 +103,8 @@ def add_user(
             """
             INSERT INTO association_table (creation_time, mod_time, deleted,
                                            username, userid, bank, default_bank,
-                                           shares, max_jobs, qos)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                           shares, max_jobs, max_active_jobs, qos)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 int(time.time()),
@@ -115,6 +116,7 @@ def add_user(
                 default_bank,
                 shares,
                 max_jobs,
+                max_active_jobs,
                 qos,
             ),
         )
@@ -163,6 +165,7 @@ def edit_user(
     default_bank=None,
     shares=None,
     max_jobs=None,
+    max_active_jobs=None,
     qos=None,
 ):
     params = locals()
@@ -172,6 +175,7 @@ def edit_user(
         "default_bank",
         "shares",
         "max_jobs",
+        "max_active_jobs",
         "qos",
     ]
     for field in editable_fields:

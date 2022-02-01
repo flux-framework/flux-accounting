@@ -87,18 +87,19 @@ def create_db(
     conn.execute(
         """
             CREATE TABLE IF NOT EXISTS association_table (
-                creation_time bigint(20)                NOT NULL,
-                mod_time      bigint(20)  DEFAULT 0     NOT NULL,
-                deleted       tinyint(4)  DEFAULT 0     NOT NULL,
-                username      tinytext                  NOT NULL,
-                userid        int(11)     DEFAULT 65534 NOT NULL,
-                bank          tinytext                  NOT NULL,
-                default_bank  tinytext                  NOT NULL,
-                shares        int(11)     DEFAULT 1     NOT NULL    ON CONFLICT REPLACE DEFAULT 1,
-                job_usage     real        DEFAULT 0.0   NOT NULL,
-                fairshare     real        DEFAULT 0.5   NOT NULL,
-                max_jobs      int(11)     DEFAULT 5     NOT NULL    ON CONFLICT REPLACE DEFAULT 5,
-                qos           tinytext    DEFAULT ''    NOT NULL    ON CONFLICT REPLACE DEFAULT '',
+                creation_time   bigint(20)                NOT NULL,
+                mod_time        bigint(20)  DEFAULT 0     NOT NULL,
+                deleted         tinyint(4)  DEFAULT 0     NOT NULL,
+                username        tinytext                  NOT NULL,
+                userid          int(11)     DEFAULT 65534 NOT NULL,
+                bank            tinytext                  NOT NULL,
+                default_bank    tinytext                  NOT NULL,
+                shares          int(11)     DEFAULT 1     NOT NULL    ON CONFLICT REPLACE DEFAULT 1,
+                job_usage       real        DEFAULT 0.0   NOT NULL,
+                fairshare       real        DEFAULT 0.5   NOT NULL,
+                max_jobs        int(11)     DEFAULT 5     NOT NULL    ON CONFLICT REPLACE DEFAULT 5,
+                max_active_jobs int(11)     DEFAULT 7     NOT NULL    ON CONFLICT REPLACE DEFAULT 7,
+                qos             tinytext    DEFAULT ''    NOT NULL    ON CONFLICT REPLACE DEFAULT '',
                 PRIMARY KEY   (username, bank)
         );"""
     )
