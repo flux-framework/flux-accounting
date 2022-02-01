@@ -25,8 +25,8 @@ test_expect_success 'create fake_user.json' '
 	cat <<-EOF >fake_user.json
 	{
 		"data" : [
-			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 2},
-			{"userid": 5011, "bank": "account2", "def_bank": "account3", "fairshare": 0.11345, "max_running_jobs": 1}
+			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 2, "max_active_jobs": 4},
+			{"userid": 5011, "bank": "account2", "def_bank": "account3", "fairshare": 0.11345, "max_running_jobs": 1, "max_active_jobs": 2}
 		]
 	}
 	EOF
@@ -79,7 +79,7 @@ test_expect_success 'increase the max jobs count of the user' '
 	cat <<-EOF >new_max_running_jobs_limit.json
 	{
 		"data" : [
-			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 3}
+			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 3, "max_active_jobs": 4}
 		]
 	}
 	EOF
