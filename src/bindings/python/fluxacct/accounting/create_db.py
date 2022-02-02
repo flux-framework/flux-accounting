@@ -98,6 +98,7 @@ def create_db(
                 job_usage        real        DEFAULT 0.0   NOT NULL,
                 fairshare        real        DEFAULT 0.5   NOT NULL,
                 max_running_jobs int(11)     DEFAULT 5     NOT NULL    ON CONFLICT REPLACE DEFAULT 5,
+                max_active_jobs  int(11)     DEFAULT 7     NOT NULL    ON CONFLICT REPLACE DEFAULT 7,
                 qos              tinytext    DEFAULT ''    NOT NULL    ON CONFLICT REPLACE DEFAULT '',
                 PRIMARY KEY   (username, bank)
         );"""
