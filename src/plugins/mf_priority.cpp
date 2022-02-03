@@ -105,7 +105,7 @@ static void rec_update_cb (flux_t *h,
                            void *arg)
 {
     char *bank, *def_bank = NULL;
-    int uid, max_jobs = 0;
+    int uid, max_running_jobs = 0;
     double fshare = 0.0;
     json_t *data, *jtemp = NULL;
     json_error_t error;
@@ -133,14 +133,14 @@ static void rec_update_cb (flux_t *h,
                             "bank", &bank,
                             "def_bank", &def_bank,
                             "fairshare", &fshare,
-                            "max_jobs", &max_jobs) < 0)
+                            "max_running_jobs", &max_running_jobs) < 0)
             flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
 
         struct bank_info *b;
         b = &users[uid][bank];
 
         b->fairshare = fshare;
-        b->max_running_jobs = max_jobs;
+        b->max_running_jobs = max_running_jobs;
 
         users_def_bank[uid] = def_bank;
     }

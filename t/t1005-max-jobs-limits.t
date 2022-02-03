@@ -25,8 +25,8 @@ test_expect_success 'create fake_user.json' '
 	cat <<-EOF >fake_user.json
 	{
 		"data" : [
-			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_jobs": 2},
-			{"userid": 5011, "bank": "account2", "def_bank": "account3", "fairshare": 0.11345, "max_jobs": 1}
+			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 2},
+			{"userid": 5011, "bank": "account2", "def_bank": "account3", "fairshare": 0.11345, "max_running_jobs": 1}
 		]
 	}
 	EOF
@@ -76,17 +76,17 @@ test_expect_success 'submit a job while already having max number of running job
 '
 
 test_expect_success 'increase the max jobs count of the user' '
-	cat <<-EOF >new_max_jobs_limit.json
+	cat <<-EOF >new_max_running_jobs_limit.json
 	{
 		"data" : [
-			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_jobs": 3}
+			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 3}
 		]
 	}
 	EOF
 '
 
 test_expect_success 'update plugin with same new sample test data' '
-	flux python ${SEND_PAYLOAD} new_max_jobs_limit.json
+	flux python ${SEND_PAYLOAD} new_max_running_jobs_limit.json
 '
 
 test_expect_success 'make sure jobs are still running' '

@@ -23,16 +23,16 @@ def print_user_rows(rows, bank):
         "shares",
         "job_usage",
         "fairshare",
-        "max_jobs",
+        "max_running_jobs",
         "qos",
     ]
     # print column names of association_table
     for header in user_headers:
-        print(header.ljust(15), end=" ")
+        print(header.ljust(18), end=" ")
     print()
     for row in rows:
         for col in list(row):
-            print(str(col).ljust(15), end=" ")
+            print(str(col).ljust(18), end=" ")
         print()
 
 
@@ -136,7 +136,7 @@ def view_bank(conn, bank, tree=False, users=False):
         if users is True:
             select_stmt = """
                         SELECT username,userid,default_bank,shares,job_usage,
-                        fairshare,max_jobs,qos FROM association_table
+                        fairshare,max_running_jobs,qos FROM association_table
                         WHERE bank=?
                         """
             cur.execute(

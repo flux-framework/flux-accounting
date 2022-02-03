@@ -50,8 +50,8 @@ test_expect_success 'create fake_payload.py' '
 	# create an array of JSON payloads
 	bulk_update_data = {
 		"data" : [
-			{"userid": userid, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_jobs": 10},
-			{"userid": userid, "bank": "account2", "def_bank": "account3", "fairshare": 0.11345, "max_jobs": 10}
+			{"userid": userid, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 10},
+			{"userid": userid, "bank": "account2", "def_bank": "account3", "fairshare": 0.11345, "max_running_jobs": 10}
 		]
 	}
 	flux.Flux().rpc("job-manager.mf_priority.rec_update", json.dumps(bulk_update_data)).get()
@@ -141,7 +141,7 @@ test_expect_success 'create a fake payload with a 0 fairshare key-value pair' '
 	# create an array of JSON payloads
 	bulk_update_data = {
 		"data" : [
-			{"userid": userid, "bank": "account4", "def_bank": "account3", "fairshare": 0.0, "max_jobs": 10}
+			{"userid": userid, "bank": "account4", "def_bank": "account3", "fairshare": 0.0, "max_running_jobs": 10}
 		]
 	}
 	flux.Flux().rpc("job-manager.mf_priority.rec_update", json.dumps(bulk_update_data)).get()
@@ -162,7 +162,7 @@ test_expect_success 'pass special key to user/bank struct to nullify information
 	cat <<-EOF >null_struct.json
 	{
 		"data" : [
-			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_jobs": -1}
+			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": -1}
 		]
 	}
 	EOF
@@ -182,7 +182,7 @@ test_expect_success 'resend user/bank information with valid data and successful
 	cat <<-EOF >valid_info.json
 	{
 		"data" : [
-			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_jobs": 2}
+			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 2}
 		]
 	}
 	EOF
