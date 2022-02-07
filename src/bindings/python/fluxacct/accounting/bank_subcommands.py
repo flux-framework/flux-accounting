@@ -14,18 +14,9 @@ import sqlite3
 from fluxacct.accounting import user_subcommands as u
 
 # helper function to print user information in a table format
-def print_user_rows(rows, bank):
+def print_user_rows(cur, rows, bank):
     print("\nUsers Under Bank {bank_name}:\n".format(bank_name=bank))
-    user_headers = [
-        "username",
-        "userid",
-        "default_bank",
-        "shares",
-        "job_usage",
-        "fairshare",
-        "max_running_jobs",
-        "qos",
-    ]
+    user_headers = [description[0] for description in cur.description]
     # print column names of association_table
     for header in user_headers:
         print(header.ljust(18), end=" ")
@@ -37,13 +28,8 @@ def print_user_rows(rows, bank):
 
 
 # helper function to print bank information in a table format
-def print_bank_row(rows, bank):
-    bank_headers = [
-        "bank_id",
-        "bank",
-        "parent_bank",
-        "shares",
-    ]
+def print_bank_rows(cur, rows, bank):
+    bank_headers = [description[0] for description in cur.description]
     # bank has sub banks, so list them
     for header in bank_headers:
         print(header.ljust(15), end=" ")
@@ -115,7 +101,7 @@ def view_bank(conn, bank, tree=False, users=False):
         rows = cur.fetchall()
 
         if rows:
-            print_bank_row(rows, bank)
+            print_bank_rows(cur, rows, bank)
         else:
             print("Bank not found in bank_table")
             return
@@ -146,7 +132,7 @@ def view_bank(conn, bank, tree=False, users=False):
             rows = cur.fetchall()
 
             if rows:
-                print_user_rows(rows, bank)
+                print_user_rows(cur, rows, bank)
             else:
                 print("\nNo users under {bank_name}".format(bank_name=bank))
     except sqlite3.OperationalError as e_database_error:
