@@ -160,17 +160,6 @@ def create_db(
     set_half_life_period_end(conn, priority_decay_half_life)
     logging.info("Created t_half_life_period_table successfully")
 
-    # QOS Table
-    # keeps track of what QOS' are defined and their associated priority
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS qos_table (
-            qos         tinytext        NOT NULL,
-            priority    int(11)         NOT NULL,
-            PRIMARY KEY (qos)
-        );"""
-    )
-
     # Queue Table
     # stores queue limit information
     logging.info("Creating queue_table in DB...")
