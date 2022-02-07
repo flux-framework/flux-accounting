@@ -99,7 +99,7 @@ def create_db(
                 fairshare        real        DEFAULT 0.5   NOT NULL,
                 max_running_jobs int(11)     DEFAULT 5     NOT NULL    ON CONFLICT REPLACE DEFAULT 5,
                 max_active_jobs  int(11)     DEFAULT 7     NOT NULL    ON CONFLICT REPLACE DEFAULT 7,
-                qos              tinytext    DEFAULT ''    NOT NULL    ON CONFLICT REPLACE DEFAULT '',
+                queues           tinytext    DEFAULT ''    NOT NULL    ON CONFLICT REPLACE DEFAULT '',
                 PRIMARY KEY   (username, bank)
         );"""
     )
@@ -161,7 +161,7 @@ def create_db(
     logging.info("Created t_half_life_period_table successfully")
 
     # Queue Table
-    # stores queue limit information
+    # stores queues, associated priorities, and limit information
     logging.info("Creating queue_table in DB...")
     conn.execute(
         """
@@ -170,6 +170,7 @@ def create_db(
                 min_nodes_per_job   int(11),
                 max_nodes_per_job   int(11),
                 max_time_per_job    int(11),
+                priority            int(11),
                 PRIMARY KEY (queue)
             );"""
     )
