@@ -21,15 +21,15 @@ def get_uid(username):
         return str(username)
 
 
-def validate_qos(conn, qos):
+def validate_queue(conn, queue):
     cur = conn.cursor()
-    qos_list = qos.split(",")
+    queue_list = queue.split(",")
 
-    for service in qos_list:
-        cur.execute("SELECT qos FROM qos_table WHERE qos=?", (service,))
+    for service in queue_list:
+        cur.execute("SELECT queue FROM queue_table WHERE queue=?", (service,))
         row = cur.fetchone()
         if row is None:
-            raise ValueError("QOS specified does not exist in qos_table")
+            raise ValueError("Queue specified does not exist in queue_table")
 
 
 def view_user(conn, user):
@@ -89,10 +89,10 @@ def add_user(
     else:
         default_bank = row[0]
 
-    # validate the qos specified if any were passed in
-    if qos != "":
+    # validate the queue specified if any were passed in
+    if queues != "":
         try:
-            validate_qos(conn, qos)
+            validate_queue(conn, queues)
         except ValueError as err:
             print(err)
             return -1
@@ -181,9 +181,9 @@ def edit_user(
     ]
     for field in editable_fields:
         if params[field] is not None:
-            if field == "qos":
+            if field == "queues":
                 try:
-                    validate_qos(conn, params[field])
+                    validate_queue(conn, params[field])
                 except ValueError as err:
                     print(err)
                     return -1
