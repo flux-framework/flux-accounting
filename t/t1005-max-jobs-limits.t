@@ -25,8 +25,8 @@ test_expect_success 'create fake_user.json' '
 	cat <<-EOF >fake_user.json
 	{
 		"data" : [
-			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 2},
-			{"userid": 5011, "bank": "account2", "def_bank": "account3", "fairshare": 0.11345, "max_running_jobs": 1}
+			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 2, "max_active_jobs": 4},
+			{"userid": 5011, "bank": "account2", "def_bank": "account3", "fairshare": 0.11345, "max_running_jobs": 1, "max_active_jobs": 2}
 		]
 	}
 	EOF
@@ -79,7 +79,7 @@ test_expect_success 'increase the max jobs count of the user' '
 	cat <<-EOF >new_max_running_jobs_limit.json
 	{
 		"data" : [
-			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 3}
+			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 3, "max_active_jobs": 4}
 		]
 	}
 	EOF
@@ -97,6 +97,110 @@ test_expect_success 'make sure jobs are still running' '
 test_expect_success 'cancel all remaining jobs' '
 	flux job cancel ${jobid1} &&
 	flux job cancel ${jobid2}
+'
+
+test_expect_success 'submit max number of jobs' '
+	jobid1=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
+	jobid2=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
+	jobid3=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
+	jobid4=$(flux python ${SUBMIT_AS} 5011 sleep 60)
+'
+
+test_expect_success '5th submitted job should be rejected because user has reached max_active_jobs limit' '
+	test_must_fail flux python ${SUBMIT_AS} 5011 sleep 60 > max_active_jobs.out 2>&1 &&
+	test_debug "cat max_active_jobs.out" &&
+	grep "user has max active jobs" max_active_jobs.out &&
+	flux job cancel $jobid1 &&
+	flux job cancel $jobid2 &&
+	flux job cancel $jobid3 &&
+	flux job cancel $jobid4
+'
+
+test_expect_success 'update max_active_jobs limit' '
+	cat <<-EOF >new_max_active_jobs_limit.json
+	{
+		"data" : [
+			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 3, "max_active_jobs": 5}
+		]
+	}
+	EOF
+'
+
+test_expect_success 'update plugin with same new sample test data' '
+	flux python ${SEND_PAYLOAD} new_max_active_jobs_limit.json
+'
+
+test_expect_success 'submit max number of jobs' '
+	jobid1=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
+	jobid2=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
+	jobid3=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
+	jobid4=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
+	jobid5=$(flux python ${SUBMIT_AS} 5011 sleep 60)
+'
+
+test_expect_success '6th submitted job should be rejected because user has reached new max_active_jobs limit' '
+	test_must_fail flux python ${SUBMIT_AS} 5011 sleep 60 > max_active_jobs.out 2>&1 &&
+	test_debug "cat max_active_jobs.out" &&
+	grep "user has max active jobs" max_active_jobs.out
+'
+
+test_expect_success 'cancel one of the active jobs' '
+	flux job cancel $jobid5
+'
+
+test_expect_success 'newly submitted job should now be accepted since user is under their max_active_jobs limit' '
+	jobid7=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
+	flux job wait-event -f json $jobid7 priority | jq '.context.priority' > job7.test &&
+	cat <<-EOF >job7.expected &&
+	45321
+	EOF
+	test_cmp job7.expected job7.test
+'
+
+test_expect_success 'cancel all remaining active jobs' '
+	flux job cancel $jobid1 &&
+	flux job cancel $jobid2 &&
+	flux job cancel $jobid3 &&
+	flux job cancel $jobid4 &&
+	flux job cancel $jobid7
+'
+
+test_expect_success 'create another user with the same limits in multiple banks' '
+	cat <<-EOF >fake_user2.json
+	{
+		"data" : [
+			{"userid": 5012, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 1, "max_active_jobs": 2},
+			{"userid": 5012, "bank": "account2", "def_bank": "account3", "fairshare": 0.11345, "max_running_jobs": 1, "max_active_jobs": 2}
+		]
+	}
+	EOF
+'
+
+test_expect_success 'update plugin with new user data' '
+	flux python ${SEND_PAYLOAD} fake_user2.json
+'
+
+test_expect_success 'submit max number of jobs under both banks' '
+	jobid1=$(flux python ${SUBMIT_AS} 5012 sleep 60) &&
+	jobid2=$(flux python ${SUBMIT_AS} 5012 sleep 60) &&
+	jobid3=$(flux python ${SUBMIT_AS} 5012 --setattr=system.bank=account2 sleep 60) &&
+	jobid4=$(flux python ${SUBMIT_AS} 5012 --setattr=system.bank=account2 sleep 60)
+'
+
+test_expect_success 'submitting a 3rd job under either bank should result in a job rejection' '
+	test_must_fail flux python ${SUBMIT_AS} 5012 sleep 60 > max_active_jobs.out 2>&1 &&
+	test_debug "cat max_active_jobs.out" &&
+	grep "user has max active jobs" max_active_jobs.out &&
+	test_must_fail flux python ${SUBMIT_AS} 5012 --setattr=system.bank=account2 sleep 60 > max_active_jobs2.out 2>&1 &&
+	test_debug "cat max_active_jobs2.out" &&
+	grep "user has max active jobs" max_active_jobs2.out
+'
+
+test_expect_success 'cancel all remaining jobs' '
+	flux job cancel $jobid1 &&
+	flux job cancel $jobid2 &&
+	flux job cancel $jobid3 &&
+	flux job cancel $jobid4
 '
 
 test_done

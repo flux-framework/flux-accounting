@@ -78,6 +78,12 @@ def add_add_user_arg(subparsers):
         metavar="MAX_RUNNING_JOBS",
     )
     subparser_add_user.add_argument(
+        "--max-active-jobs",
+        help="max number of both pending and running jobs",
+        default=7,
+        metavar="max_active_jobs",
+    )
+    subparser_add_user.add_argument(
         "--qos",
         help="quality of service",
         default="",
@@ -127,6 +133,12 @@ def add_edit_user_arg(subparsers):
         help="max number of jobs that can be running at the same time",
         default=None,
         metavar="MAX_RUNNING_JOBS",
+    )
+    subparser_edit_user.add_argument(
+        "--max-active-jobs",
+        help="max number of both pending and running jobs",
+        default=7,
+        metavar="max_active_jobs",
     )
     subparser_edit_user.add_argument(
         "--qos",
@@ -439,6 +451,7 @@ def select_accounting_function(args, conn, output_file, parser):
             args.userid,
             args.shares,
             args.max_running_jobs,
+            args.max_active_jobs,
             args.qos,
         )
     elif args.func == "delete_user":
@@ -451,6 +464,7 @@ def select_accounting_function(args, conn, output_file, parser):
             args.default_bank,
             args.shares,
             args.max_running_jobs,
+            args.max_active_jobs,
             args.qos,
         )
     elif args.func == "view_job_records":
