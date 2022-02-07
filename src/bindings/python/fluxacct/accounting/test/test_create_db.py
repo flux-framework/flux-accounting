@@ -63,7 +63,7 @@ class TestDB(unittest.TestCase):
             """
             INSERT INTO association_table
             (creation_time, mod_time, deleted, username, userid,
-            bank, default_bank, shares, qos)
+            bank, default_bank, shares, queues)
             VALUES
             (0, 0, 0, "test user", 1234, "test account", "test_account", 0, "")
             """

@@ -3,6 +3,6 @@ bank_id         bank            parent_bank     shares
 
 Users Under Bank A:
 
-username           userid             default_bank       shares             job_usage          fairshare          max_running_jobs   qos                
+username           userid             default_bank       shares             job_usage          fairshare          max_running_jobs   queues             
 user5011           5011               A                  1                  0.0                0.5                5                  expedite           
 user5012           5012               A                  1                  0.0                0.5                5                  expedite,standby   

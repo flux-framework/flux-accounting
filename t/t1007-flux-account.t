@@ -27,10 +27,10 @@ test_expect_success 'add some users to the DB' '
 	flux account -p ${DB_PATH} add-user --username=user5014 --userid=5014 --bank=C
 '
 
-test_expect_success 'add some QOS to the DB' '
-	flux account -p ${DB_PATH} add-qos --qos=standby --priority=0 &&
-	flux account -p ${DB_PATH} add-qos --qos=expedite --priority=10000
-	flux account -p ${DB_PATH} add-qos --qos=special --priority=99999
+test_expect_success 'add some queues to the DB' '
+	flux account -p ${DB_PATH} add-queue standby --priority=0 &&
+	flux account -p ${DB_PATH} add-queue expedite --priority=10000 &&
+	flux account -p ${DB_PATH} add-queue special --priority=99999
 '
 
 test_expect_success 'view some user information' '
@@ -42,36 +42,36 @@ test_expect_success 'view some user information' '
 	test_cmp num_rows.expected num_rows.test
 '
 
-test_expect_success 'add a QOS to an existing user account' '
-	flux account -p ${DB_PATH} edit-user user5011 --qos="expedite"
+test_expect_success 'add a queue to an existing user account' '
+	flux account -p ${DB_PATH} edit-user user5011 --queue="expedite"
 '
 
-test_expect_success 'trying to add a non-existent QOS to a user account should return an error' '
-	flux account -p ${DB_PATH} edit-user user5011 --qos="foo" > bad_qos.out &&
-	grep "QOS specified does not exist in qos_table" bad_qos.out
+test_expect_success 'trying to add a non-existent queue to a user account should return an error' '
+	flux account -p ${DB_PATH} edit-user user5011 --queue="foo" > bad_queue.out &&
+	grep "Queue specified does not exist in queue_table" bad_queue.out
 '
 
-test_expect_success 'trying to add a user with a non-existent QOS should also return an error' '
-	flux account -p ${DB_PATH} add-user --username=user5015 --userid=5015 --bank=A --qos="foo" > bad_qos2.out &&
-	grep "QOS specified does not exist in qos_table" bad_qos2.out
+test_expect_success 'trying to add a user with a non-existent queue should also return an error' '
+	flux account -p ${DB_PATH} add-user --username=user5015 --userid=5015 --bank=A --queue="foo" > bad_queue2.out &&
+	grep "Queue specified does not exist in queue_table" bad_queue2.out
 '
 
-test_expect_success 'add multiple QOS to an existing user account' '
-	flux account -p ${DB_PATH} edit-user user5012 --qos="expedite,standby" &&
+test_expect_success 'add multiple queues to an existing user account' '
+	flux account -p ${DB_PATH} edit-user user5012 --queue="expedite,standby" &&
 	flux account -p ${DB_PATH} view-user user5012 > user5012.out &&
 	grep "expedite,standby" user5012.out
 '
 
-test_expect_success 'edit a QOS priority' '
-	flux account -p ${DB_PATH} edit-qos --qos=expedite --priority=20000 &&
-	flux account -p ${DB_PATH} view-qos expedite > edited_qos.out &&
-	grep "20000" edited_qos.out
+test_expect_success 'edit a queue priority' '
+	flux account -p ${DB_PATH} edit-queue expedite --priority=20000 &&
+	flux account -p ${DB_PATH} view-queue expedite > edited_queue.out &&
+	grep "20000" edited_queue.out
 '
 
-test_expect_success 'remove a QOS' '
-	flux account -p ${DB_PATH} delete-qos special &&
-	flux account -p ${DB_PATH} view-qos special > deleted_qos.out &&
-	grep "QOS not found in qos_table" deleted_qos.out
+test_expect_success 'remove a queue' '
+	flux account -p ${DB_PATH} delete-queue special &&
+	flux account -p ${DB_PATH} view-queue special > deleted_queue.out &&
+	grep "queue not found in queue_table" deleted_queue.out
 '
 
 test_expect_success 'trying to view a bank that does not exist in the DB should return an error message' '
