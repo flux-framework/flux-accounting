@@ -62,7 +62,7 @@ def add_user(
     shares=1,
     max_running_jobs=5,
     max_active_jobs=7,
-    qos="",
+    queues="",
 ):
 
     if uid == 65534:
@@ -104,7 +104,7 @@ def add_user(
             INSERT INTO association_table (creation_time, mod_time, deleted,
                                            username, userid, bank, default_bank,
                                            shares, max_running_jobs,
-                                           max_active_jobs, qos)
+                                           max_active_jobs, queues)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
@@ -118,7 +118,7 @@ def add_user(
                 shares,
                 max_running_jobs,
                 max_active_jobs,
-                qos,
+                queues,
             ),
         )
         # commit changes
@@ -167,7 +167,7 @@ def edit_user(
     shares=None,
     max_running_jobs=None,
     max_active_jobs=None,
-    qos=None,
+    queues=None,
 ):
     params = locals()
     editable_fields = [
@@ -177,7 +177,7 @@ def edit_user(
         "shares",
         "max_running_jobs",
         "max_active_jobs",
-        "qos",
+        "queues",
     ]
     for field in editable_fields:
         if params[field] is not None:
