@@ -303,6 +303,13 @@ def add_add_queue_arg(subparsers):
         default="",
         metavar="MAX TIME PER JOB",
     )
+    subparser_add_queue.add_argument(
+        "--priority",
+        help="associated priority for the queue",
+        default=0,
+        metavar="PRIORITY",
+    )
+
 
 def add_view_queue_arg(subparsers):
     subparser_view_queue = subparsers.add_parser(
@@ -337,6 +344,12 @@ def add_edit_queue_arg(subparsers):
         help="max time per job",
         default=None,
         metavar="MAX TIME PER JOB",
+    )
+    subparser_edit_queue.add_argument(
+        "--priority",
+        help="associated priority for the queue",
+        default=None,
+        metavar="PRIORITY",
     )
 
 
@@ -454,6 +467,7 @@ def select_accounting_function(args, conn, output_file, parser):
             args.min_nodes_per_job,
             args.max_nodes_per_job,
             args.max_time_per_job,
+            args.priority,
         )
     elif args.func == "view_queue":
         qu.view_queue(conn, args.queue)
@@ -466,6 +480,7 @@ def select_accounting_function(args, conn, output_file, parser):
             args.min_nodes_per_job,
             args.max_nodes_per_job,
             args.max_time_per_job,
+            args.priority,
         )
     else:
         print(parser.print_usage())

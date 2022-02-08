@@ -28,15 +28,16 @@ def view_queue(conn, queue):
         print(e_database_error)
 
 
-def add_queue(conn, queue, min_nodes="", max_nodes="", max_time=""):
+def add_queue(conn, queue, min_nodes="", max_nodes="", max_time="", priority=0):
     try:
         insert_stmt = """
                       INSERT INTO queue_table (
                         queue,
                         min_nodes_per_job,
                         max_nodes_per_job,
-                        max_time_per_job
-                      ) VALUES (?, ?, ?, ?)
+                        max_time_per_job,
+                        priority
+                      ) VALUES (?, ?, ?, ?, ?)
                       """
         conn.execute(
             insert_stmt,
@@ -45,6 +46,7 @@ def add_queue(conn, queue, min_nodes="", max_nodes="", max_time=""):
                 min_nodes,
                 max_nodes,
                 max_time,
+                priority,
             ),
         )
 
@@ -63,10 +65,20 @@ def delete_queue(conn, queue):
 
 
 def edit_queue(
-    conn, queue, min_nodes_per_job=None, max_nodes_per_job=None, max_time_per_job=None
+    conn,
+    queue,
+    min_nodes_per_job=None,
+    max_nodes_per_job=None,
+    max_time_per_job=None,
+    priority=None,
 ):
     params = locals()
-    editable_fields = ["min_nodes_per_job", "max_nodes_per_job", "max_time_per_job"]
+    editable_fields = [
+        "min_nodes_per_job",
+        "max_nodes_per_job",
+        "max_time_per_job",
+        "priority",
+    ]
 
     for field in editable_fields:
         if params[field] is not None:
