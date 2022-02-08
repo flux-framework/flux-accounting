@@ -94,22 +94,20 @@ def edit_queue(
             except ValueError:
                 print("passed in value must be an integer")
 
+            update_stmt = "UPDATE queue_table SET " + field
+
             # passing a value of -1 will clear any previously set limit
             if int(params[field]) == -1:
-                update_stmt = "UPDATE queue_table SET " + field + "='' WHERE queue=?"
-                conn.execute(
-                    update_stmt,
-                    (queue,),
-                )
+                update_stmt += "=NULL WHERE queue=?"
+                tup = (queue,)
             else:
-                update_stmt = "UPDATE queue_table SET " + field + "=? WHERE queue=?"
-                conn.execute(
-                    update_stmt,
-                    (
-                        params[field],
-                        queue,
-                    ),
+                update_stmt += "=? WHERE queue=?"
+                tup = (
+                    params[field],
+                    queue,
                 )
+
+            conn.execute(update_stmt, tup)
 
             # commit changes
             conn.commit()
