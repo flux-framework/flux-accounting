@@ -17,13 +17,19 @@ def view_queue(conn, queue):
     try:
         # get the information pertaining to a queue in the DB
         cur.execute("SELECT * FROM queue_table where queue=?", (queue,))
-        row = cur.fetchone()
-        if row is None:
-            print("queue not found in queue_table")
+        rows = cur.fetchall()
+        headers = [description[0] for description in cur.description]
+        if not rows:
+            print("Queue not found in queue_table")
         else:
-            col_headers = [description[0] for description in cur.description]
-            for key, val in zip(col_headers, row):
-                print(key + ": " + str(val))
+            # print column names of association_table
+            for header in headers:
+                print(header.ljust(18), end=" ")
+            print()
+            for row in rows:
+                for col in list(row):
+                    print(str(col).ljust(18), end=" ")
+                print()
     except sqlite3.OperationalError as e_database_error:
         print(e_database_error)
 
