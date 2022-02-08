@@ -288,19 +288,19 @@ def add_add_queue_arg(subparsers):
     subparser_add_queue.add_argument(
         "--min-nodes-per-job",
         help="min nodes per job",
-        default="",
+        default=1,
         metavar="MIN NODES PER JOB",
     )
     subparser_add_queue.add_argument(
         "--max-nodes-per-job",
         help="max nodes per job",
-        default="",
+        default=1,
         metavar="MAX NODES PER JOB",
     )
     subparser_add_queue.add_argument(
         "--max-time-per-job",
         help="max time per job",
-        default="",
+        default=60,
         metavar="MAX TIME PER JOB",
     )
     subparser_add_queue.add_argument(

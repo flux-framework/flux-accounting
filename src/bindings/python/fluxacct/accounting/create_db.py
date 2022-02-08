@@ -166,11 +166,11 @@ def create_db(
     conn.execute(
         """
             CREATE TABLE IF NOT EXISTS queue_table (
-                queue               tinytext                NOT NULL,
-                min_nodes_per_job   int(11),
-                max_nodes_per_job   int(11),
-                max_time_per_job    int(11),
-                priority            int(11),
+                queue               tinytext               NOT NULL,
+                min_nodes_per_job   int(11)    DEFAULT 1   NOT NULL    ON CONFLICT REPLACE DEFAULT 1,
+                max_nodes_per_job   int(11)    DEFAULT 1   NOT NULL    ON CONFLICT REPLACE DEFAULT 1,
+                max_time_per_job    int(11)    DEFAULT 60  NOT NULL    ON CONFLICT REPLACE DEFAULT 60,
+                priority            int(11)    DEFAULT 0   NOT NULL    ON CONFLICT REPLACE DEFAULT 0,
                 PRIMARY KEY (queue)
             );"""
     )

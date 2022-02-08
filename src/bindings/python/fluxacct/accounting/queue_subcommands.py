@@ -28,7 +28,7 @@ def view_queue(conn, queue):
         print(e_database_error)
 
 
-def add_queue(conn, queue, min_nodes="", max_nodes="", max_time="", priority=0):
+def add_queue(conn, queue, min_nodes=1, max_nodes=1, max_time=60, priority=0):
     try:
         insert_stmt = """
                       INSERT INTO queue_table (
