@@ -99,7 +99,7 @@ def create_db(
                 fairshare        real        DEFAULT 0.5   NOT NULL,
                 max_running_jobs int(11)     DEFAULT 5     NOT NULL    ON CONFLICT REPLACE DEFAULT 5,
                 max_active_jobs  int(11)     DEFAULT 7     NOT NULL    ON CONFLICT REPLACE DEFAULT 7,
-                qos              tinytext    DEFAULT ''    NOT NULL    ON CONFLICT REPLACE DEFAULT '',
+                queues           tinytext    DEFAULT ''    NOT NULL    ON CONFLICT REPLACE DEFAULT '',
                 PRIMARY KEY   (username, bank)
         );"""
     )
@@ -160,27 +160,17 @@ def create_db(
     set_half_life_period_end(conn, priority_decay_half_life)
     logging.info("Created t_half_life_period_table successfully")
 
-    # QOS Table
-    # keeps track of what QOS' are defined and their associated priority
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS qos_table (
-            qos         tinytext        NOT NULL,
-            priority    int(11)         NOT NULL,
-            PRIMARY KEY (qos)
-        );"""
-    )
-
     # Queue Table
-    # stores queue limit information
+    # stores queues, associated priorities, and limit information
     logging.info("Creating queue_table in DB...")
     conn.execute(
         """
             CREATE TABLE IF NOT EXISTS queue_table (
-                queue               tinytext                NOT NULL,
-                min_nodes_per_job   int(11),
-                max_nodes_per_job   int(11),
-                max_time_per_job    int(11),
+                queue               tinytext               NOT NULL,
+                min_nodes_per_job   int(11)    DEFAULT 1   NOT NULL    ON CONFLICT REPLACE DEFAULT 1,
+                max_nodes_per_job   int(11)    DEFAULT 1   NOT NULL    ON CONFLICT REPLACE DEFAULT 1,
+                max_time_per_job    int(11)    DEFAULT 60  NOT NULL    ON CONFLICT REPLACE DEFAULT 60,
+                priority            int(11)    DEFAULT 0   NOT NULL    ON CONFLICT REPLACE DEFAULT 0,
                 PRIMARY KEY (queue)
             );"""
     )

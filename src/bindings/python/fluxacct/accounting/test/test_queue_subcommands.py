@@ -72,7 +72,7 @@ class TestAccountingCLI(unittest.TestCase):
         q.edit_queue(acct_conn, queue="queue_1", max_nodes_per_job=-1)
         cur.execute("SELECT max_nodes_per_job FROM queue_table where queue='queue_1'")
 
-        self.assertEqual(cur.fetchone()[0], "")
+        self.assertEqual(cur.fetchone()[0], 1)
 
     # remove a queue currently in the queue_table
     def test_07_delete_queue(self):

@@ -15,7 +15,6 @@ import os
 import fluxacct.accounting
 from fluxacct.accounting import user_subcommands as u
 from fluxacct.accounting import bank_subcommands as b
-from fluxacct.accounting import qos_subcommands as q
 from fluxacct.accounting import job_archive_interface as jobs
 from fluxacct.accounting import create_db as c
 from fluxacct.accounting import queue_subcommands as qu
@@ -84,10 +83,10 @@ def add_add_user_arg(subparsers):
         metavar="max_active_jobs",
     )
     subparser_add_user.add_argument(
-        "--qos",
-        help="quality of service",
+        "--queues",
+        help="queues the user is allowed to run jobs in",
         default="",
-        metavar="QUALITY OF SERVICE",
+        metavar="QUEUES",
     )
 
 
@@ -141,10 +140,10 @@ def add_edit_user_arg(subparsers):
         metavar="max_active_jobs",
     )
     subparser_edit_user.add_argument(
-        "--qos",
-        help="quality of service",
-        default=None,
-        metavar="QUALITY OF SERVICE",
+        "--queues",
+        help="queues the user is allowed to run jobs in",
+        default="",
+        metavar="QUEUES",
     )
 
 
@@ -281,40 +280,6 @@ def add_update_usage_arg(subparsers):
     )
 
 
-def add_add_qos_arg(subparsers):
-    subparser_add_qos = subparsers.add_parser("add-qos", help="add a new qos")
-
-    subparser_add_qos.set_defaults(func="add_qos")
-    subparser_add_qos.add_argument("--qos", help="QOS name", metavar="QOS")
-    subparser_add_qos.add_argument(
-        "--priority", help="QOS priority", metavar="PRIORITY"
-    )
-
-
-def add_view_qos_arg(subparsers):
-    subparser_view_qos = subparsers.add_parser("view-qos", help="view QOS information")
-
-    subparser_view_qos.set_defaults(func="view_qos")
-    subparser_view_qos.add_argument("qos", help="QOS name", metavar="QOS")
-
-
-def add_edit_qos_arg(subparsers):
-    subparser_edit_qos = subparsers.add_parser("edit-qos", help="edit a QOS' priority")
-
-    subparser_edit_qos.set_defaults(func="edit_qos")
-    subparser_edit_qos.add_argument("--qos", help="qos name", metavar="QOS")
-    subparser_edit_qos.add_argument(
-        "--priority", help="new priority", metavar="PRIORITY"
-    )
-
-
-def add_delete_qos_arg(subparsers):
-    subparser_delete_qos = subparsers.add_parser("delete-qos", help="remove a QOS")
-
-    subparser_delete_qos.set_defaults(func="delete_qos")
-    subparser_delete_qos.add_argument("qos", help="QOS name", metavar="QOS")
-
-
 def add_add_queue_arg(subparsers):
     subparser_add_queue = subparsers.add_parser("add-queue", help="add a new queue")
 
@@ -323,20 +288,26 @@ def add_add_queue_arg(subparsers):
     subparser_add_queue.add_argument(
         "--min-nodes-per-job",
         help="min nodes per job",
-        default="",
+        default=1,
         metavar="MIN NODES PER JOB",
     )
     subparser_add_queue.add_argument(
         "--max-nodes-per-job",
         help="max nodes per job",
-        default="",
+        default=1,
         metavar="MAX NODES PER JOB",
     )
     subparser_add_queue.add_argument(
         "--max-time-per-job",
         help="max time per job",
-        default="",
+        default=60,
         metavar="MAX TIME PER JOB",
+    )
+    subparser_add_queue.add_argument(
+        "--priority",
+        help="associated priority for the queue",
+        default=0,
+        metavar="PRIORITY",
     )
 
 
@@ -374,6 +345,12 @@ def add_edit_queue_arg(subparsers):
         default=None,
         metavar="MAX TIME PER JOB",
     )
+    subparser_edit_queue.add_argument(
+        "--priority",
+        help="associated priority for the queue",
+        default=None,
+        metavar="PRIORITY",
+    )
 
 
 def add_delete_queue_arg(subparsers):
@@ -399,10 +376,6 @@ def add_arguments_to_parser(parser, subparsers):
     add_delete_bank_arg(subparsers)
     add_edit_bank_arg(subparsers)
     add_update_usage_arg(subparsers)
-    add_add_qos_arg(subparsers)
-    add_view_qos_arg(subparsers)
-    add_edit_qos_arg(subparsers)
-    add_delete_qos_arg(subparsers)
     add_add_queue_arg(subparsers)
     add_view_queue_arg(subparsers)
     add_edit_queue_arg(subparsers)
@@ -452,7 +425,7 @@ def select_accounting_function(args, conn, output_file, parser):
             args.shares,
             args.max_running_jobs,
             args.max_active_jobs,
-            args.qos,
+            args.queues,
         )
     elif args.func == "delete_user":
         u.delete_user(conn, args.username, args.bank)
@@ -465,7 +438,7 @@ def select_accounting_function(args, conn, output_file, parser):
             args.shares,
             args.max_running_jobs,
             args.max_active_jobs,
-            args.qos,
+            args.queues,
         )
     elif args.func == "view_job_records":
         jobs.view_job_records(
@@ -487,14 +460,6 @@ def select_accounting_function(args, conn, output_file, parser):
     elif args.func == "update_usage":
         jobs_conn = establish_sqlite_connection(args.job_archive_db_path)
         jobs.update_job_usage(conn, jobs_conn, args.priority_decay_half_life)
-    elif args.func == "add_qos":
-        q.add_qos(conn, args.qos, args.priority)
-    elif args.func == "view_qos":
-        q.view_qos(conn, args.qos)
-    elif args.func == "edit_qos":
-        q.edit_qos(conn, args.qos, args.priority)
-    elif args.func == "delete_qos":
-        q.delete_qos(conn, args.qos)
     elif args.func == "add_queue":
         qu.add_queue(
             conn,
@@ -502,6 +467,7 @@ def select_accounting_function(args, conn, output_file, parser):
             args.min_nodes_per_job,
             args.max_nodes_per_job,
             args.max_time_per_job,
+            args.priority,
         )
     elif args.func == "view_queue":
         qu.view_queue(conn, args.queue)
@@ -514,6 +480,7 @@ def select_accounting_function(args, conn, output_file, parser):
             args.min_nodes_per_job,
             args.max_nodes_per_job,
             args.max_time_per_job,
+            args.priority,
         )
     else:
         print(parser.print_usage())

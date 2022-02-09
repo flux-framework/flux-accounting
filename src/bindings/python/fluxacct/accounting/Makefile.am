@@ -2,7 +2,6 @@ acctpy_PYTHON = \
 	__init__.py \
 	user_subcommands.py \
 	bank_subcommands.py \
-	qos_subcommands.py \
 	queue_subcommands.py \
 	job_archive_interface.py \
 	create_db.py
@@ -17,7 +16,6 @@ TESTSCRIPTS = \
 	test/test_example.py \
 	test/test_job_archive_interface.py \
 	test/test_user_subcommands.py \
-	test/test_qos_subcommands.py \
 	test/test_queue_subcommands.py
 
 dist_check_SCRIPTS = \

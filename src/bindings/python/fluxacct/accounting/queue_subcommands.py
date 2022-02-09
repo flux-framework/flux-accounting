@@ -17,26 +17,33 @@ def view_queue(conn, queue):
     try:
         # get the information pertaining to a queue in the DB
         cur.execute("SELECT * FROM queue_table where queue=?", (queue,))
-        row = cur.fetchone()
-        if row is None:
-            print("queue not found in queue_table")
+        rows = cur.fetchall()
+        headers = [description[0] for description in cur.description]
+        if not rows:
+            print("Queue not found in queue_table")
         else:
-            col_headers = [description[0] for description in cur.description]
-            for key, val in zip(col_headers, row):
-                print(key + ": " + str(val))
+            # print column names of association_table
+            for header in headers:
+                print(header.ljust(18), end=" ")
+            print()
+            for row in rows:
+                for col in list(row):
+                    print(str(col).ljust(18), end=" ")
+                print()
     except sqlite3.OperationalError as e_database_error:
         print(e_database_error)
 
 
-def add_queue(conn, queue, min_nodes="", max_nodes="", max_time=""):
+def add_queue(conn, queue, min_nodes=1, max_nodes=1, max_time=60, priority=0):
     try:
         insert_stmt = """
                       INSERT INTO queue_table (
                         queue,
                         min_nodes_per_job,
                         max_nodes_per_job,
-                        max_time_per_job
-                      ) VALUES (?, ?, ?, ?)
+                        max_time_per_job,
+                        priority
+                      ) VALUES (?, ?, ?, ?, ?)
                       """
         conn.execute(
             insert_stmt,
@@ -45,6 +52,7 @@ def add_queue(conn, queue, min_nodes="", max_nodes="", max_time=""):
                 min_nodes,
                 max_nodes,
                 max_time,
+                priority,
             ),
         )
 
@@ -63,10 +71,20 @@ def delete_queue(conn, queue):
 
 
 def edit_queue(
-    conn, queue, min_nodes_per_job=None, max_nodes_per_job=None, max_time_per_job=None
+    conn,
+    queue,
+    min_nodes_per_job=None,
+    max_nodes_per_job=None,
+    max_time_per_job=None,
+    priority=None,
 ):
     params = locals()
-    editable_fields = ["min_nodes_per_job", "max_nodes_per_job", "max_time_per_job"]
+    editable_fields = [
+        "min_nodes_per_job",
+        "max_nodes_per_job",
+        "max_time_per_job",
+        "priority",
+    ]
 
     for field in editable_fields:
         if params[field] is not None:
@@ -76,22 +94,20 @@ def edit_queue(
             except ValueError:
                 print("passed in value must be an integer")
 
+            update_stmt = "UPDATE queue_table SET " + field
+
             # passing a value of -1 will clear any previously set limit
             if int(params[field]) == -1:
-                update_stmt = "UPDATE queue_table SET " + field + "='' WHERE queue=?"
-                conn.execute(
-                    update_stmt,
-                    (queue,),
-                )
+                update_stmt += "=NULL WHERE queue=?"
+                tup = (queue,)
             else:
-                update_stmt = "UPDATE queue_table SET " + field + "=? WHERE queue=?"
-                conn.execute(
-                    update_stmt,
-                    (
-                        params[field],
-                        queue,
-                    ),
+                update_stmt += "=? WHERE queue=?"
+                tup = (
+                    params[field],
+                    queue,
                 )
+
+            conn.execute(update_stmt, tup)
 
             # commit changes
             conn.commit()

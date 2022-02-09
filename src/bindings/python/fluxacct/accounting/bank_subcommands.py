@@ -122,7 +122,7 @@ def view_bank(conn, bank, tree=False, users=False):
         if users is True:
             select_stmt = """
                         SELECT username,userid,default_bank,shares,job_usage,
-                        fairshare,max_running_jobs,qos FROM association_table
+                        fairshare,max_running_jobs,queues FROM association_table
                         WHERE bank=?
                         """
             cur.execute(
