@@ -36,6 +36,10 @@ test_expect_success 'add some users to the DB' '
 	flux account -p ${DB_PATH} add-user --username=user5013 --userid=5013 --bank=account1
 '
 
+test_expect_success 'add a queue to the DB' '
+	flux account -p ${DB_PATH} add-queue default --priority=0
+'
+
 test_expect_success 'send the user information to the plugin' '
 	flux account-priority-update -p $(pwd)/FluxAccountingTest.db
 '

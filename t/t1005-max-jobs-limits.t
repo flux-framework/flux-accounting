@@ -25,8 +25,24 @@ test_expect_success 'create fake_user.json' '
 	cat <<-EOF >fake_user.json
 	{
 		"data" : [
-			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 2, "max_active_jobs": 4},
-			{"userid": 5011, "bank": "account2", "def_bank": "account3", "fairshare": 0.11345, "max_running_jobs": 1, "max_active_jobs": 2}
+			{
+				"userid": 5011,
+				"bank": "account3",
+				"def_bank": "account3",
+				"fairshare": 0.45321,
+				"max_running_jobs": 2,
+				"max_active_jobs": 4,
+				"queues": ""
+			},
+			{
+				"userid": 5011,
+				"bank": "account2",
+				"def_bank": "account3",
+				"fairshare": 0.11345,
+				"max_running_jobs": 1,
+				"max_active_jobs": 2,
+				"queues": ""
+			}
 		]
 	}
 	EOF
@@ -34,6 +50,27 @@ test_expect_success 'create fake_user.json' '
 
 test_expect_success 'update plugin with sample test data' '
 	flux python ${SEND_PAYLOAD} fake_user.json
+'
+
+test_expect_success 'add a default queue and send it to the plugin' '
+	cat <<-EOF >fake_payload.py
+	import flux
+	import json
+
+	bulk_queue_data = {
+		"data" : [
+			{
+				"queue": "default",
+				"priority": 0,
+				"min_nodes_per_job": 0,
+				"max_nodes_per_job": 5,
+				"max_time_per_job": 64000
+			}
+		]
+	}
+	flux.Flux().rpc("job-manager.mf_priority.rec_q_update", json.dumps(bulk_queue_data)).get()
+	EOF
+	flux python fake_payload.py
 '
 
 test_expect_success 'submit max number of jobs' '
@@ -79,7 +116,15 @@ test_expect_success 'increase the max jobs count of the user' '
 	cat <<-EOF >new_max_running_jobs_limit.json
 	{
 		"data" : [
-			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 3, "max_active_jobs": 4}
+			{
+				"userid": 5011,
+				"bank": "account3",
+				"def_bank": "account3",
+				"fairshare": 0.45321,
+				"max_running_jobs": 3,
+				"max_active_jobs": 4,
+				"queues": ""
+			}
 		]
 	}
 	EOF
@@ -120,7 +165,15 @@ test_expect_success 'update max_active_jobs limit' '
 	cat <<-EOF >new_max_active_jobs_limit.json
 	{
 		"data" : [
-			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 3, "max_active_jobs": 5}
+			{
+				"userid": 5011,
+				"bank": "account3",
+				"def_bank": "account3",
+				"fairshare": 0.45321,
+				"max_running_jobs": 3,
+				"max_active_jobs": 5,
+				"queues": ""
+			}
 		]
 	}
 	EOF
@@ -169,8 +222,24 @@ test_expect_success 'create another user with the same limits in multiple banks'
 	cat <<-EOF >fake_user2.json
 	{
 		"data" : [
-			{"userid": 5012, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 1, "max_active_jobs": 2},
-			{"userid": 5012, "bank": "account2", "def_bank": "account3", "fairshare": 0.11345, "max_running_jobs": 1, "max_active_jobs": 2}
+			{
+				"userid": 5012,
+				"bank": "account3",
+				"def_bank": "account3",
+				"fairshare": 0.45321,
+				"max_running_jobs": 1,
+				"max_active_jobs": 2,
+				"queues": ""
+			},
+			{
+				"userid": 5012,
+				"bank": "account2",
+				"def_bank": "account3",
+				"fairshare": 0.11345,
+				"max_running_jobs": 1,
+				"max_active_jobs": 2,
+				"queues": ""
+			}
 		]
 	}
 	EOF
