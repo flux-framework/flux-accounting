@@ -27,6 +27,7 @@ extern "C" {
 #include <algorithm>
 #include <cinttypes>
 #include <vector>
+#include <sstream>
 
 #define BANK_INFO_MISSING -9
 
@@ -40,6 +41,8 @@ struct bank_info {
     int max_active_jobs;
     int cur_active_jobs;
     std::vector<long int> held_jobs;
+    std::vector<std::string> queues;
+    int queue_factor;
 };
 
 /******************************************************************************
@@ -93,6 +96,19 @@ int64_t priority_calculation (flux_plugin_t *p,
 }
 
 
+static void split_string (char *queues, struct bank_info *b)
+{
+    std::stringstream s_stream;
+
+    s_stream << queues; // create string stream from string
+    while (s_stream.good ()) {
+        std::string substr;
+        getline (s_stream, substr, ','); // get string delimited by comma
+        b->queues.push_back (substr);
+    }
+}
+
+
 /******************************************************************************
  *                                                                            *
  *                               Callbacks                                    *
@@ -108,12 +124,13 @@ static void rec_update_cb (flux_t *h,
                            const flux_msg_t *msg,
                            void *arg)
 {
-    char *bank, *def_bank = NULL;
+    char *bank, *def_bank, *queues = NULL;
     int uid, max_running_jobs, max_active_jobs = 0;
     double fshare = 0.0;
     json_t *data, *jtemp = NULL;
     json_error_t error;
     int num_data = 0;
+    std::stringstream s_stream;
 
     if (flux_request_unpack (msg, NULL, "{s:o}", "data", &data) < 0) {
         flux_log_error (h, "failed to unpack custom_priority.trigger msg");
@@ -132,13 +149,15 @@ static void rec_update_cb (flux_t *h,
     for (int i = 0; i < num_data; i++) {
         json_t *el = json_array_get(data, i);
 
-        if (json_unpack_ex (el, &error, 0, "{s:i, s:s, s:s, s:F, s:i, s:i}",
+        if (json_unpack_ex (el, &error, 0,
+                            "{s:i, s:s, s:s, s:F, s:i, s:i, s:s}",
                             "userid", &uid,
                             "bank", &bank,
                             "def_bank", &def_bank,
                             "fairshare", &fshare,
                             "max_running_jobs", &max_running_jobs,
-                            "max_active_jobs", &max_active_jobs) < 0)
+                            "max_active_jobs", &max_active_jobs,
+                            "queues", &queues) < 0)
             flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
 
         struct bank_info *b;
@@ -147,6 +166,9 @@ static void rec_update_cb (flux_t *h,
         b->fairshare = fshare;
         b->max_run_jobs = max_running_jobs;
         b->max_active_jobs = max_active_jobs;
+
+        // split queues comma-delimited string and add it to b->queues vector
+        split_string (queues, b);
 
         users_def_bank[uid] = def_bank;
     }
