@@ -13,7 +13,8 @@ TESTSCRIPTS = \
 	t1009-pop-db.t \
 	t1010-update-usage.t \
 	t1011-job-archive-interface.t \
-	t1012-mf-priority-load.t
+	t1012-mf-priority-load.t \
+	t1013-mf-priority-queues.t
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
