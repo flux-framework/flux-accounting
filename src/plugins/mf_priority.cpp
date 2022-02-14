@@ -67,7 +67,11 @@ struct queue_info {
  *
  * fairshare: the ratio between the amount of resources allocated vs. resources
  *     consumed.
+ *
  * urgency: a user-controlled factor to prioritize their own jobs.
+ *
+ * queue: a factor that can further affect the priority of a job based on the
+ *     queue passed in.
  */
 int64_t priority_calculation (flux_plugin_t *p,
                               flux_plugin_arg_t *args,
@@ -76,10 +80,12 @@ int64_t priority_calculation (flux_plugin_t *p,
                               int urgency)
 {
     double fshare_factor = 0.0, priority = 0.0;
-    int fshare_weight;
+    int queue_factor = 0;
+    int fshare_weight, queue_weight;
     struct bank_info *b;
 
     fshare_weight = 100000;
+    queue_weight = 10000;
 
     if (urgency == FLUX_JOB_URGENCY_HOLD)
         return FLUX_JOB_PRIORITY_MIN;
@@ -100,10 +106,16 @@ int64_t priority_calculation (flux_plugin_t *p,
     }
 
     fshare_factor = b->fairshare;
+    queue_factor = b->queue_factor;
 
-    priority = (fshare_weight * fshare_factor) + (urgency - 16);
+    priority = round ((fshare_weight * fshare_factor) +
+                      (queue_weight * queue_factor) +
+                      (urgency - 16));
 
-    return abs (round (priority));
+    if (priority < 0)
+        return FLUX_JOB_PRIORITY_MIN;
+
+    return priority;
 }
 
 
