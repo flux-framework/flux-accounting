@@ -438,7 +438,7 @@ def check_end_hl(acct_conn, pdhl):
         acct_conn.commit()
 
 
-def update_job_usage(acct_conn, jobs_conn, pdhl):
+def update_job_usage(acct_conn, jobs_conn, pdhl=1):
     s_assoc = "SELECT username, bank FROM association_table"
     cur = acct_conn.cursor()
     cur.execute(s_assoc)

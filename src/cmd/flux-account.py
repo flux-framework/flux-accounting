@@ -275,7 +275,9 @@ def add_update_usage_arg(subparsers):
     )
     subparser_update_usage.add_argument(
         "--priority-decay-half-life",
-        help="contribution of historical usage in weeks on the composite usage value",
+        default=1,
+        type=int,
+        help="number of weeks for a job's usage contribution to a half-life decay",
         metavar="PRIORITY DECAY HALF LIFE",
     )
 
