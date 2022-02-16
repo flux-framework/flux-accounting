@@ -7,6 +7,7 @@ queue_rules:
       - status-success="python lint"
       - status-success="bionic - py3.6"
       - status-success="el8 - py3.6"
+      - status-success="el8 - distcheck"
       - status-success="coverage"
       - label="merge-when-passing"
       - label!="work-in-progress"

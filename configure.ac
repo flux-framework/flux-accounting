@@ -103,19 +103,11 @@ AC_CONFIG_FILES([Makefile
   src/Makefile
   src/common/Makefile
   src/common/libtap/Makefile
-  src/fairness/Makefile
-  src/fairness/weighted_tree/Makefile
-  src/fairness/weighted_tree/test/Makefile
-  src/fairness/reader/Makefile
-  src/fairness/reader/test/Makefile
-  src/fairness/writer/Makefile
-  src/fairness/writer/test/Makefile
   src/bindings/Makefile
   src/bindings/python/Makefile
   src/bindings/python/fluxacct/Makefile
   src/bindings/python/fluxacct/accounting/Makefile
   src/bindings/python/fluxacct/accounting/__init__.py
-  src/cmd/Makefile
   src/plugins/Makefile
   t/Makefile
   ])
