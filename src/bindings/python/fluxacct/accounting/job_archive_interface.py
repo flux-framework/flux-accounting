@@ -14,13 +14,7 @@ import pwd
 import csv
 import math
 
-
-def count_ranks(ranks):
-    if "-" in ranks:
-        ranks_count = ranks.replace("-", ",").split(",")
-        return int(ranks_count[1]) - int(ranks_count[0]) + 1
-
-    return int(ranks) + 1
+from flux.resource import ResourceSet
 
 
 def get_username(userid):
@@ -127,6 +121,8 @@ def add_job_records(rows):
     job_records = []
 
     for row in rows:
+        rset = ResourceSet(row[6])  # fetch R
+
         job_record = JobRecord(
             row[0],  # userid
             get_username(row[0]),  # username
@@ -134,7 +130,7 @@ def add_job_records(rows):
             row[2],  # t_submit
             row[3],  # t_run
             row[4],  # t_inactive
-            count_ranks(row[5]),  # nnodes
+            rset.nnodes,  # nnodes
             row[6],  # resources
         )
         job_records.append(job_record)
