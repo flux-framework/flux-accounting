@@ -12,7 +12,7 @@ import sqlite3
 import sys
 
 
-def populate_job_archive_db(jobs_conn, userid, username, num_entries, starting_jobid):
+def populate_job_archive_db(jobs_conn, userid, num_entries, starting_jobid):
     jobid = starting_jobid
     t_inactive_delta = 2000
 
@@ -24,10 +24,8 @@ def populate_job_archive_db(jobs_conn, userid, username, num_entries, starting_j
                 INSERT INTO jobs (
                     id,
                     userid,
-                    username,
                     ranks,
                     t_submit,
-                    t_sched,
                     t_run,
                     t_cleanup,
                     t_inactive,
@@ -35,12 +33,11 @@ def populate_job_archive_db(jobs_conn, userid, username, num_entries, starting_j
                     jobspec,
                     R
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     jobid,
                     userid,
-                    username,
                     "0",
                     99998000,
                     100000000,
@@ -82,12 +79,10 @@ def main():
     jobs_conn.execute(
         """
             CREATE TABLE IF NOT EXISTS jobs (
-                id            int       NOT NULL,
+                id            char(16)  NOT NULL,
                 userid        int       NOT NULL,
-                username      text      NOT NULL,
                 ranks         text      NOT NULL,
                 t_submit      real      NOT NULL,
-                t_sched       real      NOT NULL,
                 t_run         real      NOT NULL,
                 t_cleanup     real      NOT NULL,
                 t_inactive    real      NOT NULL,
@@ -99,10 +94,10 @@ def main():
     )
 
     # populate the job-archive DB with fake job entries
-    populate_job_archive_db(jobs_conn, 5011, "5011", 2, 1000)
-    populate_job_archive_db(jobs_conn, 5012, "5012", 3, 2000)
-    populate_job_archive_db(jobs_conn, 5013, "5013", 3, 4000)
-    populate_job_archive_db(jobs_conn, 5021, "5014", 4, 5000)
+    populate_job_archive_db(jobs_conn, 5011, 2, 1000)
+    populate_job_archive_db(jobs_conn, 5012, 3, 2000)
+    populate_job_archive_db(jobs_conn, 5013, 3, 4000)
+    populate_job_archive_db(jobs_conn, 5021, 4, 5000)
 
 
 if __name__ == "__main__":

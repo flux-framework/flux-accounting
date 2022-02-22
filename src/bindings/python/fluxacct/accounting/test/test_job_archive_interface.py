@@ -39,12 +39,10 @@ class TestAccountingCLI(unittest.TestCase):
         jobs_conn.execute(
             """
                 CREATE TABLE IF NOT EXISTS jobs (
-                    id            int       NOT NULL,
+                    id            char(16)  NOT NULL,
                     userid        int       NOT NULL,
-                    username      text      NOT NULL,
                     ranks         text      NOT NULL,
                     t_submit      real      NOT NULL,
-                    t_sched       real      NOT NULL,
                     t_run         real      NOT NULL,
                     t_cleanup     real      NOT NULL,
                     t_inactive    real      NOT NULL,
@@ -87,9 +85,7 @@ class TestAccountingCLI(unittest.TestCase):
         interval = 0  # add to job timestamps to diversify job-archive records
 
         @mock.patch("time.time", mock.MagicMock(return_value=9000000))
-        def populate_job_archive_db(
-            jobs_conn, userid, username, ranks, nodes, num_entries
-        ):
+        def populate_job_archive_db(jobs_conn, userid, ranks, nodes, num_entries):
             nonlocal jobid
             nonlocal interval
             t_inactive_delta = 2000
@@ -124,10 +120,8 @@ class TestAccountingCLI(unittest.TestCase):
                         INSERT INTO jobs (
                             id,
                             userid,
-                            username,
                             ranks,
                             t_submit,
-                            t_sched,
                             t_run,
                             t_cleanup,
                             t_inactive,
@@ -135,15 +129,13 @@ class TestAccountingCLI(unittest.TestCase):
                             jobspec,
                             R
                         )
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         (
                             jobid,
                             userid,
-                            username,
                             ranks,
                             (time.time() + interval) - 2000,
-                            (time.time() + interval) - 1000,
                             (time.time() + interval),
                             (time.time() + interval) + 1000,
                             (time.time() + interval) + t_inactive_delta,
@@ -163,15 +155,15 @@ class TestAccountingCLI(unittest.TestCase):
                 t_inactive_delta += 100
 
         # populate the job-archive DB with fake job entries
-        populate_job_archive_db(jobs_conn, 1001, "1001", "0", "fluke[0]", 2)
+        populate_job_archive_db(jobs_conn, 1001, "0", "fluke[0]", 2)
 
-        populate_job_archive_db(jobs_conn, 1002, "1002", "0-1", "fluke[0-1]", 3)
-        populate_job_archive_db(jobs_conn, 1002, "1002", "0", "fluke[0]", 2)
+        populate_job_archive_db(jobs_conn, 1002, "0-1", "fluke[0-1]", 3)
+        populate_job_archive_db(jobs_conn, 1002, "0", "fluke[0]", 2)
 
-        populate_job_archive_db(jobs_conn, 1003, "1003", "0-2", "fluke[0-2]", 3)
+        populate_job_archive_db(jobs_conn, 1003, "0-2", "fluke[0-2]", 3)
 
-        populate_job_archive_db(jobs_conn, 1004, "1004", "0-3", "fluke[0-3]", 4)
-        populate_job_archive_db(jobs_conn, 1004, "1004", "0", "fluke[0]", 4)
+        populate_job_archive_db(jobs_conn, 1004, "0-3", "fluke[0-3]", 4)
+        populate_job_archive_db(jobs_conn, 1004, "0", "fluke[0]", 4)
 
     # passing a valid jobid should return
     # its job information
@@ -333,10 +325,8 @@ class TestAccountingCLI(unittest.TestCase):
                 INSERT INTO jobs (
                     id,
                     userid,
-                    username,
                     ranks,
                     t_submit,
-                    t_sched,
                     t_run,
                     t_cleanup,
                     t_inactive,
@@ -344,15 +334,13 @@ class TestAccountingCLI(unittest.TestCase):
                     jobspec,
                     R
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     "200",
                     "1001",
-                    "1001",
                     "0",
                     time.time() + 100,
-                    time.time() + 200,
                     time.time() + 300,
                     time.time() + 400,
                     time.time() + 500,
