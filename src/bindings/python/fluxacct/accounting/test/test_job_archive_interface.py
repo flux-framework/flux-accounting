@@ -87,10 +87,35 @@ class TestAccountingCLI(unittest.TestCase):
         interval = 0  # add to job timestamps to diversify job-archive records
 
         @mock.patch("time.time", mock.MagicMock(return_value=9000000))
-        def populate_job_archive_db(jobs_conn, userid, username, ranks, num_entries):
+        def populate_job_archive_db(
+            jobs_conn, userid, username, ranks, nodes, num_entries
+        ):
             nonlocal jobid
             nonlocal interval
             t_inactive_delta = 2000
+
+            R_input = """{{
+              "version": 1,
+              "execution": {{
+                "R_lite": [
+                  {{
+                    "rank": "{rank}",
+                    "children": {{
+                        "core": "0-3",
+                        "gpu": "0"
+                     }}
+                  }}
+                ],
+                "starttime": 0,
+                "expiration": 0,
+                "nodelist": [
+                  "{nodelist}"
+                ]
+              }}
+            }}
+            """.format(
+                rank=ranks, nodelist=nodes
+            )
 
             for i in range(num_entries):
                 try:
@@ -124,7 +149,7 @@ class TestAccountingCLI(unittest.TestCase):
                             (time.time() + interval) + t_inactive_delta,
                             "eventlog",
                             "jobspec",
-                            '{"version":1,"execution": {"R_lite":[{"rank":"0","children": {"core": "0"}}]}}',
+                            R_input,
                         ),
                     )
                     # commit changes
@@ -138,15 +163,15 @@ class TestAccountingCLI(unittest.TestCase):
                 t_inactive_delta += 100
 
         # populate the job-archive DB with fake job entries
-        populate_job_archive_db(jobs_conn, 1001, "1001", "0", 2)
+        populate_job_archive_db(jobs_conn, 1001, "1001", "0", "fluke[0]", 2)
 
-        populate_job_archive_db(jobs_conn, 1002, "1002", "0-1", 3)
-        populate_job_archive_db(jobs_conn, 1002, "1002", "0", 2)
+        populate_job_archive_db(jobs_conn, 1002, "1002", "0-1", "fluke[0-1]", 3)
+        populate_job_archive_db(jobs_conn, 1002, "1002", "0", "fluke[0]", 2)
 
-        populate_job_archive_db(jobs_conn, 1003, "1003", "0-2", 3)
+        populate_job_archive_db(jobs_conn, 1003, "1003", "0-2", "fluke[0-2]", 3)
 
-        populate_job_archive_db(jobs_conn, 1004, "1004", "0-3", 4)
-        populate_job_archive_db(jobs_conn, 1004, "1004", "0", 4)
+        populate_job_archive_db(jobs_conn, 1004, "1004", "0-3", "fluke[0-3]", 4)
+        populate_job_archive_db(jobs_conn, 1004, "1004", "0", "fluke[0]", 4)
 
     # passing a valid jobid should return
     # its job information
