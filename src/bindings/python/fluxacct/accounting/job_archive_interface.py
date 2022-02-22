@@ -65,7 +65,7 @@ def write_records_to_file(job_records, output_file):
 
 def print_job_records(job_records):
     print(
-        "{:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10}".format(
+        "{:<10} {:<10} {:<10} {:<15} {:<15} {:<15} {:<10}".format(
             "UserID",
             "Username",
             "JobID",
@@ -73,12 +73,11 @@ def print_job_records(job_records):
             "T_Run",
             "T_Inactive",
             "Nodes",
-            "R",
         )
     )
     for record in job_records:
         print(
-            "{:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10}".format(
+            "{:<10} {:<10} {:<10} {:<15} {:<15} {:<15} {:<10}".format(
                 record.userid,
                 record.username,
                 record.jobid,
@@ -86,7 +85,6 @@ def print_job_records(job_records):
                 record.t_run,
                 record.t_inactive,
                 record.nnodes,
-                record.resources,
             )
         )
 
