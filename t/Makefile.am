@@ -11,7 +11,8 @@ TESTSCRIPTS = \
 	t1007-flux-account.t \
 	t1008-mf-priority-update.t \
 	t1009-pop-db.t \
-	t1010-update-usage.t
+	t1010-update-usage.t \
+	t1011-job-archive-interface.t
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
