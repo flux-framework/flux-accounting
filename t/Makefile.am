@@ -10,7 +10,8 @@ TESTSCRIPTS = \
 	t1006-update-fshare.t \
 	t1007-flux-account.t \
 	t1008-mf-priority-update.t \
-	t1009-pop-db.t
+	t1009-pop-db.t \
+	t1010-update-usage.t
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
@@ -45,7 +46,10 @@ EXTRA_DIST= \
 	expected/flux_account/full_hierarchy.expected \
 	expected/flux_account/root_bank.expected \
 	expected/pop_db/db_hierarchy_base.expected \
-	expected/pop_db/db_hierarchy_new_users.expected
+	expected/pop_db/db_hierarchy_new_users.expected \
+	expected/job_usage/pre_update.expected \
+	expected/job_usage/post_update1.expected \
+	expected/job_usage/post_update2.expected
 
 clean-local:
 	rm -fr trash-directory.* test-results .prove *.broker.log */*.broker.log *.output
