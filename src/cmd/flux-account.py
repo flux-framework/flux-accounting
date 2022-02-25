@@ -443,7 +443,7 @@ def select_accounting_function(args, conn, output_file, parser):
             args.queues,
         )
     elif args.func == "view_job_records":
-        jobs.view_job_records(
+        jobs.output_job_records(
             conn,
             output_file,
             jobid=args.jobid,

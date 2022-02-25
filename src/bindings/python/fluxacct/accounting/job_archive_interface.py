@@ -14,13 +14,7 @@ import pwd
 import csv
 import math
 
-
-def count_ranks(ranks):
-    if "-" in ranks:
-        ranks_count = ranks.replace("-", ",").split(",")
-        return int(ranks_count[1]) - int(ranks_count[0]) + 1
-
-    return int(ranks) + 1
+from flux.resource import ResourceSet
 
 
 def get_username(userid):
@@ -71,7 +65,7 @@ def write_records_to_file(job_records, output_file):
 
 def print_job_records(job_records):
     print(
-        "{:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10}".format(
+        "{:<10} {:<10} {:<10} {:<15} {:<15} {:<15} {:<10}".format(
             "UserID",
             "Username",
             "JobID",
@@ -79,12 +73,11 @@ def print_job_records(job_records):
             "T_Run",
             "T_Inactive",
             "Nodes",
-            "R",
         )
     )
     for record in job_records:
         print(
-            "{:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10}".format(
+            "{:<10} {:<10} {:<10} {:<15} {:<15} {:<15} {:<10}".format(
                 record.userid,
                 record.username,
                 record.jobid,
@@ -92,7 +85,6 @@ def print_job_records(job_records):
                 record.t_run,
                 record.t_inactive,
                 record.nnodes,
-                record.resources,
             )
         )
 
@@ -127,6 +119,8 @@ def add_job_records(rows):
     job_records = []
 
     for row in rows:
+        rset = ResourceSet(row[6])  # fetch R
+
         job_record = JobRecord(
             row[0],  # userid
             get_username(row[0]),  # username
@@ -134,7 +128,7 @@ def add_job_records(rows):
             row[2],  # t_submit
             row[3],  # t_run
             row[4],  # t_inactive
-            count_ranks(row[5]),  # nnodes
+            rset.nnodes,  # nnodes
             row[6],  # resources
         )
         job_records.append(job_record)
@@ -142,7 +136,7 @@ def add_job_records(rows):
     return job_records
 
 
-def view_job_records(conn, output_file, **kwargs):
+def get_job_records(conn, **kwargs):
     job_records = []
 
     # find out which args were passed and place them in a dict
@@ -185,13 +179,19 @@ def view_job_records(conn, output_file, **kwargs):
     cur = conn.cursor()
     cur.execute(select_stmt, (*tuple(params_list),))
     rows = cur.fetchall()
-    # if the length of dataframe is 0, that means
-    # no job records were found in the jobs table,
-    # so just return an empty list
+    # if the length of dataframe is 0, that means no job records were found
+    # in the jobs table, so just return an empty list
     if len(rows) == 0:
         return job_records
 
     job_records = add_job_records(rows)
+
+    return job_records
+
+
+def output_job_records(conn, output_file, **kwargs):
+    job_records = get_job_records(conn, **kwargs)
+
     if output_file is None:
         print_job_records(job_records)
     else:
@@ -356,9 +356,8 @@ def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank):
 
     # get jobs that have completed since the last seen completed job
     last_j_ts = get_last_job_ts(acct_conn, user, bank)
-    user_jobs = view_job_records(
+    user_jobs = get_job_records(
         jobs_conn,
-        output_file=None,
         user=user,
         after_start_time=last_j_ts,
     )

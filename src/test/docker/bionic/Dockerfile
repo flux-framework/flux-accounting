@@ -17,5 +17,8 @@ RUN \
    && sudo adduser $USER sudo ; \
  fi
 
+# add site-packages to PYTHONPATH
+ENV PYTHONPATH="${PYTHONPATH}:/usr/lib/python3.6/site-packages"
+
 USER $USER
 WORKDIR /home/$USER
