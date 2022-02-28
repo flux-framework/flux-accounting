@@ -1,3 +1,20 @@
+flux-accounting version 0.14.0 - 2022-02-28
+-------------------------------------------
+
+#### Fixes
+
+* Fix incorrect listing of column names when printing table information in the flux-accounting database (#203)
+
+* Fix `TypeError` when not specifying a value for an optional argument for the `update-usage` command (#209)
+
+* Fix incorrect parsing of the `count_ranks()` helper function when updating job usage values (#211)
+
+#### Features
+
+* Add a new `max_active_jobs` limit for user/bank combos in the multi-factor priority plugin (#201)
+
+* Add a new distcheck builder to flux-accounting CI (#206)
+
 flux-accounting version 0.13.0 - 2022-01-31
 -------------------------------------------
 
