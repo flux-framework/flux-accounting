@@ -54,6 +54,7 @@ class TestDB(unittest.TestCase):
             "job_usage_factor_table",
             "t_half_life_period_table",
             "queue_table",
+            "plugin_factor_table",
         ]
         self.assertEqual(list_of_tables, expected)
 

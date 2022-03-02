@@ -174,5 +174,27 @@ def create_db(
                 PRIMARY KEY (queue)
             );"""
     )
+    logging.info("Created queue_table successfully")
+
+    # Plugin Weight Table
+    # stores the weights for all of the priority factors in the multi-factor
+    # priority plugin
+    logging.info("Creating plugin_factor_table in DB...")
+    conn.execute(
+        """
+            CREATE TABLE IF NOT EXISTS plugin_factor_table (
+                factor      tinytext                NOT NULL,
+                weight      int(11)     DEFAULT 1,
+                PRIMARY KEY (factor)
+            );"""
+    )
+    logging.info("Created plugin_factor_table successfully")
+    conn.execute(
+        "INSERT INTO plugin_factor_table (factor, weight) VALUES ('fairshare', 100000);"
+    )
+    conn.execute(
+        "INSERT INTO plugin_factor_table (factor, weight) VALUES ('queue', 10000);"
+    )
+    conn.commit()
 
     conn.close()
