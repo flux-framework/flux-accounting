@@ -167,6 +167,28 @@ test_expect_success 'remove a queue from the queue_table' '
 	grep "Queue not found in queue_table" deleted_queue.out
 '
 
+test_expect_success 'view plugin factor information' '
+	flux account -p ${DB_PATH} view-plugin-factor fairshare > fshare_factor.test &&
+	grep "fairshare          100000" fshare_factor.test
+'
+
+test_expect_success 'edit a plugin factor successfully' '
+	flux account -p ${DB_PATH} edit-plugin-factor fairshare --weight=1234 &&
+	flux account -p ${DB_PATH} view-plugin-factor fairshare > fshare_factor_edited.test &&
+	grep "fairshare          1234" fshare_factor_edited.test
+'
+
+test_expect_success 'try to edit a plugin factor with a bad type' '
+	test_must_fail flux account -p ${DB_PATH} edit-plugin-factor fairshare --weight=foo > bad_type.out 2>&1 &&
+	test_debug "bad_type.out" &&
+	grep "edit-plugin-factor: error: argument --weight: invalid int value:" bad_type.out
+'
+
+test_expect_success 'try to view a plugin factor that does not exist' '
+	flux account -p ${DB_PATH} view-plugin-factor foo > no_such_factor.out &&
+	grep "Factor not found in plugin_factor_table" no_such_factor.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
