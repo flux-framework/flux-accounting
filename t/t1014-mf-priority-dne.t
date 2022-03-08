@@ -62,6 +62,13 @@ test_expect_success 'send the user/bank information to the plugin without reprio
 		]
 	}
 	flux.Flux().rpc("job-manager.mf_priority.rec_q_update", json.dumps(bulk_queue_data)).get()
+	bulk_fac_data = {
+		"data" : [
+			{"factor": "fairshare", "weight": 100000},
+			{"factor": "queue", "weight": 10000}
+		]
+	}
+	flux.Flux().rpc("job-manager.mf_priority.rec_fac_update", json.dumps(bulk_fac_data)).get()
 	EOF
 	flux python fake_payload.py
 '
