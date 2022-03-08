@@ -37,6 +37,7 @@ extern "C" {
 std::map<int, std::map<std::string, struct bank_info>> users;
 std::map<std::string, struct queue_info> queues;
 std::map<int, std::string> users_def_bank;
+std::map<std::string, int> plugin_factors;
 
 struct bank_info {
     double fairshare;
@@ -337,6 +338,53 @@ static void reprior_cb (flux_t *h,
 error:
     flux_respond_error (h, msg, errno, flux_msg_last_error (msg));
 
+}
+
+
+/*
+ * Unpack a payload from an external bulk update service and place it in a
+ * map datastructure.
+ */
+static void rec_f_cb (flux_t *h,
+                      flux_msg_handler_t *mh,
+                      const flux_msg_t *msg,
+                      void *arg)
+{
+    char *factor = NULL;
+    int weight = 0;
+    json_t *data, *jtemp = NULL;
+    json_error_t error;
+    int num_data = 0;
+
+    if (flux_request_unpack (msg, NULL, "{s:o}", "data", &data) < 0) {
+        flux_log_error (h, "failed to unpack custom_priority.trigger msg");
+        goto error;
+    }
+
+    if (flux_respond (h, msg, NULL) < 0)
+        flux_log_error (h, "flux_respond");
+
+    if (!data || !json_is_array (data)) {
+        flux_log (h, LOG_ERR, "mf_priority: invalid bulk_update payload");
+        goto error;
+    }
+    num_data = json_array_size (data);
+
+    for (int i = 0; i < num_data; i++) {
+        json_t *el = json_array_get(data, i);
+
+        if (json_unpack_ex (el, &error, 0,
+                            "{s:s, s:i}",
+                            "factor", &factor,
+                            "weight", &weight) < 0)
+            flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
+
+        plugin_factors[factor] = weight;
+    }
+
+    return;
+error:
+    flux_respond_error (h, msg, errno, flux_msg_last_error (msg));
 }
 
 
@@ -810,7 +858,8 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
     if (flux_plugin_register (p, "mf_priority", tab) < 0
         || flux_jobtap_service_register (p, "rec_update", rec_update_cb, p)
         || flux_jobtap_service_register (p, "reprioritize", reprior_cb, p)
-        || flux_jobtap_service_register (p, "rec_q_update", rec_q_cb, p) < 0)
+        || flux_jobtap_service_register (p, "rec_q_update", rec_q_cb, p)
+        || flux_jobtap_service_register (p, "rec_fac_update", rec_f_cb, p) < 0)
         return -1;
 
     struct queue_info *q;

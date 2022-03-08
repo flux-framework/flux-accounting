@@ -51,6 +51,7 @@ def bulk_update(path):
     data = {}
     bulk_user_data = []
     bulk_q_data = []
+    bulk_factor_data = []
 
     # fetch all rows from association_table (will print out tuples)
     for row in cur.execute(
@@ -89,6 +90,19 @@ def bulk_update(path):
     data = {"data": bulk_q_data}
 
     flux.Flux().rpc("job-manager.mf_priority.rec_q_update", json.dumps(data)).get()
+
+    # fetch all factors and their associated weights from the plugin_factor_table
+    for row in cur.execute("SELECT * FROM plugin_factor_table"):
+        # create a JSON payload with the results of the query
+        single_factor_data = {
+            "factor": str(row[0]),
+            "weight": int(row[1]),
+        }
+        bulk_factor_data.append(single_factor_data)
+
+    data = {"data": bulk_factor_data}
+
+    flux.Flux().rpc("job-manager.mf_priority.rec_fac_update", json.dumps(data)).get()
 
     flux.Flux().rpc("job-manager.mf_priority.reprioritize")
 
