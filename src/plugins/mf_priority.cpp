@@ -85,8 +85,9 @@ int64_t priority_calculation (flux_plugin_t *p,
     int fshare_weight, queue_weight;
     struct bank_info *b;
 
-    fshare_weight = 100000;
-    queue_weight = 10000;
+    // fetch associated weights of all of the priority factors
+    fshare_weight = plugin_factors["fairshare"];
+    queue_weight = plugin_factors["queue"];
 
     if (urgency == FLUX_JOB_URGENCY_HOLD)
         return FLUX_JOB_PRIORITY_MIN;
