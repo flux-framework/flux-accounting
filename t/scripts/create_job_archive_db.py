@@ -12,12 +12,14 @@ import sqlite3
 import sys
 
 
-def populate_job_archive_db(jobs_conn, userid, num_entries, starting_jobid):
+def populate_job_archive_db(jobs_conn, userid, bank, num_entries, starting_jobid):
     jobid = starting_jobid
     t_inactive_delta = 2000
 
     for i in range(num_entries):
         jobid += 1
+        jobspec = '{ "attributes": { "system": { "bank": "' + bank + '"} } }'
+
         try:
             jobs_conn.execute(
                 """
@@ -44,7 +46,7 @@ def populate_job_archive_db(jobs_conn, userid, num_entries, starting_jobid):
                     100001000,
                     100002000,
                     "eventlog",
-                    "jobspec",
+                    jobspec,
                     """{
                       "version": 1,
                       "execution": {
@@ -94,10 +96,10 @@ def main():
     )
 
     # populate the job-archive DB with fake job entries
-    populate_job_archive_db(jobs_conn, 5011, 2, 1000)
-    populate_job_archive_db(jobs_conn, 5012, 3, 2000)
-    populate_job_archive_db(jobs_conn, 5013, 3, 4000)
-    populate_job_archive_db(jobs_conn, 5021, 4, 5000)
+    populate_job_archive_db(jobs_conn, 5011, "account1", 2, 1000)
+    populate_job_archive_db(jobs_conn, 5012, "account1", 3, 2000)
+    populate_job_archive_db(jobs_conn, 5013, "account1", 3, 4000)
+    populate_job_archive_db(jobs_conn, 5021, "account2", 4, 5000)
 
 
 if __name__ == "__main__":
