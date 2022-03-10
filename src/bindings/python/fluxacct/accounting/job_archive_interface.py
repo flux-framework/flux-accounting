@@ -13,6 +13,7 @@ import time
 import pwd
 import csv
 import math
+import json
 
 from flux.resource import ResourceSet
 
@@ -136,7 +137,46 @@ def add_job_records(rows):
     return job_records
 
 
-def get_job_records(conn, **kwargs):
+# check if 1) a "bank" attribute exists in jobspec, which means the user
+# submitted a job under a secondary bank, and 2) the "bank" attribute
+# in jobspec matches the bank we are currently counting jobs for
+def check_jobspec(jobspec, bank):
+    return bool(
+        ("bank" in jobspec["attributes"]["system"])
+        and (jobspec["attributes"]["system"]["bank"] == bank)
+    )
+
+
+# we are looking for jobs that were submitted under a secondary bank, so we'll
+# only add jobs that have the same bank name attribute in the jobspec
+def sec_bank_jobs(job_records, bank):
+    jobs = []
+    for job in job_records:
+        jobspec = json.loads(job[7])
+
+        if check_jobspec(jobspec, bank):
+            jobs.append(job)
+
+    return jobs
+
+
+# we are looking for jobs that were submitted under a default bank, which has
+# two cases: 1) the user submitted a job while specifying their default bank,
+# or 2) the user submitted a job without specifying any bank at all
+def def_bank_jobs(job_records, default_bank):
+    jobs = []
+    for job in job_records:
+        jobspec = json.loads(job[7])
+
+        if check_jobspec(jobspec, default_bank):
+            jobs.append(job)
+        elif "bank" not in jobspec["attributes"]["system"]:
+            jobs.append(job)
+
+    return jobs
+
+
+def get_job_records(conn, bank, default_bank, **kwargs):
     job_records = []
 
     # find out which args were passed and place them in a dict
@@ -150,7 +190,9 @@ def get_job_records(conn, **kwargs):
         if val is not None and key in valid_params
     }
 
-    select_stmt = "SELECT userid,id,t_submit,t_run,t_inactive,ranks,R FROM jobs "
+    select_stmt = (
+        "SELECT userid,id,t_submit,t_run,t_inactive,ranks,R,jobspec FROM jobs "
+    )
     where_stmt = ""
 
     def append_to_where(where_stmt, conditional):
@@ -184,13 +226,24 @@ def get_job_records(conn, **kwargs):
     if len(rows) == 0:
         return job_records
 
-    job_records = add_job_records(rows)
+    if bank is None and default_bank is None:
+        # special case for unit tests in test_job_archive_interface.py
+        job_records = add_job_records(rows)
+
+        return job_records
+
+    if bank != default_bank:
+        jobs = sec_bank_jobs(rows, bank)
+    else:
+        jobs = def_bank_jobs(rows, default_bank)
+
+    job_records = add_job_records(jobs)
 
     return job_records
 
 
 def output_job_records(conn, output_file, **kwargs):
-    job_records = get_job_records(conn, **kwargs)
+    job_records = get_job_records(conn, None, None, **kwargs)
 
     if output_file is None:
         print_job_records(job_records)
@@ -339,7 +392,7 @@ def get_curr_usg_bin(acct_conn, user, bank):
     return float(row[0])
 
 
-def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank):
+def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank, default_bank):
 
     # hl_period represents the number of seconds that represent one usage bin
     hl_period = pdhl * 604800
@@ -358,6 +411,8 @@ def calc_usage_factor(jobs_conn, acct_conn, pdhl, user, bank):
     last_j_ts = get_last_job_ts(acct_conn, user, bank)
     user_jobs = get_job_records(
         jobs_conn,
+        bank,
+        default_bank,
         user=user,
         after_start_time=last_j_ts,
     )
@@ -438,12 +493,12 @@ def check_end_hl(acct_conn, pdhl):
 
 
 def update_job_usage(acct_conn, jobs_conn, pdhl=1):
-    s_assoc = "SELECT username, bank FROM association_table"
+    s_assoc = "SELECT username, bank, default_bank FROM association_table"
     cur = acct_conn.cursor()
     cur.execute(s_assoc)
     rows = cur.fetchall()
 
     for row in rows:
-        calc_usage_factor(jobs_conn, acct_conn, pdhl, row[0], row[1])
+        calc_usage_factor(jobs_conn, acct_conn, pdhl, row[0], row[1], row[2])
 
     check_end_hl(acct_conn, pdhl)
