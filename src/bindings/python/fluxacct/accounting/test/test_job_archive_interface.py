@@ -85,7 +85,7 @@ class TestAccountingCLI(unittest.TestCase):
         interval = 0  # add to job timestamps to diversify job-archive records
 
         @mock.patch("time.time", mock.MagicMock(return_value=9000000))
-        def populate_job_archive_db(jobs_conn, userid, ranks, nodes, num_entries):
+        def populate_job_archive_db(jobs_conn, userid, bank, ranks, nodes, num_entries):
             nonlocal jobid
             nonlocal interval
             t_inactive_delta = 2000
@@ -140,7 +140,7 @@ class TestAccountingCLI(unittest.TestCase):
                             (time.time() + interval) + 1000,
                             (time.time() + interval) + t_inactive_delta,
                             "eventlog",
-                            "jobspec",
+                            '{ "attributes": { "system": { "bank": "' + bank + '"} } }',
                             R_input,
                         ),
                     )
@@ -155,15 +155,15 @@ class TestAccountingCLI(unittest.TestCase):
                 t_inactive_delta += 100
 
         # populate the job-archive DB with fake job entries
-        populate_job_archive_db(jobs_conn, 1001, "0", "fluke[0]", 2)
+        populate_job_archive_db(jobs_conn, 1001, "C", "0", "fluke[0]", 2)
 
-        populate_job_archive_db(jobs_conn, 1002, "0-1", "fluke[0-1]", 3)
-        populate_job_archive_db(jobs_conn, 1002, "0", "fluke[0]", 2)
+        populate_job_archive_db(jobs_conn, 1002, "C", "0-1", "fluke[0-1]", 3)
+        populate_job_archive_db(jobs_conn, 1002, "C", "0", "fluke[0]", 2)
 
-        populate_job_archive_db(jobs_conn, 1003, "0-2", "fluke[0-2]", 3)
+        populate_job_archive_db(jobs_conn, 1003, "D", "0-2", "fluke[0-2]", 3)
 
-        populate_job_archive_db(jobs_conn, 1004, "0-3", "fluke[0-3]", 4)
-        populate_job_archive_db(jobs_conn, 1004, "0", "fluke[0]", 4)
+        populate_job_archive_db(jobs_conn, 1004, "D", "0-3", "fluke[0-3]", 4)
+        populate_job_archive_db(jobs_conn, 1004, "D", "0", "fluke[0]", 4)
 
     # passing a valid jobid should return
     # its job information
@@ -255,7 +255,12 @@ class TestAccountingCLI(unittest.TestCase):
         acct_conn.commit()
 
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn, acct_conn, pdhl=1, user=user, bank=bank
+            jobs_conn,
+            acct_conn,
+            pdhl=1,
+            user=user,
+            bank=bank,
+            default_bank=bank,
         )
         self.assertEqual(usage_factor, 17044.0)
 
@@ -276,7 +281,12 @@ class TestAccountingCLI(unittest.TestCase):
         acct_conn.commit()
 
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn, acct_conn, pdhl=1, user=user, bank=bank
+            jobs_conn,
+            acct_conn,
+            pdhl=1,
+            user=user,
+            bank=bank,
+            default_bank=bank,
         )
         self.assertEqual(usage_factor, 8500.0)
 
@@ -289,7 +299,12 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(ts_old, 0.0)
 
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn, acct_conn, pdhl=1, user="1003", bank="D"
+            jobs_conn,
+            acct_conn,
+            pdhl=1,
+            user="1003",
+            bank="D",
+            default_bank="D",
         )
 
         cur.execute(s_ts)
@@ -345,7 +360,7 @@ class TestAccountingCLI(unittest.TestCase):
                     time.time() + 400,
                     time.time() + 500,
                     "eventlog",
-                    "jobspec",
+                    '{ "attributes": { "system": { "bank": "C"} } }',
                     '{"version":1,"execution": {"R_lite":[{"rank":"0","children": {"core": "0"}}]}}',
                 ),
             )
@@ -357,7 +372,12 @@ class TestAccountingCLI(unittest.TestCase):
 
         # re-calculate usage factor for user1001
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn, acct_conn, pdhl=1, user=user, bank=bank
+            jobs_conn,
+            acct_conn,
+            pdhl=1,
+            user=user,
+            bank=bank,
+            default_bank=bank,
         )
         self.assertEqual(usage_factor, 4366.0)
 
@@ -369,7 +389,12 @@ class TestAccountingCLI(unittest.TestCase):
         bank = "C"
 
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn, acct_conn, pdhl=1, user=user, bank=bank
+            jobs_conn,
+            acct_conn,
+            pdhl=1,
+            user=user,
+            bank=bank,
+            default_bank=bank,
         )
 
         self.assertEqual(usage_factor, 2199.5)
