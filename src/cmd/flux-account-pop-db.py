@@ -77,8 +77,9 @@ def populate_db(path, users=None, banks=None):
                     uid = row[1]
                     bank = row[2]
                     shares = row[3] if row[3] != "" else 1
-                    max_jobs = row[4] if row[4] != "" else 5
-                    qos = row[5]
+                    max_running_jobs = row[4] if row[4] != "" else 5
+                    max_active_jobs = row[5] if row[5] != "" else 7
+                    queues = row[6]
 
                     u.add_user(
                         conn,
@@ -86,8 +87,9 @@ def populate_db(path, users=None, banks=None):
                         bank,
                         uid,
                         shares,
-                        max_jobs,
-                        qos,
+                        max_running_jobs,
+                        max_active_jobs,
+                        queues,
                     )
         except IOError as err:
             print(err)
@@ -100,9 +102,10 @@ def main():
 
         Order of elements required for populating association_table:
 
-        Username,UserID,Bank,Shares,MaxJobs,QOS
+        Username,UserID,Bank,Shares,MaxRunningJobs,MaxActiveJobs,Queues
 
-        [Shares] and [MaxJobs] can be left blank ('') in .csv file for a given row.
+        [Shares], [MaxRunningJobs], and [MaxActiveJobs] can be left blank ('') in
+        the .csv file for a given row.
 
         ----------------
 
