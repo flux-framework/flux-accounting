@@ -1,0 +1,6 @@
+#!/bin/bash
+
+if test $(flux getattr rank) -eq 0 \
+    && flux jobtap list | grep -q mf_priority.so; then
+     flux account-priority-update || true
+fi

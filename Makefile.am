@@ -14,3 +14,6 @@ CODE_COVERAGE_IGNORE_PATTERN = \
     "/usr/lib/*"
 CODE_COVERAGE_LCOV_OPTIONS =
 @CODE_COVERAGE_RULES@
+
+dist_fluxrc1_SCRIPTS = \
+    etc/01-flux-account-priority-update
