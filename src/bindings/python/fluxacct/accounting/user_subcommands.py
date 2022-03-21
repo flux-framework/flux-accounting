@@ -101,16 +101,15 @@ def add_user(
         # insert the user values into association_table
         conn.execute(
             """
-            INSERT INTO association_table (creation_time, mod_time, deleted,
-                                           username, userid, bank, default_bank,
-                                           shares, max_running_jobs,
-                                           max_active_jobs, queues)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO association_table (creation_time, mod_time, username,
+                                           userid, bank, default_bank, shares,
+                                           max_running_jobs, max_active_jobs,
+                                           queues)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 int(time.time()),
                 int(time.time()),
-                0,
                 username,
                 uid,
                 bank,
