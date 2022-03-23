@@ -35,11 +35,7 @@ test_expect_success 'add some queues to the DB' '
 
 test_expect_success 'view some user information' '
 	flux account -p ${DB_PATH} view-user user5011 > user_info.out &&
-	grep -c "user5011" user_info.out > num_rows.test &&
-	cat <<-EOF >num_rows.expected &&
-	1
-	EOF
-	test_cmp num_rows.expected num_rows.test
+	grep "user5011" | grep "5011" | grep "A" user_info.out
 '
 
 test_expect_success 'add a queue to an existing user account' '
@@ -111,8 +107,8 @@ test_expect_success 'trying to view a user who does not exist in the DB should r
 '
 
 test_expect_success 'trying to view a user that does exist in the DB should return some information' '
-	flux account -p ${DB_PATH} view-user user5011 > good_user.test &&
-	grep "creation_time" good_user.test
+	flux account -p ${DB_PATH} view-user user5011 > good_user.out &&
+	grep "user5011" | grep "5011" | grep "A" good_user.out
 '
 
 test_expect_success 'edit a field in a user account' '
@@ -121,8 +117,8 @@ test_expect_success 'edit a field in a user account' '
 
 test_expect_success 'edit a field in a bank account' '
 	flux account -p ${DB_PATH} edit-bank C --shares=50 &&
-	flux account -p ${DB_PATH} view-bank C > edited_bank.test &&
-	grep "50" edited_bank.test
+	flux account -p ${DB_PATH} view-bank C > edited_bank.out &&
+	grep "C" | grep "50" edited_bank.out
 '
 
 test_expect_success 'remove a bank (and any corresponding users that belong to that bank)' '
@@ -137,22 +133,15 @@ test_expect_success 'make sure both the DB and the user are successfully removed
 '
 
 test_expect_success 'remove a user account' '
-	flux account -p ${DB_PATH} delete-user user5012 A
-'
-
-test_expect_success 'make sure the user is successfully removed from the DB' '
+	flux account -p ${DB_PATH} delete-user user5012 A &&
 	flux account -p ${DB_PATH} view-user user5012 > deleted_user.out &&
 	grep "User not found in association_table" deleted_user.out
 '
 
 test_expect_success 'add a queue with no optional args to the queue_table' '
 	flux account -p ${DB_PATH} add-queue queue_1
-	flux account -p ${DB_PATH} view-queue queue_1 > new_queue.test &&
-	cat <<-EOF >new_queue.expected
-	queue              min_nodes_per_job  max_nodes_per_job  max_time_per_job   priority           
-	queue_1            1                  1                  60                 0                  
-	EOF
-	test_cmp new_queue.expected new_queue.test
+	flux account -p ${DB_PATH} view-queue queue_1 > new_queue.out &&
+	grep "queue_1" | grep "1" | grep "1" | grep "60" | grep "0" new_queue.out
 	'
 
 test_expect_success 'add another queue with some optional args' '
@@ -160,7 +149,9 @@ test_expect_success 'add another queue with some optional args' '
 '
 
 test_expect_success 'edit some queue information' '
-	flux account -p ${DB_PATH} edit-queue queue_1 --max-nodes-per-job 100
+	flux account -p ${DB_PATH} edit-queue queue_1 --max-nodes-per-job 100 &&
+	flux account -p ${DB_PATH} view-queue queue_1 > edited_max_nodes.out &&
+	grep "queue_1" | grep "100" edited_max_nodes.out
 '
 
 test_expect_success 'edit multiple columns for one queue' '
@@ -169,12 +160,8 @@ test_expect_success 'edit multiple columns for one queue' '
 
 test_expect_success 'reset a queue limit' '
 	flux account -p ${DB_PATH} edit-queue queue_1 --max-nodes-per-job -1 &&
-	flux account -p ${DB_PATH} view-queue queue_1 > reset_limit.test &&
-	cat <<-EOF >reset_limit.expected
-	queue              min_nodes_per_job  max_nodes_per_job  max_time_per_job   priority           
-	queue_1            1                  1                  120                0                  
-	EOF
-	test_cmp reset_limit.expected reset_limit.test
+	flux account -p ${DB_PATH} view-queue queue_1 > reset_limit.out &&
+	grep "queue_1" | grep "1" | grep "1" | grep "120" | grep "0" reset_limit.out
 '
 
 test_expect_success 'remove a queue from the queue_table' '
