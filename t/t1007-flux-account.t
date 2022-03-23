@@ -62,6 +62,12 @@ test_expect_success 'add multiple queues to an existing user account' '
 	grep "expedite,standby" user5012.out
 '
 
+test_expect_success 'edit the max_active_jobs of an existing user' '
+	flux account -p ${DB_PATH} edit-user user5011 --max-active-jobs 999 &&
+	flux account -p ${DB_PATH} view-user user5011 > edited_shares.out &&
+	grep "user5011" | grep "5011" | grep "999" edited_shares.out
+'
+
 test_expect_success 'edit a queue priority' '
 	flux account -p ${DB_PATH} edit-queue expedite --priority=20000 &&
 	flux account -p ${DB_PATH} view-queue expedite > edited_queue.out &&
