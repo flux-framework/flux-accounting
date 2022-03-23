@@ -122,10 +122,7 @@ test_expect_success 'edit a field in a bank account' '
 '
 
 test_expect_success 'remove a bank (and any corresponding users that belong to that bank)' '
-	flux account -p ${DB_PATH} delete-bank C
-'
-
-test_expect_success 'make sure both the DB and the user are successfully removed from DB' '
+	flux account -p ${DB_PATH} delete-bank C &&
 	flux account -p ${DB_PATH} view-bank C > deleted_bank.out &&
 	grep "Bank not found in bank_table" deleted_bank.out &&
 	flux account -p ${DB_PATH} view-user user5014 > deleted_user.out &&
@@ -165,10 +162,7 @@ test_expect_success 'reset a queue limit' '
 '
 
 test_expect_success 'remove a queue from the queue_table' '
-	flux account -p ${DB_PATH} delete-queue queue_2
-'
-
-test_expect_success 'make sure the queue is successfully removed from the DB' '
+	flux account -p ${DB_PATH} delete-queue queue_2 &&
 	flux account -p ${DB_PATH} view-queue queue_2 > deleted_queue.out &&
 	grep "Queue not found in queue_table" deleted_queue.out
 '
