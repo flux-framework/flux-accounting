@@ -142,7 +142,7 @@ def add_edit_user_arg(subparsers):
     subparser_edit_user.add_argument(
         "--queues",
         help="queues the user is allowed to run jobs in",
-        default="",
+        default=None,
         metavar="QUEUES",
     )
 
