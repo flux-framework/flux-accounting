@@ -204,6 +204,69 @@ static int priority_cb (flux_plugin_t *p,
         return -1;
     }
 
+    b = static_cast<bank_info *> (flux_jobtap_job_aux_get (
+                                                    p,
+                                                    FLUX_JOBTAP_CURRENT_JOB,
+                                                    "mf_priority:bank_info"));
+
+    if (b == NULL) {
+        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "mf_priority",
+                                     0, "internal error: bank info is missing");
+
+        return -1;
+    }
+
+    std::map<int, std::map<std::string, struct bank_info>>::iterator it;
+    std::map<std::string, struct bank_info>::iterator bank_it;
+
+    if (b->max_run_jobs == BANK_INFO_MISSING) {
+        // try to look up user again
+        it = users.find (userid);
+        if (it == users.end ()) {
+            return flux_jobtap_priority_unavail (p, args);
+        } else {
+            // make sure user belongs to bank they specified; if no bank was
+            // passed in, look up their default bank
+            if (bank != NULL) {
+                bank_it = it->second.find (std::string (bank));
+                if (bank_it == it->second.end ()) {
+                    flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                                 "mf_priority", 0,
+                                                 "not a member of %s", bank);
+                    return -1;
+                }
+            } else {
+                bank = const_cast<char*> (users_def_bank[userid].c_str ());
+                bank_it = it->second.find (std::string (bank));
+                if (bank_it == it->second.end ()) {
+                    flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                                 "mf_priority", 0,
+                                                 "user/default bank entry "
+                                                 "does not exist");
+                    return -1;
+                }
+            }
+
+            if (bank_it->second.max_run_jobs == BANK_INFO_MISSING) {
+                return flux_jobtap_priority_unavail (p, args);
+            }
+
+            // if we get here, the bank was unknown when this job was first
+            // accepted, and therefore the active and run job counts for this
+            // job need to be incremented here
+            bank_it->second.cur_active_jobs++;
+            bank_it->second.cur_run_jobs++;
+
+            // update current job with user/bank information
+            if (flux_jobtap_job_aux_set (p,
+                                         FLUX_JOBTAP_CURRENT_JOB,
+                                         "mf_priority:bank_info",
+                                         &bank_it->second,
+                                         NULL) < 0)
+                flux_log_error (h, "flux_jobtap_job_aux_set");
+        }
+    }
+
     priority = priority_calculation (p, args, userid, bank, urgency);
 
     if (flux_plugin_arg_pack (args,
@@ -215,19 +278,6 @@ static int priority_cb (flux_plugin_t *p,
                   LOG_ERR,
                   "flux_plugin_arg_pack: %s",
                   flux_plugin_arg_strerror (args));
-        return -1;
-    }
-
-    b = static_cast<bank_info *> (flux_jobtap_job_aux_get (
-                                                    p,
-                                                    FLUX_JOBTAP_CURRENT_JOB,
-                                                    "mf_priority:bank_info"));
-
-    if (b == NULL) {
-        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "mf_priority",
-                                     0, "job.state.priority: bank info is " \
-                                     "missing");
-
         return -1;
     }
 
@@ -501,6 +551,8 @@ static int inactive_cb (flux_plugin_t *p,
 {
     int userid;
     struct bank_info *b;
+    std::map<int, std::map<std::string, struct bank_info>>::iterator it;
+    std::map<std::string, struct bank_info>::iterator bank_it;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
@@ -541,6 +593,11 @@ static int inactive_cb (flux_plugin_t *p,
 
         b->held_jobs.erase (b->held_jobs.begin ());
     }
+
+    // delete user's "DNE" entry in internal map (if it exists)
+    it = users.find (userid);
+    if (it != users.end ())
+        it->second.erase ("DNE");
 
     return 0;
 }
