@@ -157,6 +157,24 @@ error:
 }
 
 
+static void reprior_cb (flux_t *h,
+                        flux_msg_handler_t *mh,
+                        const flux_msg_t *msg,
+                        void *arg)
+{
+    flux_plugin_t *p = (flux_plugin_t*) arg;
+
+    if (flux_jobtap_reprioritize_all (p) < 0)
+        goto error;
+    if (flux_respond (h, msg, NULL) < 0)
+        flux_log_error (h, "flux_respond");
+    return;
+error:
+    flux_respond_error (h, msg, errno, flux_msg_last_error (msg));
+
+}
+
+
 /*
  * Unpack the urgency and userid from a submitted job and call
  * priority_calculation (), which will return a new job priority to be packed.
@@ -542,7 +560,8 @@ static const struct flux_plugin_handler tab[] = {
 extern "C" int flux_plugin_init (flux_plugin_t *p)
 {
     if (flux_plugin_register (p, "mf_priority", tab) < 0
-        || flux_jobtap_service_register (p, "rec_update", rec_update_cb, p) < 0)
+        || flux_jobtap_service_register (p, "rec_update", rec_update_cb, p)
+        || flux_jobtap_service_register (p, "reprioritize", reprior_cb, p) < 0)
         return -1;
     return 0;
 }

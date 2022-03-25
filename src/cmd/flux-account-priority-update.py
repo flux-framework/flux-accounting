@@ -70,6 +70,7 @@ def bulk_update(path):
     data = {"data": bulk_user_data}
 
     flux.Flux().rpc("job-manager.mf_priority.rec_update", json.dumps(data)).get()
+    flux.Flux().rpc("job-manager.mf_priority.reprioritize")
 
 
 def main():
