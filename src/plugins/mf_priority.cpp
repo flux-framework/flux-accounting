@@ -28,6 +28,8 @@ extern "C" {
 #include <cinttypes>
 #include <vector>
 
+#define BANK_INFO_MISSING -9
+
 std::map<int, std::map<std::string, struct bank_info>> users;
 std::map<int, std::string> users_def_bank;
 
@@ -217,6 +219,29 @@ static int priority_cb (flux_plugin_t *p,
 }
 
 
+static void add_missing_bank_info (flux_plugin_t *p, flux_t *h, int userid)
+{
+    struct bank_info *b;
+
+    b = &users[userid]["DNE"];
+    users_def_bank[userid] = "DNE";
+
+    b->fairshare = 0.1;
+    b->max_run_jobs = BANK_INFO_MISSING;
+    b->cur_run_jobs = 0;
+    b->max_active_jobs = 0;
+    b->cur_active_jobs = 0;
+    b->held_jobs = std::vector<long int>();
+
+    if (flux_jobtap_job_aux_set (p,
+                                 FLUX_JOBTAP_CURRENT_JOB,
+                                 "mf_priority:bank_info",
+                                 b,
+                                 NULL) < 0)
+        flux_log_error (h, "flux_jobtap_job_aux_set");
+}
+
+
 /*
  * Look up the userid of the submitted job in the multimap; if user is not found
  * in the map, reject the job saying the user wasn't found in the
@@ -247,9 +272,12 @@ static int validate_cb (flux_plugin_t *p,
 
     // make sure user belongs to flux-accounting DB
     it = users.find (userid);
-    if (it == users.end ())
-        return flux_jobtap_reject_job (p, args,
-                                       "user not found in flux-accounting DB");
+    if (it == users.end ()) {
+        // user does not exist in internal map yet, so create a bank_info
+        // struct that signifies it's going to be held in PRIORITY
+        add_missing_bank_info (p, h, userid);
+        return 0;
+    }
 
     // make sure user belongs to bank they specified; if no bank was passed in,
     // look up their default bank
@@ -280,29 +308,6 @@ static int validate_cb (flux_plugin_t *p,
     // submitted jobs will be rejected
     if (max_active_jobs > 0 && cur_active_jobs >= max_active_jobs)
         return flux_jobtap_reject_job (p, args, "user has max active jobs");
-
-    // special case where the user/bank bank_info struct is set to NULL; used
-    // for testing the "if (b == NULL)" checks
-    if (max_run_jobs == -1) {
-        if (flux_jobtap_job_aux_set (p,
-                                     FLUX_JOBTAP_CURRENT_JOB,
-                                     "mf_priority:bank_info",
-                                     NULL,
-                                     NULL) < 0)
-            flux_log_error (h, "flux_jobtap_job_aux_set");
-
-        return 0;
-    }
-
-
-    if (flux_jobtap_job_aux_set (p,
-                                 FLUX_JOBTAP_CURRENT_JOB,
-                                 "mf_priority:bank_info",
-                                 &bank_it->second,
-                                 NULL) < 0)
-        flux_log_error (h, "flux_jobtap_job_aux_set");
-
-    bank_it->second.cur_active_jobs++;
 
     return 0;
 }
