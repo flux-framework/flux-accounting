@@ -313,6 +313,118 @@ static int validate_cb (flux_plugin_t *p,
 }
 
 
+static int new_cb (flux_plugin_t *p,
+                        const char *topic,
+                        flux_plugin_arg_t *args,
+                        void *data)
+{
+    int userid;
+    char *bank = NULL;
+    int max_run_jobs, cur_active_jobs, max_active_jobs = 0;
+    double fairshare = 0.0;
+    struct bank_info *b;
+
+    std::map<int, std::map<std::string, struct bank_info>>::iterator it;
+    std::map<std::string, struct bank_info>::iterator bank_it;
+
+    flux_t *h = flux_jobtap_get_flux (p);
+    if (flux_plugin_arg_unpack (args,
+                                FLUX_PLUGIN_ARG_IN,
+                                "{s:i, s{s{s{s?s}}}}",
+                                "userid", &userid,
+                                "jobspec", "attributes", "system",
+                                "bank", &bank) < 0) {
+        return flux_jobtap_reject_job (p, args, "unable to unpack bank arg");
+    }
+
+    b = static_cast<bank_info *> (flux_jobtap_job_aux_get (
+                                                    p,
+                                                    FLUX_JOBTAP_CURRENT_JOB,
+                                                    "mf_priority:bank_info"));
+
+    if (b != NULL) {
+        max_run_jobs = b->max_run_jobs;
+        fairshare = b->fairshare;
+        cur_active_jobs = b->cur_active_jobs;
+        max_active_jobs = b->max_active_jobs;
+    } else {
+        // make sure user belongs to flux-accounting DB
+        it = users.find (userid);
+        if (it == users.end ()) {
+            // user does not exist in internal map yet, so create a bank_info
+            // struct that signifies it's going to be held in PRIORITY
+            add_missing_bank_info (p, h, userid);
+            return 0;
+        }
+
+        // make sure user belongs to bank they specified; if no bank was passed
+        // in, look up their default bank
+        if (bank != NULL) {
+            bank_it = it->second.find (std::string (bank));
+            if (bank_it == it->second.end ()) {
+                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                             "mf_priority", 0,
+                                             "job.new: not a member of %s",
+                                             bank);
+                return -1;
+            }
+        } else {
+            bank = const_cast<char*> (users_def_bank[userid].c_str ());
+            bank_it = it->second.find (std::string (bank));
+            if (bank_it == it->second.end ()) {
+                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                             "mf_priority", 0,
+                                             "job.new: user/default bank "
+                                             "entry does not exist");
+                return -1;
+            }
+        }
+
+        max_run_jobs = bank_it->second.max_run_jobs;
+        fairshare = bank_it->second.fairshare;
+        cur_active_jobs = bank_it->second.cur_active_jobs;
+        max_active_jobs = bank_it->second.max_active_jobs;
+
+        b = &bank_it->second;
+    }
+
+    // if a user's fairshare value is 0, that means they shouldn't be able
+    // to run jobs on a system
+    if (fairshare == 0)
+        return flux_jobtap_reject_job (p, args, "user fairshare value is 0");
+
+    // if a user/bank has reached their max_active_jobs limit, subsequently
+    // submitted jobs will be rejected
+    if (max_active_jobs > 0 && cur_active_jobs >= max_active_jobs)
+        return flux_jobtap_reject_job (p, args, "user has max active jobs");
+
+    // special case where the user/bank bank_info struct is set to NULL; used
+    // for testing the "if (b == NULL)" checks
+    if (max_run_jobs == -1) {
+        if (flux_jobtap_job_aux_set (p,
+                                     FLUX_JOBTAP_CURRENT_JOB,
+                                     "mf_priority:bank_info",
+                                     NULL,
+                                     NULL) < 0)
+            flux_log_error (h, "flux_jobtap_job_aux_set");
+
+        return 0;
+    }
+
+
+    if (flux_jobtap_job_aux_set (p,
+                                 FLUX_JOBTAP_CURRENT_JOB,
+                                 "mf_priority:bank_info",
+                                 b,
+                                 NULL) < 0)
+        flux_log_error (h, "flux_jobtap_job_aux_set");
+
+    b->cur_active_jobs++;
+
+    return 0;
+}
+
+
 static int depend_cb (flux_plugin_t *p,
                       const char *topic,
                       flux_plugin_arg_t *args,
@@ -418,6 +530,7 @@ static int inactive_cb (flux_plugin_t *p,
 
 static const struct flux_plugin_handler tab[] = {
     { "job.validate", validate_cb, NULL },
+    { "job.new", new_cb, NULL },
     { "job.state.priority", priority_cb, NULL },
     { "job.priority.get", priority_cb, NULL },
     { "job.state.inactive", inactive_cb, NULL },
