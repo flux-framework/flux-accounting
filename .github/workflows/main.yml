@@ -33,7 +33,7 @@ jobs:
         pip install -r requirements.txt
     - name: Lint with black
       run: |
-        pip install black==20.8b1
+        pip install --upgrade black==20.8b1 click==8.0.2
         # return the status of running black formatter
         black . --check
 
