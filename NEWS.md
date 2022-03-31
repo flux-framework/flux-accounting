@@ -1,3 +1,25 @@
+flux-accounting version 0.15.0 - 2022-03-31
+-------------------------------------------
+
+#### Fixes
+
+* Fix incorrect job usage calculation for users who belong to multiple banks (#219)
+
+* Update the `pop-db` command to include the `max_active_jobs`, `max_running_jobs`
+  limits defined in the `association_table` (#224)
+
+* Remove the unused ‘deleted’ column from the `association_table` in the flux-accounting DB (#224)
+
+* Fix the default value for the `--queues` optional argument in the `edit-user` command (#225)
+
+#### Features
+
+* Add an `rc1` script that populates multi-factor priority plugin with flux-accounting DB
+information on instance startup or restart (#223)
+
+* Allow multi-factor priority plugin to be loaded and hold jobs without user/bank
+information (#227)
+
 flux-accounting version 0.14.0 - 2022-02-28
 -------------------------------------------
 
