@@ -21,12 +21,6 @@ test_expect_success 'check that mf_priority plugin is loaded' '
 	flux jobtap list | grep mf_priority
 '
 
-test_expect_success 'try to submit a job when user does not exist in DB' '
-	test_must_fail flux mini submit -n1 hostname > failure.out 2>&1 &&
-	test_debug "cat failure.out" &&
-	grep "user not found in flux-accounting DB" failure.out
-'
-
 test_expect_success 'send an empty payload to make sure unpack fails' '
 	cat <<-EOF >bad_payload.py &&
 	import flux
