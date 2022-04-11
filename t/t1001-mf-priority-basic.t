@@ -151,35 +151,6 @@ test_expect_success 'reject job when invalid bank format is passed in' '
 	grep "unable to unpack bank arg" invalid_fmt.out
 '
 
-test_expect_success 'create a fake payload with a 0 fairshare key-value pair' '
-	cat <<-EOF >empty_fairshare.py
-	import flux
-	import pwd
-	import getpass
-	import json
-
-	username = getpass.getuser()
-	userid = pwd.getpwnam(username).pw_uid
-	# create an array of JSON payloads
-	bulk_update_data = {
-		"data" : [
-			{"userid": userid, "bank": "account4", "def_bank": "account3", "fairshare": 0.0, "max_running_jobs": 10, "max_active_jobs": 12}
-		]
-	}
-	flux.Flux().rpc("job-manager.mf_priority.rec_update", json.dumps(bulk_update_data)).get()
-	EOF
-'
-
-test_expect_success 'update plugin with sample test data' '
-	flux python empty_fairshare.py
-'
-
-test_expect_success 'submit a job with new bank and 0 fairshare should result in a job rejection' '
-	test_must_fail flux mini submit --setattr=system.bank=account4 hostname > zero_fairshare.out 2>&1 &&
-	test_debug "zero_fairshare.out" &&
-	grep "user fairshare value is 0" zero_fairshare.out
-'
-
 test_expect_success 'pass special key to user/bank struct to nullify information' '
 	cat <<-EOF >null_struct.json
 	{
