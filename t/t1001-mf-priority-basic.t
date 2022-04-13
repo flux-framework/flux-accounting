@@ -90,7 +90,8 @@ test_expect_success 'submit a job with default urgency' '
 	cat <<-EOF >job1.expected &&
 	45321
 	EOF
-	test_cmp job1.expected job1.test
+	test_cmp job1.expected job1.test &&
+	flux job cancel $jobid
 '
 
 test_expect_success 'submit a job with custom urgency' '
@@ -99,7 +100,8 @@ test_expect_success 'submit a job with custom urgency' '
 	cat <<-EOF >job2.expected &&
 	45320
 	EOF
-	test_cmp job2.expected job2.test
+	test_cmp job2.expected job2.test &&
+	flux job cancel $jobid
 '
 
 test_expect_success 'submit a job with urgency of 0' '
@@ -118,7 +120,8 @@ test_expect_success 'submit a job with urgency of 31' '
 	cat <<-EOF >job4.expected &&
 	4294967295
 	EOF
-	test_cmp job4.expected job4.test
+	test_cmp job4.expected job4.test &&
+	flux job cancel $jobid
 '
 
 test_expect_success 'submit a job with other bank' '
@@ -127,7 +130,8 @@ test_expect_success 'submit a job with other bank' '
 	cat <<-EOF >job5.expected &&
 	11345
 	EOF
-	test_cmp job5.expected job5.test
+	test_cmp job5.expected job5.test &&
+	flux job cancel $jobid
 '
 
 test_expect_success 'submit a job using default bank' '
@@ -136,7 +140,8 @@ test_expect_success 'submit a job using default bank' '
 	cat <<-EOF >job6.expected &&
 	45321
 	EOF
-	test_cmp job6.expected job6.test
+	test_cmp job6.expected job6.test &&
+	flux job cancel $jobid
 '
 
 test_expect_success 'submit a job using a bank the user does not belong to' '
@@ -201,7 +206,8 @@ test_expect_success 'resend user/bank information with valid data and successful
 	cat <<-EOF >job2.expected &&
 	45321
 	EOF
-	test_cmp job2.expected job2.test
+	test_cmp job2.expected job2.test &&
+	flux job cancel $jobid2
 '
 
 test_done
