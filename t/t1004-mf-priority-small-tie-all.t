@@ -25,15 +25,15 @@ test_expect_success 'create a group of users with many ties in fairshare values'
 	cat <<-EOF >fake_small_tie_all.json
 	{
 	    "data" : [
-	        {"userid": 5011, "bank": "account1", "def_bank": "account1", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7},
-	        {"userid": 5012, "bank": "account1", "def_bank": "account1", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7},
-	        {"userid": 5013, "bank": "account1", "def_bank": "account1", "fairshare": 1, "max_running_jobs": 5, "max_active_jobs": 7},
-	        {"userid": 5021, "bank": "account2", "def_bank": "account2", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7},
-	        {"userid": 5022, "bank": "account2", "def_bank": "account2", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7},
-	        {"userid": 5023, "bank": "account2", "def_bank": "account2", "fairshare": 1, "max_running_jobs": 5, "max_active_jobs": 7},
-	        {"userid": 5031, "bank": "account3", "def_bank": "account3", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7},
-	        {"userid": 5032, "bank": "account3", "def_bank": "account3", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7},
-	        {"userid": 5033, "bank": "account3", "def_bank": "account3", "fairshare": 1, "max_running_jobs": 5, "max_active_jobs": 7}
+	        {"userid": 5011, "bank": "account1", "def_bank": "account1", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""},
+	        {"userid": 5012, "bank": "account1", "def_bank": "account1", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""},
+	        {"userid": 5013, "bank": "account1", "def_bank": "account1", "fairshare": 1, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""},
+	        {"userid": 5021, "bank": "account2", "def_bank": "account2", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""},
+	        {"userid": 5022, "bank": "account2", "def_bank": "account2", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""},
+	        {"userid": 5023, "bank": "account2", "def_bank": "account2", "fairshare": 1, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""},
+	        {"userid": 5031, "bank": "account3", "def_bank": "account3", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""},
+	        {"userid": 5032, "bank": "account3", "def_bank": "account3", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""},
+	        {"userid": 5033, "bank": "account3", "def_bank": "account3", "fairshare": 1, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""}
 	    ]
 	}
 	EOF
@@ -41,6 +41,27 @@ test_expect_success 'create a group of users with many ties in fairshare values'
 
 test_expect_success 'send the user information to the plugin' '
 	flux python ${SEND_PAYLOAD} fake_small_tie_all.json
+'
+
+test_expect_success 'add a default queue and send it to the plugin' '
+	cat <<-EOF >fake_payload.py
+	import flux
+	import json
+
+	bulk_queue_data = {
+		"data" : [
+			{
+				"queue": "default",
+				"priority": 0,
+				"min_nodes_per_job": 0,
+				"max_nodes_per_job": 5,
+				"max_time_per_job": 64000
+			}
+		]
+	}
+	flux.Flux().rpc("job-manager.mf_priority.rec_q_update", json.dumps(bulk_queue_data)).get()
+	EOF
+	flux python fake_payload.py
 '
 
 test_expect_success 'stop the queue' '

@@ -37,6 +37,18 @@ test_expect_success 'create fake_payload.py' '
 		]
 	}
 	flux.Flux().rpc("job-manager.mf_priority.rec_update", json.dumps(bulk_update_data)).get()
+	bulk_queue_data = {
+		"data" : [
+			{
+				"queue": "default",
+				"priority": 0,
+				"min_nodes_per_job": 0,
+				"max_nodes_per_job": 5,
+				"max_time_per_job": 64000
+			}
+		]
+	}
+	flux.Flux().rpc("job-manager.mf_priority.rec_q_update", json.dumps(bulk_queue_data)).get()
 	flux.Flux().rpc("job-manager.mf_priority.reprioritize")
 	EOF
 '

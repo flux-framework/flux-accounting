@@ -50,11 +50,13 @@ def bulk_update(path):
 
     data = {}
     bulk_user_data = []
+    bulk_q_data = []
 
     # fetch all rows from association_table (will print out tuples)
     for row in cur.execute(
         """SELECT userid, bank, default_bank,
-           fairshare, max_running_jobs, max_active_jobs FROM association_table"""
+           fairshare, max_running_jobs, max_active_jobs,
+           queues FROM association_table"""
     ):
         # create a JSON payload with the results of the query
         single_user_data = {
@@ -64,13 +66,34 @@ def bulk_update(path):
             "fairshare": float(row[3]),
             "max_running_jobs": int(row[4]),
             "max_active_jobs": int(row[5]),
+            "queues": str(row[6]),
         }
         bulk_user_data.append(single_user_data)
 
     data = {"data": bulk_user_data}
 
     flux.Flux().rpc("job-manager.mf_priority.rec_update", json.dumps(data)).get()
+
+    # fetch all rows from queue_table
+    for row in cur.execute("SELECT * FROM queue_table"):
+        # create a JSON payload with the results of the query
+        single_q_data = {
+            "queue": str(row[0]),
+            "min_nodes_per_job": int(row[1]),
+            "max_nodes_per_job": int(row[2]),
+            "max_time_per_job": int(row[3]),
+            "priority": int(row[4]),
+        }
+        bulk_q_data.append(single_q_data)
+
+    data = {"data": bulk_q_data}
+
+    flux.Flux().rpc("job-manager.mf_priority.rec_q_update", json.dumps(data)).get()
+
     flux.Flux().rpc("job-manager.mf_priority.reprioritize")
+
+    # close DB connection
+    cur.close()
 
 
 def main():

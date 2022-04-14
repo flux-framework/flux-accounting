@@ -44,11 +44,39 @@ test_expect_success 'create fake_payload.py' '
 	# create an array of JSON payloads
 	bulk_update_data = {
 		"data" : [
-			{"userid": userid, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 10, "max_active_jobs": 12},
-			{"userid": userid, "bank": "account2", "def_bank": "account3", "fairshare": 0.11345, "max_running_jobs": 10, "max_active_jobs": 12}
+			{
+				"userid": userid,
+				"bank": "account3",
+				"def_bank": "account3",
+				"fairshare": 0.45321,
+				"max_running_jobs": 10,
+				"max_active_jobs": 12,
+				"queues": "standby,special"
+			},
+			{
+				"userid": userid,
+				"bank": "account2",
+				"def_bank": "account3",
+				"fairshare": 0.11345,
+				"max_running_jobs": 10,
+				"max_active_jobs": 12,
+				"queues": "standby"
+			}
 		]
 	}
 	flux.Flux().rpc("job-manager.mf_priority.rec_update", json.dumps(bulk_update_data)).get()
+	bulk_queue_data = {
+		"data" : [
+			{
+				"queue": "default",
+				"priority": 0,
+				"min_nodes_per_job": 0,
+				"max_nodes_per_job": 5,
+				"max_time_per_job": 64000
+			}
+		]
+	}
+	flux.Flux().rpc("job-manager.mf_priority.rec_q_update", json.dumps(bulk_queue_data)).get()
 	EOF
 '
 
@@ -156,7 +184,15 @@ test_expect_success 'pass special key to user/bank struct to nullify information
 	cat <<-EOF >null_struct.json
 	{
 		"data" : [
-			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": -1, "max_active_jobs": 12}
+			{
+				"userid": 5011,
+				"bank": "account3",
+				"def_bank": "account3",
+				"fairshare": 0.45321,
+				"max_running_jobs": -1,
+				"max_active_jobs": 12,
+				"queues": "standby,special"
+			}
 		]
 	}
 	EOF
@@ -176,7 +212,15 @@ test_expect_success 'resend user/bank information with valid data and successful
 	cat <<-EOF >valid_info.json
 	{
 		"data" : [
-			{"userid": 5011, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 2, "max_active_jobs": 4}
+			{
+				"userid": 5011,
+				"bank": "account3",
+				"def_bank": "account3",
+				"fairshare": 0.45321,
+				"max_running_jobs": 2,
+				"max_active_jobs": 4,
+				"queues": "standby,special"
+			}
 		]
 	}
 	EOF
