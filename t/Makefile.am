@@ -14,7 +14,8 @@ TESTSCRIPTS = \
 	t1010-update-usage.t \
 	t1011-job-archive-interface.t \
 	t1012-mf-priority-load.t \
-	t1013-mf-priority-queues.t
+	t1013-mf-priority-queues.t \
+	t1014-mf-priority-dne.t
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
