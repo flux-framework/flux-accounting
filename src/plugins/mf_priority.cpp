@@ -790,11 +790,6 @@ static int inactive_cb (flux_plugin_t *p,
         b->held_jobs.erase (b->held_jobs.begin ());
     }
 
-    // delete user's "DNE" entry in internal map (if it exists)
-    it = users.find (userid);
-    if (it != users.end ())
-        it->second.erase ("DNE");
-
     return 0;
 }
 
