@@ -1,3 +1,14 @@
+flux-accounting version 0.16.0 - 2022-04-30
+------------------------------------------
+
+#### Fixes
+
+* Fix memory corruption due to use-after-free of the "DNE" bank entry (#233)
+
+#### Features
+
+* Add queue priority to job priority calculation (#207)
+
 flux-accounting version 0.15.0 - 2022-03-31
 -------------------------------------------
 
