@@ -143,11 +143,11 @@ class TestAccountingCLI(unittest.TestCase):
         u.delete_user(acct_conn, username="fluxuser", bank="acct")
 
         cursor.execute(
-            "SELECT * FROM association_table WHERE username='fluxuser' AND bank='acct'"
+            "SELECT deleted FROM association_table WHERE username='fluxuser' AND bank='acct'"
         )
-        num_rows_after_delete = cursor.fetchall()
+        rows = cursor.fetchall()
 
-        self.assertEqual(len(num_rows_after_delete), 0)
+        self.assertEqual(rows[0][0], 1)
 
     # check for a new user's default bank
     def test_07_check_default_bank_new_user(self):
