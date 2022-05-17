@@ -143,7 +143,7 @@ def delete_bank(conn, bank):
     cursor = conn.cursor()
 
     try:
-        cursor.execute("DELETE FROM bank_table WHERE bank=?", (bank,))
+        cursor.execute("UPDATE bank_table SET deleted=1 WHERE bank=?", (bank,))
 
         # helper function to traverse the bank table and delete all of its sub banks
         def get_sub_banks(bank):
@@ -162,7 +162,9 @@ def delete_bank(conn, bank):
             # else, delete all of its sub banks and continue traversing
             else:
                 for row in rows:
-                    cursor.execute("DELETE FROM bank_table WHERE bank=?", (row[0],))
+                    cursor.execute(
+                        "UPDATE bank_table SET deleted=1 WHERE bank=?", (row[0],)
+                    )
                     get_sub_banks(row[0])
 
         get_sub_banks(bank)
