@@ -89,6 +89,7 @@ def create_db(
             CREATE TABLE IF NOT EXISTS association_table (
                 creation_time    bigint(20)                         NOT NULL,
                 mod_time         bigint(20)  DEFAULT 0              NOT NULL,
+                deleted          int(11)     DEFAULT 0              NOT NULL,
                 username         tinytext                           NOT NULL,
                 userid           int(11)     DEFAULT 65534          NOT NULL,
                 bank             tinytext                           NOT NULL,
