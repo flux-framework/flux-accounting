@@ -126,13 +126,13 @@ test_expect_success 'remove a bank (and any corresponding users that belong to t
 	flux account -p ${DB_PATH} view-bank C > deleted_bank.out &&
 	grep "Bank not found in bank_table" deleted_bank.out &&
 	flux account -p ${DB_PATH} view-user user5014 > deleted_user.out &&
-	grep "User not found in association_table" deleted_user.out
+	grep -f ${EXPECTED_FILES}/deleted_user.expected deleted_user.out
 '
 
 test_expect_success 'remove a user account' '
 	flux account -p ${DB_PATH} delete-user user5012 A &&
 	flux account -p ${DB_PATH} view-user user5012 > deleted_user.out &&
-	grep "User not found in association_table" deleted_user.out
+	grep -f ${EXPECTED_FILES}/deleted_user.expected deleted_user.out
 '
 
 test_expect_success 'add a queue with no optional args to the queue_table' '
