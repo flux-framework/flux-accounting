@@ -1,5 +1,5 @@
-bank_id         bank            parent_bank     shares          
-2               A               root            1               
+bank_id         bank            deleted         parent_bank     shares          
+2               A               0               root            1               
 
 Users Under Bank A:
 

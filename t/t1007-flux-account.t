@@ -123,8 +123,8 @@ test_expect_success 'edit a field in a bank account' '
 
 test_expect_success 'remove a bank (and any corresponding users that belong to that bank)' '
 	flux account -p ${DB_PATH} delete-bank C &&
-	flux account -p ${DB_PATH} view-bank C > deleted_bank.out &&
-	grep "Bank not found in bank_table" deleted_bank.out &&
+	flux account -p ${DB_PATH} view-bank C > deleted_bank.test &&
+	grep -f ${EXPECTED_FILES}/deleted_bank.expected deleted_bank.test &&
 	flux account -p ${DB_PATH} view-user user5014 > deleted_user.out &&
 	grep -f ${EXPECTED_FILES}/deleted_user.expected deleted_user.out
 '

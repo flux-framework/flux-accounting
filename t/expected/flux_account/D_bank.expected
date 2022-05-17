@@ -1,5 +1,5 @@
-bank_id         bank            parent_bank     shares          
-5               D               root            1               
+bank_id         bank            deleted         parent_bank     shares          
+5               D               0               root            1               
 
 D
  E
