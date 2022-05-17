@@ -72,12 +72,13 @@ class TestAccountingCLI(unittest.TestCase):
         rows = cur.fetchall()
         self.assertEqual(len(rows), 1)
 
-    # removing a bank currently in the bank_table
+    # remove a bank currently in the bank_table
     def test_05_delete_bank_success(self):
         b.delete_bank(acct_conn, bank="sub_account_1")
-        cur.execute("SELECT * FROM bank_table WHERE bank='sub_account_1'")
+        cur.execute("SELECT deleted FROM bank_table WHERE bank='sub_account_1'")
         rows = cur.fetchall()
-        self.assertEqual(len(rows), 0)
+
+        self.assertEqual(rows[0][0], 1)
 
     # deleting a parent bank should remove all of its sub banks
     def test_06_delete_parent_bank(self):
@@ -93,9 +94,17 @@ class TestAccountingCLI(unittest.TestCase):
         b.add_bank(acct_conn, bank="G", parent_bank="C", shares=1)
 
         b.delete_bank(acct_conn, bank="A")
-        cur.execute("SELECT * FROM bank_table")
+        cur.execute("SELECT deleted FROM bank_table WHERE bank='A'")
         rows = cur.fetchall()
-        self.assertEqual(len(rows), 0)
+        self.assertEqual(rows[0][0], 1)
+
+        cur.execute("SELECT deleted FROM bank_table WHERE bank='B'")
+        rows = cur.fetchall()
+        self.assertEqual(rows[0][0], 1)
+
+        cur.execute("SELECT deleted FROM bank_table WHERE bank='F'")
+        rows = cur.fetchall()
+        self.assertEqual(rows[0][0], 1)
 
     # edit a bank value
     def test_07_edit_bank_value(self):
