@@ -146,11 +146,10 @@ def add_user(
 
 
 def delete_user(conn, username, bank):
-    # delete user account from association_table
-    delete_stmt = "DELETE FROM association_table WHERE username=? AND bank=?"
-    cursor = conn.cursor()
-    cursor.execute(
-        delete_stmt,
+    # set deleted flag in user row
+    update_stmt = "UPDATE association_table SET deleted=1 WHERE username=? AND bank=?"
+    conn.execute(
+        update_stmt,
         (
             username,
             bank,
