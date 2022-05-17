@@ -7,6 +7,7 @@ SMALL_NO_TIE=${SHARNESS_TEST_SRCDIR}/expected/test_dbs/small_no_tie.db
 SMALL_TIE=${SHARNESS_TEST_SRCDIR}/expected/test_dbs/small_tie.db
 SMALL_TIE_ALL=${SHARNESS_TEST_SRCDIR}/expected/test_dbs/small_tie_all.db
 OUT_OF_INSERT_ORDER=${SHARNESS_TEST_SRCDIR}/expected/test_dbs/out_of_insert_order.db
+DB_PATH=$(pwd)/FluxAccountingTestHierarchy.db
 
 test_expect_success 'create hierarchy output from C++ - small_no_tie.db' '
     flux account-shares -p ${SMALL_NO_TIE} > test_small_no_tie.txt
@@ -86,6 +87,32 @@ test_expect_success 'create hierarchy output from C++ - out_of_insert_order.db' 
 
 test_expect_success 'compare hierarchy outputs - out_of_insert_order.db' '
     test_cmp ${SHARNESS_TEST_SRCDIR}/expected/out_of_insert_order.txt test_out_of_insert_order.txt
+'
+
+test_expect_success 'create a test DB and add some banks and users' '
+    flux account -p $(pwd)/FluxAccountingTestHierarchy.db create-db &&
+    flux account -p ${DB_PATH} add-bank root 1 &&
+	flux account -p ${DB_PATH} add-bank --parent-bank=root A 1 &&
+	flux account -p ${DB_PATH} add-bank --parent-bank=root B 1 &&
+	flux account -p ${DB_PATH} add-bank --parent-bank=root C 1 &&
+    flux account -p ${DB_PATH} add-user --username=user5011 --userid=5011 --bank=A &&
+	flux account -p ${DB_PATH} add-user --username=user5012 --userid=5012 --bank=A &&
+	flux account -p ${DB_PATH} add-user --username=user5013 --userid=5013 --bank=B &&
+	flux account -p ${DB_PATH} add-user --username=user5014 --userid=5014 --bank=C
+'
+
+test_expect_success 'print hierarchy' '
+    flux account-shares -p ${DB_PATH} > before_delete.test &&
+    test_cmp ${SHARNESS_TEST_SRCDIR}/expected/before_delete.expected before_delete.test
+'
+
+test_expect_success 'delete a user' '
+    flux account -p ${DB_PATH} delete-user user5012 A
+'
+
+test_expect_success 'print hierarchy again and check that deleted user does not show up in hierarchy' '
+    flux account-shares -p ${DB_PATH} > after_delete.test &&
+    test_cmp ${SHARNESS_TEST_SRCDIR}/expected/after_delete.expected after_delete.test
 '
 
 test_done

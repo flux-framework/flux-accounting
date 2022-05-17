@@ -34,6 +34,8 @@ EXTRA_DIST= \
 	expected/out_of_insert_order.txt \
 	expected/post_fshare_update.expected \
 	expected/pre_fshare_update.expected \
+	expected/before_delete.expected \
+	expected/after_delete.expected \
 	expected/small_no_tie_parsable.txt \
 	expected/small_no_tie.txt \
 	expected/small_tie_all_parsable.txt \
