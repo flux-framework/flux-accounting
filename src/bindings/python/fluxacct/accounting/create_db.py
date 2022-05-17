@@ -114,6 +114,7 @@ def create_db(
             CREATE TABLE IF NOT EXISTS bank_table (
                 bank_id     integer PRIMARY KEY AUTOINCREMENT,
                 bank        text                NOT NULL,
+                deleted     int(11) DEFAULT 0   NOT NULL,
                 parent_bank text    DEFAULT '',
                 shares      int                 NOT NULL
         );"""
