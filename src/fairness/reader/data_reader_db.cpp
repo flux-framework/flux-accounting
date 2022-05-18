@@ -294,8 +294,10 @@ std::shared_ptr<weighted_tree_node_t> data_reader_db_t::get_sub_banks (
         while (rc == SQLITE_ROW) {
             std::string bank = reinterpret_cast<char const *> (
                 sqlite3_column_text (c_sub_banks, 0));
+            int deleted = sqlite3_column_int (c_sub_banks, 1);
 
-            banks.push_back (bank);
+            if (deleted == 0)
+                banks.push_back (bank);
             rc = sqlite3_step (c_sub_banks);
         }
         if (rc == SQLITE_ERROR) {
@@ -360,8 +362,8 @@ std::shared_ptr<weighted_tree_node_t> data_reader_db_t::load_accounting_db (
 
     s_shrs = "SELECT bank_table.shares FROM bank_table WHERE bank=?";
 
-    s_sub_banks = "SELECT bank_table.bank FROM bank_table WHERE parent_bank=? "
-                  "ORDER BY bank_table.bank";
+    s_sub_banks = "SELECT bank_table.bank, bank_table.deleted FROM bank_table "
+                  "WHERE parent_bank=? ORDER BY bank_table.bank";
 
     s_assoc = "SELECT association_table.username, association_table.shares, "
               "association_table.bank, association_table.job_usage, "
