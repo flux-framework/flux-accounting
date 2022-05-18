@@ -43,6 +43,7 @@ EXTRA_DIST= \
 	expected/print_hierarchy/small_tie.txt \
 	expected/print_hierarchy/before_delete.expected \
 	expected/print_hierarchy/after_delete.expected \
+	expected/print_hierarchy/after_bank_delete.expected \
 	expected/update_fshare/post_fshare_update.expected \
 	expected/update_fshare/pre_fshare_update.expected \
 	expected/test_dbs/out_of_insert_order.db \
