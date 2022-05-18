@@ -36,6 +36,7 @@ EXTRA_DIST= \
 	expected/pre_fshare_update.expected \
 	expected/before_delete.expected \
 	expected/after_delete.expected \
+	expected/after_bank_delete.expected \
 	expected/small_no_tie_parsable.txt \
 	expected/small_no_tie.txt \
 	expected/small_tie_all_parsable.txt \

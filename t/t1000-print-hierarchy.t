@@ -115,4 +115,12 @@ test_expect_success 'print hierarchy again and check that deleted user does not 
     test_cmp ${SHARNESS_TEST_SRCDIR}/expected/after_delete.expected after_delete.test
 '
 
+test_expect_success 'delete a bank' '
+    flux account -p ${DB_PATH} delete-bank A
+'
+test_expect_success 'print hierarchy again and check that deleted bank or users do not show up in hierarchy' '
+    flux account-shares -p ${DB_PATH} > after_bank_delete.test &&
+    test_cmp ${SHARNESS_TEST_SRCDIR}/expected/after_bank_delete.expected after_bank_delete.test
+'
+
 test_done
