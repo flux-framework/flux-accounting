@@ -58,11 +58,11 @@ test_expect_success 'stop the queue' '
 	flux queue stop
 '
 
-test_expect_success 'trying to submit a job without specifying a queue should attempt to use default queue' '
-	test_must_fail flux python ${SUBMIT_AS} 5011 -n1 hostname > no_default_queue.out 2>&1 &&
-	test_debug "no_default_queue.out" &&
-	grep "No default queue exists" no_default_queue.out
-'
+# test_expect_success 'trying to submit a job without specifying a queue should attempt to use default queue' '
+# 	test_must_fail flux python ${SUBMIT_AS} 5011 -n1 hostname > no_default_queue.out 2>&1 &&
+# 	test_debug "no_default_queue.out" &&
+# 	grep "No default queue exists" no_default_queue.out
+# '
 
 test_expect_success 'adding a default queue allows users to run jobs without specifying a queue' '
 	flux account -p ${DB_PATH} add-queue default --priority=1000 &&

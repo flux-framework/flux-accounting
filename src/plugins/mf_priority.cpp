@@ -812,6 +812,18 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
         || flux_jobtap_service_register (p, "reprioritize", reprior_cb, p)
         || flux_jobtap_service_register (p, "rec_q_update", rec_q_cb, p) < 0)
         return -1;
+
+    struct queue_info *q;
+    q = &queues["default"];
+
+    // min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
+    // currently used or enforced in this plugin, so their values have no
+    // effect in queue limit enforcement.
+    q->min_nodes_per_job = 0;
+    q->max_nodes_per_job = 1024;
+    q->max_time_per_job = 64000;
+    q->priority = 1000;
+
     return 0;
 }
 
