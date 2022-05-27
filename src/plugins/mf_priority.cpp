@@ -540,6 +540,12 @@ static int validate_cb (flux_plugin_t *p,
                                      "user/default bank entry does not exist");
     }
 
+    // if user/bank entry was "deleted," reject job with a message saying the
+    // entry has been deleted
+    if (bank_it->second.deleted == 1)
+        return flux_jobtap_reject_job (p, args, "user/bank entry has been "
+                                       "deleted from flux-accounting DB");
+
     // fetch priority associated with passed-in queue (or default queue)
     bank_it->second.queue_factor = get_queue_info (queue, bank_it);
 
