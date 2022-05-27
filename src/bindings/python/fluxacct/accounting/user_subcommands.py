@@ -98,6 +98,27 @@ def add_user(
             print(err)
             return -1
 
+    # check if user/bank entry already exists but was disabled first; if so,
+    # just update the 'active' column in already existing row
+    cur.execute(
+        "SELECT * FROM association_table WHERE username=? AND bank=?",
+        (
+            username,
+            bank,
+        ),
+    )
+    rows = cur.fetchall()
+    if len(rows) == 1:
+        cur.execute(
+            "UPDATE association_table SET active=1 WHERE username=? AND bank=?",
+            (
+                username,
+                bank,
+            ),
+        )
+        conn.commit()
+        return 0
+
     try:
         # insert the user values into association_table
         conn.execute(
