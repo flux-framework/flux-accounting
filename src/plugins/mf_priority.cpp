@@ -47,6 +47,7 @@ struct bank_info {
     std::vector<long int> held_jobs;
     std::vector<std::string> queues;
     int queue_factor;
+    int deleted;
 };
 
 struct queue_info {
@@ -217,7 +218,7 @@ static void rec_update_cb (flux_t *h,
     double fshare = 0.0;
     json_t *data, *jtemp = NULL;
     json_error_t error;
-    int num_data = 0;
+    int num_data, deleted = 0;
     std::stringstream s_stream;
 
     if (flux_request_unpack (msg, NULL, "{s:o}", "data", &data) < 0) {
@@ -238,14 +239,15 @@ static void rec_update_cb (flux_t *h,
         json_t *el = json_array_get(data, i);
 
         if (json_unpack_ex (el, &error, 0,
-                            "{s:i, s:s, s:s, s:F, s:i, s:i, s:s}",
+                            "{s:i, s:s, s:s, s:F, s:i, s:i, s:s, s:i}",
                             "userid", &uid,
                             "bank", &bank,
                             "def_bank", &def_bank,
                             "fairshare", &fshare,
                             "max_running_jobs", &max_running_jobs,
                             "max_active_jobs", &max_active_jobs,
-                            "queues", &queues) < 0)
+                            "queues", &queues,
+                            "deleted", &deleted) < 0)
             flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
 
         struct bank_info *b;
@@ -254,6 +256,7 @@ static void rec_update_cb (flux_t *h,
         b->fairshare = fshare;
         b->max_run_jobs = max_running_jobs;
         b->max_active_jobs = max_active_jobs;
+        b->deleted = deleted;
 
         // split queues comma-delimited string and add it to b->queues vector
         split_string (queues, b);
