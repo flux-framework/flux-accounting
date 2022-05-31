@@ -199,6 +199,23 @@ class TestAccountingCLI(unittest.TestCase):
         expected_output = "User not found in association_table\n"
         self.assertEqual(mock_stdout.getvalue(), expected_output)
 
+    def test_11_delete_user_default_bank_row(self):
+        u.add_user(acct_conn, username="test_user2", bank="A")
+        u.add_user(acct_conn, username="test_user2", bank="B")
+        cur = acct_conn.cursor()
+        cur.execute(
+            "SELECT default_bank FROM association_table WHERE username='test_user2'"
+        )
+
+        self.assertEqual(cur.fetchone()[0], "A")
+
+        u.delete_user(acct_conn, username="test_user2", bank="A")
+        cur.execute(
+            "SELECT default_bank FROM association_table WHERE username='test_user2'"
+        )
+
+        self.assertEqual(cur.fetchone()[0], "B")
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):
