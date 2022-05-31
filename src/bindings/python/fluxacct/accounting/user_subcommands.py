@@ -158,6 +158,24 @@ def delete_user(conn, username, bank):
     # commit changes
     conn.commit()
 
+    # check if bank being deleted is the user's default bank
+    cur = conn.cursor()
+    select_stmt = "SELECT default_bank FROM association_table WHERE username=?"
+    cur.execute(select_stmt, (username,))
+    rows = cur.fetchall()
+    default_bank = rows[0][0]
+
+    if default_bank == bank:
+        # get first bank from other potential existing rows from user
+        select_stmt = """SELECT bank FROM association_table WHERE deleted=0 AND username=?
+                         ORDER BY creation_time"""
+        cur.execute(select_stmt, (username,))
+        rows = cur.fetchall()
+        # update user rows to have a new default bank (the next earliest user/bank row created)
+        if len(rows) > 0:
+            new_default_bank = rows[0][0]
+            edit_user(conn, username, default_bank=new_default_bank)
+
 
 def edit_user(
     conn,
