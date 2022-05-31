@@ -167,6 +167,21 @@ test_expect_success 'remove a queue from the queue_table' '
 	grep "Queue not found in queue_table" deleted_queue.out
 '
 
+test_expect_success 'Add a user to two different banks' '
+	flux account -p ${DB_PATH} add-user --username=user5015 --userid=5015 --bank=E &&
+	flux account -p ${DB_PATH} add-user --username=user5015 --userid=5015 --bank=F
+'
+
+test_expect_success 'Delete user default bank row' '
+	flux account -p ${DB_PATH} delete-user user5013 E
+'
+
+test_expect_success 'Check that user default bank gets updated to other bank' '
+	flux account -p ${DB_PATH} view-user user5015 > new_default_bank.out &&
+	cat new_default_bank.out &&
+	grep "user5015" | grep "F" | grep "F" new_default_bank.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
