@@ -83,6 +83,12 @@ def add_add_user_arg(subparsers):
         metavar="max_active_jobs",
     )
     subparser_add_user.add_argument(
+        "--max-nodes",
+        help="max number of nodes a user can have across all of their running jobs",
+        default=5,
+        metavar="MAX_NODES",
+    )
+    subparser_add_user.add_argument(
         "--queues",
         help="queues the user is allowed to run jobs in",
         default="",
@@ -138,6 +144,12 @@ def add_edit_user_arg(subparsers):
         help="max number of both pending and running jobs",
         default=7,
         metavar="max_active_jobs",
+    )
+    subparser_edit_user.add_argument(
+        "--max-nodes",
+        help="max number of nodes a user can have across all of their running jobs",
+        default=5,
+        metavar="MAX_NODES",
     )
     subparser_edit_user.add_argument(
         "--queues",
@@ -427,6 +439,7 @@ def select_accounting_function(args, conn, output_file, parser):
             args.shares,
             args.max_running_jobs,
             args.max_active_jobs,
+            args.max_nodes,
             args.queues,
         )
     elif args.func == "delete_user":
@@ -440,6 +453,7 @@ def select_accounting_function(args, conn, output_file, parser):
             args.shares,
             args.max_running_jobs,
             args.max_active_jobs,
+            args.max_nodes,
             args.queues,
         )
     elif args.func == "view_job_records":

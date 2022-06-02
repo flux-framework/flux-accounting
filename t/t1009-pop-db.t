@@ -26,11 +26,11 @@ test_expect_success 'populate flux-accounting DB with banks.csv' '
 
 test_expect_success 'create a users.csv file containing user information' '
 	cat <<-EOF >users.csv
-	user1000,1000,A,1,10,15,""
-	user1001,1001,A,1,10,15,""
-	user1002,1002,A,1,10,15,""
-	user1003,1003,A,1,10,15,""
-	user1004,1004,A,1,10,15,""
+	user1000,1000,A,1,10,15,5,""
+	user1001,1001,A,1,10,15,5,""
+	user1002,1002,A,1,10,15,5,""
+	user1003,1003,A,1,10,15,5,""
+	user1004,1004,A,1,10,15,5,""
 	EOF
 '
 
@@ -45,11 +45,11 @@ test_expect_success 'check database hierarchy to make sure all banks & users wer
 
 test_expect_success 'create a users.csv file with some missing optional user information' '
 	cat <<-EOF >users_optional_vals.csv
-	user1005,1005,B,1,5,,""
-	user1006,1006,B,,,,""
-	user1007,1007,B,1,7,,""
-	user1008,1008,B,,,,""
-	user1009,1009,B,1,9,,""
+	user1005,1005,B,1,5,,5,""
+	user1006,1006,B,,,,5,""
+	user1007,1007,B,1,7,,,""
+	user1008,1008,B,,,,5,""
+	user1009,1009,B,1,9,,,""
 	EOF
 '
 
