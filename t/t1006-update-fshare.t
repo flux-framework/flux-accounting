@@ -3,6 +3,8 @@
 test_description='Test print-hierarchy command'
 
 . `dirname $0`/sharness.sh
+
+EXPECTED_FILES=${SHARNESS_TEST_SRCDIR}/expected/update_fshare
 CREATE_TEST_DB=${SHARNESS_TEST_SRCDIR}/scripts/create_test_db.py
 UPDATE_USAGE_COL=${SHARNESS_TEST_SRCDIR}/scripts/update_usage_column.py
 
@@ -29,7 +31,7 @@ test_expect_success 'create hierarchy output from C++ - small_no_tie.db' '
 '
 
 test_expect_success 'compare hierarchy outputs' '
-	test_cmp ${SHARNESS_TEST_SRCDIR}/expected/pre_fshare_update.expected pre_fshare_update.test
+	test_cmp ${EXPECTED_FILES}/pre_fshare_update.expected pre_fshare_update.test
 '
 
 test_expect_success 'update usage column in t_small_no_tie.db' '
@@ -45,7 +47,7 @@ test_expect_success 'create hierarchy output from C++ - small_no_tie.db' '
 '
 
 test_expect_success 'compare hierarchy outputs' '
-	test_cmp ${SHARNESS_TEST_SRCDIR}/expected/post_fshare_update.expected post_fshare_update.test
+	test_cmp ${EXPECTED_FILES}/post_fshare_update.expected post_fshare_update.test
 '
 
 test_expect_success 'delete t_small_no_tie.db' '
