@@ -29,17 +29,17 @@ EXTRA_DIST= \
 	sharness.sh \
 	sharness.d \
 	rc \
-	expected/custom_small_tie_parsable.txt \
-	expected/help_message.txt \
-	expected/out_of_insert_order.txt \
-	expected/post_fshare_update.expected \
-	expected/pre_fshare_update.expected \
-	expected/small_no_tie_parsable.txt \
-	expected/small_no_tie.txt \
-	expected/small_tie_all_parsable.txt \
-	expected/small_tie_all.txt \
-	expected/small_tie_parsable.txt \
-	expected/small_tie.txt \
+	expected/print_hierarchy/custom_small_tie_parsable.txt \
+	expected/print_hierarchy/help_message.txt \
+	expected/print_hierarchy/out_of_insert_order.txt \
+	expected/print_hierarchy/small_no_tie_parsable.txt \
+	expected/print_hierarchy/small_no_tie.txt \
+	expected/print_hierarchy/small_tie_all_parsable.txt \
+	expected/print_hierarchy/small_tie_all.txt \
+	expected/print_hierarchy/small_tie_parsable.txt \
+	expected/print_hierarchy/small_tie.txt \
+	expected/update_fshare/post_fshare_update.expected \
+	expected/update_fshare/pre_fshare_update.expected \
 	expected/test_dbs/out_of_insert_order.db \
 	expected/test_dbs/small_no_tie.db \
 	expected/test_dbs/small_tie_all.db \
