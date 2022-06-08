@@ -62,7 +62,7 @@ def add_user(
     shares=1,
     max_running_jobs=5,
     max_active_jobs=7,
-    max_nodes=5,
+    max_nodes=2147483647,
     queues="",
 ):
 

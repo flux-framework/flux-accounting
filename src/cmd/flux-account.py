@@ -85,7 +85,7 @@ def add_add_user_arg(subparsers):
     subparser_add_user.add_argument(
         "--max-nodes",
         help="max number of nodes a user can have across all of their running jobs",
-        default=5,
+        default=2147483647,
         metavar="MAX_NODES",
     )
     subparser_add_user.add_argument(
