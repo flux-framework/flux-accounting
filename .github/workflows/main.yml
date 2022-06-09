@@ -89,6 +89,20 @@ jobs:
        ref: ${{ github.event.pull_request.head.sha }}
        fetch-depth: 0
 
+    - name: fetch annotated tag
+      if: >
+        (matrix.create_release || matrix.docker_tag) &&
+        github.ref != 'refs/heads/master'
+      run: |
+        # Ensure git-describe works on a tag.
+        #  (checkout@v2 action may have left current tag as
+        #   lightweight instead of annotated. See
+        #   https://github.com/actions/checkout/issues/290)
+        #
+        echo github.ref == ${{ github.ref }} ;
+        git fetch -f origin ${{ github.ref }}:${{ github.ref }} ;
+        echo git describe now reports $(git describe --always)
+
     - name: coverage setup
       env: ${{matrix.env}}
       if: matrix.coverage
@@ -111,3 +125,32 @@ jobs:
       if: failure() || cancelled()
       env: ${{matrix.env}}
       run: src/test/checks-annotate.sh
+
+    #   prepare, create and deploy release on tag:
+    - name: prep release
+      id: prep_release
+      if: success() && matrix.create_release
+      env: ${{matrix.env}}
+      run: echo "::set-output name=tarball::$(echo flux-accounting*.tar.gz)"
+
+    - name: create release
+      id: create_release
+      if: success() && matrix.create_release
+      env: ${{matrix.env}}
+      uses: actions/create-release@v1
+      with:
+        tag_name: ${{ matrix.tag }}
+        release_name: flux-accounting ${{ matrix.tag }}
+        prerelease: true
+        body: |
+          View [Release Notes](https://github.com/${{ github.repository }}/blob/${{ matrix.tag }}/NEWS.md) for flux-accounting ${{ matrix.tag }}
+
+    - name: upload tarball
+      id: upload-tarball
+      if: success() && matrix.create_release
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ steps.prep_release.outputs.tarball }}
+        asset_name: ${{ steps.prep_release.outputs.tarball }}
+        asset_content_type: "application/gzip"
