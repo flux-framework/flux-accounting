@@ -34,6 +34,11 @@ def main():
     userid = int(sys.argv[1])
     os.environ["FLUX_HANDLE_USERID"] = str(userid)
 
+    submitcmd = ["flux", "job", "submit", "--flags=signed"]
+    for arg in sys.argv[2:]:
+        if "urgency" in arg:
+            submitcmd.append(arg)
+
     minicmd = [
         "flux",
         "mini",
@@ -46,7 +51,6 @@ def main():
 
     signedJ = SecurityContext().sign_wrap_as(userid, jobspec, mech_type="none")
 
-    submitcmd = ["flux", "job", "submit", "--flags=signed"]
     jobid = run_process(submitcmd, input=signedJ)
     print(jobid)
 
