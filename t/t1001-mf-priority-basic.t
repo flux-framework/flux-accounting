@@ -90,7 +90,8 @@ test_expect_success 'submit a job with default urgency' '
 	cat <<-EOF >job1.expected &&
 	45321
 	EOF
-	test_cmp job1.expected job1.test
+	test_cmp job1.expected job1.test &&
+	flux job cancel $jobid
 '
 
 test_expect_success 'submit a job with custom urgency' '
@@ -99,7 +100,8 @@ test_expect_success 'submit a job with custom urgency' '
 	cat <<-EOF >job2.expected &&
 	45320
 	EOF
-	test_cmp job2.expected job2.test
+	test_cmp job2.expected job2.test &&
+	flux job cancel $jobid
 '
 
 test_expect_success 'submit a job with urgency of 0' '
@@ -118,7 +120,8 @@ test_expect_success 'submit a job with urgency of 31' '
 	cat <<-EOF >job4.expected &&
 	4294967295
 	EOF
-	test_cmp job4.expected job4.test
+	test_cmp job4.expected job4.test &&
+	flux job cancel $jobid
 '
 
 test_expect_success 'submit a job with other bank' '
@@ -127,7 +130,8 @@ test_expect_success 'submit a job with other bank' '
 	cat <<-EOF >job5.expected &&
 	11345
 	EOF
-	test_cmp job5.expected job5.test
+	test_cmp job5.expected job5.test &&
+	flux job cancel $jobid
 '
 
 test_expect_success 'submit a job using default bank' '
@@ -136,7 +140,8 @@ test_expect_success 'submit a job using default bank' '
 	cat <<-EOF >job6.expected &&
 	45321
 	EOF
-	test_cmp job6.expected job6.test
+	test_cmp job6.expected job6.test &&
+	flux job cancel $jobid
 '
 
 test_expect_success 'submit a job using a bank the user does not belong to' '
@@ -149,35 +154,6 @@ test_expect_success 'reject job when invalid bank format is passed in' '
 	test_must_fail flux mini submit --setattr=system.bank=1 -n1 hostname > invalid_fmt.out 2>&1 &&
 	test_debug "cat invalid_fmt.out" &&
 	grep "unable to unpack bank arg" invalid_fmt.out
-'
-
-test_expect_success 'create a fake payload with a 0 fairshare key-value pair' '
-	cat <<-EOF >empty_fairshare.py
-	import flux
-	import pwd
-	import getpass
-	import json
-
-	username = getpass.getuser()
-	userid = pwd.getpwnam(username).pw_uid
-	# create an array of JSON payloads
-	bulk_update_data = {
-		"data" : [
-			{"userid": userid, "bank": "account4", "def_bank": "account3", "fairshare": 0.0, "max_running_jobs": 10, "max_active_jobs": 12}
-		]
-	}
-	flux.Flux().rpc("job-manager.mf_priority.rec_update", json.dumps(bulk_update_data)).get()
-	EOF
-'
-
-test_expect_success 'update plugin with sample test data' '
-	flux python empty_fairshare.py
-'
-
-test_expect_success 'submit a job with new bank and 0 fairshare should result in a job rejection' '
-	test_must_fail flux mini submit --setattr=system.bank=account4 hostname > zero_fairshare.out 2>&1 &&
-	test_debug "zero_fairshare.out" &&
-	grep "user fairshare value is 0" zero_fairshare.out
 '
 
 test_expect_success 'pass special key to user/bank struct to nullify information' '
@@ -230,7 +206,8 @@ test_expect_success 'resend user/bank information with valid data and successful
 	cat <<-EOF >job2.expected &&
 	45321
 	EOF
-	test_cmp job2.expected job2.test
+	test_cmp job2.expected job2.test &&
+	flux job cancel $jobid2
 '
 
 test_done

@@ -554,11 +554,6 @@ static int validate_cb (flux_plugin_t *p,
     cur_active_jobs = bank_it->second.cur_active_jobs;
     max_active_jobs = bank_it->second.max_active_jobs;
 
-    // if a user's fairshare value is 0, that means they shouldn't be able
-    // to run jobs on a system
-    if (fairshare == 0)
-        return flux_jobtap_reject_job (p, args, "user fairshare value is 0");
-
     // if a user/bank has reached their max_active_jobs limit, subsequently
     // submitted jobs will be rejected
     if (max_active_jobs > 0 && cur_active_jobs >= max_active_jobs)
@@ -651,11 +646,6 @@ static int new_cb (flux_plugin_t *p,
 
         b = &bank_it->second;
     }
-
-    // if a user's fairshare value is 0, that means they shouldn't be able
-    // to run jobs on a system
-    if (fairshare == 0)
-        return flux_jobtap_reject_job (p, args, "user fairshare value is 0");
 
     // if a user/bank has reached their max_active_jobs limit, subsequently
     // submitted jobs will be rejected
