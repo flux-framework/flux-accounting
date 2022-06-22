@@ -9,7 +9,9 @@ the developers._
 
 Development for a bank/accounting interface for the Flux resource manager.
 Writes and saves user account information to persistent storage using Python's
-SQLite3 API.
+SQLite3 API. Calculates fair-share values for users and banks based on
+historical job data. Generates job priority values for users with a multi-factor
+priority plugin.
 
 ### Install Instructions
 
@@ -131,9 +133,9 @@ mounting /Users/moussa1/src/flux-framework/flux-accounting as /usr/src
 [moussa1@docker-desktop src]$
 ```
 
-### User Account Information
+### User and Bank Information
 
-The accounting table in this database stores information like username and
+The accounting tables in this database stores information like username and
 ID, banks to submit jobs against, allocated shares to the user, as well as
 static limits, including a max number of running jobs at a given time and
 a max number of submitted jobs per user/bank combo.
@@ -195,6 +197,14 @@ $ flux account view-user fluxuser
 creation_time    mod_time  deleted  username  bank   shares  max_jobs  max_wall_pj
    1595438356  1595438356        0  fluxuser  foo         1       100           60
 ```
+
+Multiple rows of data can be loaded to the database at once using `.csv` files
+and the `flux account-pop-db` command. Run `flux account-pop-db --help` for
+`.csv` formatting instructions.
+
+User and bank information can also be exported from the database using the
+`flux account-export-db` command, which will extract information from both the
+user and bank tables and place them into `.csv` files.
 
 #### Release
 
