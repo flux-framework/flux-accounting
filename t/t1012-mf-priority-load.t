@@ -1,6 +1,6 @@
 #!/bin/bash
 
-test_description='Test multi-factor priority plugin with a single user'
+test_description='Test multi-factor priority plugin and loading user information late'
 
 . `dirname $0`/sharness.sh
 MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so

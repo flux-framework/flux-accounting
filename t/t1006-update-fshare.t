@@ -1,6 +1,6 @@
 #!/bin/bash
 
-test_description='Test print-hierarchy command'
+test_description='Test update-fshare command with user and job data'
 
 . `dirname $0`/sharness.sh
 

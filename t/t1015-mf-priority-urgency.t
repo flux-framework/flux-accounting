@@ -1,6 +1,6 @@
 #!/bin/bash
 
-test_description='Test multi-factor priority plugin order with no ties'
+test_description='Test multi-factor priority plugin order with different --urgency values'
 
 . `dirname $0`/sharness.sh
 MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
