@@ -1,6 +1,6 @@
 #!/bin/bash
 
-test_description='Test print-hierarchy command'
+test_description='Test flux account update-usage command with user and job data'
 
 . `dirname $0`/sharness.sh
 DB_PATH=$(pwd)/FluxAccountingTest.db
