@@ -1,3 +1,25 @@
+flux-accounting version 0.17.0 - 2022-06-23
+-------------------------------------------
+
+#### Fixes
+
+* Disable requirement for a `default` queue (#237)
+
+#### Features
+
+* Add a new `max_nodes` column to the `association_table` which represents
+the max number of nodes a user/bank combo can have across all of their
+running jobs (#235)
+
+* Add a sharness test for calculating job priorities of multiple users with
+different `--urgency` values (#236)
+
+* Add a new `export-db` command which extracts information from both the
+`association_table` and `bank_table` into `.csv` files for processing (#243)
+
+* Add a new `update-db` command which adds any new tables and/or adds any
+new columns to existing tables in a flux-accounting database (#244)
+
 flux-accounting version 0.16.0 - 2022-04-30
 ------------------------------------------
 
