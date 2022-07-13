@@ -777,7 +777,9 @@ static int inactive_cb (flux_plugin_t *p,
             flux_jobtap_raise_exception (p, jobid, "mf_priority",
                                          0, "failed to remove job dependency");
 
-        b->held_jobs.erase (b->held_jobs.begin ());
+        // check that there is in fact a job ID to be removed from the list
+        if (b->held_jobs.begin () != b->held_jobs.end ())
+            b->held_jobs.erase (b->held_jobs.begin ());
     }
 
     return 0;
