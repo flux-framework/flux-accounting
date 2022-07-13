@@ -158,8 +158,9 @@ def update_db(path, new_db):
         new_conn.close()
 
         os.remove(new_db)
-    except sqlite3.OperationalError:
-        print(f"Unable to open temporary database file: %s" % new_db)
+    except sqlite3.OperationalError as exc:
+        print(f"Unable to open temporary database file: {new_db}")
+        print(f"Exception: {exc}")
         sys.exit(1)
 
 
