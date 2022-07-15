@@ -74,4 +74,16 @@ test_expect_success 'get all the columns of the updated table in the DB and chec
 	test_cmp association_table_columns.expected association_table_columns.test
 '
 
+test_expect_success 'get all the columns from the queue_table and make sure the dropped column does not show up' '
+	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -c queue_table > queue_table_columns.test &&
+	cat <<-EOF >queue_table_columns.expected
+	table name: queue_table
+	queue
+	min_nodes_per_job
+	max_nodes_per_job
+	priority
+	EOF
+	test_cmp queue_table_columns.expected queue_table_columns.test
+'
+
 test_done
