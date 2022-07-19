@@ -541,6 +541,12 @@ static int validate_cb (flux_plugin_t *p,
                                      "user/default bank entry does not exist");
     }
 
+    // if user/bank entry was disabled, reject job with a message saying the
+    // entry has been disabled
+    if (bank_it->second.active == 0)
+        return flux_jobtap_reject_job (p, args, "user/bank entry has been "
+                                       "disabled from flux-accounting DB");
+
     // fetch priority associated with passed-in queue (or default queue)
     bank_it->second.queue_factor = get_queue_info (queue, bank_it);
 
