@@ -41,6 +41,19 @@ def main():
                                                     org_description tinytext DEFAULT '' NOT NULL,
                                                     PRIMARY KEY (org_name));"""
     )
+
+    # create a new version of the queue_table without max_time_per_job
+    cur.execute("DROP TABLE queue_table")
+    cur.execute(
+        """CREATE TABLE IF NOT EXISTS queue_table (
+                queue               tinytext               NOT NULL,
+                min_nodes_per_job   int(11)    DEFAULT 1   NOT NULL    ON CONFLICT REPLACE DEFAULT 1,
+                max_nodes_per_job   int(11)    DEFAULT 1   NOT NULL    ON CONFLICT REPLACE DEFAULT 1,
+                priority            int(11)    DEFAULT 0   NOT NULL    ON CONFLICT REPLACE DEFAULT 0,
+                PRIMARY KEY (queue)
+            );"""
+    )
+
     conn.commit()
     conn.close()
 

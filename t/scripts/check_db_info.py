@@ -37,7 +37,8 @@ def est_sqlite_conn(path):
 def check_tables(cur):
     cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
     tables = cur.fetchall()
-    print(tables)
+    for table in tables:
+        print(table[0])
 
 
 def check_columns(cur, table_name):
@@ -45,7 +46,8 @@ def check_columns(cur, table_name):
     # get the information of each column in the table from new DB
     cur.execute("PRAGMA table_info(%s)" % table_name)
     columns = cur.fetchall()
-    print(columns)
+    for col in columns:
+        print(col[1])
 
 
 def main():

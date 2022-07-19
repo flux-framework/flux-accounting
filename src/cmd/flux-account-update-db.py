@@ -44,6 +44,77 @@ def est_sqlite_conn(path):
     return conn
 
 
+# gets a final list of columns for the new version of a table, which
+# include any columns added in a newer version or removed from an older version
+def get_cols_list(old_columns, new_columns):
+    cols = []
+
+    for column in new_columns:
+        if column in old_columns and column in new_columns:
+            cols.append(column)
+        elif column in new_columns:
+            cols.append(column)
+
+    return cols
+
+
+# adds a new version of the table to the DB
+def add_tmp_table_to_db(old_cur, table, cols):
+    add_stmt = "CREATE TABLE IF NOT EXISTS " + table[0] + "_tmp" + " ("
+
+    for column in cols:
+        column_name = column[1]
+        column_type = column[2]
+        not_null = column[3]
+        default_value = column[4]
+
+        add_stmt += column_name + " " + column_type + " "
+        if default_value is not None:
+            add_stmt += "DEFAULT " + default_value
+        if not_null == 1:
+            add_stmt += " NOT NULL"
+        # only add a comma if column is not last item in list
+        if column != cols[-1]:
+            add_stmt += ", "
+
+    # look for primary key to add to table; if column[5] > 0, that means
+    # it is either the primary key or one of the values that make up a
+    # primary key
+    primary_keys = ",".join([column[1] for column in cols if column[5] > 0])
+    if len(primary_keys) > 0:
+        add_stmt += ", PRIMARY KEY ("
+        add_stmt += ",".join([column[1] for column in cols if column[5] > 0])
+        add_stmt += ")"
+
+    add_stmt += ");"
+
+    # add new table to DB
+    old_cur.execute(add_stmt)
+
+
+# move all existing rows from the old version of the table to the new version of the table
+def move_existing_rows(old_cur, cols, old_columns, table):
+    # get list of columns to be added to new table that were in old table but not new table
+    existing_cols = [column[1] for column in cols if column in old_columns]
+    insert = "INSERT INTO " + table[0] + "_tmp"
+    values = " (" + (",".join(existing_cols)) + ")"
+    select = " SELECT " + (",".join(existing_cols)) + " FROM " + table[0]
+    final_stmt = insert + values + select
+
+    old_cur.execute(final_stmt)
+
+
+# drops the '_tmp' appended to the new version of the table to match the old table name
+def rename_tmp_table(old_cur, table):
+    # drop old table
+    drop_stmt = "DROP TABLE " + table[0]
+    old_cur.execute(drop_stmt)
+
+    # rename table to match old table
+    alter_stmt = "ALTER TABLE " + table[0] + "_tmp" + " RENAME TO " + table[0]
+    old_cur.execute(alter_stmt)
+
+
 # update_tables() is responsible for adding any new tables that don't yet exist
 # in the old flux-accounting DB. It will look at the table schema for the table
 # that doesn't yet exist and create a "CREATE TABLE ..." statement to add and
@@ -94,12 +165,16 @@ def update_tables(old_conn, old_cur, new_cur):
 
 # update_columns() looks that the existing tables in the old flux-accounting DB
 # to see if any of the tables need to add any additional columns to its tables.
-# If it does, it will issue an "ALTER TABLE ..." statement to add any columns
+# If it does, it will create a new version of the table with any added or removed
+# columns from a newer version of flux-accounting, copy any and all existing rows
+# from the old table, and DROP the old table to be replaced with the new table
 def update_columns(old_conn, old_cur, new_cur):
     print("checking for new columns to add in tables...")
 
     # get all table names from the temporary new database
-    new_cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    new_cur.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+    )
     new_tables = new_cur.fetchall()
 
     for table in new_tables:
@@ -111,27 +186,21 @@ def update_columns(old_conn, old_cur, new_cur):
         old_cur.execute("PRAGMA table_info(%s)" % table)
         old_columns = old_cur.fetchall()
 
-        for column in new_columns:
-            if column not in old_columns:
-                # we need to add this column to the DB
-                print("new column found in %s: %s" % (table[0], column[1]))
+        # generate a final columns list, which consist of columns added
+        # in a newer version or removed from an older version
+        cols = get_cols_list(old_columns, new_columns)
 
-                # we need to add this column to the table in the old DB
-                alter_stmt = "ALTER TABLE " + table[0] + " ADD COLUMN "
-                column_name = column[1]
-                column_type = column[2]
-                not_null = column[3]
-                default_value = column[4]
+        # create a new version of table with the updated column list
+        add_tmp_table_to_db(old_cur, table, cols)
 
-                alter_stmt += column_name + " " + column_type
-                if default_value is not None:
-                    alter_stmt += " DEFAULT " + default_value
-                if not_null == 1:
-                    alter_stmt += " NOT NULL"
+        # move elements from the old table to new version of the table
+        move_existing_rows(old_cur, cols, old_columns, table)
 
-                old_cur.execute(alter_stmt)
-                # commit changes
-                old_conn.commit()
+        # rename the new table to match the name of the old table
+        rename_tmp_table(old_cur, table)
+
+        # commit changes
+        old_conn.commit()
 
 
 def update_db(path, new_db):
@@ -158,8 +227,9 @@ def update_db(path, new_db):
         new_conn.close()
 
         os.remove(new_db)
-    except sqlite3.OperationalError:
-        print(f"Unable to open temporary database file: %s" % new_db)
+    except sqlite3.OperationalError as exc:
+        print(f"Unable to open temporary database file: {new_db}")
+        print(f"Exception: {exc}")
         sys.exit(1)
 
 

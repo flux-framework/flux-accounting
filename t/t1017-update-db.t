@@ -29,7 +29,7 @@ test_expect_success 'add some users to the DB' '
 	flux account -p ${DB_PATHv1} add-user --username=user5014 --userid=5014 --bank=C
 '
 
-test_expect_success 'create a new flux-accounting DB with an additional table, additional columns in existing tables' '
+test_expect_success 'create a new flux-accounting DB with an additional table, additional columns in existing tables, and a removed column' '
 	flux python ${MODIFY_DB} ${DB_PATHv2}
 '
 
@@ -38,13 +38,52 @@ test_expect_success 'run flux account-update-db' '
 '
 
 test_expect_success 'get all the tables of the old DB and check that new table was added' '
-	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -t > tables.out &&
-	grep "organization" tables.out
+	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -t > tables.test &&
+	cat <<-EOF >tables.expected
+	sqlite_sequence
+	association_table
+	bank_table
+	job_usage_factor_table
+	t_half_life_period_table
+	organization
+	queue_table
+	EOF
+	test_cmp tables.expected tables.test
 '
 
 test_expect_success 'get all the columns of the updated table in the DB and check that new columns were added' '
-	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -c association_table > columns.out &&
-	grep "organization" | grep "yrs_experience" columns.out
+	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -c association_table > association_table_columns.test &&
+	cat <<-EOF >association_table_columns.expected
+	table name: association_table
+	creation_time
+	mod_time
+	username
+	userid
+	bank
+	default_bank
+	shares
+	job_usage
+	fairshare
+	max_running_jobs
+	max_active_jobs
+	max_nodes
+	queues
+	organization
+	yrs_experience
+	EOF
+	test_cmp association_table_columns.expected association_table_columns.test
+'
+
+test_expect_success 'get all the columns from the queue_table and make sure the dropped column does not show up' '
+	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -c queue_table > queue_table_columns.test &&
+	cat <<-EOF >queue_table_columns.expected
+	table name: queue_table
+	queue
+	min_nodes_per_job
+	max_nodes_per_job
+	priority
+	EOF
+	test_cmp queue_table_columns.expected queue_table_columns.test
 '
 
 test_done
