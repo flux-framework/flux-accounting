@@ -18,7 +18,8 @@ TESTSCRIPTS = \
 	t1014-mf-priority-dne.t \
 	t1015-mf-priority-urgency.t \
 	t1016-export-db.t \
-	t1017-update-db.t
+	t1017-update-db.t \
+	t1018-mf-priority-disable-entry.t
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
