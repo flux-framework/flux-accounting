@@ -94,6 +94,12 @@ def add_add_user_arg(subparsers):
         default="",
         metavar="QUEUES",
     )
+    subparser_add_user.add_argument(
+        "--projects",
+        help="projects the user is allowed to submit jobs under",
+        default="*",
+        metavar="PROJECTS",
+    )
 
 
 def add_delete_user_arg(subparsers):
@@ -156,6 +162,18 @@ def add_edit_user_arg(subparsers):
         help="queues the user is allowed to run jobs in",
         default=None,
         metavar="QUEUES",
+    )
+    subparser_edit_user.add_argument(
+        "--projects",
+        help="projects the user is allowed to submit jobs under",
+        default=None,
+        metavar="PROJECTS",
+    )
+    subparser_edit_user.add_argument(
+        "--default-project",
+        help="default projects the user submits jobs under when no project is specified",
+        default=None,
+        metavar="DEFAULT_PROJECT",
     )
 
 
@@ -442,6 +460,7 @@ def select_accounting_function(args, conn, output_file, parser):
             args.max_active_jobs,
             args.max_nodes,
             args.queues,
+            args.projects,
         )
     elif args.func == "delete_user":
         u.delete_user(conn, args.username, args.bank)
@@ -456,6 +475,8 @@ def select_accounting_function(args, conn, output_file, parser):
             args.max_active_jobs,
             args.max_nodes,
             args.queues,
+            args.projects,
+            args.default_project,
         )
     elif args.func == "view_job_records":
         jobs.output_job_records(
