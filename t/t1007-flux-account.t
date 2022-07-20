@@ -182,6 +182,88 @@ test_expect_success 'Check that user default bank gets updated to other bank' '
 	grep "user5015" | grep "F" | grep "F" new_default_bank.out
 '
 
+test_expect_success 'add some projects to the project_table' '
+	flux account -p ${DB_PATH} add-project project_1 &&
+	flux account -p ${DB_PATH} add-project project_2 &&
+	flux account -p ${DB_PATH} add-project project_3 &&
+	flux account -p ${DB_PATH} add-project project_4
+'
+
+test_expect_success 'view project information from the project_table' '
+	flux account -p ${DB_PATH} view-project project_1 > project_1.out &&
+	grep "1" | grep "project_1" project_1.out
+'
+
+test_expect_success 'add a user with some specified projects to the association_table' '
+	flux account -p ${DB_PATH} add-user --username=user5015 --bank=A --projects="project_1,project_3" &&
+	flux account -p ${DB_PATH} view-user user5015 > user5015_info.out &&
+	grep "user5015" | grep "project_1,project_3,*" user5015_info.out
+'
+
+test_expect_success 'adding a user with a non-existing project should fail' '
+	flux account -p ${DB_PATH} add-user --username=user5016 --bank=A --projects="project_1,foo" > bad_project.out &&
+	grep "Project \"foo\" does not exist in project_table" bad_project.out
+'
+
+test_expect_success 'successfully edit a projects list for a user' '
+	flux account -p ${DB_PATH} edit-user user5015 --bank=A --projects="project_1,project_2,project_3" &&
+	flux account -p ${DB_PATH} view-user user5015 > user5015_edited_info.out &&
+	grep "user5015" | grep "project_1,project_2,project_3,*" user5015_edited_info.out
+'
+
+test_expect_success 'editing a user project list with a non-existing project should fail' '
+	flux account -p ${DB_PATH} edit-user user5015 --bank=A --projects="project_1,foo" > bad_project_2.out &&
+	grep "Project \"foo\" does not exist in project_table" bad_project_2.out
+'
+
+test_expect_success 'remove a project from the project_table that is still referenced by at least one user' '
+	flux account -p ${DB_PATH} delete-project project_1 > warning_message.out &&
+	flux account -p ${DB_PATH} view-project project_1 > deleted_project.out &&
+	grep "WARNING: user(s) in the assocation_table still reference this project." warning_message.out &&
+	grep "Project not found in project_table" deleted_project.out
+'
+
+test_expect_success 'remove a project that is not referenced by any users' '
+	flux account -p ${DB_PATH} delete-project project_4 &&
+	flux account -p ${DB_PATH} view-project project_4 > deleted_project_2.out &&
+	grep "Project not found in project_table" deleted_project_2.out
+'
+
+test_expect_success 'add a user to the accounting DB without specifying any projects' '
+	flux account -p ${DB_PATH} add-user --username=user5017 --bank=A &&
+	flux account -p ${DB_PATH} view-user user5017 > default_project_unspecified.test &&
+	cat <<-EOF >default_project_unspecfied.expected
+	default_project
+	*
+	EOF
+	grep -f default_project_unspecfied.expected default_project_unspecified.test
+'
+
+test_expect_success 'add a user to the accounting DB and specify a project' '
+	flux account -p ${DB_PATH} add-user --username=user5018 --bank=A --projects=project_2 &&
+	flux account -p ${DB_PATH} view-user user5018 > default_project_specified.test &&
+	cat <<-EOF >default_project_specified.expected
+	default_project
+	project_2
+	EOF
+	grep -f default_project_specified.expected default_project_specified.test
+'
+
+test_expect_success 'edit the default project of a user' '
+	flux account -p ${DB_PATH} edit-user user5018 --default-project=* &&
+	flux account -p ${DB_PATH} view-user user5018 > edited_default_project.test &&
+	cat <<-EOF >edited_default_project.expected
+	default_project
+	*
+	EOF
+	grep -f edited_default_project.expected edited_default_project.test
+	cat <<-EOF >projects_list.expected
+	projects
+	project_2,*
+	EOF
+	grep -f projects_list.expected edited_default_project.test
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
