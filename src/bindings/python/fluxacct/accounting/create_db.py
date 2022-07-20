@@ -177,4 +177,18 @@ def create_db(
             );"""
     )
 
+    # Projects Table
+    # stores projects
+    logging.info("Creating project_table in DB...")
+    conn.execute(
+        """
+            CREATE TABLE IF NOT EXISTS project_table (
+                project_id          integer    PRIMARY KEY AUTOINCREMENT,
+                project             tinytext               NOT NULL,
+                usage               real       DEFAULT 0.0 NOT NULL
+            );"""
+    )
+    conn.execute("INSERT INTO project_table (project) VALUES ('*')")
+    conn.commit()
+
     conn.close()
