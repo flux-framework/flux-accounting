@@ -17,7 +17,8 @@ TESTSCRIPTS = \
 	test/test_example.py \
 	test/test_job_archive_interface.py \
 	test/test_user_subcommands.py \
-	test/test_queue_subcommands.py
+	test/test_queue_subcommands.py \
+	test/test_project_subcommands.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS)
