@@ -57,6 +57,7 @@ test_expect_success 'get all the columns of the updated table in the DB and chec
 	table name: association_table
 	creation_time
 	mod_time
+	active
 	username
 	userid
 	bank
