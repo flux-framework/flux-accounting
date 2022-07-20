@@ -46,6 +46,7 @@ test_expect_success 'get all the tables of the old DB and check that new table w
 	bank_table
 	job_usage_factor_table
 	t_half_life_period_table
+	project_table
 	organization
 	queue_table
 	EOF
@@ -70,6 +71,8 @@ test_expect_success 'get all the columns of the updated table in the DB and chec
 	max_active_jobs
 	max_nodes
 	queues
+	projects
+	default_project
 	organization
 	yrs_experience
 	EOF
