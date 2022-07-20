@@ -18,6 +18,7 @@ from fluxacct.accounting import bank_subcommands as b
 from fluxacct.accounting import job_archive_interface as jobs
 from fluxacct.accounting import create_db as c
 from fluxacct.accounting import queue_subcommands as qu
+from fluxacct.accounting import project_subcommands as p
 
 
 def add_path_arg(parser):
@@ -394,6 +395,39 @@ def add_delete_queue_arg(subparsers):
     subparser_delete_queue.add_argument("queue", help="queue name", metavar="QUEUE")
 
 
+def add_add_project_arg(subparsers):
+    subparser_add_project = subparsers.add_parser(
+        "add-project", help="add a new project"
+    )
+
+    subparser_add_project.set_defaults(func="add_project")
+    subparser_add_project.add_argument(
+        "project", help="project name", metavar="PROJECT"
+    )
+
+
+def add_view_project_arg(subparsers):
+    subparser_view_project = subparsers.add_parser(
+        "view-project", help="view project information"
+    )
+
+    subparser_view_project.set_defaults(func="view_project")
+    subparser_view_project.add_argument(
+        "project", help="project name", metavar="PROJECT"
+    )
+
+
+def add_delete_project_arg(subparsers):
+    subparser_delete_project = subparsers.add_parser(
+        "delete-project", help="remove a project"
+    )
+
+    subparser_delete_project.set_defaults(func="delete_project")
+    subparser_delete_project.add_argument(
+        "project", help="project name", metavar="PROJECT"
+    )
+
+
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_output_file_arg(parser)
@@ -412,6 +446,9 @@ def add_arguments_to_parser(parser, subparsers):
     add_view_queue_arg(subparsers)
     add_edit_queue_arg(subparsers)
     add_delete_queue_arg(subparsers)
+    add_add_project_arg(subparsers)
+    add_view_project_arg(subparsers)
+    add_delete_project_arg(subparsers)
 
 
 def set_db_location(args):
@@ -520,6 +557,12 @@ def select_accounting_function(args, conn, output_file, parser):
             args.max_time_per_job,
             args.priority,
         )
+    elif args.func == "add_project":
+        p.add_project(conn, args.project)
+    elif args.func == "view_project":
+        p.view_project(conn, args.project)
+    elif args.func == "delete_project":
+        p.delete_project(conn, args.project)
     else:
         print(parser.print_usage())
 
