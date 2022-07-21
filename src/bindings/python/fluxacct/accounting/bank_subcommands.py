@@ -143,9 +143,9 @@ def delete_bank(conn, bank):
     cursor = conn.cursor()
 
     try:
-        cursor.execute("DELETE FROM bank_table WHERE bank=?", (bank,))
+        cursor.execute("UPDATE bank_table SET active=0 WHERE bank=?", (bank,))
 
-        # helper function to traverse the bank table and delete all of its sub banks
+        # helper function to traverse the bank table and disable all of its sub banks
         def get_sub_banks(bank):
             select_stmt = "SELECT bank FROM bank_table WHERE parent_bank=?"
             cursor.execute(select_stmt, (bank,))
@@ -159,10 +159,12 @@ def delete_bank(conn, bank):
                     """
                 for assoc_row in cursor.execute(select_assoc_stmt, (bank,)):
                     u.delete_user(conn, username=assoc_row[0], bank=assoc_row[1])
-            # else, delete all of its sub banks and continue traversing
+            # else, disable all of its sub banks and continue traversing
             else:
                 for row in rows:
-                    cursor.execute("DELETE FROM bank_table WHERE bank=?", (row[0],))
+                    cursor.execute(
+                        "UPDATE bank_table SET active=0 WHERE bank=?", (row[0],)
+                    )
                     get_sub_banks(row[0])
 
         get_sub_banks(bank)

@@ -89,6 +89,7 @@ def create_db(
             CREATE TABLE IF NOT EXISTS association_table (
                 creation_time    bigint(20)                         NOT NULL,
                 mod_time         bigint(20)  DEFAULT 0              NOT NULL,
+                active           int(11)     DEFAULT 1              NOT NULL,
                 username         tinytext                           NOT NULL,
                 userid           int(11)     DEFAULT 65534          NOT NULL,
                 bank             tinytext                           NOT NULL,
@@ -113,6 +114,7 @@ def create_db(
             CREATE TABLE IF NOT EXISTS bank_table (
                 bank_id     integer PRIMARY KEY AUTOINCREMENT,
                 bank        text                NOT NULL,
+                active      int(11) DEFAULT 1   NOT NULL,
                 parent_bank text    DEFAULT '',
                 shares      int                 NOT NULL
         );"""

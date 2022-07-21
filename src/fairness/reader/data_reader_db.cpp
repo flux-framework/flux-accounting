@@ -245,33 +245,36 @@ std::shared_ptr<weighted_tree_node_t> data_reader_db_t::get_sub_banks (
             std::string usage = reinterpret_cast<char const *> (
                 sqlite3_column_text (c_assoc, 3));
             double fshare = sqlite3_column_double (c_assoc, 4);
+            int active = sqlite3_column_int (c_assoc, 5);
 
-            try {
-                // add association as a child of the node
-                if (add_assoc (username, shrs, usage, fshare, node) < 0) {
-                    m_err_msg += "Failed to add association\n";
+            if (active) {
+                try {
+                    // add association as a child of the node
+                    if (add_assoc (username, shrs, usage, fshare, node) < 0) {
+                        m_err_msg += "Failed to add association\n";
+                        errno = EINVAL;
+
+                        return nullptr;
+                    }
+
+                    bank_usg += std::stoi (usage);
+                }
+                catch (const std::invalid_argument &ia) {
+                    m_err_msg += "Invalid argument: "
+                        + std::string (ia.what ())
+                        + "\n";
                     errno = EINVAL;
 
                     return nullptr;
                 }
+                catch (const std::out_of_range &oor) {
+                    m_err_msg += "Invalid argument: "
+                        + std::string (oor.what ())
+                        + "\n";
+                    errno = EINVAL;
 
-                bank_usg += std::stoi (usage);
-            }
-            catch (const std::invalid_argument &ia) {
-                m_err_msg += "Invalid argument: "
-                    + std::string (ia.what ())
-                    + "\n";
-                errno = EINVAL;
-
-                return nullptr;
-            }
-            catch (const std::out_of_range &oor) {
-                m_err_msg += "Invalid argument: "
-                    + std::string (oor.what ())
-                    + "\n";
-                errno = EINVAL;
-
-                return nullptr;
+                    return nullptr;
+                }
             }
 
             rc = sqlite3_step (c_assoc);
@@ -291,8 +294,10 @@ std::shared_ptr<weighted_tree_node_t> data_reader_db_t::get_sub_banks (
         while (rc == SQLITE_ROW) {
             std::string bank = reinterpret_cast<char const *> (
                 sqlite3_column_text (c_sub_banks, 0));
+            int active = sqlite3_column_int (c_sub_banks, 1);
 
-            banks.push_back (bank);
+            if (active)
+                banks.push_back (bank);
             rc = sqlite3_step (c_sub_banks);
         }
         if (rc == SQLITE_ERROR) {
@@ -357,12 +362,12 @@ std::shared_ptr<weighted_tree_node_t> data_reader_db_t::load_accounting_db (
 
     s_shrs = "SELECT bank_table.shares FROM bank_table WHERE bank=?";
 
-    s_sub_banks = "SELECT bank_table.bank FROM bank_table WHERE parent_bank=? "
-                  "ORDER BY bank_table.bank";
+    s_sub_banks = "SELECT bank_table.bank, bank_table.active FROM bank_table "
+                  "WHERE parent_bank=? ORDER BY bank_table.bank";
 
     s_assoc = "SELECT association_table.username, association_table.shares, "
               "association_table.bank, association_table.job_usage, "
-              "association_table.fairshare "
+              "association_table.fairshare, association_table.active "
               "FROM association_table WHERE association_table.bank=?"
               "ORDER BY association_table.username";
 

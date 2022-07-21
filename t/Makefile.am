@@ -41,6 +41,9 @@ EXTRA_DIST= \
 	expected/print_hierarchy/small_tie_all.txt \
 	expected/print_hierarchy/small_tie_parsable.txt \
 	expected/print_hierarchy/small_tie.txt \
+	expected/print_hierarchy/before_delete.expected \
+	expected/print_hierarchy/after_delete.expected \
+	expected/print_hierarchy/after_bank_delete.expected \
 	expected/update_fshare/post_fshare_update.expected \
 	expected/update_fshare/pre_fshare_update.expected \
 	expected/test_dbs/out_of_insert_order.db \
@@ -52,6 +55,8 @@ EXTRA_DIST= \
 	expected/flux_account/D_bank.expected \
 	expected/flux_account/full_hierarchy.expected \
 	expected/flux_account/root_bank.expected \
+	expected/flux_account/deleted_user.expected \
+	expected/flux_account/deleted_bank.expected \
 	expected/pop_db/db_hierarchy_base.expected \
 	expected/pop_db/db_hierarchy_new_users.expected \
 	expected/job_usage/pre_update.expected \

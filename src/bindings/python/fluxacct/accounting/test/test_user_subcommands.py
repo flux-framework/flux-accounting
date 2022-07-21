@@ -143,11 +143,11 @@ class TestAccountingCLI(unittest.TestCase):
         u.delete_user(acct_conn, username="fluxuser", bank="acct")
 
         cursor.execute(
-            "SELECT * FROM association_table WHERE username='fluxuser' AND bank='acct'"
+            "SELECT active FROM association_table WHERE username='fluxuser' AND bank='acct'"
         )
-        num_rows_after_delete = cursor.fetchall()
+        rows = cursor.fetchall()
 
-        self.assertEqual(len(num_rows_after_delete), 0)
+        self.assertEqual(rows[0][0], 0)
 
     # check for a new user's default bank
     def test_07_check_default_bank_new_user(self):
@@ -198,6 +198,44 @@ class TestAccountingCLI(unittest.TestCase):
         u.view_user(acct_conn, "foo")
         expected_output = "User not found in association_table\n"
         self.assertEqual(mock_stdout.getvalue(), expected_output)
+
+    # disable a user who belongs to multiple banks; make sure that the default_bank
+    # is updated to the next earliest associated bank
+    def test_11_disable_user_default_bank_row(self):
+        u.add_user(acct_conn, username="test_user2", bank="A")
+        u.add_user(acct_conn, username="test_user2", bank="B")
+        cur = acct_conn.cursor()
+        cur.execute(
+            "SELECT default_bank FROM association_table WHERE username='test_user2'"
+        )
+
+        self.assertEqual(cur.fetchone()[0], "A")
+
+        u.delete_user(acct_conn, username="test_user2", bank="A")
+        cur.execute(
+            "SELECT default_bank FROM association_table WHERE username='test_user2'"
+        )
+
+        self.assertEqual(cur.fetchone()[0], "B")
+
+    # disable a user who only belongs to one bank; make sure that the default_bank
+    # stays the same after disabling
+    def test_12_disable_user_default_bank_row_2(self):
+        u.add_user(acct_conn, username="test_user3", bank="A")
+        cur = acct_conn.cursor()
+        cur.execute(
+            "SELECT default_bank FROM association_table WHERE username='test_user3'"
+        )
+
+        self.assertEqual(cur.fetchone()[0], "A")
+
+        u.delete_user(acct_conn, username="test_user3", bank="A")
+
+        cur.execute(
+            "SELECT default_bank FROM association_table WHERE username='test_user3'"
+        )
+
+        self.assertEqual(cur.fetchone()[0], "A")
 
     # remove database and log file
     @classmethod

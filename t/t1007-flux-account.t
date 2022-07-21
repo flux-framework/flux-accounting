@@ -123,16 +123,16 @@ test_expect_success 'edit a field in a bank account' '
 
 test_expect_success 'remove a bank (and any corresponding users that belong to that bank)' '
 	flux account -p ${DB_PATH} delete-bank C &&
-	flux account -p ${DB_PATH} view-bank C > deleted_bank.out &&
-	grep "Bank not found in bank_table" deleted_bank.out &&
+	flux account -p ${DB_PATH} view-bank C > deleted_bank.test &&
+	grep -f ${EXPECTED_FILES}/deleted_bank.expected deleted_bank.test &&
 	flux account -p ${DB_PATH} view-user user5014 > deleted_user.out &&
-	grep "User not found in association_table" deleted_user.out
+	grep -f ${EXPECTED_FILES}/deleted_user.expected deleted_user.out
 '
 
 test_expect_success 'remove a user account' '
 	flux account -p ${DB_PATH} delete-user user5012 A &&
 	flux account -p ${DB_PATH} view-user user5012 > deleted_user.out &&
-	grep "User not found in association_table" deleted_user.out
+	grep -f ${EXPECTED_FILES}/deleted_user.expected deleted_user.out
 '
 
 test_expect_success 'add a queue with no optional args to the queue_table' '
@@ -165,6 +165,21 @@ test_expect_success 'remove a queue from the queue_table' '
 	flux account -p ${DB_PATH} delete-queue queue_2 &&
 	flux account -p ${DB_PATH} view-queue queue_2 > deleted_queue.out &&
 	grep "Queue not found in queue_table" deleted_queue.out
+'
+
+test_expect_success 'Add a user to two different banks' '
+	flux account -p ${DB_PATH} add-user --username=user5015 --userid=5015 --bank=E &&
+	flux account -p ${DB_PATH} add-user --username=user5015 --userid=5015 --bank=F
+'
+
+test_expect_success 'Delete user default bank row' '
+	flux account -p ${DB_PATH} delete-user user5013 E
+'
+
+test_expect_success 'Check that user default bank gets updated to other bank' '
+	flux account -p ${DB_PATH} view-user user5015 > new_default_bank.out &&
+	cat new_default_bank.out &&
+	grep "user5015" | grep "F" | grep "F" new_default_bank.out
 '
 
 test_expect_success 'remove flux-accounting DB' '
