@@ -1,3 +1,19 @@
+flux-accounting version 0.18.0 - 2022-08-02
+-------------------------------------------
+
+#### Fixes
+
+* Fix `update-db` command to account for deleted columns when updating a
+flux-accounting database (#252)
+
+* Improve error message clarity from sqlite3.connect when running the
+`update-db` command (#248)
+
+#### Features
+
+* Add ability to disable a user/bank combo in the multi-factor priority plugin
+that prevents a user from submitting and running jobs (#254)
+
 flux-accounting version 0.17.0 - 2022-06-23
 -------------------------------------------
 
