@@ -236,7 +236,10 @@ def update_db(path, new_db):
         os.remove(new_db)
     except sqlite3.OperationalError as exc:
         print(f"Unable to open temporary database file: {new_db}")
+        sys.exit(1)
+    except sqlite3.IntegrityError as exc:
         print(f"Exception: {exc}")
+        os.remove(new_db)
         sys.exit(1)
 
 
