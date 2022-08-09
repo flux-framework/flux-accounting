@@ -47,12 +47,15 @@ def est_sqlite_conn(path):
 # gets a final list of columns for the new version of a table, which
 # include any columns added in a newer version or removed from an older version
 def get_cols_list(old_columns, new_columns):
+    # create a list of just the column names for comparison
+    old_columns_names = [column[1] for column in old_columns]
+    new_columns_names = [column[1] for column in new_columns]
     cols = []
 
     for column in new_columns:
-        if column in old_columns and column in new_columns:
+        if column[1] in old_columns_names and column[1] in new_columns_names:
             cols.append(column)
-        elif column in new_columns:
+        elif column[1] in new_columns_names:
             cols.append(column)
 
     return cols
@@ -94,8 +97,12 @@ def add_tmp_table_to_db(old_cur, table, cols):
 
 # move all existing rows from the old version of the table to the new version of the table
 def move_existing_rows(old_cur, cols, old_columns, table):
+    # convert old_columns and cols to just lists of column names instead of tuples
+    old_columns = [column[1] for column in old_columns]
+    cols = [column[1] for column in cols]
+
     # get list of columns to be added to new table that were in old table but not new table
-    existing_cols = [column[1] for column in cols if column in old_columns]
+    existing_cols = [column for column in cols if column in old_columns]
     insert = "INSERT INTO " + table[0] + "_tmp"
     values = " (" + (",".join(existing_cols)) + ")"
     select = " SELECT " + (",".join(existing_cols)) + " FROM " + table[0]
@@ -229,7 +236,10 @@ def update_db(path, new_db):
         os.remove(new_db)
     except sqlite3.OperationalError as exc:
         print(f"Unable to open temporary database file: {new_db}")
+        sys.exit(1)
+    except sqlite3.IntegrityError as exc:
         print(f"Exception: {exc}")
+        os.remove(new_db)
         sys.exit(1)
 
 
