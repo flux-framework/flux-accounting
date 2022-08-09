@@ -1,3 +1,16 @@
+flux-accounting version 0.18.1 - 2022-08-09
+-------------------------------------------
+
+#### Fixes
+
+* Fix `update-db` command to provide clearer exception messages when
+the command fails to update a flux-accounting database (#258)
+
+#### Features
+
+* Add new tests for the `update-db` command for updating old versions
+of a flux-accounting database (#258)
+
 flux-accounting version 0.18.0 - 2022-08-02
 -------------------------------------------
 
