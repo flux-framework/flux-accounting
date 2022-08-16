@@ -198,11 +198,187 @@ int check_queue_factor (flux_plugin_t *p,
 }
 
 
+/*
+ * Add held job IDs to a JSON array to be added to a bank_info JSON object.
+ */
+static json_t *add_held_jobs (
+                            const std::pair<std::string, struct bank_info> &b)
+{
+    json_t *held_jobs = NULL;
+
+    // add any held jobs to a JSON array
+    if (!(held_jobs = json_array ()))
+        goto error;
+
+    for (auto const &j : b.second.held_jobs) {
+        json_t *jobid = json_integer (j);
+
+        if (!jobid)
+            goto error;
+
+        if (json_array_append_new (held_jobs, jobid) < 0) {
+            json_decref (jobid);
+            goto error;
+        }
+    }
+
+    return held_jobs;
+error:
+    json_decref (held_jobs);
+    return NULL;
+}
+
+
+/*
+ * Create a JSON object for a bank that a user belongs to.
+ */
+static json_t *pack_bank_info_object (
+                            const std::pair<std::string, struct bank_info> &b)
+{
+    json_t *bank_info, *held_jobs = NULL;
+
+    held_jobs = add_held_jobs (b);
+    if (held_jobs == NULL)
+        goto error;
+
+    if (!(bank_info = json_pack ("{s:s, s:f, s:i, s:i, s:i, s:i, s:o, s:i}",
+                                 "bank", b.first.c_str (),
+                                 "fairshare", b.second.fairshare,
+                                 "max_run_jobs", b.second.max_run_jobs,
+                                 "cur_run_jobs", b.second.cur_run_jobs,
+                                 "max_active_jobs", b.second.max_active_jobs,
+                                 "cur_active_jobs", b.second.cur_active_jobs,
+                                 "held_jobs", held_jobs,
+                                 "active", b.second.active))) {
+            goto error;
+    }
+
+    return bank_info;
+error:
+    json_decref (held_jobs);
+    return NULL;
+}
+
+
+/*
+ * For each bank that a user belongs to, create a JSON object for each bank and
+ * add it to the user JSON object.
+ */
+static json_t *banks_to_json (
+                    flux_plugin_t *p,
+                    std::pair<int, std::map<std::string, struct bank_info>> &u)
+{
+    json_t *bank_info, *banks = NULL;
+
+    banks = json_array (); // array of banks that user belongs to
+    if (!banks)
+        goto error;
+
+    for (auto const &b : u.second) {
+        bank_info = pack_bank_info_object (b); // JSON object for one bank
+        if (bank_info == NULL)
+            goto error;
+
+        if (json_array_append_new (banks, bank_info) < 0) {
+            json_decref (bank_info);
+            goto error;
+        }
+    }
+
+    return banks;
+error:
+    json_decref (banks);
+    return NULL;
+}
+
+
+/*
+ * Iterate thrpugh each user in users map and create a JSON object for each
+ * user.
+ */
+static json_t *user_to_json (
+                    flux_plugin_t *p,
+                    std::pair<int, std::map<std::string, struct bank_info>> u)
+{
+    json_t *user = json_object (); // JSON object for one user
+    json_t *userid, *banks = NULL;
+
+    if (!user)
+        return NULL;
+
+    userid = json_integer (u.first);
+    if (!userid)
+        goto error;
+
+    if (json_object_set_new (user, "userid", userid) < 0) {
+        json_decref (userid);
+        goto error;
+    }
+
+    banks = banks_to_json (p, u);
+    if (banks == NULL)
+        goto error;
+
+    if (json_object_set_new (user, "banks", banks) < 0) {
+        json_decref (banks);
+        goto error;
+    }
+
+    return user;
+error:
+    json_decref (user);
+    return NULL;
+}
+
+
 /******************************************************************************
  *                                                                            *
  *                               Callbacks                                    *
  *                                                                            *
  *****************************************************************************/
+
+/*
+ * Get state of all user and bank information from plugin
+ */
+static int query_cb (flux_plugin_t *p,
+                     const char *topic,
+                     flux_plugin_arg_t *args,
+                     void *data)
+{
+    flux_t *h = flux_jobtap_get_flux (p);
+    json_t *all_users = json_array (); // array of user/bank combos
+
+    if (!all_users)
+        return -1;
+
+    for (auto const &u : users) {
+        json_t *user = user_to_json (p, u);
+        if (user == NULL) {
+            json_decref (all_users);
+            return -1;
+        }
+
+        if (json_array_append_new (all_users, user) < 0) {
+            json_decref (user);
+            json_decref (all_users);
+            return -1;
+        }
+    }
+
+    if (flux_plugin_arg_pack (args,
+                              FLUX_PLUGIN_ARG_OUT,
+                              "{s:O}",
+                              "mf_priority_map",
+                              all_users) < 0)
+        flux_log_error (flux_jobtap_get_flux (p),
+                        "mf_priority: query_cb: flux_plugin_arg_pack: %s",
+                        flux_plugin_arg_strerror (args));
+
+    json_decref (all_users);
+
+    return 0;
+}
+
 
 /*
  * Unpack a payload from an external bulk update service and place it in the
@@ -801,6 +977,7 @@ static const struct flux_plugin_handler tab[] = {
     { "job.priority.get", priority_cb, NULL },
     { "job.state.inactive", inactive_cb, NULL },
     { "job.state.depend", depend_cb, NULL },
+    { "plugin.query", query_cb, NULL},
     { 0 },
 };
 
