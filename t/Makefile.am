@@ -19,7 +19,8 @@ TESTSCRIPTS = \
 	t1015-mf-priority-urgency.t \
 	t1016-export-db.t \
 	t1017-update-db.t \
-	t1018-mf-priority-disable-entry.t
+	t1018-mf-priority-disable-entry.t \
+	t1019-mf-priority-info-fetch.t
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
@@ -71,7 +72,9 @@ EXTRA_DIST= \
 	expected/pop_db/db_hierarchy_new_users.expected \
 	expected/job_usage/pre_update.expected \
 	expected/job_usage/post_update1.expected \
-	expected/job_usage/post_update2.expected
+	expected/job_usage/post_update2.expected \
+	expected/plugin_state/internal_state_1.expected \
+	expected/plugin_state/internal_state_3.expected
 
 clean-local:
 	rm -fr trash-directory.* test-results .prove *.broker.log */*.broker.log *.output
