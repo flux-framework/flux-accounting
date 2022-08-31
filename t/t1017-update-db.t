@@ -5,17 +5,9 @@ test_description='Test flux account-update-db command'
 
 DB_PATHv1=$(pwd)/FluxAccountingTestv1.db
 DB_PATHv2=$(pwd)/FluxAccountingTestv2.db
-DB_v0_10_0=${SHARNESS_TEST_SRCDIR}/expected/test_dbs/FluxAccountingv0-10-0.db
-DB_v0_11_0=${SHARNESS_TEST_SRCDIR}/expected/test_dbs/FluxAccountingv0-11-0.db
-DB_v0_12_0=${SHARNESS_TEST_SRCDIR}/expected/test_dbs/FluxAccountingv0-12-0.db
-DB_v0_13_0=${SHARNESS_TEST_SRCDIR}/expected/test_dbs/FluxAccountingv0-13-0.db
-DB_v0_14_0=${SHARNESS_TEST_SRCDIR}/expected/test_dbs/FluxAccountingv0-14-0.db
-DB_v0_15_0=${SHARNESS_TEST_SRCDIR}/expected/test_dbs/FluxAccountingv0-15-0.db
-DB_v0_16_0=${SHARNESS_TEST_SRCDIR}/expected/test_dbs/FluxAccountingv0-16-0.db
-DB_v0_17_0=${SHARNESS_TEST_SRCDIR}/expected/test_dbs/FluxAccountingv0-17-0.db
-DB_v0_18_0=${SHARNESS_TEST_SRCDIR}/expected/test_dbs/FluxAccountingv0-18-0.db
 MODIFY_DB=${SHARNESS_TEST_SRCDIR}/scripts/modify_accounting_db.py
 CHECK_TABLES=${SHARNESS_TEST_SRCDIR}/scripts/check_db_info.py
+DB_INTEGRITY_CHECK=${SHARNESS_TEST_SRCDIR}/scripts/db_integrity_check.py
 
 test_expect_success 'create a flux-accounting DB' '
 	flux account -p $(pwd)/FluxAccountingTestv1.db create-db
@@ -96,70 +88,22 @@ test_expect_success 'get all the columns from the queue_table and make sure the 
 	test_cmp queue_table_columns.expected queue_table_columns.test
 '
 
-test_expect_success 'successfully update flux-accounting DB from v0.10.0' '
-	cp ${DB_v0_10_0} tmp_v0_10_0.db &&
-	chmod 666 tmp_v0_10_0.db &&
-	flux account-update-db -p tmp_v0_10_0.db
-'
-
-test_expect_success 'successfully update flux-accounting DB from v0.11.0' '
-	cp ${DB_v0_11_0} tmp_v0_11_0.db &&
-	chmod 666 tmp_v0_11_0.db &&
-	flux account-update-db -p tmp_v0_11_0.db
-'
-
-test_expect_success 'successfully update flux-accounting DB from v0.12.0' '
-	cp ${DB_v0_12_0} tmp_v0_12_0.db &&
-	chmod 666 tmp_v0_12_0.db &&
-	flux account-update-db -p tmp_v0_12_0.db
-'
-
-test_expect_success 'successfully update flux-accounting DB from v0.13.0' '
-	cp ${DB_v0_13_0} tmp_v0_13_0.db &&
-	chmod 666 tmp_v0_13_0.db &&
-	flux account-update-db -p tmp_v0_13_0.db
-'
-
-test_expect_success 'successfully update flux-accounting DB from v0.14.0' '
-	cp ${DB_v0_14_0} tmp_v0_14_0.db &&
-	chmod 666 tmp_v0_14_0.db &&
-	flux account-update-db -p tmp_v0_14_0.db
-'
-
-test_expect_success 'successfully update flux-accounting DB from v0.15.0' '
-	cp ${DB_v0_15_0} tmp_v0_15_0.db &&
-	chmod 666 tmp_v0_15_0.db &&
-	flux account-update-db -p tmp_v0_15_0.db
-'
-
-test_expect_success 'successfully update flux-accounting DB from v0.16.0' '
-	cp ${DB_v0_16_0} tmp_v0_16_0.db &&
-	chmod 666 tmp_v0_16_0.db &&
-	flux account-update-db -p tmp_v0_16_0.db
-'
-
-test_expect_success 'successfully update flux-accounting DB from v0.17.0' '
-	cp ${DB_v0_17_0} tmp_v0_17_0.db &&
-	chmod 666 tmp_v0_17_0.db &&
-	flux account-update-db -p tmp_v0_17_0.db
-'
-
-test_expect_success 'successfully update flux-accounting DB from v0.18.0' '
-	cp ${DB_v0_18_0} tmp_v0_18_0.db &&
-	chmod 666 tmp_v0_18_0.db &&
-	flux account-update-db -p tmp_v0_18_0.db
-'
-
-test_expect_success 'remove temporary test DBs' '
-	rm tmp_v0_10_0.db &&
-	rm tmp_v0_11_0.db &&
-	rm tmp_v0_12_0.db &&
-	rm tmp_v0_13_0.db &&
-	rm tmp_v0_14_0.db &&
-	rm tmp_v0_15_0.db &&
-	rm tmp_v0_16_0.db &&
-	rm tmp_v0_17_0.db &&
-	rm tmp_v0_18_0.db
-'
+# test updating flux-accounting databases from older versions,
+# starting with v0.10.0
+for db in ${SHARNESS_TEST_SRCDIR}/expected/test_dbs/*; do
+	if [[ $db == *FluxAccounting* ]]; then
+		tmp_db=$(basename $db | cut -d '.' -f 1)_tmp.db
+		cp $db $tmp_db
+		chmod +rw $tmp_db
+		test_expect_success 'update old DB: '$(basename $db) \
+			"flux account-update-db -p $tmp_db"
+		test_expect_success 'add a bank: '$(basename $db) \
+			"flux account -p $tmp_db add-bank root 1"
+		test_expect_success 'add a user: '$(basename $db) \
+			"flux account -p $tmp_db add-user --username=fluxuser --bank=root"
+		test_expect_success 'check validity of DB: '$(basename $db) \
+			"flux python ${DB_INTEGRITY_CHECK} $tmp_db > result.out && grep 'ok' result.out"
+	fi
+done
 
 test_done
