@@ -37,8 +37,9 @@ def est_sqlite_conn(path):
         conn = sqlite3.connect(db_uri, uri=True)
         # set foreign keys constraint
         conn.execute("PRAGMA foreign_keys = 1")
-    except sqlite3.OperationalError:
+    except sqlite3.OperationalError as exc:
         print(f"Unable to open database file: {db_uri}", file=sys.stderr)
+        print(f"Exception: {exc}")
         sys.exit(1)
 
     return conn
@@ -236,6 +237,7 @@ def update_db(path, new_db):
         os.remove(new_db)
     except sqlite3.OperationalError as exc:
         print(f"Unable to open temporary database file: {new_db}")
+        print(f"Exception: {exc}")
         sys.exit(1)
     except sqlite3.IntegrityError as exc:
         print(f"Exception: {exc}")
