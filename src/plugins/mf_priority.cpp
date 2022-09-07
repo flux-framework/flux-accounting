@@ -902,7 +902,9 @@ static int depend_cb (flux_plugin_t *p,
     // if user has already hit their max running jobs count, add a job
     // dependency to hold job until an already running job has finished
     if ((b->max_run_jobs > 0) && (b->cur_run_jobs == b->max_run_jobs)) {
-        if (flux_jobtap_dependency_add (p, id, "max-jobs-limit") < 0) {
+        if (flux_jobtap_dependency_add (p,
+                                        id,
+                                        "max-running-jobs-user-limit") < 0) {
             flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
                                          "mf_priority", 0, "failed to add " \
                                          "job dependency");
@@ -959,7 +961,9 @@ static int inactive_cb (flux_plugin_t *p,
     if ((b->held_jobs.size () > 0) && (b->cur_run_jobs < b->max_run_jobs)) {
         long int jobid = b->held_jobs.front ();
 
-        if (flux_jobtap_dependency_remove (p, jobid, "max-jobs-limit") < 0)
+        if (flux_jobtap_dependency_remove (p,
+                                           jobid,
+                                           "max-running-jobs-user-limit") < 0)
             flux_jobtap_raise_exception (p, jobid, "mf_priority",
                                          0, "failed to remove job dependency");
 
