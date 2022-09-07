@@ -1,3 +1,12 @@
+flux-accounting version 0.19.0 - 2022-09-07
+-------------------------------------------
+
+#### Features
+
+* Add new `plugin.query` callback to multi-factor priority plugin which returns
+internal information about users and banks, active and running job counts, and
+any held jobs at the time of the query (#264)
+
 flux-accounting version 0.18.1 - 2022-08-09
 -------------------------------------------
 
