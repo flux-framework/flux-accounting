@@ -122,6 +122,31 @@ def check_if_user_disabled(conn, cur, username, bank):
     return False
 
 
+def get_default_bank(cur, username):
+    select_stmt = "SELECT default_bank FROM association_table WHERE username=?"
+    cur.execute(select_stmt, (username,))
+    rows = cur.fetchall()
+
+    return rows[0][0]
+
+
+# helper function that is called when a user's default_bank row gets disabled from
+# the association_table. It will look for other banks that the user belongs to; if
+# so, the default bank needs to be updated for these rows
+def update_default_bank(conn, cur, username):
+    # get first bank from other potential existing rows from user
+    select_stmt = """SELECT bank FROM association_table WHERE active=1 AND username=?
+                     ORDER BY creation_time"""
+    cur.execute(select_stmt, (username,))
+    rows = cur.fetchall()
+    # if len(rows) == 0, then the user only belongs to one bank (the bank they are being
+    # disabled in); thus the user's default bank does not need to be updated
+    if len(rows) > 0:
+        # update user rows to have a new default bank (the next earliest user/bank row created)
+        new_default_bank = rows[0][0]
+        edit_user(conn, username, default_bank=new_default_bank)
+
+
 def view_user(conn, user):
     cur = conn.cursor()
     try:
@@ -233,6 +258,8 @@ def add_user(
 
 
 def delete_user(conn, username, bank):
+    cur = conn.cursor()
+
     # set deleted flag in user row
     update_stmt = "UPDATE association_table SET active=0 WHERE username=? AND bank=?"
     conn.execute(
@@ -246,24 +273,12 @@ def delete_user(conn, username, bank):
     conn.commit()
 
     # check if bank being deleted is the user's default bank
-    cur = conn.cursor()
-    select_stmt = "SELECT default_bank FROM association_table WHERE username=?"
-    cur.execute(select_stmt, (username,))
-    rows = cur.fetchall()
-    default_bank = rows[0][0]
+    default_bank = get_default_bank(cur, username)
 
+    # if the user belongs to multiple banks, then we need to update the default
+    # bank for the other rows
     if default_bank == bank:
-        # get first bank from other potential existing rows from user
-        select_stmt = """SELECT bank FROM association_table WHERE active=1 AND username=?
-                         ORDER BY creation_time"""
-        cur.execute(select_stmt, (username,))
-        rows = cur.fetchall()
-        # if len(rows) == 0, then the user only belongs to one bank (the bank they are being
-        # disabled in); thus the user's default bank does not need to be updated
-        if len(rows) > 0:
-            # update user rows to have a new default bank (the next earliest user/bank row created)
-            new_default_bank = rows[0][0]
-            edit_user(conn, username, default_bank=new_default_bank)
+        update_default_bank(conn, cur, username)
 
 
 def edit_user(
