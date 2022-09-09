@@ -21,6 +21,23 @@ def get_uid(username):
         return str(username)
 
 
+def set_uid(username, uid):
+
+    if uid == 65534:
+        fetched_uid = get_uid(username)
+
+        try:
+            if isinstance(fetched_uid, int):
+                uid = fetched_uid
+            else:
+                raise KeyError
+        except KeyError:
+            print("could not find UID for user; adding default UID")
+            uid = 65534
+
+    return uid
+
+
 def validate_queue(conn, queue):
     cur = conn.cursor()
     queue_list = queue.split(",")
@@ -46,6 +63,14 @@ def validate_project(conn, projects):
     return ",".join(project_list)
 
 
+def set_default_project(projects):
+    if projects != "*":
+        project_list = projects.split(",")
+        return project_list[0]
+
+    return "*"
+
+
 def print_user_rows(headers, rows):
     # find length of longest column name
     col_width = len(sorted(headers, key=len)[-1])
@@ -57,6 +82,44 @@ def print_user_rows(headers, rows):
         for col in list(row):
             print(str(col).ljust(col_width), end=" ")
         print()
+
+
+# check for a default bank of the user being added; if the user is new, set
+# the first bank they were added to as their default bank
+def set_default_bank(cur, username, bank):
+    select_stmt = "SELECT default_bank FROM association_table WHERE username=?"
+    cur.execute(select_stmt, (username,))
+    row = cur.fetchone()
+
+    if row is None:
+        return bank
+
+    return row[0]
+
+
+# check if user/bank entry already exists but was disabled first; if so,
+# just update the 'active' column in already existing row
+def check_if_user_disabled(conn, cur, username, bank):
+    cur.execute(
+        "SELECT * FROM association_table WHERE username=? AND bank=?",
+        (
+            username,
+            bank,
+        ),
+    )
+    rows = cur.fetchall()
+    if len(rows) == 1:
+        cur.execute(
+            "UPDATE association_table SET active=1 WHERE username=? AND bank=?",
+            (
+                username,
+                bank,
+            ),
+        )
+        conn.commit()
+        return True
+
+    return False
 
 
 def view_user(conn, user):
@@ -86,30 +149,12 @@ def add_user(
     queues="",
     projects="*",
 ):
-
-    if uid == 65534:
-        # get uid of user
-        fetched_uid = get_uid(username)
-
-        try:
-            if isinstance(fetched_uid, int):
-                uid = fetched_uid
-            else:
-                raise KeyError
-        except KeyError:
-            print("could not find UID for user; adding default UID")
-
-    # check for a default bank of the user being added; if the user is new, set
-    # the first bank they were added to as their default bank
     cur = conn.cursor()
-    select_stmt = "SELECT default_bank FROM association_table WHERE username=?"
-    cur.execute(select_stmt, (username,))
-    row = cur.fetchone()
 
-    if row is None:
-        default_bank = bank
-    else:
-        default_bank = row[0]
+    userid = set_uid(username, uid)
+
+    # set default bank for user
+    default_bank = set_default_bank(cur, username, bank)
 
     # validate the queue specified if any were passed in
     if queues != "":
@@ -119,34 +164,13 @@ def add_user(
             print(err)
             return -1
 
-    # check if user/bank entry already exists but was disabled first; if so,
-    # just update the 'active' column in already existing row
-    cur.execute(
-        "SELECT * FROM association_table WHERE username=? AND bank=?",
-        (
-            username,
-            bank,
-        ),
-    )
-    rows = cur.fetchall()
-    if len(rows) == 1:
-        cur.execute(
-            "UPDATE association_table SET active=1 WHERE username=? AND bank=?",
-            (
-                username,
-                bank,
-            ),
-        )
-        conn.commit()
+    # if True, we don't need to execute an add statement, so just return
+    if check_if_user_disabled(conn, cur, username, bank):
         return 0
 
     # validate the project(s) specified if any were passed in;
     # add default project name ('*') to project(s) specified if
     # any were passed in
-    #
-    # determine default_project for user; if no other projects
-    # were specified, use '*' as the default. If a project was
-    # specified, then use the first one as the default
     if projects != "*":
         try:
             projects = validate_project(conn, projects)
@@ -154,10 +178,10 @@ def add_user(
             print(err)
             return -1
 
-        project_list = projects.split(",")
-        default_project = project_list[0]
-    else:
-        default_project = "*"
+    # determine default_project for user; if no other projects
+    # were specified, use '*' as the default. If a project was
+    # specified, then use the first one as the default
+    default_project = set_default_project(projects)
 
     try:
         # insert the user values into association_table
@@ -173,7 +197,7 @@ def add_user(
                 int(time.time()),
                 int(time.time()),
                 username,
-                uid,
+                userid,
                 bank,
                 default_bank,
                 shares,
