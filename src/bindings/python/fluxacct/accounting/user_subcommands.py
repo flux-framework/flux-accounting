@@ -147,6 +147,21 @@ def update_default_bank(conn, cur, username):
         edit_user(conn, username, default_bank=new_default_bank)
 
 
+def update_mod_time(conn, username, bank):
+    mod_time_tup = (
+        int(time.time()),
+        username,
+    )
+    if bank is not None:
+        update_stmt = """UPDATE association_table SET mod_time=?
+                         WHERE username=? AND bank=?"""
+        mod_time_tup = mod_time_tup + (bank,)
+    else:
+        update_stmt = "UPDATE association_table SET mod_time=? WHERE username=?"
+
+    conn.execute(update_stmt, mod_time_tup)
+
+
 def view_user(conn, user):
     cur = conn.cursor()
     try:
@@ -342,18 +357,7 @@ def edit_user(
             conn.execute(update_stmt, tup)
 
     # update mod_time column
-    mod_time_tup = (
-        int(time.time()),
-        username,
-    )
-    if bank is not None:
-        update_stmt = """UPDATE association_table SET mod_time=?
-                         WHERE username=? AND bank=?"""
-        mod_time_tup = mod_time_tup + (bank,)
-    else:
-        update_stmt = "UPDATE association_table SET mod_time=? WHERE username=?"
-
-    conn.execute(update_stmt, mod_time_tup)
+    update_mod_time(conn, username, bank)
 
     # commit changes
     conn.commit()
