@@ -101,6 +101,8 @@ def create_db(
                 max_active_jobs  int(11)     DEFAULT 7              NOT NULL    ON CONFLICT REPLACE DEFAULT 7,
                 max_nodes        int(11)     DEFAULT 2147483647     NOT NULL    ON CONFLICT REPLACE DEFAULT 2147483647,
                 queues           tinytext    DEFAULT ''             NOT NULL    ON CONFLICT REPLACE DEFAULT '',
+                projects         tinytext    DEFAULT '*'            NOT NULL    ON CONFLICT REPLACE DEFAULT '*',
+                default_project  tinytext    DEFAULT '*'            NOT NULL    ON CONFLICT REPLACE DEFAULT '*',
                 PRIMARY KEY   (username, bank)
         );"""
     )
@@ -176,5 +178,19 @@ def create_db(
                 PRIMARY KEY (queue)
             );"""
     )
+
+    # Projects Table
+    # stores projects
+    logging.info("Creating project_table in DB...")
+    conn.execute(
+        """
+            CREATE TABLE IF NOT EXISTS project_table (
+                project_id          integer    PRIMARY KEY AUTOINCREMENT,
+                project             tinytext               NOT NULL,
+                usage               real       DEFAULT 0.0 NOT NULL
+            );"""
+    )
+    conn.execute("INSERT INTO project_table (project) VALUES ('*')")
+    conn.commit()
 
     conn.close()

@@ -3,6 +3,7 @@ acctpy_PYTHON = \
 	user_subcommands.py \
 	bank_subcommands.py \
 	queue_subcommands.py \
+	project_subcommands.py \
 	job_archive_interface.py \
 	create_db.py
 
@@ -16,7 +17,8 @@ TESTSCRIPTS = \
 	test/test_example.py \
 	test/test_job_archive_interface.py \
 	test/test_user_subcommands.py \
-	test/test_queue_subcommands.py
+	test/test_queue_subcommands.py \
+	test/test_project_subcommands.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS)

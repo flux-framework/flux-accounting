@@ -32,6 +32,20 @@ def validate_queue(conn, queue):
             raise ValueError("Queue specified does not exist in queue_table")
 
 
+def validate_project(conn, projects):
+    cur = conn.cursor()
+    project_list = projects.split(",")
+    project_list.append("*")
+
+    for project in project_list:
+        cur.execute("SELECT project FROM project_table WHERE project=?", (project,))
+        row = cur.fetchone()
+        if row is None:
+            raise ValueError('Project "%s" does not exist in project_table' % project)
+
+    return ",".join(project_list)
+
+
 def view_user(conn, user):
     cur = conn.cursor()
     try:
@@ -44,11 +58,11 @@ def view_user(conn, user):
         else:
             # print column names of association_table
             for header in headers:
-                print(header.ljust(15), end=" ")
+                print(header.ljust(18), end=" ")
             print()
             for row in rows:
                 for col in list(row):
-                    print(str(col).ljust(15), end=" ")
+                    print(str(col).ljust(18), end=" ")
                 print()
     except sqlite3.OperationalError as e_database_error:
         print(e_database_error)
@@ -64,6 +78,7 @@ def add_user(
     max_active_jobs=7,
     max_nodes=2147483647,
     queues="",
+    projects="*",
 ):
 
     if uid == 65534:
@@ -119,6 +134,25 @@ def add_user(
         conn.commit()
         return 0
 
+    # validate the project(s) specified if any were passed in;
+    # add default project name ('*') to project(s) specified if
+    # any were passed in
+    #
+    # determine default_project for user; if no other projects
+    # were specified, use '*' as the default. If a project was
+    # specified, then use the first one as the default
+    if projects != "*":
+        try:
+            projects = validate_project(conn, projects)
+        except ValueError as err:
+            print(err)
+            return -1
+
+        project_list = projects.split(",")
+        default_project = project_list[0]
+    else:
+        default_project = "*"
+
     try:
         # insert the user values into association_table
         conn.execute(
@@ -126,8 +160,8 @@ def add_user(
             INSERT INTO association_table (creation_time, mod_time, username,
                                            userid, bank, default_bank, shares,
                                            max_running_jobs, max_active_jobs,
-                                           max_nodes, queues)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                           max_nodes, queues, projects, default_project)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 int(time.time()),
@@ -141,6 +175,8 @@ def add_user(
                 max_active_jobs,
                 max_nodes,
                 queues,
+                projects,
+                default_project,
             ),
         )
         # commit changes
@@ -210,6 +246,8 @@ def edit_user(
     max_active_jobs=None,
     max_nodes=None,
     queues=None,
+    projects=None,
+    default_project=None,
 ):
     params = locals()
     editable_fields = [
@@ -221,12 +259,20 @@ def edit_user(
         "max_active_jobs",
         "max_nodes",
         "queues",
+        "projects",
+        "default_project",
     ]
     for field in editable_fields:
         if params[field] is not None:
             if field == "queues":
                 try:
                     validate_queue(conn, params[field])
+                except ValueError as err:
+                    print(err)
+                    return -1
+            if field == "projects":
+                try:
+                    params[field] = validate_project(conn, params[field])
                 except ValueError as err:
                     print(err)
                     return -1
