@@ -13,7 +13,11 @@ import sqlite3
 import time
 import pwd
 
-
+###############################################################
+#                                                             #
+#                      Helper Functions                       #
+#                                                             #
+###############################################################
 def get_uid(username):
     try:
         return pwd.getpwnam(username).pw_uid
@@ -162,6 +166,11 @@ def update_mod_time(conn, username, bank):
     conn.execute(update_stmt, mod_time_tup)
 
 
+###############################################################
+#                                                             #
+#                   Subcommand Functions                      #
+#                                                             #
+###############################################################
 def view_user(conn, user):
     cur = conn.cursor()
     try:
