@@ -46,24 +46,30 @@ def validate_project(conn, projects):
     return ",".join(project_list)
 
 
+def print_user_rows(headers, rows):
+    # find length of longest column name
+    col_width = len(sorted(headers, key=len)[-1])
+
+    for header in headers:
+        print(header.ljust(col_width), end=" ")
+    print()
+    for row in rows:
+        for col in list(row):
+            print(str(col).ljust(col_width), end=" ")
+        print()
+
+
 def view_user(conn, user):
     cur = conn.cursor()
     try:
         # get the information pertaining to a user in the DB
         cur.execute("SELECT * FROM association_table where username=?", (user,))
         rows = cur.fetchall()
-        headers = [description[0] for description in cur.description]
+        headers = [description[0] for description in cur.description]  # column names
         if not rows:
             print("User not found in association_table")
         else:
-            # print column names of association_table
-            for header in headers:
-                print(header.ljust(18), end=" ")
-            print()
-            for row in rows:
-                for col in list(row):
-                    print(str(col).ljust(18), end=" ")
-                print()
+            print_user_rows(headers, rows)
     except sqlite3.OperationalError as e_database_error:
         print(e_database_error)
 
