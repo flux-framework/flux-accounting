@@ -16,6 +16,8 @@ import pathlib
 import math
 import time
 
+import fluxacct.accounting
+
 
 def add_usage_columns_to_table(
     conn, table_name, priority_usage_reset_period=None, priority_decay_half_life=None
@@ -81,6 +83,9 @@ def create_db(
     except sqlite3.OperationalError as exception:
         logging.error(exception)
         sys.exit(1)
+
+    # set version number of database
+    conn.execute("PRAGMA user_version = %d" % (fluxacct.accounting.db_schema_version))
 
     # Association Table
     logging.info("Creating association_table in DB...")
