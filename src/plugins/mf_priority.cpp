@@ -940,6 +940,8 @@ static int inactive_cb (flux_plugin_t *p,
                         void *data)
 {
     int userid;
+    long int id;
+    long int jobid;
     struct bank_info *b;
     std::map<int, std::map<std::string, struct bank_info>>::iterator it;
     std::map<std::string, struct bank_info>::iterator bank_it;
@@ -947,7 +949,8 @@ static int inactive_cb (flux_plugin_t *p,
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i}",
+                                "{s:I, s:i}",
+                                "id", &id,
                                 "userid", &userid) < 0) {
         flux_log (h,
                   LOG_ERR,
@@ -969,19 +972,44 @@ static int inactive_cb (flux_plugin_t *p,
         return -1;
     }
 
-    b->cur_run_jobs--;
-    b->cur_active_jobs--;
+    // if job has the same ID exists in held_jobs, only decrement
+    // cur_active_jobs, remove the ID from held_jobs list, and return
+    // since this job was never in RUN state, and therefore should not
+    // remove a dependency on another held job
+    if (b->held_jobs.size () > 0) {
+        if (std::count (b->held_jobs.begin (), b->held_jobs.end (), id)) {
+            // the job ID exists in held_jobs, so we only need to decrement
+            // the active jobs count
+            b->cur_active_jobs--;
+            // remove job ID from held_jobs
+            remove (b->held_jobs.begin (), b->held_jobs.end (), id);
+
+            return 0;
+        }
+        else {
+            // the job ID transitioned from RUN state, so we need to decrement
+            // both the running jobs count and the active jobs count
+            b->cur_run_jobs--;
+            b->cur_active_jobs--;
+        }
+    } else {
+        // the job has transitioned from RUN state, so we need to decrement
+        // both the running jobs count and the active jobs count
+        b->cur_run_jobs--;
+        b->cur_active_jobs--;
+    }
 
     // if the user/bank combo has any currently held jobs and the user is now
     // under their max jobs limit, remove the dependency from first held job
     if ((b->held_jobs.size () > 0) && (b->cur_run_jobs < b->max_run_jobs)) {
-        long int jobid = b->held_jobs.front ();
+        jobid = b->held_jobs.front ();
 
         if (flux_jobtap_dependency_remove (p,
                                            jobid,
-                                           "max-running-jobs-user-limit") < 0)
+                                           "max-running-jobs-user-limit") < 0) {
             flux_jobtap_raise_exception (p, jobid, "mf_priority",
                                          0, "failed to remove job dependency");
+        }
 
         b->held_jobs.erase (b->held_jobs.begin ());
     }
