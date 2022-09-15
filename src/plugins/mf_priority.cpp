@@ -530,6 +530,7 @@ static int priority_cb (flux_plugin_t *p,
                         void *data)
 {
     int urgency, userid;
+    int max_run_jobs, cur_run_jobs, max_active_jobs, cur_active_jobs;
     char *bank = NULL;
     char *queue = NULL;
     int64_t priority;
@@ -595,6 +596,22 @@ static int priority_cb (flux_plugin_t *p,
 
             if (bank_it->second.max_run_jobs == BANK_INFO_MISSING) {
                 return flux_jobtap_priority_unavail (p, args);
+            }
+
+            max_active_jobs = bank_it->second.max_active_jobs;
+            cur_active_jobs = bank_it->second.cur_active_jobs;
+            max_run_jobs = bank_it->second.max_run_jobs;
+            cur_run_jobs = bank_it->second.cur_run_jobs;
+
+            if ((max_active_jobs >= 0) && (cur_active_jobs == max_active_jobs)) {
+                // user has already hit their max active jobs count,
+                // so raise a job exception on this job and return
+                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                             "mf_priority", 0,
+                                             "job.state.priority: user has "
+                                             "hit max_active_jobs limit");
+
+                return 0;
             }
 
             // fetch priority associated with passed-in queue (or default queue)
