@@ -50,7 +50,7 @@ class TestAccountingCLI(unittest.TestCase):
     # trying to add a sub account with an invalid parent bank
     # name should result in a failure
     def test_03_add_with_invalid_parent_bank(self):
-        with self.assertRaises(Exception) as context:
+        with self.assertRaises(ValueError) as context:
             b.add_bank(
                 acct_conn,
                 bank="bad_subaccount",
@@ -118,7 +118,7 @@ class TestAccountingCLI(unittest.TestCase):
     # trying to edit a bank value <= 0 should raise
     # an exception
     def test_08_edit_bank_value_fail(self):
-        with self.assertRaises(Exception) as context:
+        with self.assertRaises(ValueError) as context:
             b.add_bank(acct_conn, bank="bad_bank", shares=10)
             b.edit_bank(acct_conn, bank="bad_bank", shares=-1)
 
