@@ -13,6 +13,12 @@ import sqlite3
 
 from fluxacct.accounting import user_subcommands as u
 
+###############################################################
+#                                                             #
+#                      Helper Functions                       #
+#                                                             #
+###############################################################
+
 # helper function to print user information in a table format
 def print_user_rows(cur, rows, bank):
     print("\nUsers Under Bank {bank_name}:\n".format(bank_name=bank))
@@ -69,6 +75,13 @@ def validate_parent_bank(cur, parent_bank):
             raise ValueError("Parent bank not found in bank table")
     except sqlite3.OperationalError as e_database_error:
         print(e_database_error)
+
+
+###############################################################
+#                                                             #
+#                   Subcommand Functions                      #
+#                                                             #
+###############################################################
 
 
 def add_bank(conn, bank, shares, parent_bank=""):
