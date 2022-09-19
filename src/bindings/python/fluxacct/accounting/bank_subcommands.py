@@ -61,18 +61,23 @@ def print_sub_banks(conn, bank, indent=""):
             print_sub_banks(conn, row[0], indent + " ")
 
 
+def validate_parent_bank(cur, parent_bank):
+    try:
+        cur.execute("SELECT shares FROM bank_table WHERE bank=?", (parent_bank,))
+        row = cur.fetchone()
+        if row is None:
+            raise ValueError("Parent bank not found in bank table")
+    except sqlite3.OperationalError as e_database_error:
+        print(e_database_error)
+
+
 def add_bank(conn, bank, shares, parent_bank=""):
     cur = conn.cursor()
-    # if the parent bank is not "", that means the bank
-    # trying to be added wants to be placed under a parent bank
+
+    # if the parent bank is not "", that means the bank trying
+    # to be added wants to be placed under an existing parent bank
     if parent_bank != "":
-        try:
-            cur.execute("SELECT shares FROM bank_table WHERE bank=?", (parent_bank,))
-            row = cur.fetchone()
-            if row is None:
-                raise Exception("Parent bank not found in bank table")
-        except sqlite3.OperationalError as e_database_error:
-            print(e_database_error)
+        validate_parent_bank(cur, parent_bank)
 
     # insert the bank values into the database
     try:
