@@ -13,12 +13,33 @@ import sqlite3
 import time
 import pwd
 
-
+###############################################################
+#                                                             #
+#                      Helper Functions                       #
+#                                                             #
+###############################################################
 def get_uid(username):
     try:
         return pwd.getpwnam(username).pw_uid
     except KeyError:
         return str(username)
+
+
+def set_uid(username, uid):
+
+    if uid == 65534:
+        fetched_uid = get_uid(username)
+
+        try:
+            if isinstance(fetched_uid, int):
+                uid = fetched_uid
+            else:
+                raise KeyError
+        except KeyError:
+            print("could not find UID for user; adding default UID")
+            uid = 65534
+
+    return uid
 
 
 def validate_queue(conn, queue):
@@ -46,75 +67,43 @@ def validate_project(conn, projects):
     return ",".join(project_list)
 
 
-def view_user(conn, user):
-    cur = conn.cursor()
-    try:
-        # get the information pertaining to a user in the DB
-        cur.execute("SELECT * FROM association_table where username=?", (user,))
-        rows = cur.fetchall()
-        headers = [description[0] for description in cur.description]
-        if not rows:
-            print("User not found in association_table")
-        else:
-            # print column names of association_table
-            for header in headers:
-                print(header.ljust(18), end=" ")
-            print()
-            for row in rows:
-                for col in list(row):
-                    print(str(col).ljust(18), end=" ")
-                print()
-    except sqlite3.OperationalError as e_database_error:
-        print(e_database_error)
+def set_default_project(projects):
+    if projects != "*":
+        project_list = projects.split(",")
+        return project_list[0]
+
+    return "*"
 
 
-def add_user(
-    conn,
-    username,
-    bank,
-    uid=65534,
-    shares=1,
-    max_running_jobs=5,
-    max_active_jobs=7,
-    max_nodes=2147483647,
-    queues="",
-    projects="*",
-):
+def print_user_rows(headers, rows):
+    # find length of longest column name
+    col_width = len(sorted(headers, key=len)[-1])
 
-    if uid == 65534:
-        # get uid of user
-        fetched_uid = get_uid(username)
+    for header in headers:
+        print(header.ljust(col_width), end=" ")
+    print()
+    for row in rows:
+        for col in list(row):
+            print(str(col).ljust(col_width), end=" ")
+        print()
 
-        try:
-            if isinstance(fetched_uid, int):
-                uid = fetched_uid
-            else:
-                raise KeyError
-        except KeyError:
-            print("could not find UID for user; adding default UID")
 
-    # check for a default bank of the user being added; if the user is new, set
-    # the first bank they were added to as their default bank
-    cur = conn.cursor()
+# check for a default bank of the user being added; if the user is new, set
+# the first bank they were added to as their default bank
+def set_default_bank(cur, username, bank):
     select_stmt = "SELECT default_bank FROM association_table WHERE username=?"
     cur.execute(select_stmt, (username,))
     row = cur.fetchone()
 
     if row is None:
-        default_bank = bank
-    else:
-        default_bank = row[0]
+        return bank
 
-    # validate the queue specified if any were passed in
-    if queues != "":
-        try:
-            validate_queue(conn, queues)
-        except ValueError as err:
-            print(err)
-            return -1
+    return row[0]
 
-    # check if user/bank entry already exists but was disabled first; if so,
-    # just update the 'active' column in already existing row
+
+# check if user/bank entry already exists but was disabled first; if so,
+# just update the 'active' column in already existing row
+def check_if_user_disabled(conn, cur, username, bank):
     cur.execute(
         "SELECT * FROM association_table WHERE username=? AND bank=?",
         (
@@ -132,15 +121,105 @@ def add_user(
             ),
         )
         conn.commit()
+        return True
+
+    return False
+
+
+def get_default_bank(cur, username):
+    select_stmt = "SELECT default_bank FROM association_table WHERE username=?"
+    cur.execute(select_stmt, (username,))
+    rows = cur.fetchall()
+
+    return rows[0][0]
+
+
+# helper function that is called when a user's default_bank row gets disabled from
+# the association_table. It will look for other banks that the user belongs to; if
+# so, the default bank needs to be updated for these rows
+def update_default_bank(conn, cur, username):
+    # get first bank from other potential existing rows from user
+    select_stmt = """SELECT bank FROM association_table WHERE active=1 AND username=?
+                     ORDER BY creation_time"""
+    cur.execute(select_stmt, (username,))
+    rows = cur.fetchall()
+    # if len(rows) == 0, then the user only belongs to one bank (the bank they are being
+    # disabled in); thus the user's default bank does not need to be updated
+    if len(rows) > 0:
+        # update user rows to have a new default bank (the next earliest user/bank row created)
+        new_default_bank = rows[0][0]
+        edit_user(conn, username, default_bank=new_default_bank)
+
+
+def update_mod_time(conn, username, bank):
+    mod_time_tup = (
+        int(time.time()),
+        username,
+    )
+    if bank is not None:
+        update_stmt = """UPDATE association_table SET mod_time=?
+                         WHERE username=? AND bank=?"""
+        mod_time_tup = mod_time_tup + (bank,)
+    else:
+        update_stmt = "UPDATE association_table SET mod_time=? WHERE username=?"
+
+    conn.execute(update_stmt, mod_time_tup)
+
+
+###############################################################
+#                                                             #
+#                   Subcommand Functions                      #
+#                                                             #
+###############################################################
+def view_user(conn, user):
+    cur = conn.cursor()
+    try:
+        # get the information pertaining to a user in the DB
+        cur.execute("SELECT * FROM association_table where username=?", (user,))
+        rows = cur.fetchall()
+        headers = [description[0] for description in cur.description]  # column names
+        if not rows:
+            print("User not found in association_table")
+        else:
+            print_user_rows(headers, rows)
+    except sqlite3.OperationalError as e_database_error:
+        print(e_database_error)
+
+
+def add_user(
+    conn,
+    username,
+    bank,
+    uid=65534,
+    shares=1,
+    max_running_jobs=5,
+    max_active_jobs=7,
+    max_nodes=2147483647,
+    queues="",
+    projects="*",
+):
+    cur = conn.cursor()
+
+    userid = set_uid(username, uid)
+
+    # set default bank for user
+    default_bank = set_default_bank(cur, username, bank)
+
+    # validate the queue specified if any were passed in
+    if queues != "":
+        try:
+            validate_queue(conn, queues)
+        except ValueError as err:
+            print(err)
+            return -1
+
+    # if True, we don't need to execute an add statement, so just return
+    if check_if_user_disabled(conn, cur, username, bank):
         return 0
 
     # validate the project(s) specified if any were passed in;
     # add default project name ('*') to project(s) specified if
     # any were passed in
-    #
-    # determine default_project for user; if no other projects
-    # were specified, use '*' as the default. If a project was
-    # specified, then use the first one as the default
     if projects != "*":
         try:
             projects = validate_project(conn, projects)
@@ -148,10 +227,10 @@ def add_user(
             print(err)
             return -1
 
-        project_list = projects.split(",")
-        default_project = project_list[0]
-    else:
-        default_project = "*"
+    # determine default_project for user; if no other projects
+    # were specified, use '*' as the default. If a project was
+    # specified, then use the first one as the default
+    default_project = set_default_project(projects)
 
     try:
         # insert the user values into association_table
@@ -167,7 +246,7 @@ def add_user(
                 int(time.time()),
                 int(time.time()),
                 username,
-                uid,
+                userid,
                 bank,
                 default_bank,
                 shares,
@@ -203,6 +282,8 @@ def add_user(
 
 
 def delete_user(conn, username, bank):
+    cur = conn.cursor()
+
     # set deleted flag in user row
     update_stmt = "UPDATE association_table SET active=0 WHERE username=? AND bank=?"
     conn.execute(
@@ -216,24 +297,12 @@ def delete_user(conn, username, bank):
     conn.commit()
 
     # check if bank being deleted is the user's default bank
-    cur = conn.cursor()
-    select_stmt = "SELECT default_bank FROM association_table WHERE username=?"
-    cur.execute(select_stmt, (username,))
-    rows = cur.fetchall()
-    default_bank = rows[0][0]
+    default_bank = get_default_bank(cur, username)
 
+    # if the user belongs to multiple banks, then we need to update the default
+    # bank for the other rows
     if default_bank == bank:
-        # get first bank from other potential existing rows from user
-        select_stmt = """SELECT bank FROM association_table WHERE active=1 AND username=?
-                         ORDER BY creation_time"""
-        cur.execute(select_stmt, (username,))
-        rows = cur.fetchall()
-        # if len(rows) == 0, then the user only belongs to one bank (the bank they are being
-        # disabled in); thus the user's default bank does not need to be updated
-        if len(rows) > 0:
-            # update user rows to have a new default bank (the next earliest user/bank row created)
-            new_default_bank = rows[0][0]
-            edit_user(conn, username, default_bank=new_default_bank)
+        update_default_bank(conn, cur, username)
 
 
 def edit_user(
@@ -297,18 +366,7 @@ def edit_user(
             conn.execute(update_stmt, tup)
 
     # update mod_time column
-    mod_time_tup = (
-        int(time.time()),
-        username,
-    )
-    if bank is not None:
-        update_stmt = """UPDATE association_table SET mod_time=?
-                         WHERE username=? AND bank=?"""
-        mod_time_tup = mod_time_tup + (bank,)
-    else:
-        update_stmt = "UPDATE association_table SET mod_time=? WHERE username=?"
-
-    conn.execute(update_stmt, mod_time_tup)
+    update_mod_time(conn, username, bank)
 
     # commit changes
     conn.commit()

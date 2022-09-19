@@ -26,12 +26,10 @@ class TestAccountingCLI(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         # create example accounting database
-        c.create_db("TestAcctingSubcommands.db")
+        c.create_db("TestUserSubcommands.db")
         global acct_conn
         try:
-            acct_conn = sqlite3.connect(
-                "file:TestAcctingSubcommands.db?mode=rw", uri=True
-            )
+            acct_conn = sqlite3.connect("file:TestUserSubcommands.db?mode=rw", uri=True)
             cur = acct_conn.cursor()
         except sqlite3.OperationalError:
             print(f"Unable to open test database file", file=sys.stderr)
@@ -55,7 +53,7 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(num_rows_assoc_table, num_rows_job_usage_factor_table)
 
-    # adding a user with the same primary key (username, account) should
+    # adding a user with the same primary key (username, bank) should
     # return an IntegrityError
     def test_02_add_duplicate_primary_key(self):
         u.add_user(
@@ -77,8 +75,7 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertRaises(sqlite3.IntegrityError)
 
-    # adding a user with the same username BUT a different account should
-    # succeed
+    # add a user with the same username but a different bank
     def test_03_add_duplicate_user(self):
         u.add_user(
             acct_conn,
@@ -117,7 +114,8 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(cursor.fetchone()[0], 10000)
 
-    # edit a value for a user in the association table
+    # reset a value for a user in the association table by
+    # passing -1
     def test_05_edit_reset_user_value(self):
         u.edit_user(
             acct_conn,
@@ -130,7 +128,7 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(cursor.fetchone()[0], 1)
 
-    # delete a user from the association table
+    # disable a user from the association table
     def test_06_delete_user(self):
         cursor = acct_conn.cursor()
         cursor.execute(
@@ -241,7 +239,7 @@ class TestAccountingCLI(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         acct_conn.close()
-        os.remove("TestAcctingSubcommands.db")
+        os.remove("TestUserSubcommands.db")
 
 
 def suite():
