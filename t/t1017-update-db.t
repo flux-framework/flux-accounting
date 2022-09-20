@@ -8,6 +8,14 @@ DB_PATHv2=$(pwd)/FluxAccountingTestv2.db
 MODIFY_DB=${SHARNESS_TEST_SRCDIR}/scripts/modify_accounting_db.py
 CHECK_TABLES=${SHARNESS_TEST_SRCDIR}/scripts/check_db_info.py
 DB_INTEGRITY_CHECK=${SHARNESS_TEST_SRCDIR}/scripts/db_integrity_check.py
+OLD_DB=$(pwd)/oldFluxAccounting.db
+MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
+
+export TEST_UNDER_FLUX_NO_JOB_EXEC=y
+export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
+test_under_flux 1 job
+
+flux setattr log-stderr-level 1
 
 test_expect_success 'create a flux-accounting DB' '
 	flux account -p $(pwd)/FluxAccountingTestv1.db create-db
@@ -108,5 +116,46 @@ for db in ${SHARNESS_TEST_SRCDIR}/expected/test_dbs/*; do
 			"flux python ${DB_INTEGRITY_CHECK} $tmp_db > result.out && grep 'ok' result.out"
 	fi
 done
+
+test_expect_success 'create a DB with an older schema version' '
+	cat <<-EOF >create_old_db.py
+	import sqlite3
+	import fluxacct.accounting
+
+	from fluxacct.accounting import create_db as c
+
+	old_db = "oldFluxAccounting.db"
+	c.create_db(old_db)
+
+	conn = sqlite3.connect(old_db)
+	cur = conn.cursor()
+
+	# update user_version for DB
+	cur.execute("PRAGMA user_version = 1")
+	conn.commit()
+	EOF
+	flux python create_old_db.py
+'
+
+test_expect_success 'load multi-factor priority plugin' '
+	flux jobtap load -r .priority-default ${MULTI_FACTOR_PRIORITY}
+'
+
+test_expect_success 'check that mf_priority plugin is loaded' '
+	flux jobtap list | grep mf_priority
+'
+
+test_expect_success 'try to call a flux account command when the old DB has not updated' '
+	test_must_fail flux account -p ${OLD_DB} add-bank root 1 > out_of_date.out &&
+	grep "flux-accounting database out of date" out_of_date.out
+'
+
+test_expect_success 'try to send information to plugin when old DB has not been updated (will upgrade DB)' '
+	flux account-priority-update -p ${OLD_DB}
+'
+
+test_expect_success 'successfully call a flux account command after the old DB has been updated' '
+	flux account -p ${OLD_DB} add-bank root 1
+'
 
 test_done
