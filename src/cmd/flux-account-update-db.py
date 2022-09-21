@@ -125,8 +125,8 @@ def rename_tmp_table(old_cur, table):
 
 # update_tables() is responsible for adding any new tables that don't yet exist
 # in the old flux-accounting DB. It will look at the table schema for the table
-# that doesn't yet exist and create a "CREATE TABLE ..." statement to add and
-# commit to the old flux-accounting DB
+# that doesn't yet exist and create a "CREATE TABLE ..." statement to add to the
+# old flux-accounting DB
 def update_tables(old_conn, old_cur, new_cur):
     print("checking for new tables...")
 
@@ -168,7 +168,6 @@ def update_tables(old_conn, old_cur, new_cur):
 
             # add table to old DB
             old_cur.execute(add_stmt)
-            old_conn.commit()
 
 
 # update_columns() looks that the existing tables in the old flux-accounting DB
@@ -207,9 +206,6 @@ def update_columns(old_conn, old_cur, new_cur):
         # rename the new table to match the name of the old table
         rename_tmp_table(old_cur, table)
 
-        # commit changes
-        old_conn.commit()
-
 
 def update_db(path, new_db):
     old_conn = est_sqlite_conn(path)
@@ -229,6 +225,14 @@ def update_db(path, new_db):
         update_tables(old_conn, old_cur, new_cur)
 
         update_columns(old_conn, old_cur, new_cur)
+
+        # update user_version for DB
+        old_cur.execute(
+            "PRAGMA user_version = %d" % (fluxacct.accounting.db_schema_version)
+        )
+
+        # commit changes
+        old_conn.commit()
 
         # close connections to DB's and remove temporary database
         old_conn.close()
