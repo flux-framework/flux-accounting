@@ -44,6 +44,17 @@ def est_sqlite_conn(path):
         print(f"Exception: {exc}")
         sys.exit(1)
 
+    # check version of database; if not up to date, output message
+    # and exit
+    cur = conn.cursor()
+    cur.execute("PRAGMA user_version")
+    db_version = cur.fetchone()[0]
+    if db_version < fluxacct.accounting.db_schema_version:
+        print(
+            "flux-accounting database out of date; please update DB with 'flux account-update-db' before running commands"
+        )
+        sys.exit(1)
+
     return conn
 
 
