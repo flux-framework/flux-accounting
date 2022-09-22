@@ -14,6 +14,7 @@ import sys
 import os
 import sqlite3
 import json
+import subprocess
 
 import flux
 
@@ -41,6 +42,24 @@ def est_sqlite_conn(path):
         print(f"Unable to open database file: {db_uri}", file=sys.stderr)
         print(f"Exception: {exc}")
         sys.exit(1)
+
+    # check version of database; if not up to date, output message
+    # and exit
+    cur = conn.cursor()
+    cur.execute("PRAGMA user_version")
+    db_version = cur.fetchone()[0]
+    if db_version < fluxacct.accounting.db_schema_version:
+        print(
+            """flux-accounting database out of date; updating DB with """
+            """'flux account-update-db' before sending infomation to plugin"""
+        )
+        # if flux account-update-db fails, we should not attempt to send data from
+        # the DB to the priority plugin, and instead we should abort
+        try:
+            subprocess.run(["flux", "account-update-db", "-p", path], check=True)
+        except SystemExit as exc:
+            print(f"Exception: {exc.code}")
+            sys.exit(1)
 
     return conn
 

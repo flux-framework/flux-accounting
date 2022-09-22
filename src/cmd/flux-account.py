@@ -593,6 +593,17 @@ def main():
 
     conn = establish_sqlite_connection(path)
 
+    # check version of database; if not up to date, output message
+    # and exit
+    cur = conn.cursor()
+    cur.execute("PRAGMA user_version")
+    db_version = cur.fetchone()[0]
+    if db_version < 20:
+        print(
+            "flux-accounting database out of date; please update DB with 'flux account-update-db' before running commands"
+        )
+        sys.exit(1)
+
     output_file = set_output_file(args)
 
     try:
