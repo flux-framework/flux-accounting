@@ -19,10 +19,9 @@ from fluxacct.accounting import create_db as c
 
 
 class TestAccountingCLI(unittest.TestCase):
-    # create accounting, job-archive databases
+    # create test flux-accounting database
     @classmethod
     def setUpClass(self):
-        # create example accounting database
         c.create_db("TestBankSubcommands.db")
         global acct_conn
         global cur
@@ -33,24 +32,22 @@ class TestAccountingCLI(unittest.TestCase):
             print(f"Unable to open test database file", file=sys.stderr)
             sys.exit(-1)
 
-    # let's add a top-level account using the add-bank
-    # subcommand
+    # add a top-level account using add_bank()
     def test_01_add_bank_success(self):
         b.add_bank(acct_conn, bank="root", shares=100)
         cur.execute("SELECT * FROM bank_table WHERE bank='root'")
         rows = cur.fetchall()
         self.assertEqual(len(rows), 1)
 
-    # let's make sure if we try to add it a second time,
-    # it fails gracefully
+    # check for an IntegrityError when trying to add a duplicate bank
     def test_02_add_dup_bank(self):
         b.add_bank(acct_conn, bank="root", shares=100)
         self.assertRaises(sqlite3.IntegrityError)
 
     # trying to add a sub account with an invalid parent bank
-    # name should result in a failure
+    # name should result in a ValueError
     def test_03_add_with_invalid_parent_bank(self):
-        with self.assertRaises(Exception) as context:
+        with self.assertRaises(ValueError) as context:
             b.add_bank(
                 acct_conn,
                 bank="bad_subaccount",
@@ -60,9 +57,8 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertTrue("Parent bank not found in bank table" in str(context.exception))
 
-    # now let's add a couple sub accounts whose parent is 'root'
-    # and whose total shares equal root's allocation (100 shares)
-    def test_04_add_subaccounts(self):
+    # add a couple sub accounts whose parent is 'root'
+    def test_04_add_sub_banks(self):
         b.add_bank(acct_conn, bank="sub_account_1", parent_bank="root", shares=50)
         cur.execute("SELECT * FROM bank_table WHERE bank='sub_account_1'")
         rows = cur.fetchall()
@@ -80,7 +76,7 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(rows[0][0], 0)
 
-    # disabling a parent bank should remove all of its sub banks
+    # disabling a parent bank should disable all of its sub banks
     def test_06_disable_parent_bank(self):
         b.delete_bank(acct_conn, bank="root")
         b.delete_bank(acct_conn, bank="sub_account_2")
@@ -115,10 +111,10 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(cursor.fetchone()[0], 50)
 
-    # trying to edit a bank value <= 0 should raise
-    # an exception
+    # trying to edit a bank's shares <= 0 should raise
+    # a ValueError
     def test_08_edit_bank_value_fail(self):
-        with self.assertRaises(Exception) as context:
+        with self.assertRaises(ValueError) as context:
             b.add_bank(acct_conn, bank="bad_bank", shares=10)
             b.edit_bank(acct_conn, bank="bad_bank", shares=-1)
 

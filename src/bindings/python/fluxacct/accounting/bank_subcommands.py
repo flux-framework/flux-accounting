@@ -13,6 +13,12 @@ import sqlite3
 
 from fluxacct.accounting import user_subcommands as u
 
+###############################################################
+#                                                             #
+#                      Helper Functions                       #
+#                                                             #
+###############################################################
+
 # helper function to print user information in a table format
 def print_user_rows(cur, rows, bank):
     print("\nUsers Under Bank {bank_name}:\n".format(bank_name=bank))
@@ -61,18 +67,30 @@ def print_sub_banks(conn, bank, indent=""):
             print_sub_banks(conn, row[0], indent + " ")
 
 
+def validate_parent_bank(cur, parent_bank):
+    try:
+        cur.execute("SELECT shares FROM bank_table WHERE bank=?", (parent_bank,))
+        row = cur.fetchone()
+        if row is None:
+            raise ValueError("Parent bank not found in bank table")
+    except sqlite3.OperationalError as e_database_error:
+        print(e_database_error)
+
+
+###############################################################
+#                                                             #
+#                   Subcommand Functions                      #
+#                                                             #
+###############################################################
+
+
 def add_bank(conn, bank, shares, parent_bank=""):
     cur = conn.cursor()
-    # if the parent bank is not "", that means the bank
-    # trying to be added wants to be placed under a parent bank
+
+    # if the parent bank is not "", that means the bank trying
+    # to be added wants to be placed under an existing parent bank
     if parent_bank != "":
-        try:
-            cur.execute("SELECT shares FROM bank_table WHERE bank=?", (parent_bank,))
-            row = cur.fetchone()
-            if row is None:
-                raise Exception("Parent bank not found in bank table")
-        except sqlite3.OperationalError as e_database_error:
-            print(e_database_error)
+        validate_parent_bank(cur, parent_bank)
 
     # insert the bank values into the database
     try:
@@ -186,7 +204,7 @@ def edit_bank(conn, bank, shares):
     # if user tries to edit a shares value <= 0,
     # raise an exception
     if int(shares) <= 0:
-        raise Exception("New shares amount must be >= 0")
+        raise ValueError("New shares amount must be >= 0")
     try:
         # edit value in bank_table
         conn.execute(
