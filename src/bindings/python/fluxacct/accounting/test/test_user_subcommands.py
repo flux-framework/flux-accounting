@@ -242,6 +242,12 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(cur.fetchone()[0], "A")
 
+    # adding a user to a nonexistent bank should raise a ValueError
+    def test_13_add_user_to_nonexistent_bank(self):
+        u.add_user(acct_conn, username="test_user4", bank="foo")
+
+        self.assertRaises(ValueError)
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):

@@ -264,6 +264,11 @@ test_expect_success 'edit the default project of a user' '
 	grep -f projects_list.expected edited_default_project.test
 '
 
+test_expect_success 'trying to add a user to a nonexistent bank should raise a ValueError' '
+	flux account -p ${DB_PATH} add-user --username=user5019 --bank=foo > nonexistent_bank.out &&
+	grep "Bank \"foo\" does not exist in bank_table" nonexistent_bank.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
