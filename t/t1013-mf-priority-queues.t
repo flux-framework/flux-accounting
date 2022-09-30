@@ -94,13 +94,13 @@ test_expect_success 'configure flux with those queues' '
 
 test_expect_success 'submit a job using a queue the user does not belong to' '
 	test_must_fail flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account2 \
-		--setattr=system.queue=expedite -n1 hostname > unavail_queue.out 2>&1 &&
+		--queue=expedite -n1 hostname > unavail_queue.out 2>&1 &&
 	test_debug "unavail_queue.out" &&
 	grep "Queue not valid for user: expedite" unavail_queue.out
 '
 
 test_expect_success 'submit a job using a nonexistent queue' '
-	test_must_fail flux python ${SUBMIT_AS} 5011 --setattr=system.queue=foo \
+	test_must_fail flux python ${SUBMIT_AS} 5011 --queue=foo \
 		-n1 hostname > bad_queue.out 2>&1 &&
 	test_debug "bad_queue.out" &&
 	grep "Queue does not exist: foo" bad_queue.out
@@ -108,7 +108,7 @@ test_expect_success 'submit a job using a nonexistent queue' '
 
 test_expect_success 'submit a job using standby queue, which should not increase job priority' '
 	jobid1=$(flux python ${SUBMIT_AS} 5011 --job-name=standby \
-		--setattr=system.bank=account1 --setattr=system.queue=standby -n1 hostname) &&
+		--setattr=system.bank=account1 --queue=standby -n1 hostname) &&
 	flux job wait-event -f json $jobid1 priority | jq '.context.priority' > job1.test &&
 	cat <<-EOF >job1.expected &&
 	50000
@@ -118,7 +118,7 @@ test_expect_success 'submit a job using standby queue, which should not increase
 
 test_expect_success 'submit a job using expedite queue, which should increase priority' '
 	jobid2=$(flux python ${SUBMIT_AS} 5011 --job-name=expedite \
-		--setattr=system.bank=account1 --setattr=system.queue=expedite -n1 hostname) &&
+		--setattr=system.bank=account1 --queue=expedite -n1 hostname) &&
 	flux job wait-event -f json $jobid2 priority | jq '.context.priority' > job2.test &&
 	cat <<-EOF >job2.expected &&
 	100050000
@@ -127,9 +127,9 @@ test_expect_success 'submit a job using expedite queue, which should increase pr
 '
 
 test_expect_success 'submit a job using the rest of the available queues' '
-	jobid3=$(flux python ${SUBMIT_AS} 5011 --job-name=bronze --setattr=system.queue=bronze -n1 hostname) &&
-	jobid4=$(flux python ${SUBMIT_AS} 5011 --job-name=silver --setattr=system.queue=silver -n1 hostname) &&
-	jobid5=$(flux python ${SUBMIT_AS} 5011 --job-name=gold --setattr=system.queue=gold -n1 hostname)
+	jobid3=$(flux python ${SUBMIT_AS} 5011 --job-name=bronze --queue=bronze -n1 hostname) &&
+	jobid4=$(flux python ${SUBMIT_AS} 5011 --job-name=silver --queue=silver -n1 hostname) &&
+	jobid5=$(flux python ${SUBMIT_AS} 5011 --job-name=gold --queue=gold -n1 hostname)
 '
 
 test_expect_success 'check order of job queue' '
@@ -157,7 +157,7 @@ test_expect_success 'unload mf_priority.so' '
 '
 
 test_expect_success 'submit a job to a nonexistent queue with no plugin information loaded' '
-	jobid6=$(flux python ${SUBMIT_AS} 5011 --setattr=system.queue=foo -n1 hostname) &&
+	jobid6=$(flux python ${SUBMIT_AS} 5011 --queue=foo -n1 hostname) &&
 	test $(flux jobs -no {state} ${jobid6}) = PRIORITY
 '
 
