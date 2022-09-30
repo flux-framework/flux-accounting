@@ -3,13 +3,16 @@
 test_description='Test multi-factor priority plugin queue support with a single user'
 
 . `dirname $0`/sharness.sh
+
+mkdir -p conf.d
+
 MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
 SUBMIT_AS=${SHARNESS_TEST_SRCDIR}/scripts/submit_as.py
 DB_PATH=$(pwd)/FluxAccountingTest.db
 
 export TEST_UNDER_FLUX_NO_JOB_EXEC=y
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
-test_under_flux 1 job
+test_under_flux 1 job -o,--config-path=$(pwd)/conf.d
 
 flux setattr log-stderr-level 1
 
@@ -74,6 +77,19 @@ test_expect_success 'adding a default queue allows users to run jobs without spe
 	EOF
 	test_cmp job0.expected job0.test &&
 	flux job cancel $jobid0
+'
+
+# Include "foo" queue that accounting doesn't know about for test below
+test_expect_success 'configure flux with those queues' '
+	cat >conf.d/queues.toml <<-EOT &&
+	[queues.standby]
+	[queues.expedite]
+	[queues.bronze]
+	[queues.silver]
+	[queues.gold]
+	[queues.foo]
+	EOT
+	flux config reload
 '
 
 test_expect_success 'submit a job using a queue the user does not belong to' '
