@@ -29,10 +29,21 @@ extern "C" {
 #include <vector>
 #include <sstream>
 
+// the plugin does not know about the association who submitted a job and will
+// assign default values to the association until it receives information from
+// flux-accounting
 #define BANK_INFO_MISSING -9
-#define NO_SUCH_QUEUE -5
+
+// a queue is specified for a submitted job that flux-accounting does not know
+// about
+#define UNKNOWN_QUEUE 0
+
+// no queue is specified for a submitted job
+#define NO_QUEUE_SPECIFIED 0
+
+// a queue was specified for a submitted job that flux-accounting knows about and
+// the association does not have permission to run jobs under
 #define INVALID_QUEUE -6
-#define NO_DEFAULT_QUEUE -7
 
 std::map<int, std::map<std::string, struct bank_info>> users;
 std::map<std::string, struct queue_info> queues;
@@ -50,6 +61,9 @@ struct bank_info {
     int active;
 };
 
+// min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
+// currently used or enforced in this plugin, so their values have no
+// effect in queue limit enforcement.
 struct queue_info {
     int min_nodes_per_job;
     int max_nodes_per_job;
@@ -126,13 +140,16 @@ static int get_queue_info (
 {
     std::map<std::string, struct queue_info>::iterator q_it;
 
-    // make sure that if a queue is passed in, it 1) exists, and 2) is a valid
-    // queue for the user to run jobs in
+    // make sure that if a queue is passed in, it is a valid queue for the
+    // user to run jobs in
     if (queue != NULL) {
-        // check #1) the queue passed in exists in the queues map
+        // check #1) the queue passed in exists in the queues map;
+        // if the queue cannot be found, this means that flux-accounting
+        // does not know about the queue, and thus should return a default
+        // factor
         q_it = queues.find (queue);
         if (q_it == queues.end ())
-            return NO_SUCH_QUEUE;
+            return UNKNOWN_QUEUE;
 
         // check #2) the queue passed in is a valid option to pass for user
         std::vector<std::string>::iterator vect_it;
@@ -145,13 +162,8 @@ static int get_queue_info (
             // add priority associated with the passed in queue to bank_info
             return queues[queue].priority;
     } else {
-        // no queue was specified, so use default queue and associated priority
-        q_it = queues.find ("default");
-
-        if (q_it == queues.end ())
-            return NO_DEFAULT_QUEUE;
-        else
-            return queues["default"].priority;
+        // no queue was specified, so just use a default queue factor
+        return NO_QUEUE_SPECIFIED;
     }
 }
 
@@ -174,23 +186,11 @@ int check_queue_factor (flux_plugin_t *p,
                         char *queue,
                         char *prefix = (char *) "")
 {
-    if (queue_factor == NO_SUCH_QUEUE) {
-        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "mf_priority",
-                                     0,
-                                     "%sQueue does not exist: %s",
-                                     prefix, queue);
-        return -1;
-    } else if (queue_factor == INVALID_QUEUE) {
+    if (queue_factor == INVALID_QUEUE) {
         flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
                                      "mf_priority", 0,
                                      "%sQueue not valid for user: %s",
                                      prefix, queue);
-        return -1;
-    }
-    else if (queue_factor == NO_DEFAULT_QUEUE) {
-        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
-                                     "mf_priority", 0,
-                                     "No default queue exists");
         return -1;
     }
 
@@ -723,17 +723,15 @@ static int validate_cb (flux_plugin_t *p,
         return flux_jobtap_reject_job (p, args, "user/bank entry has been "
                                        "disabled from flux-accounting DB");
 
-    // fetch priority associated with passed-in queue (or default queue)
+    // fetch priority associated with passed-in queue; if a queue cannot be
+    // found, use a default factor for the queue (UNKOWN_QUEUE). If a queue
+    // is found but is determined that a user does not have access to submit
+    // jobs to it, it can still be rejected.
     bank_it->second.queue_factor = get_queue_info (queue, bank_it);
 
-    if (bank_it->second.queue_factor == NO_SUCH_QUEUE)
-        return flux_jobtap_reject_job (p, args, "Queue does not exist: %s",
-                                       queue);
-    else if (bank_it->second.queue_factor == INVALID_QUEUE)
+    if (bank_it->second.queue_factor == INVALID_QUEUE)
         return flux_jobtap_reject_job (p, args, "Queue not valid for user: %s",
                                        queue);
-    else if (bank_it->second.queue_factor == NO_DEFAULT_QUEUE)
-        return flux_jobtap_reject_job (p, args, "No default queue exists");
 
     max_run_jobs = bank_it->second.max_run_jobs;
     fairshare = bank_it->second.fairshare;
@@ -993,17 +991,6 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
         || flux_jobtap_service_register (p, "reprioritize", reprior_cb, p)
         || flux_jobtap_service_register (p, "rec_q_update", rec_q_cb, p) < 0)
         return -1;
-
-    struct queue_info *q;
-    q = &queues["default"];
-
-    // min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
-    // currently used or enforced in this plugin, so their values have no
-    // effect in queue limit enforcement.
-    q->min_nodes_per_job = 0;
-    q->max_nodes_per_job = 1024;
-    q->max_time_per_job = 64000;
-    q->priority = 1000;
 
     return 0;
 }

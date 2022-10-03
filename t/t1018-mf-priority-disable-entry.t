@@ -44,7 +44,7 @@ test_expect_success 'submit a job successfully under default bank' '
 	jobid1=$(flux mini submit -n1 hostname) &&
 	flux job wait-event -f json $jobid1 priority | jq '.context.priority' > job1.test &&
 	cat <<-EOF >job1.expected &&
-	10050000
+	50000
 	EOF
 	test_cmp job1.expected job1.test
 '
@@ -53,7 +53,7 @@ test_expect_success 'submit a job successfully under second bank' '
 	jobid2=$(flux mini submit --setattr=system.bank=account2 -n1 hostname) &&
 	flux job wait-event -f json $jobid2 priority | jq '.context.priority' > job2.test &&
 	cat <<-EOF >job2.expected &&
-	10050000
+	50000
 	EOF
 	test_cmp job2.expected job2.test
 '
@@ -78,7 +78,7 @@ test_expect_success 'submit a job successfully under second bank' '
 	jobid3=$(flux mini submit --setattr=system.bank=account2 -n1 hostname) &&
 	flux job wait-event -f json $jobid3 priority | jq '.context.priority' > job3.test &&
 	cat <<-EOF >job3.expected &&
-	10050000
+	50000
 	EOF
 	test_cmp job3.expected job3.test
 '
@@ -92,7 +92,7 @@ test_expect_success 'try to submit job under new default user/bank entry' '
 	jobid4=$(flux mini submit -n1 hostname) &&
 	flux job wait-event -f json $jobid4 priority | jq '.context.priority' > job4.test &&
 	cat <<-EOF >job4.expected &&
-	10050000
+	50000
 	EOF
 	test_cmp job4.expected job4.test
 '

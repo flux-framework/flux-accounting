@@ -61,19 +61,13 @@ test_expect_success 'stop the queue' '
 	flux queue stop
 '
 
-# test_expect_success 'trying to submit a job without specifying a queue should attempt to use default queue' '
-# 	test_must_fail flux python ${SUBMIT_AS} 5011 -n1 hostname > no_default_queue.out 2>&1 &&
-# 	test_debug "no_default_queue.out" &&
-# 	grep "No default queue exists" no_default_queue.out
-# '
-
-test_expect_success 'adding a default queue allows users to run jobs without specifying a queue' '
+test_expect_success 'users can run jobs without specifying a queue' '
 	flux account -p ${DB_PATH} add-queue default --priority=1000 &&
 	flux account-priority-update -p $(pwd)/FluxAccountingTest.db &&
 	jobid0=$(flux python ${SUBMIT_AS} 5011 -n1 hostname) &&
 	flux job wait-event -f json $jobid0 priority | jq '.context.priority' > job0.test &&
 	cat <<-EOF >job0.expected &&
-	10050000
+	50000
 	EOF
 	test_cmp job0.expected job0.test &&
 	flux job cancel $jobid0
@@ -97,13 +91,6 @@ test_expect_success 'submit a job using a queue the user does not belong to' '
 		--queue=expedite -n1 hostname > unavail_queue.out 2>&1 &&
 	test_debug "unavail_queue.out" &&
 	grep "Queue not valid for user: expedite" unavail_queue.out
-'
-
-test_expect_success 'submit a job using a nonexistent queue' '
-	test_must_fail flux python ${SUBMIT_AS} 5011 --queue=foo \
-		-n1 hostname > bad_queue.out 2>&1 &&
-	test_debug "bad_queue.out" &&
-	grep "Queue does not exist: foo" bad_queue.out
 '
 
 test_expect_success 'submit a job using standby queue, which should not increase job priority' '
@@ -165,11 +152,6 @@ test_expect_success 'reload mf_priority.so and update it with the sample test da
 	flux jobtap load ${MULTI_FACTOR_PRIORITY} &&
 	test $(flux jobs -no {state} ${jobid6}) = PRIORITY &&
 	flux account-priority-update -p $(pwd)/FluxAccountingTest.db
-'
-
-test_expect_success 'ensure job exception was raised saying that the queue does not exist' '
-	flux job wait-event -v ${jobid6} exception > nonexistent_queue.test &&
-	grep "Queue does not exist: foo" nonexistent_queue.test
 '
 
 test_done
