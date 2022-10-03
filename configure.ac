@@ -93,7 +93,6 @@ adl_RECURSIVE_EVAL([$localstatedir], acct_db_path)
 AS_VAR_SET(acct_db_path, $acct_db_path)
 AC_SUBST(acct_db_path)
 
-AC_CONFIG_MACRO_DIR([config])
 X_AC_EXPAND_INSTALL_DIRS
 
 fluxplugin_ldflags="-avoid-version -export-symbols-regex '^flux_plugin_init\$\$' --disable-static -shared -export-dynamic"
