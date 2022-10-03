@@ -61,6 +61,9 @@ struct bank_info {
     int active;
 };
 
+// min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
+// currently used or enforced in this plugin, so their values have no
+// effect in queue limit enforcement.
 struct queue_info {
     int min_nodes_per_job;
     int max_nodes_per_job;
