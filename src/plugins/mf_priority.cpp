@@ -720,17 +720,15 @@ static int validate_cb (flux_plugin_t *p,
         return flux_jobtap_reject_job (p, args, "user/bank entry has been "
                                        "disabled from flux-accounting DB");
 
-    // fetch priority associated with passed-in queue (or default queue)
+    // fetch priority associated with passed-in queue; if a queue cannot be
+    // found, use a default factor for the queue (UNKOWN_QUEUE). If a queue
+    // is found but is determined that a user does not have access to submit
+    // jobs to it, it can still be rejected.
     bank_it->second.queue_factor = get_queue_info (queue, bank_it);
 
-    if (bank_it->second.queue_factor == NO_SUCH_QUEUE)
-        return flux_jobtap_reject_job (p, args, "Queue does not exist: %s",
-                                       queue);
-    else if (bank_it->second.queue_factor == INVALID_QUEUE)
+    if (bank_it->second.queue_factor == INVALID_QUEUE)
         return flux_jobtap_reject_job (p, args, "Queue not valid for user: %s",
                                        queue);
-    else if (bank_it->second.queue_factor == NO_DEFAULT_QUEUE)
-        return flux_jobtap_reject_job (p, args, "No default queue exists");
 
     max_run_jobs = bank_it->second.max_run_jobs;
     fairshare = bank_it->second.fairshare;
