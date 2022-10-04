@@ -32,7 +32,7 @@ extern "C" {
 // the plugin does not know about the association who submitted a job and will
 // assign default values to the association until it receives information from
 // flux-accounting
-#define BANK_INFO_MISSING -9
+#define BANK_INFO_MISSING 999
 
 // a queue is specified for a submitted job that flux-accounting does not know
 // about
@@ -650,8 +650,9 @@ static void add_missing_bank_info (flux_plugin_t *p, flux_t *h, int userid)
     b->fairshare = 0.1;
     b->max_run_jobs = BANK_INFO_MISSING;
     b->cur_run_jobs = 0;
-    b->max_active_jobs = 0;
+    b->max_active_jobs = 1000;
     b->cur_active_jobs = 0;
+    b->active = 1;
     b->held_jobs = std::vector<long int>();
 
     if (flux_jobtap_job_aux_set (p,
