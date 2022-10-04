@@ -13,6 +13,8 @@ import argparse
 import os
 import sqlite3
 import sys
+import tempfile
+import shutil
 
 from argparse import RawDescriptionHelpFormatter
 
@@ -212,40 +214,43 @@ def update_db(path, new_db):
     old_cur = old_conn.cursor()
 
     try:
-        # we should only pass a new DB if we are testing the flux
-        # account-update-db command; normally, no value should be passed for
-        # new_db
-        if not new_db:
-            new_db = "tmpFluxAccounting.db"
-            c.create_db(new_db)
+        with tempfile.TemporaryDirectory() as tmp_dir_name:
+            # we should only pass a new DB if we are testing the flux
+            # account-update-db command; normally, no value should be passed for
+            # new_db
+            if not new_db:
+                tmp_db_path = tmp_dir_name + "/tmpFluxAccounting.db"
+                c.create_db(tmp_db_path)
 
-        new_conn = sqlite3.connect("file:%s?mode=rw" % new_db, uri=True)
-        new_cur = new_conn.cursor()
+                new_conn = sqlite3.connect("file:%s?mode=rw" % (tmp_db_path), uri=True)
+            else:
+                new_conn = sqlite3.connect("file:%s?mode=rw" % new_db, uri=True)
 
-        update_tables(old_conn, old_cur, new_cur)
+            new_cur = new_conn.cursor()
 
-        update_columns(old_conn, old_cur, new_cur)
+            update_tables(old_conn, old_cur, new_cur)
 
-        # update user_version for DB
-        old_cur.execute(
-            "PRAGMA user_version = %d" % (fluxacct.accounting.db_schema_version)
-        )
+            update_columns(old_conn, old_cur, new_cur)
 
-        # commit changes
-        old_conn.commit()
+            # update user_version for DB
+            old_cur.execute(
+                "PRAGMA user_version = %d" % (fluxacct.accounting.db_schema_version)
+            )
 
-        # close connections to DB's and remove temporary database
-        old_conn.close()
-        new_conn.close()
+            # commit changes
+            old_conn.commit()
 
-        os.remove(new_db)
+            # close connections to DB's and remove temporary database
+            old_conn.close()
+            new_conn.close()
     except sqlite3.OperationalError as exc:
         print(f"Unable to open temporary database file: {new_db}")
         print(f"Exception: {exc}")
+        shutil.rmtree(tmp_dir_name)
         sys.exit(1)
     except sqlite3.IntegrityError as exc:
         print(f"Exception: {exc}")
-        os.remove(new_db)
+        shutil.rmtree(tmp_dir_name)
         sys.exit(1)
 
 
