@@ -18,6 +18,24 @@ test_expect_success 'check that mf_priority plugin is loaded' '
 	flux jobtap list | grep mf_priority
 '
 
+test_expect_success 'submit a number of jobs with no user/bank info loaded to plugin' '
+	jobid1=$(flux mini submit --wait-event=depend hostname) &&
+	jobid2=$(flux mini submit --wait-event=depend hostname) &&
+	jobid3=$(flux mini submit --wait-event=depend hostname)
+'
+
+test_expect_success 'make sure jobs get held in state PRIORITY' '
+	test $(flux jobs -no {state} ${jobid1}) = PRIORITY &&
+	test $(flux jobs -no {state} ${jobid2}) = PRIORITY &&
+	test $(flux jobs -no {state} ${jobid3}) = PRIORITY
+'
+
+test_expect_success 'cancel held jobs' '
+	flux job cancel $jobid1 &&
+	flux job cancel $jobid2 &&
+	flux job cancel $jobid3
+'
+
 test_expect_success 'submit job #1 with no user/bank info loaded to plugin' '
 	jobid1=$(flux mini submit --wait-event=depend hostname)
 '
