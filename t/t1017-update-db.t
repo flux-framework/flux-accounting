@@ -158,4 +158,9 @@ test_expect_success 'successfully call a flux account command after the old DB h
 	flux account -p ${OLD_DB} add-bank root 1
 '
 
+test_expect_success 'call update-db from the / directory to make sure command works' '
+	cd / &&
+	flux account-update-db -p ${OLD_DB}
+'
+
 test_done
