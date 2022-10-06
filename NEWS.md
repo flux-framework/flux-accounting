@@ -1,3 +1,11 @@
+flux-accounting version 0.20.1 - 2022-10-05
+-------------------------------------------
+
+#### Fixes
+
+* Change `update-db` command to create temporary database in `/tmp` instead
+of current working directory (#288)
+
 flux-accounting version 0.20.0 - 2022-10-04
 -------------------------------------------
 
