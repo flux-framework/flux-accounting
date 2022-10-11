@@ -170,7 +170,7 @@ test_expect_success 'update max_active_jobs limit' '
 				"bank": "account3",
 				"def_bank": "account3",
 				"fairshare": 0.45321,
-				"max_running_jobs": 3,
+				"max_running_jobs": 2,
 				"max_active_jobs": 5,
 				"queues": ""
 			}
@@ -203,15 +203,16 @@ test_expect_success 'cancel one of the active jobs' '
 
 test_expect_success 'newly submitted job should now be accepted since user is under their max_active_jobs limit' '
 	jobid7=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
-	flux job wait-event -f json $jobid7 priority | jq '.context.priority' > job7.test &&
-	cat <<-EOF >job7.expected &&
-	45321
-	EOF
-	test_cmp job7.expected job7.test
+	test $(flux jobs -no {state} ${jobid7}) = DEPEND
+'
+
+test_expect_success 'cancel one of the running jobs and make sure that the held jobs release in order of submission' '
+	flux job cancel $jobid1 &&
+	test $(flux jobs -no {state} ${jobid3}) = RUN &&
+	test $(flux jobs -no {state} ${jobid7}) = DEPEND
 '
 
 test_expect_success 'cancel all remaining active jobs' '
-	flux job cancel $jobid1 &&
 	flux job cancel $jobid2 &&
 	flux job cancel $jobid3 &&
 	flux job cancel $jobid4 &&
