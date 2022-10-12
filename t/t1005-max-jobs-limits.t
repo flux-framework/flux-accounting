@@ -202,21 +202,21 @@ test_expect_success 'cancel one of the active jobs' '
 '
 
 test_expect_success 'newly submitted job should now be accepted since user is under their max_active_jobs limit' '
-	jobid7=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
-	test $(flux jobs -no {state} ${jobid7}) = DEPEND
+	jobid6=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
+	test $(flux jobs -no {state} ${jobid6}) = DEPEND
 '
 
 test_expect_success 'cancel one of the running jobs and make sure that the held jobs release in order of submission' '
 	flux job cancel $jobid1 &&
 	test $(flux jobs -no {state} ${jobid3}) = RUN &&
-	test $(flux jobs -no {state} ${jobid7}) = DEPEND
+	test $(flux jobs -no {state} ${jobid6}) = DEPEND
 '
 
 test_expect_success 'cancel all remaining active jobs' '
 	flux job cancel $jobid2 &&
 	flux job cancel $jobid3 &&
 	flux job cancel $jobid4 &&
-	flux job cancel $jobid7
+	flux job cancel $jobid6
 '
 
 test_expect_success 'create another user with the same limits in multiple banks' '
