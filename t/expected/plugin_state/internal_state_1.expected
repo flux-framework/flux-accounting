@@ -10,7 +10,11 @@
         "max_active_jobs": 7,
         "cur_active_jobs": 0,
         "held_jobs": [],
-        "active": 1
+        "active": 1,
+        "projects": [
+          "*"
+        ],
+        "def_project": "*"
       },
       {
         "bank": "account2",
@@ -20,7 +24,11 @@
         "max_active_jobs": 7,
         "cur_active_jobs": 0,
         "held_jobs": [],
-        "active": 1
+        "active": 1,
+        "projects": [
+          "*"
+        ],
+        "def_project": "*"
       }
     ]
   }

@@ -282,18 +282,53 @@ error:
 
 
 /*
+ * Add projects to a JSON array to be added to a bank_info JSON object.
+ */
+static json_t *add_projects (const std::pair<std::string, struct bank_info> &b)
+{
+    json_t *projects = NULL;
+
+    // add any projects to a JSON array
+    if (!(projects = json_array ()))
+        goto error;
+
+    for (auto const &j : b.second.projects) {
+        json_t *project = json_string (j.c_str ());
+
+        if (!project)
+            goto error;
+
+        if (json_array_append_new (projects, project) < 0) {
+            json_decref (project);
+            goto error;
+        }
+    }
+
+    return projects;
+error:
+    json_decref (projects);
+    return NULL;
+}
+
+
+/*
  * Create a JSON object for a bank that a user belongs to.
  */
 static json_t *pack_bank_info_object (
                             const std::pair<std::string, struct bank_info> &b)
 {
-    json_t *bank_info, *held_jobs = NULL;
+    json_t *bank_info, *held_jobs, *projects = NULL;
 
     held_jobs = add_held_jobs (b);
     if (held_jobs == NULL)
         goto error;
 
-    if (!(bank_info = json_pack ("{s:s, s:f, s:i, s:i, s:i, s:i, s:o, s:i}",
+    projects = add_projects (b);
+    if (projects == NULL)
+        goto error;
+
+    if (!(bank_info = json_pack ("{s:s, s:f, s:i, s:i, s:i, "
+                                 " s:i, s:o, s:i, s:o, s:s}",
                                  "bank", b.first.c_str (),
                                  "fairshare", b.second.fairshare,
                                  "max_run_jobs", b.second.max_run_jobs,
@@ -301,13 +336,17 @@ static json_t *pack_bank_info_object (
                                  "max_active_jobs", b.second.max_active_jobs,
                                  "cur_active_jobs", b.second.cur_active_jobs,
                                  "held_jobs", held_jobs,
-                                 "active", b.second.active))) {
+                                 "active", b.second.active,
+                                 "projects", projects,
+                                 "def_project",
+                                 b.second.def_project.c_str ()))) {
             goto error;
     }
 
     return bank_info;
 error:
     json_decref (held_jobs);
+    json_decref (projects);
     return NULL;
 }
 
