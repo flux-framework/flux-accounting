@@ -18,6 +18,7 @@ import sys
 from unittest import mock
 
 from fluxacct.accounting import user_subcommands as u
+from fluxacct.accounting import bank_subcommands as b
 from fluxacct.accounting import create_db as c
 
 
@@ -37,6 +38,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # add a valid user to association_table
     def test_01_add_valid_user(self):
+        b.add_bank(acct_conn, bank="acct", shares=10)
         u.add_user(
             acct_conn,
             username="fluxuser",
@@ -77,6 +79,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # add a user with the same username but a different bank
     def test_03_add_duplicate_user(self):
+        b.add_bank(acct_conn, bank="other_acct", shares=10)
         u.add_user(
             acct_conn,
             username="dup_user",
@@ -149,6 +152,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # check for a new user's default bank
     def test_07_check_default_bank_new_user(self):
+        b.add_bank(acct_conn, bank="test_bank", shares=10)
         u.add_user(
             acct_conn,
             username="test_user1",
@@ -164,6 +168,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # check for an existing user's default bank
     def test_08_check_default_bank_existing_user(self):
+        b.add_bank(acct_conn, bank="other_test_bank", shares=10)
         u.add_user(
             acct_conn,
             username="test_user1",
@@ -200,6 +205,8 @@ class TestAccountingCLI(unittest.TestCase):
     # disable a user who belongs to multiple banks; make sure that the default_bank
     # is updated to the next earliest associated bank
     def test_11_disable_user_default_bank_row(self):
+        b.add_bank(acct_conn, bank="A", shares=1)
+        b.add_bank(acct_conn, bank="B", shares=1)
         u.add_user(acct_conn, username="test_user2", bank="A")
         u.add_user(acct_conn, username="test_user2", bank="B")
         cur = acct_conn.cursor()
@@ -234,6 +241,12 @@ class TestAccountingCLI(unittest.TestCase):
         )
 
         self.assertEqual(cur.fetchone()[0], "A")
+
+    # adding a user to a nonexistent bank should raise a ValueError
+    def test_13_add_user_to_nonexistent_bank(self):
+        u.add_user(acct_conn, username="test_user4", bank="foo")
+
+        self.assertRaises(ValueError)
 
     # remove database and log file
     @classmethod

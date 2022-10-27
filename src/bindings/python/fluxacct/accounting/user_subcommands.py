@@ -67,6 +67,15 @@ def validate_project(conn, projects):
     return ",".join(project_list)
 
 
+def validate_bank(conn, bank):
+    cur = conn.cursor()
+
+    cur.execute("SELECT bank FROM bank_table WHERE bank=?", (bank,))
+    row = cur.fetchone()
+    if row is None:
+        raise ValueError('Bank "%s" does not exist in bank_table' % bank)
+
+
 def set_default_project(projects):
     if projects != "*":
         project_list = projects.split(",")
@@ -201,6 +210,13 @@ def add_user(
     cur = conn.cursor()
 
     userid = set_uid(username, uid)
+
+    # validate the bank specified if one was passed in
+    try:
+        validate_bank(conn, bank)
+    except ValueError as err:
+        print(err)
+        return -1
 
     # set default bank for user
     default_bank = set_default_bank(cur, username, bank)

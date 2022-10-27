@@ -15,6 +15,7 @@ import sqlite3
 
 from fluxacct.accounting import create_db as c
 from fluxacct.accounting import user_subcommands as u
+from fluxacct.accounting import bank_subcommands as b
 from fluxacct.accounting import project_subcommands as p
 
 
@@ -53,6 +54,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # add a user to the accounting DB without specifying a default project
     def test_04_default_project_unspecified(self):
+        b.add_bank(acct_conn, bank="A", shares=1)
         u.add_user(acct_conn, username="user5001", uid=5001, bank="A")
         cur.execute(
             "SELECT default_project FROM association_table WHERE username='user5001' AND bank='A'"
