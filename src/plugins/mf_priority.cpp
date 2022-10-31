@@ -28,6 +28,7 @@ extern "C" {
 #include <cinttypes>
 #include <vector>
 #include <sstream>
+#include <chrono>
 
 // the plugin does not know about the association who submitted a job and will
 // assign default values to the association until it receives information from
@@ -99,6 +100,9 @@ int64_t priority_calculation (flux_plugin_t *p,
     int queue_factor = 0;
     int fshare_weight, queue_weight;
     struct bank_info *b;
+    double t_submit = 0.0;
+    double cur_time = 0.0;
+    double age = 0.0;
 
     fshare_weight = priority_weights["fshare_weight"];
     queue_weight = priority_weights["queue_weight"];
@@ -127,6 +131,25 @@ int64_t priority_calculation (flux_plugin_t *p,
                                      "missing");
         return -1;
     }
+
+    // fetch t_submit
+    flux_t *h = flux_jobtap_get_flux (p);
+    if (flux_plugin_arg_unpack (args,
+                                FLUX_PLUGIN_ARG_IN,
+                                "{s:f}",
+                                "t_submit", &t_submit) < 0) {
+        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "mf_priority",
+                                     0, "job.state.priority: failed to get "
+                                     "t_submit");
+        return -1;
+    }
+
+    // get current time
+    cur_time = std::chrono::duration_cast <std::chrono::duration<double>> (
+        std::chrono::system_clock::now ().time_since_epoch ()).count ();
+
+    // calculate age of job
+    age = cur_time - t_submit;
 
     fshare_factor = b->fairshare;
     queue_factor = b->queue_factor;
