@@ -98,14 +98,15 @@ int64_t priority_calculation (flux_plugin_t *p,
 {
     double fshare_factor = 0.0, priority = 0.0;
     int queue_factor = 0;
-    int fshare_weight, queue_weight;
+    int fshare_weight, queue_weight, age_weight;
     struct bank_info *b;
     double t_submit = 0.0;
     double cur_time = 0.0;
-    double age = 0.0;
+    double age_factor = 0.0;
 
     fshare_weight = priority_weights["fshare_weight"];
     queue_weight = priority_weights["queue_weight"];
+    age_weight = priority_weights["age_weight"];
 
     // check values of priority factor weights; if not configured,
     // these will be set to -1, so just use default weights
@@ -113,6 +114,8 @@ int64_t priority_calculation (flux_plugin_t *p,
         fshare_weight = 100000;
     if (queue_weight == -1)
         queue_weight = 10000;
+    if (age_weight == -1)
+        age_weight = 1000;
 
     if (urgency == FLUX_JOB_URGENCY_HOLD)
         return FLUX_JOB_PRIORITY_MIN;
@@ -149,13 +152,14 @@ int64_t priority_calculation (flux_plugin_t *p,
         std::chrono::system_clock::now ().time_since_epoch ()).count ();
 
     // calculate age of job
-    age = cur_time - t_submit;
+    age_factor = cur_time - t_submit;
 
     fshare_factor = b->fairshare;
     queue_factor = b->queue_factor;
 
     priority = round ((fshare_weight * fshare_factor) +
                       (queue_weight * queue_factor) +
+                      (age_weight * age_factor) +
                       (urgency - 16));
 
     if (priority < 0)
