@@ -354,17 +354,18 @@ static int conf_update_cb (flux_plugin_t *p,
                            flux_plugin_arg_t *args,
                            void *data)
 {
-    int fshare_weight = -1, queue_weight = -1;
+    int fshare_weight = -1, queue_weight = -1, age_weight = -1;
     flux_t *h = flux_jobtap_get_flux (p);
 
     // unpack the various factors to be used in the multi-factor
     // priority calculation
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s?{s?{s?i, s?i}}}",
+                                "{s?{s?{s?i, s?i, s?i}}}",
                                 "conf", "priority_factors",
                                 "fshare_weight", &fshare_weight,
-                                "queue_weight", &queue_weight) < 0) {
+                                "queue_weight", &queue_weight,
+                                "age_weight", &age_weight) < 0) {
         flux_log_error (flux_jobtap_get_flux (p),
                         "mf_priority: conf.update: flux_plugin_arg_unpack: %s",
                         flux_plugin_arg_strerror (args));
@@ -373,6 +374,7 @@ static int conf_update_cb (flux_plugin_t *p,
     // assign unpacked weights into priority_weights map
     priority_weights["fshare_weight"] = fshare_weight;
     priority_weights["queue_weight"] = queue_weight;
+    priority_weights["age_weight"] = age_weight;
 
     return 0;
 }
