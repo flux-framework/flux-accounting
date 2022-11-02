@@ -161,12 +161,16 @@ def update_tables(old_conn, old_cur, new_cur):
                 if default_value is not None:
                     add_stmt += "DEFAULT " + default_value + " "
                 if not_null == 1:
-                    add_stmt += "NOT NULL, "
+                    add_stmt += "NOT NULL"
+                if column != new_columns[-1]:
+                    add_stmt += ", "
 
             # look for primary key in new table to add
             for column in new_columns:
                 if column[5] == 1:
-                    add_stmt += "PRIMARY KEY (" + column[1] + "));"
+                    add_stmt += ", PRIMARY KEY (" + column[1] + ")"
+
+            add_stmt += ");"
 
             # add table to old DB
             old_cur.execute(add_stmt)
