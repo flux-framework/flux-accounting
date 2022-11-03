@@ -20,7 +20,8 @@ TESTSCRIPTS = \
 	t1016-export-db.t \
 	t1017-update-db.t \
 	t1018-mf-priority-disable-entry.t \
-	t1019-mf-priority-info-fetch.t
+	t1019-mf-priority-info-fetch.t \
+	t1020-mf-priority-config.t
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
