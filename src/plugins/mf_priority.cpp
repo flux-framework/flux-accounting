@@ -40,6 +40,7 @@ extern "C" {
 std::map<int, std::map<std::string, Association>> users;
 std::map<std::string, Queue> queues;
 std::map<int, std::string> users_def_bank;
+std::map<std::string, int> priority_weights;
 
 /******************************************************************************
  *                                                                            *
@@ -166,6 +167,38 @@ static void add_special_association (flux_plugin_t *p, flux_t *h, int userid)
  *                               Callbacks                                    *
  *                                                                            *
  *****************************************************************************/
+
+/*
+ * Get config information about the various priority factor weights
+ * and assign them in the priority_weights map.
+ */
+static int conf_update_cb (flux_plugin_t *p,
+                           const char *topic,
+                           flux_plugin_arg_t *args,
+                           void *data)
+{
+    int fshare_weight = -1, queue_weight = -1;
+    flux_t *h = flux_jobtap_get_flux (p);
+
+    // unpack the various factors to be used in job priority calculation
+    if (flux_plugin_arg_unpack (args,
+                                FLUX_PLUGIN_ARG_IN,
+                                "{s?{s?{s?i, s?i}}}",
+                                "conf", "priority_factors",
+                                "fshare_weight", &fshare_weight,
+                                "queue_weight", &queue_weight) < 0) {
+        flux_log_error (flux_jobtap_get_flux (p),
+                        "mf_priority: conf.update: flux_plugin_arg_unpack: %s",
+                        flux_plugin_arg_strerror (args));
+    }
+
+    // assign unpacked weights into priority_weights map
+    priority_weights["fshare_weight"] = fshare_weight;
+    priority_weights["queue_weight"] = queue_weight;
+
+    return 0;
+}
+
 
 /*
  * Get state of all user and bank information from plugin
@@ -998,6 +1031,7 @@ static const struct flux_plugin_handler tab[] = {
     { "plugin.query", query_cb, NULL},
     { "job.update.attributes.system.queue", update_queue_cb, NULL },
     { "job.update.attributes.system.bank", update_bank_cb, NULL },
+    { "conf.update", conf_update_cb, NULL},
     { 0 },
 };
 
