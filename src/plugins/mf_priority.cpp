@@ -72,8 +72,13 @@ int64_t priority_calculation (flux_plugin_t *p,
     int fshare_weight, queue_weight;
     Association *b;
 
-    fshare_weight = 100000;
-    queue_weight = 10000;
+    fshare_weight = priority_weights["fairshare"];
+    queue_weight = priority_weights["queue"];
+
+    // check values of priority factor weights; if not configured,
+    // these will be set to -1, so just use default weights
+    if (fshare_weight == -1) fshare_weight = 100000;
+    if (queue_weight == -1) queue_weight = 10000;
 
     if (urgency == FLUX_JOB_URGENCY_HOLD)
         return FLUX_JOB_PRIORITY_MIN;
