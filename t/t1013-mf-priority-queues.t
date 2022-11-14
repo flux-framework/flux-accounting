@@ -24,6 +24,14 @@ test_expect_success 'check that mf_priority plugin is loaded' '
 	flux jobtap list | grep mf_priority
 '
 
+test_expect_success 'disable age factor in multi-factor priority plugin' '
+	cat >conf.d/test.toml <<-EOT &&
+	[priority_factors]
+	age_weight = 0
+	EOT
+	flux config reload
+'
+
 test_expect_success 'create flux-accounting DB' '
 	flux account -p $(pwd)/FluxAccountingTest.db create-db
 '
@@ -82,6 +90,8 @@ test_expect_success 'configure flux with those queues' '
 	[queues.silver]
 	[queues.gold]
 	[queues.foo]
+	[priority_factors]
+	age_factor = 0
 	EOT
 	flux config reload
 '
