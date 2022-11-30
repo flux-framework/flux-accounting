@@ -111,9 +111,33 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(cursor.fetchone()[0], 50)
 
+    # edit a bank's parent bank
+    def test_08_edit_parent_bank_success(self):
+        b.add_bank(acct_conn, bank="A", parent_bank="root", shares=1)
+        b.add_bank(acct_conn, bank="B", parent_bank="root", shares=1)
+
+        # set bank's parent bank to A
+        b.add_bank(acct_conn, bank="C", parent_bank="A", shares=1)
+
+        # change bank's parent bank to B
+        b.edit_bank(acct_conn, bank="C", parent_bank="B")
+
+        cursor = acct_conn.cursor()
+        cursor.execute("SELECT parent_bank FROM bank_table WHERE bank='C'")
+
+        self.assertEqual(cursor.fetchone()[0], "B")
+
+    # trying to edit a bank's parent bank to a bank that does not
+    # exist should raise a ValueError
+    def test_09_edit_parent_bank_failure(self):
+        with self.assertRaises(ValueError) as context:
+            b.edit_bank(acct_conn, bank="C", parent_bank="foo")
+
+        self.assertTrue("Parent bank not found in bank table" in str(context.exception))
+
     # trying to edit a bank's shares <= 0 should raise
     # a ValueError
-    def test_08_edit_bank_value_fail(self):
+    def test_10_edit_bank_value_fail(self):
         with self.assertRaises(ValueError) as context:
             b.add_bank(acct_conn, bank="bad_bank", shares=10)
             b.edit_bank(acct_conn, bank="bad_bank", shares=-1)
