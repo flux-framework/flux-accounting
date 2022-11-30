@@ -292,6 +292,11 @@ def add_edit_bank_arg(subparsers):
         help="new shares value",
         metavar="SHARES",
     )
+    subparser_edit_bank.add_argument(
+        "--parent-bank",
+        help="parent bank",
+        metavar="PARENT BANK",
+    )
 
 
 def add_update_usage_arg(subparsers):
@@ -531,7 +536,7 @@ def select_accounting_function(args, conn, output_file, parser):
     elif args.func == "delete_bank":
         b.delete_bank(conn, args.bank)
     elif args.func == "edit_bank":
-        b.edit_bank(conn, args.bank, args.shares)
+        b.edit_bank(conn, args.bank, args.shares, args.parent_bank)
     elif args.func == "update_usage":
         jobs_conn = establish_sqlite_connection(args.job_archive_db_path)
         jobs.update_job_usage(conn, jobs_conn, args.priority_decay_half_life)
