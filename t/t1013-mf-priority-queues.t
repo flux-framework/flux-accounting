@@ -154,4 +154,8 @@ test_expect_success 'reload mf_priority.so and update it with the sample test da
 	flux account-priority-update -p $(pwd)/FluxAccountingTest.db
 '
 
+test_expect_success 'cancel final job' '
+	flux job cancel $jobid6
+'
+
 test_done
