@@ -84,7 +84,7 @@ test_expect_success 'configure flux with those queues' '
 	[queues.foo]
 	EOT
 	flux config reload &&
-	flux queue stop
+	flux queue stop --all
 '
 
 test_expect_success 'submit a job using a queue the user does not belong to' '
