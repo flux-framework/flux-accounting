@@ -1,0 +1,11 @@
+Account                         Username           RawShares            RawUsage           Fairshare
+root                                                       1                   0
+ B                                                         1                   0
+  B                             user5013                   1                   0                 0.5
+ C                                                         1                   0
+  C                             user5014                   1                   0                 0.5
+ D                                                         1                   0
+ E                                                         1                   0
+  F                                                        1                   0
+   F                            user1001                   1                   0                 0.5
+   F                            user1002                   1                   0                 0.5

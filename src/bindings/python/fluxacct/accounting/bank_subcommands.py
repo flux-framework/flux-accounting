@@ -199,22 +199,36 @@ def delete_bank(conn, bank):
     return 0
 
 
-def edit_bank(conn, bank, shares):
-    print(shares)
-    # if user tries to edit a shares value <= 0,
-    # raise an exception
-    if int(shares) <= 0:
-        raise ValueError("New shares amount must be >= 0")
-    try:
-        # edit value in bank_table
-        conn.execute(
-            "UPDATE bank_table SET shares=? WHERE bank=?",
-            (
-                shares,
+def edit_bank(
+    conn,
+    bank=None,
+    shares=None,
+    parent_bank=None,
+):
+    cur = conn.cursor()
+    params = locals()
+    editable_fields = [
+        "shares",
+        "parent_bank",
+    ]
+    for field in editable_fields:
+        if params[field] is not None:
+            if field == "parent_bank":
+                validate_parent_bank(cur, params[field])
+            if field == "shares":
+                if int(shares) <= 0:
+                    raise ValueError("New shares amount must be >= 0")
+
+            update_stmt = "UPDATE bank_table SET " + field
+
+            update_stmt += "=? WHERE bank=?"
+            tup = (
+                params[field],
                 bank,
-            ),
-        )
-        # commit changes
-        conn.commit()
-    except sqlite3.OperationalError as e_database_error:
-        print(e_database_error)
+            )
+            conn.execute(update_stmt, tup)
+
+    # commit changes
+    conn.commit()
+
+    return 0

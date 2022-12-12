@@ -125,4 +125,26 @@ test_expect_success 'print hierarchy again and check that deleted bank or users 
     test_cmp ${EXPECTED_FILES}/after_bank_delete.expected after_bank_delete.test
 '
 
+test_expect_success 'add some sub banks and some users' '
+    flux account -p ${DB_PATH} add-bank --parent-bank=root D 1 &&
+    flux account -p ${DB_PATH} add-bank --parent-bank=root E 1 &&
+    flux account -p ${DB_PATH} add-bank --parent-bank=D F 1 &&
+    flux account -p ${DB_PATH} add-user --username=user1001 --userid=1001 --bank=F &&
+    flux account -p ${DB_PATH} add-user --username=user1002 --userid=1002 --bank=F
+'
+
+test_expect_success 'check hierarchy before changing parent bank of F' '
+    flux account-shares -p ${DB_PATH} > before_parent_bank_change.test &&
+    test_cmp ${EXPECTED_FILES}/before_parent_bank_change.expected before_parent_bank_change.test
+'
+
+test_expect_success 'change parent bank of F' '
+    flux account -p ${DB_PATH} edit-bank F --parent-bank=E
+'
+
+test_expect_success 'check hierarchy after changing parent bank of F' '
+    flux account-shares -p ${DB_PATH} > after_parent_bank_change.test &&
+    test_cmp ${EXPECTED_FILES}/after_parent_bank_change.expected after_parent_bank_change.test
+'
+
 test_done
