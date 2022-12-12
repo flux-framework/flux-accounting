@@ -1,3 +1,16 @@
+flux-accounting version 0.21.0 - 2022-12-12
+-------------------------------------------
+
+#### Features
+
+* Add ability to edit the parent bank of a bank (#299)
+
+#### Testsuite
+
+* Do not assume queues default to stopped (#302)
+
+* Stop all queues with `--all` option (#303)
+
 flux-accounting version 0.20.1 - 2022-10-05
 -------------------------------------------
 
