@@ -16,6 +16,14 @@ test_under_flux 1 job -o,--config-path=$(pwd)/conf.d
 
 flux setattr log-stderr-level 1
 
+test_expect_success 'create flux-accounting DB' '
+	flux account -p $(pwd)/FluxAccountingTest.db create-db
+'
+
+test_expect_success 'start flux-accounting service' '
+	flux account-service -p ${DB_PATH} -t
+'
+
 test_expect_success 'load multi-factor priority plugin' '
 	flux jobtap load -r .priority-default ${MULTI_FACTOR_PRIORITY}
 '
@@ -24,33 +32,29 @@ test_expect_success 'check that mf_priority plugin is loaded' '
 	flux jobtap list | grep mf_priority
 '
 
-test_expect_success 'create flux-accounting DB' '
-	flux account -p $(pwd)/FluxAccountingTest.db create-db
-'
-
 test_expect_success 'add some banks to the DB' '
-	flux account -p ${DB_PATH} add-bank root 1 &&
-	flux account -p ${DB_PATH} add-bank --parent-bank=root account1 1 &&
-	flux account -p ${DB_PATH} add-bank --parent-bank=root account2 1
+	flux account add-bank root 1 &&
+	flux account add-bank --parent-bank=root account1 1 &&
+	flux account add-bank --parent-bank=root account2 1
 '
 
 test_expect_success 'add some queues to the DB' '
-	flux account -p ${DB_PATH} add-queue standby --priority=0 &&
-	flux account -p ${DB_PATH} add-queue expedite --priority=10000 &&
-	flux account -p ${DB_PATH} add-queue bronze --priority=200 &&
-	flux account -p ${DB_PATH} add-queue silver --priority=300 &&
-	flux account -p ${DB_PATH} add-queue gold --priority=400
+	flux account add-queue standby --priority=0 &&
+	flux account add-queue expedite --priority=10000 &&
+	flux account add-queue bronze --priority=200 &&
+	flux account add-queue silver --priority=300 &&
+	flux account add-queue gold --priority=400
 '
 
 test_expect_success 'add a user to the DB' '
-	flux account -p ${DB_PATH} add-user --username=user5011 \
+	flux account add-user --username=user5011 \
 		--userid=5011 --bank=account1 --queues="standby,bronze,silver,gold,expedite" &&
-	flux account -p ${DB_PATH} add-user --username=user5011 \
+	flux account add-user --username=user5011 \
 		--userid=5011 --bank=account2 --queues="standby"
 '
 
 test_expect_success 'view user information' '
-	flux account -p ${DB_PATH} view-user user5011
+	flux account view-user user5011
 '
 
 test_expect_success 'send the user and queue information to the plugin' '
@@ -62,7 +66,7 @@ test_expect_success 'stop the queue' '
 '
 
 test_expect_success 'users can run jobs without specifying a queue' '
-	flux account -p ${DB_PATH} add-queue default --priority=1000 &&
+	flux account add-queue default --priority=1000 &&
 	flux account-priority-update -p $(pwd)/FluxAccountingTest.db &&
 	jobid0=$(flux python ${SUBMIT_AS} 5011 -n1 hostname) &&
 	flux job wait-event -f json $jobid0 priority | jq '.context.priority' > job0.test &&
@@ -157,6 +161,10 @@ test_expect_success 'reload mf_priority.so and update it with the sample test da
 
 test_expect_success 'cancel final job' '
 	flux job cancel $jobid6
+'
+
+test_expect_success 'shut down flux-accounting service' '
+	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
 
 test_done

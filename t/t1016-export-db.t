@@ -7,25 +7,35 @@ DB_PATHv1=$(pwd)/FluxAccountingTestv1.db
 DB_PATHv2=$(pwd)/FluxAccountingTestv2.db
 EXPECTED_FILES=${SHARNESS_TEST_SRCDIR}/expected/pop_db
 
+export TEST_UNDER_FLUX_NO_JOB_EXEC=y
+export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
+test_under_flux 1 job
+
+flux setattr log-stderr-level 1
+
 test_expect_success 'create flux-accounting DB' '
 	flux account -p $(pwd)/FluxAccountingTestv1.db create-db
 '
 
+test_expect_success 'start flux-accounting service' '
+	flux account-service -p ${DB_PATHv1} -t
+'
+
 test_expect_success 'add some banks to the DB' '
-	flux account -p ${DB_PATHv1} add-bank root 1 &&
-	flux account -p ${DB_PATHv1} add-bank --parent-bank=root A 1 &&
-	flux account -p ${DB_PATHv1} add-bank --parent-bank=root B 1 &&
-	flux account -p ${DB_PATHv1} add-bank --parent-bank=root C 1 &&
-	flux account -p ${DB_PATHv1} add-bank --parent-bank=root D 1 &&
-	flux account -p ${DB_PATHv1} add-bank --parent-bank=D E 1
-	flux account -p ${DB_PATHv1} add-bank --parent-bank=D F 1
+	flux account add-bank root 1 &&
+	flux account add-bank --parent-bank=root A 1 &&
+	flux account add-bank --parent-bank=root B 1 &&
+	flux account add-bank --parent-bank=root C 1 &&
+	flux account add-bank --parent-bank=root D 1 &&
+	flux account add-bank --parent-bank=D E 1
+	flux account add-bank --parent-bank=D F 1
 '
 
 test_expect_success 'add some users to the DB' '
-	flux account -p ${DB_PATHv1} add-user --username=user5011 --userid=5011 --bank=A &&
-	flux account -p ${DB_PATHv1} add-user --username=user5012 --userid=5012 --bank=A &&
-	flux account -p ${DB_PATHv1} add-user --username=user5013 --userid=5013 --bank=B &&
-	flux account -p ${DB_PATHv1} add-user --username=user5014 --userid=5014 --bank=C
+	flux account add-user --username=user5011 --userid=5011 --bank=A &&
+	flux account add-user --username=user5012 --userid=5012 --bank=A &&
+	flux account add-user --username=user5013 --userid=5013 --bank=B &&
+	flux account add-user --username=user5014 --userid=5014 --bank=C
 '
 
 test_expect_success 'export DB information into .csv files' '
@@ -74,6 +84,10 @@ test_expect_success 'specify a different filename for exported users and banks .
 	flux account-export-db -p ${DB_PATHv2} --users foo.csv --banks bar.csv &&
 	test_cmp -b users_expected.csv foo.csv &&
 	test_cmp -b banks_expected.csv bar.csv
+'
+
+test_expect_success 'shut down flux-accounting service' '
+	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
 
 test_done

@@ -11,6 +11,20 @@ SMALL_TIE_ALL=${SHARNESS_TEST_SRCDIR}/expected/test_dbs/small_tie_all.db
 OUT_OF_INSERT_ORDER=${SHARNESS_TEST_SRCDIR}/expected/test_dbs/out_of_insert_order.db
 DB_PATH=$(pwd)/FluxAccountingTestHierarchy.db
 
+export TEST_UNDER_FLUX_NO_JOB_EXEC=y
+export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
+test_under_flux 1 job
+
+flux setattr log-stderr-level 1
+
+test_expect_success 'create flux-accounting DB' '
+    flux account -p $(pwd)/FluxAccountingTestHierarchy.db create-db
+'
+
+test_expect_success 'start flux-accounting service' '
+	flux account-service -p ${DB_PATH} -t
+'
+
 test_expect_success 'create hierarchy output from C++ - small_no_tie.db' '
     flux account-shares -p ${SMALL_NO_TIE} > test_small_no_tie.txt
 '
@@ -91,16 +105,15 @@ test_expect_success 'compare hierarchy outputs - out_of_insert_order.db' '
     test_cmp ${EXPECTED_FILES}/out_of_insert_order.txt test_out_of_insert_order.txt
 '
 
-test_expect_success 'create a test DB and add some banks and users' '
-    flux account -p $(pwd)/FluxAccountingTestHierarchy.db create-db &&
-    flux account -p ${DB_PATH} add-bank root 1 &&
-	flux account -p ${DB_PATH} add-bank --parent-bank=root A 1 &&
-	flux account -p ${DB_PATH} add-bank --parent-bank=root B 1 &&
-	flux account -p ${DB_PATH} add-bank --parent-bank=root C 1 &&
-    flux account -p ${DB_PATH} add-user --username=user5011 --userid=5011 --bank=A &&
-	flux account -p ${DB_PATH} add-user --username=user5012 --userid=5012 --bank=A &&
-	flux account -p ${DB_PATH} add-user --username=user5013 --userid=5013 --bank=B &&
-	flux account -p ${DB_PATH} add-user --username=user5014 --userid=5014 --bank=C
+test_expect_success 'add some banks and users' '
+	flux account add-bank root 1 &&
+	flux account add-bank --parent-bank=root A 1 &&
+	flux account add-bank --parent-bank=root B 1 &&
+	flux account add-bank --parent-bank=root C 1 &&
+	flux account add-user --username=user5011 --userid=5011 --bank=A &&
+	flux account add-user --username=user5012 --userid=5012 --bank=A &&
+	flux account add-user --username=user5013 --userid=5013 --bank=B &&
+	flux account add-user --username=user5014 --userid=5014 --bank=C
 '
 
 test_expect_success 'print hierarchy' '
@@ -109,7 +122,7 @@ test_expect_success 'print hierarchy' '
 '
 
 test_expect_success 'delete a user' '
-    flux account -p ${DB_PATH} delete-user user5012 A
+    flux account delete-user user5012 A
 '
 
 test_expect_success 'print hierarchy again and check that deleted user does not show up in hierarchy' '
@@ -118,19 +131,20 @@ test_expect_success 'print hierarchy again and check that deleted user does not 
 '
 
 test_expect_success 'delete a bank' '
-    flux account -p ${DB_PATH} delete-bank A
+    flux account delete-bank A
 '
+
 test_expect_success 'print hierarchy again and check that deleted bank or users do not show up in hierarchy' '
     flux account-shares -p ${DB_PATH} > after_bank_delete.test &&
     test_cmp ${EXPECTED_FILES}/after_bank_delete.expected after_bank_delete.test
 '
 
 test_expect_success 'add some sub banks and some users' '
-    flux account -p ${DB_PATH} add-bank --parent-bank=root D 1 &&
-    flux account -p ${DB_PATH} add-bank --parent-bank=root E 1 &&
-    flux account -p ${DB_PATH} add-bank --parent-bank=D F 1 &&
-    flux account -p ${DB_PATH} add-user --username=user1001 --userid=1001 --bank=F &&
-    flux account -p ${DB_PATH} add-user --username=user1002 --userid=1002 --bank=F
+    flux account add-bank --parent-bank=root D 1 &&
+    flux account add-bank --parent-bank=root E 1 &&
+    flux account add-bank --parent-bank=D F 1 &&
+    flux account add-user --username=user1001 --userid=1001 --bank=F &&
+    flux account add-user --username=user1002 --userid=1002 --bank=F
 '
 
 test_expect_success 'check hierarchy before changing parent bank of F' '
@@ -139,12 +153,16 @@ test_expect_success 'check hierarchy before changing parent bank of F' '
 '
 
 test_expect_success 'change parent bank of F' '
-    flux account -p ${DB_PATH} edit-bank F --parent-bank=E
+    flux account edit-bank F --parent-bank=E
 '
 
 test_expect_success 'check hierarchy after changing parent bank of F' '
     flux account-shares -p ${DB_PATH} > after_parent_bank_change.test &&
     test_cmp ${EXPECTED_FILES}/after_parent_bank_change.expected after_parent_bank_change.test
+'
+
+test_expect_success 'shut down flux-accounting service' '
+	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
 
 test_done
