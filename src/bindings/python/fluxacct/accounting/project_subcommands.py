@@ -19,19 +19,21 @@ def view_project(conn, project):
         cur.execute("SELECT * FROM project_table where project=?", (project,))
         rows = cur.fetchall()
         headers = [description[0] for description in cur.description]
+        project_str = ""
         if not rows:
-            print("Project not found in project_table")
-        else:
-            # print column names of project_table
-            for header in headers:
-                print(header.ljust(18), end=" ")
-            print()
-            for row in rows:
-                for col in list(row):
-                    print(str(col).ljust(18), end=" ")
-                print()
+            return "Project not found in project_table"
+
+        for header in headers:
+            project_str += header.ljust(18)
+        project_str += "\n"
+        for row in rows:
+            for col in list(row):
+                project_str += str(col).ljust(18)
+            project_str += "\n"
+
+        return project_str
     except sqlite3.OperationalError as e_database_error:
-        print(e_database_error)
+        return e_database_error
 
 
 def add_project(conn, project):
@@ -43,9 +45,11 @@ def add_project(conn, project):
         )
 
         conn.commit()
+
+        return 0
     # make sure entry is unique
     except sqlite3.IntegrityError as integrity_error:
-        print(integrity_error)
+        return integrity_error
 
 
 def delete_project(conn, project):
@@ -55,13 +59,21 @@ def delete_project(conn, project):
     select_stmt = "SELECT * FROM association_table WHERE projects LIKE ?"
     cursor.execute(select_stmt, ("%" + project + "%",))
     rows = cursor.fetchall()
-    if len(rows) > 0:
-        print(
-            """WARNING: user(s) in the assocation_table still reference this project.
-                 Make sure to edit user rows to account for this deleted project."""
-        )
+    warning_stmt = (
+        "WARNING: user(s) in the assocation_table still "
+        "reference this project. Make sure to edit user rows to "
+        "account for this deleted project."
+    )
 
     delete_stmt = "DELETE FROM project_table WHERE project=?"
     cursor.execute(delete_stmt, (project,))
 
     conn.commit()
+
+    # if len(rows) > 0, this means that at least one association in the
+    # association_table references this project. If this is the case,
+    # return the warning message after deleting the project.
+    if len(rows) > 0:
+        return warning_stmt
+
+    return 0
