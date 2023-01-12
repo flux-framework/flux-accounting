@@ -487,9 +487,9 @@ def set_output_file(args):
 def select_accounting_function(args, conn, output_file, parser):
     return_val = 0
     if args.func == "view_user":
-        u.view_user(conn, args.username)
+        return_val = u.view_user(conn, args.username)
     elif args.func == "add_user":
-        u.add_user(
+        return_val = u.add_user(
             conn,
             args.username,
             args.bank,
@@ -502,9 +502,9 @@ def select_accounting_function(args, conn, output_file, parser):
             args.projects,
         )
     elif args.func == "delete_user":
-        u.delete_user(conn, args.username, args.bank)
+        return_val = u.delete_user(conn, args.username, args.bank)
     elif args.func == "edit_user":
-        u.edit_user(
+        return_val = u.edit_user(
             conn,
             args.username,
             args.bank,
