@@ -527,13 +527,13 @@ def select_accounting_function(args, conn, output_file, parser):
             after_start_time=args.after_start_time,
         )
     elif args.func == "add_bank":
-        b.add_bank(conn, args.bank, args.shares, args.parent_bank)
+        return_val = b.add_bank(conn, args.bank, args.shares, args.parent_bank)
     elif args.func == "view_bank":
-        b.view_bank(conn, args.bank, args.users)
+        return_val = b.view_bank(conn, args.bank, args.users)
     elif args.func == "delete_bank":
-        b.delete_bank(conn, args.bank)
+        return_val = b.delete_bank(conn, args.bank)
     elif args.func == "edit_bank":
-        b.edit_bank(conn, args.bank, args.shares, args.parent_bank)
+        return_val = b.edit_bank(conn, args.bank, args.shares, args.parent_bank)
     elif args.func == "update_usage":
         jobs_conn = establish_sqlite_connection(args.job_archive_db_path)
         jobs.update_job_usage(conn, jobs_conn, args.priority_decay_half_life)
