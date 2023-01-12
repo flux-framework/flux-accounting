@@ -538,7 +538,7 @@ def select_accounting_function(args, conn, output_file, parser):
         jobs_conn = establish_sqlite_connection(args.job_archive_db_path)
         jobs.update_job_usage(conn, jobs_conn, args.priority_decay_half_life)
     elif args.func == "add_queue":
-        qu.add_queue(
+        return_val = qu.add_queue(
             conn,
             args.queue,
             args.min_nodes_per_job,
@@ -547,11 +547,11 @@ def select_accounting_function(args, conn, output_file, parser):
             args.priority,
         )
     elif args.func == "view_queue":
-        qu.view_queue(conn, args.queue)
+        return_val = qu.view_queue(conn, args.queue)
     elif args.func == "delete_queue":
-        qu.delete_queue(conn, args.queue)
+        return_val = qu.delete_queue(conn, args.queue)
     elif args.func == "edit_queue":
-        qu.edit_queue(
+        return_val = qu.edit_queue(
             conn,
             args.queue,
             args.min_nodes_per_job,
