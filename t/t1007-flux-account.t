@@ -129,7 +129,7 @@ test_expect_success 'add a queue with no optional args to the queue_table' '
 	flux account -p ${DB_PATH} add-queue queue_1
 	flux account -p ${DB_PATH} view-queue queue_1 > new_queue.out &&
 	grep "queue_1" | grep "1" | grep "1" | grep "60" | grep "0" new_queue.out
-	'
+'
 
 test_expect_success 'add another queue with some optional args' '
 	flux account -p ${DB_PATH} add-queue queue_2 --min-nodes-per-job=1 --max-nodes-per-job=10 --max-time-per-job=120
