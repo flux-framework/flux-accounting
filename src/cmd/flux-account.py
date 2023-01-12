@@ -560,11 +560,11 @@ def select_accounting_function(args, conn, output_file, parser):
             args.priority,
         )
     elif args.func == "add_project":
-        p.add_project(conn, args.project)
+        return_val = p.add_project(conn, args.project)
     elif args.func == "view_project":
-        p.view_project(conn, args.project)
+        return_val = p.view_project(conn, args.project)
     elif args.func == "delete_project":
-        p.delete_project(conn, args.project)
+        return_val = p.delete_project(conn, args.project)
     else:
         print(parser.print_usage())
         return
