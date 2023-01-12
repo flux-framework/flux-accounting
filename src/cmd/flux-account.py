@@ -518,7 +518,7 @@ def select_accounting_function(args, conn, output_file, parser):
             args.default_project,
         )
     elif args.func == "view_job_records":
-        jobs.output_job_records(
+        return_val = jobs.output_job_records(
             conn,
             output_file,
             jobid=args.jobid,
