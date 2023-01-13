@@ -485,6 +485,7 @@ def set_output_file(args):
 
 
 def select_accounting_function(args, conn, output_file, parser):
+    return_val = 0
     if args.func == "view_user":
         u.view_user(conn, args.username)
     elif args.func == "add_user":
@@ -566,6 +567,10 @@ def select_accounting_function(args, conn, output_file, parser):
         p.delete_project(conn, args.project)
     else:
         print(parser.print_usage())
+        return
+
+    if return_val != 0:
+        print(return_val)
 
 
 def main():
