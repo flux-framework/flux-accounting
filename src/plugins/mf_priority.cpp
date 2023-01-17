@@ -28,6 +28,7 @@ extern "C" {
 #include <cinttypes>
 #include <vector>
 #include <sstream>
+#include <chrono>
 
 // the plugin does not know about the association who submitted a job and will
 // assign default values to the association until it receives information from
@@ -48,6 +49,7 @@ extern "C" {
 std::map<int, std::map<std::string, struct bank_info>> users;
 std::map<std::string, struct queue_info> queues;
 std::map<int, std::string> users_def_bank;
+std::map<std::string, int> priority_weights;
 
 struct bank_info {
     double fairshare;
@@ -96,11 +98,24 @@ int64_t priority_calculation (flux_plugin_t *p,
 {
     double fshare_factor = 0.0, priority = 0.0;
     int queue_factor = 0;
-    int fshare_weight, queue_weight;
+    int fshare_weight, queue_weight, age_weight;
     struct bank_info *b;
+    double t_submit = 0.0;
+    double cur_time = 0.0;
+    double age_factor = 0.0;
 
-    fshare_weight = 100000;
-    queue_weight = 10000;
+    fshare_weight = priority_weights["fshare_weight"];
+    queue_weight = priority_weights["queue_weight"];
+    age_weight = priority_weights["age_weight"];
+
+    // check values of priority factor weights; if not configured,
+    // these will be set to -1, so just use default weights
+    if (fshare_weight == -1)
+        fshare_weight = 100000;
+    if (queue_weight == -1)
+        queue_weight = 10000;
+    if (age_weight == -1)
+        age_weight = 1000;
 
     if (urgency == FLUX_JOB_URGENCY_HOLD)
         return FLUX_JOB_PRIORITY_MIN;
@@ -120,11 +135,31 @@ int64_t priority_calculation (flux_plugin_t *p,
         return -1;
     }
 
+    // fetch t_submit
+    flux_t *h = flux_jobtap_get_flux (p);
+    if (flux_plugin_arg_unpack (args,
+                                FLUX_PLUGIN_ARG_IN,
+                                "{s:f}",
+                                "t_submit", &t_submit) < 0) {
+        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "mf_priority",
+                                     0, "job.state.priority: failed to get "
+                                     "t_submit");
+        return -1;
+    }
+
+    // get current time
+    cur_time = std::chrono::duration_cast <std::chrono::duration<double>> (
+        std::chrono::system_clock::now ().time_since_epoch ()).count ();
+
+    // calculate age of job
+    age_factor = cur_time - t_submit;
+
     fshare_factor = b->fairshare;
     queue_factor = b->queue_factor;
 
     priority = round ((fshare_weight * fshare_factor) +
                       (queue_weight * queue_factor) +
+                      (age_weight * age_factor) +
                       (urgency - 16));
 
     if (priority < 0)
@@ -336,6 +371,41 @@ error:
  *                               Callbacks                                    *
  *                                                                            *
  *****************************************************************************/
+
+/*
+ * Get config information about the various priority factor weights
+ * and assign them in the priority_weights map.
+ */
+static int conf_update_cb (flux_plugin_t *p,
+                           const char *topic,
+                           flux_plugin_arg_t *args,
+                           void *data)
+{
+    int fshare_weight = -1, queue_weight = -1, age_weight = -1;
+    flux_t *h = flux_jobtap_get_flux (p);
+
+    // unpack the various factors to be used in the multi-factor
+    // priority calculation
+    if (flux_plugin_arg_unpack (args,
+                                FLUX_PLUGIN_ARG_IN,
+                                "{s?{s?{s?i, s?i, s?i}}}",
+                                "conf", "priority_factors",
+                                "fshare_weight", &fshare_weight,
+                                "queue_weight", &queue_weight,
+                                "age_weight", &age_weight) < 0) {
+        flux_log_error (flux_jobtap_get_flux (p),
+                        "mf_priority: conf.update: flux_plugin_arg_unpack: %s",
+                        flux_plugin_arg_strerror (args));
+    }
+
+    // assign unpacked weights into priority_weights map
+    priority_weights["fshare_weight"] = fshare_weight;
+    priority_weights["queue_weight"] = queue_weight;
+    priority_weights["age_weight"] = age_weight;
+
+    return 0;
+}
+
 
 /*
  * Get state of all user and bank information from plugin
@@ -981,6 +1051,7 @@ static const struct flux_plugin_handler tab[] = {
     { "job.state.inactive", inactive_cb, NULL },
     { "job.state.depend", depend_cb, NULL },
     { "plugin.query", query_cb, NULL},
+    { "conf.update", conf_update_cb, NULL},
     { 0 },
 };
 
