@@ -250,14 +250,6 @@ def add_view_bank_arg(subparsers):
         metavar="BANK",
     )
     subparser_view_bank.add_argument(
-        "-t",
-        "--tree",
-        action="store_const",
-        const=True,
-        help="list all sub banks in a tree format with specified bank as root of tree",
-        metavar="TREE",
-    )
-    subparser_view_bank.add_argument(
         "-u",
         "--users",
         action="store_const",
@@ -532,7 +524,7 @@ def select_accounting_function(args, conn, output_file, parser):
     elif args.func == "add_bank":
         b.add_bank(conn, args.bank, args.shares, args.parent_bank)
     elif args.func == "view_bank":
-        b.view_bank(conn, args.bank, args.tree, args.users)
+        b.view_bank(conn, args.bank, args.users)
     elif args.func == "delete_bank":
         b.delete_bank(conn, args.bank)
     elif args.func == "edit_bank":

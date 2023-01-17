@@ -42,29 +42,10 @@ def print_bank_rows(cur, rows, bank):
     print()
     for row in rows:
         for col in list(row):
-            print(str(col).ljust(15), end=" ")
-        print()
+            bank_str += str(col).ljust(15)
+        bank_str += "\n"
 
-
-# helper function to traverse the bank table and delete all sub banks and users
-def print_sub_banks(conn, bank, indent=""):
-    select_stmt = "SELECT bank FROM bank_table WHERE parent_bank=?"
-    cur = conn.cursor()
-    cur.execute(select_stmt, (bank,))
-    rows = cur.fetchall()
-
-    # we've reached a bank with no sub banks
-    if len(rows) == 0:
-        cur.execute("SELECT username FROM association_table WHERE bank=?", (bank,))
-        rows = cur.fetchall()
-        if rows:
-            for row in rows:
-                print(indent, row[0])
-    # else, delete all of its sub banks and continue traversing
-    else:
-        for row in rows:
-            print(indent, row[0])
-            print_sub_banks(conn, row[0], indent + " ")
+    return bank_str
 
 
 def validate_parent_bank(cur, parent_bank):
@@ -112,7 +93,7 @@ def add_bank(conn, bank, shares, parent_bank=""):
         print(integrity_error)
 
 
-def view_bank(conn, bank, tree=False, users=False):
+def view_bank(conn, bank, users=False):
     cur = conn.cursor()
     try:
         cur.execute("SELECT * FROM bank_table WHERE bank=?", (bank,))
@@ -121,22 +102,10 @@ def view_bank(conn, bank, tree=False, users=False):
         if rows:
             print_bank_rows(cur, rows, bank)
         else:
-            print("Bank not found in bank_table")
-            return
+            return "Bank not found in bank_table"
 
-        # print out the hierarchy view with the specified bank as the root of the tree
-        if tree is True:
-            # get all potential sub banks
-            cur.execute("SELECT * FROM bank_table WHERE parent_bank=?", (bank,))
-            rows = cur.fetchall()
-
-            if rows:
-                print("\n{bank_name}".format(bank_name=bank))
-                print_sub_banks(conn, bank, "")
-            else:
-                print("\nNo sub banks under {bank_name}".format(bank_name=bank))
-
-        # if users is passed in, print out all potential users under passed in bank
+        # if users is passed in, print out all potential users under
+        # the passed in bank
         if users is True:
             select_stmt = """
                         SELECT username,userid,default_bank,shares,job_usage,
