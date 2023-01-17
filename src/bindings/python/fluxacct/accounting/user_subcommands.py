@@ -36,18 +36,17 @@ def set_uid(username, uid):
             else:
                 raise KeyError
         except KeyError:
-            print("could not find UID for user; adding default UID")
             uid = 65534
 
     return uid
 
 
-def validate_queue(conn, queue):
+def validate_queue(conn, queues):
     cur = conn.cursor()
-    queue_list = queue.split(",")
+    queue_list = queues.split(",")
 
-    for service in queue_list:
-        cur.execute("SELECT queue FROM queue_table WHERE queue=?", (service,))
+    for queue in queue_list:
+        cur.execute("SELECT queue FROM queue_table WHERE queue=?", (queue,))
         row = cur.fetchone()
         if row is None:
             raise ValueError("Queue specified does not exist in queue_table")
@@ -221,7 +220,7 @@ def add_user(
     # set default bank for user
     default_bank = set_default_bank(cur, username, bank)
 
-    # validate the queue specified if any were passed in
+    # validate the queue(s) specified if any were passed in
     if queues != "":
         try:
             validate_queue(conn, queues)
@@ -315,7 +314,8 @@ def delete_user(conn, username, bank):
     # check if bank being deleted is the user's default bank
     default_bank = get_default_bank(cur, username)
 
-    # if the user belongs to multiple banks, then we need to update the default
+    # if the user belongs to multiple banks and the bank being disabled
+    # is the user's default bank, then we need to update the default
     # bank for the other rows
     if default_bank == bank:
         update_default_bank(conn, cur, username)
