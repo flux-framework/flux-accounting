@@ -61,7 +61,7 @@ def validate_project(conn, projects):
         cur.execute("SELECT project FROM project_table WHERE project=?", (project,))
         row = cur.fetchone()
         if row is None:
-            raise ValueError('Project "%s" does not exist in project_table' % project)
+            raise ValueError(project)
 
     return ",".join(project_list)
 
@@ -72,7 +72,8 @@ def validate_bank(conn, bank):
     cur.execute("SELECT bank FROM bank_table WHERE bank=?", (bank,))
     row = cur.fetchone()
     if row is None:
-        raise ValueError('Bank "%s" does not exist in bank_table' % bank)
+        # return the name of the bank that was invalid
+        raise ValueError(bank)
 
 
 def set_default_project(projects):
@@ -83,17 +84,20 @@ def set_default_project(projects):
     return "*"
 
 
-def print_user_rows(headers, rows):
+def get_user_rows(headers, rows):
     # find length of longest column name
     col_width = len(sorted(headers, key=len)[-1])
+    user_str = ""
 
     for header in headers:
-        print(header.ljust(col_width), end=" ")
-    print()
+        user_str += header.ljust(col_width)
+    user_str += "\n"
     for row in rows:
         for col in list(row):
-            print(str(col).ljust(col_width), end=" ")
-        print()
+            user_str += str(col).ljust(col_width)
+        user_str += "\n"
+
+    return user_str
 
 
 # check for a default bank of the user being added; if the user is new, set
@@ -187,11 +191,13 @@ def view_user(conn, user):
         rows = cur.fetchall()
         headers = [description[0] for description in cur.description]  # column names
         if not rows:
-            print("User not found in association_table")
-        else:
-            print_user_rows(headers, rows)
+            return "User not found in association_table"
+
+        user_str = get_user_rows(headers, rows)
+
+        return user_str
     except sqlite3.OperationalError as e_database_error:
-        print(e_database_error)
+        return e_database_error
 
 
 def add_user(
@@ -213,9 +219,8 @@ def add_user(
     # validate the bank specified if one was passed in
     try:
         validate_bank(conn, bank)
-    except ValueError as err:
-        print(err)
-        return -1
+    except ValueError as bad_bank:
+        return 'Bank "%s" does not exist in bank_table' % bad_bank
 
     # set default bank for user
     default_bank = set_default_bank(cur, username, bank)
@@ -224,9 +229,8 @@ def add_user(
     if queues != "":
         try:
             validate_queue(conn, queues)
-        except ValueError as err:
-            print(err)
-            return -1
+        except ValueError:
+            return "Queue specified does not exist in queue_table"
 
     # if True, we don't need to execute an add statement, so just return
     if check_if_user_disabled(conn, cur, username, bank):
@@ -238,9 +242,8 @@ def add_user(
     if projects != "*":
         try:
             projects = validate_project(conn, projects)
-        except ValueError as err:
-            print(err)
-            return -1
+        except ValueError as bad_project:
+            return 'Project "%s" does not exist in project_table' % bad_project
 
     # determine default_project for user; if no other projects
     # were specified, use '*' as the default. If a project was
@@ -288,12 +291,11 @@ def add_user(
             ),
         )
         conn.commit()
+
+        return 0
     # make sure entry is unique
     except sqlite3.IntegrityError as integrity_error:
-        print(integrity_error)
-        return -1
-
-    return 0
+        return integrity_error
 
 
 def delete_user(conn, username, bank):
@@ -319,6 +321,8 @@ def delete_user(conn, username, bank):
     # bank for the other rows
     if default_bank == bank:
         update_default_bank(conn, cur, username)
+
+    return 0
 
 
 def edit_user(
@@ -352,15 +356,13 @@ def edit_user(
             if field == "queues":
                 try:
                     validate_queue(conn, params[field])
-                except ValueError as err:
-                    print(err)
-                    return -1
+                except ValueError:
+                    return "Queue specified does not exist in queue_table"
             if field == "projects":
                 try:
                     params[field] = validate_project(conn, params[field])
-                except ValueError as err:
-                    print(err)
-                    return -1
+                except ValueError as bad_project:
+                    return 'Project "%s" does not exist in project_table' % bad_project
 
             update_stmt = "UPDATE association_table SET " + field
 
