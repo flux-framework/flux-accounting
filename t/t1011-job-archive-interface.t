@@ -52,10 +52,6 @@ test_expect_success 'add some users to the DB' '
 	flux account -p ${DB_PATH} add-user --username=user5012 --userid=5012 --bank=account1 --shares=1
 '
 
-test_expect_success 'flux account-shares works' '
-	flux account-shares -p $(pwd)/FluxAccountingTest.db
-'
-
 test_expect_success 'job-archive: set up config file' '
 		cat >archive.toml <<EOF &&
 [archive]

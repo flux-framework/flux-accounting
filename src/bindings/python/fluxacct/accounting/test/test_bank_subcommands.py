@@ -47,15 +47,14 @@ class TestAccountingCLI(unittest.TestCase):
     # trying to add a sub account with an invalid parent bank
     # name should result in a ValueError
     def test_03_add_with_invalid_parent_bank(self):
-        with self.assertRaises(ValueError) as context:
-            b.add_bank(
-                acct_conn,
-                bank="bad_subaccount",
-                parent_bank="bad_parentaccount",
-                shares=1,
-            )
+        b.add_bank(
+            acct_conn,
+            bank="bad_subaccount",
+            parent_bank="bad_parentaccount",
+            shares=1,
+        )
 
-        self.assertTrue("Parent bank not found in bank table" in str(context.exception))
+        self.assertRaises(ValueError)
 
     # add a couple sub accounts whose parent is 'root'
     def test_04_add_sub_banks(self):

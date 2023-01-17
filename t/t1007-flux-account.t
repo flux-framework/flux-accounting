@@ -86,19 +86,9 @@ test_expect_success 'viewing the root bank with no optional args should show jus
 	test_cmp ${EXPECTED_FILES}/root_bank.expected root_bank.test
 '
 
-test_expect_success 'viewing the root bank with -t should show the entire hierarchy' '
-	flux account -p ${DB_PATH} view-bank root -t > full_hierarchy.test &&
-	test_cmp ${EXPECTED_FILES}/full_hierarchy.expected full_hierarchy.test
-'
-
 test_expect_success 'viewing a bank with users in it should print all user info under that bank as well' '
 	flux account -p ${DB_PATH} view-bank A -u > A_bank.test &&
 	test_cmp ${EXPECTED_FILES}/A_bank.expected A_bank.test
-'
-
-test_expect_success 'viewing a bank with sub banks should return a smaller hierarchy tree' '
-	flux account -p ${DB_PATH} view-bank D -t > D_bank.test &&
-	test_cmp ${EXPECTED_FILES}/D_bank.expected D_bank.test
 '
 
 test_expect_success 'trying to view a user who does not exist in the DB should return an error message' '
@@ -139,7 +129,7 @@ test_expect_success 'add a queue with no optional args to the queue_table' '
 	flux account -p ${DB_PATH} add-queue queue_1
 	flux account -p ${DB_PATH} view-queue queue_1 > new_queue.out &&
 	grep "queue_1" | grep "1" | grep "1" | grep "60" | grep "0" new_queue.out
-	'
+'
 
 test_expect_success 'add another queue with some optional args' '
 	flux account -p ${DB_PATH} add-queue queue_2 --min-nodes-per-job=1 --max-nodes-per-job=10 --max-time-per-job=120

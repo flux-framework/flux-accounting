@@ -250,14 +250,6 @@ def add_view_bank_arg(subparsers):
         metavar="BANK",
     )
     subparser_view_bank.add_argument(
-        "-t",
-        "--tree",
-        action="store_const",
-        const=True,
-        help="list all sub banks in a tree format with specified bank as root of tree",
-        metavar="TREE",
-    )
-    subparser_view_bank.add_argument(
         "-u",
         "--users",
         action="store_const",
@@ -367,24 +359,28 @@ def add_edit_queue_arg(subparsers):
     subparser_edit_queue.add_argument("queue", help="queue name", metavar="QUEUE")
     subparser_edit_queue.add_argument(
         "--min-nodes-per-job",
+        type=int,
         help="min nodes per job",
         default=None,
         metavar="MIN NODES PER JOB",
     )
     subparser_edit_queue.add_argument(
         "--max-nodes-per-job",
+        type=int,
         help="max nodes per job",
         default=None,
         metavar="MAX NODES PER JOB",
     )
     subparser_edit_queue.add_argument(
         "--max-time-per-job",
+        type=int,
         help="max time per job",
         default=None,
         metavar="MAX TIME PER JOB",
     )
     subparser_edit_queue.add_argument(
         "--priority",
+        type=int,
         help="associated priority for the queue",
         default=None,
         metavar="PRIORITY",
@@ -489,10 +485,11 @@ def set_output_file(args):
 
 
 def select_accounting_function(args, conn, output_file, parser):
+    return_val = 0
     if args.func == "view_user":
-        u.view_user(conn, args.username)
+        return_val = u.view_user(conn, args.username)
     elif args.func == "add_user":
-        u.add_user(
+        return_val = u.add_user(
             conn,
             args.username,
             args.bank,
@@ -505,9 +502,9 @@ def select_accounting_function(args, conn, output_file, parser):
             args.projects,
         )
     elif args.func == "delete_user":
-        u.delete_user(conn, args.username, args.bank)
+        return_val = u.delete_user(conn, args.username, args.bank)
     elif args.func == "edit_user":
-        u.edit_user(
+        return_val = u.edit_user(
             conn,
             args.username,
             args.bank,
@@ -521,7 +518,7 @@ def select_accounting_function(args, conn, output_file, parser):
             args.default_project,
         )
     elif args.func == "view_job_records":
-        jobs.output_job_records(
+        return_val = jobs.output_job_records(
             conn,
             output_file,
             jobid=args.jobid,
@@ -530,18 +527,18 @@ def select_accounting_function(args, conn, output_file, parser):
             after_start_time=args.after_start_time,
         )
     elif args.func == "add_bank":
-        b.add_bank(conn, args.bank, args.shares, args.parent_bank)
+        return_val = b.add_bank(conn, args.bank, args.shares, args.parent_bank)
     elif args.func == "view_bank":
-        b.view_bank(conn, args.bank, args.tree, args.users)
+        return_val = b.view_bank(conn, args.bank, args.users)
     elif args.func == "delete_bank":
-        b.delete_bank(conn, args.bank)
+        return_val = b.delete_bank(conn, args.bank)
     elif args.func == "edit_bank":
-        b.edit_bank(conn, args.bank, args.shares, args.parent_bank)
+        return_val = b.edit_bank(conn, args.bank, args.shares, args.parent_bank)
     elif args.func == "update_usage":
         jobs_conn = establish_sqlite_connection(args.job_archive_db_path)
         jobs.update_job_usage(conn, jobs_conn, args.priority_decay_half_life)
     elif args.func == "add_queue":
-        qu.add_queue(
+        return_val = qu.add_queue(
             conn,
             args.queue,
             args.min_nodes_per_job,
@@ -550,11 +547,11 @@ def select_accounting_function(args, conn, output_file, parser):
             args.priority,
         )
     elif args.func == "view_queue":
-        qu.view_queue(conn, args.queue)
+        return_val = qu.view_queue(conn, args.queue)
     elif args.func == "delete_queue":
-        qu.delete_queue(conn, args.queue)
+        return_val = qu.delete_queue(conn, args.queue)
     elif args.func == "edit_queue":
-        qu.edit_queue(
+        return_val = qu.edit_queue(
             conn,
             args.queue,
             args.min_nodes_per_job,
@@ -563,13 +560,17 @@ def select_accounting_function(args, conn, output_file, parser):
             args.priority,
         )
     elif args.func == "add_project":
-        p.add_project(conn, args.project)
+        return_val = p.add_project(conn, args.project)
     elif args.func == "view_project":
-        p.view_project(conn, args.project)
+        return_val = p.view_project(conn, args.project)
     elif args.func == "delete_project":
-        p.delete_project(conn, args.project)
+        return_val = p.delete_project(conn, args.project)
     else:
         print(parser.print_usage())
+        return
+
+    if return_val != 0:
+        print(return_val)
 
 
 def main():

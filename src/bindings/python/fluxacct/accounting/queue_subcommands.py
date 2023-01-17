@@ -19,19 +19,22 @@ def view_queue(conn, queue):
         cur.execute("SELECT * FROM queue_table where queue=?", (queue,))
         rows = cur.fetchall()
         headers = [description[0] for description in cur.description]
+        queue_str = ""
         if not rows:
-            print("Queue not found in queue_table")
-        else:
-            # print column names of association_table
-            for header in headers:
-                print(header.ljust(18), end=" ")
-            print()
-            for row in rows:
-                for col in list(row):
-                    print(str(col).ljust(18), end=" ")
-                print()
+            return "Queue not found in queue_table"
+
+        # print column names of queue_table
+        for header in headers:
+            queue_str += header.ljust(18)
+        queue_str += "\n"
+        for row in rows:
+            for col in list(row):
+                queue_str += str(col).ljust(18)
+            queue_str += "\n"
+
+        return queue_str
     except sqlite3.OperationalError as e_database_error:
-        print(e_database_error)
+        return e_database_error
 
 
 def add_queue(conn, queue, min_nodes=1, max_nodes=1, max_time=60, priority=0):
@@ -57,9 +60,11 @@ def add_queue(conn, queue, min_nodes=1, max_nodes=1, max_time=60, priority=0):
         )
 
         conn.commit()
+
+        return 0
     # make sure entry is unique
     except sqlite3.IntegrityError as integrity_error:
-        print(integrity_error)
+        return integrity_error
 
 
 def delete_queue(conn, queue):
@@ -68,6 +73,8 @@ def delete_queue(conn, queue):
     cursor.execute(delete_stmt, (queue,))
 
     conn.commit()
+
+    return 0
 
 
 def edit_queue(
@@ -89,10 +96,8 @@ def edit_queue(
     for field in editable_fields:
         if params[field] is not None:
             # check that the passed in value is truly an integer
-            try:
-                updated_value = int(params[field])
-            except ValueError:
-                print("passed in value must be an integer")
+            if not isinstance(params[field], int):
+                raise ValueError("passed in value must be an integer")
 
             update_stmt = "UPDATE queue_table SET " + field
 

@@ -64,30 +64,29 @@ def write_records_to_file(job_records, output_file):
             )
 
 
-def print_job_records(job_records):
-    print(
-        "{:<10} {:<10} {:<10} {:<15} {:<15} {:<15} {:<10}".format(
-            "UserID",
-            "Username",
-            "JobID",
-            "T_Submit",
-            "T_Run",
-            "T_Inactive",
-            "Nodes",
-        )
+def fetch_job_records(job_records):
+    job_record_str = ""
+    job_record_str += "{:<10} {:<10} {:<10} {:<15} {:<15} {:<15} {:<10}".format(
+        "UserID",
+        "Username",
+        "JobID",
+        "T_Submit",
+        "T_Run",
+        "T_Inactive",
+        "Nodes",
     )
     for record in job_records:
-        print(
-            "{:<10} {:<10} {:<10} {:<15} {:<15} {:<15} {:<10}".format(
-                record.userid,
-                record.username,
-                record.jobid,
-                record.t_submit,
-                record.t_run,
-                record.t_inactive,
-                record.nnodes,
-            )
+        job_record_str += "{:<10} {:<10} {:<10} {:<15} {:<15} {:<15} {:<10}".format(
+            record.userid,
+            record.username,
+            record.jobid,
+            record.t_submit,
+            record.t_run,
+            record.t_inactive,
+            record.nnodes,
         )
+
+    return job_record_str
 
 
 class JobRecord:
@@ -246,9 +245,10 @@ def output_job_records(conn, output_file, **kwargs):
     job_records = get_job_records(conn, None, None, **kwargs)
 
     if output_file is None:
-        print_job_records(job_records)
-    else:
-        write_records_to_file(job_records, output_file)
+        job_record_str = fetch_job_records(job_records)
+        return job_record_str
+
+    write_records_to_file(job_records, output_file)
 
     return job_records
 
