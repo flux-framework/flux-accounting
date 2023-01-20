@@ -7,10 +7,9 @@
 #
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
-import sqlite3
 import argparse
 import sys
-import os
+import json
 
 import fluxacct.accounting
 from fluxacct.accounting import user_subcommands as u
@@ -496,25 +495,6 @@ def set_db_location(args):
     return path
 
 
-def establish_sqlite_connection(path):
-    # try to open database file; will exit with -1 if database file not found
-    if not os.path.isfile(path):
-        print(f"Database file does not exist: {path}", file=sys.stderr)
-        sys.exit(1)
-
-    db_uri = "file:" + path + "?mode=rw"
-    try:
-        conn = sqlite3.connect(db_uri, uri=True)
-        # set foreign keys constraint
-        conn.execute("PRAGMA foreign_keys = 1")
-    except sqlite3.OperationalError as exc:
-        print(f"Unable to open database file: {db_uri}", file=sys.stderr)
-        print(f"Exception: {exc}")
-        sys.exit(1)
-
-    return conn
-
-
 def set_output_file(args):
     # set path for output file
     output_file = args.output_file if args.output_file else None
@@ -635,25 +615,9 @@ def main():
         )
         sys.exit(0)
 
-    conn = establish_sqlite_connection(path)
-
-    # check version of database; if not up to date, output message
-    # and exit
-    cur = conn.cursor()
-    cur.execute("PRAGMA user_version")
-    db_version = cur.fetchone()[0]
-    if db_version < 20:
-        print(
-            "flux-accounting database out of date; please update DB with 'flux account-update-db' before running commands"
-        )
-        sys.exit(1)
-
     output_file = set_output_file(args)
 
-    try:
-        select_accounting_function(args, conn, output_file, parser)
-    finally:
-        conn.close()
+    select_accounting_function(args, output_file, parser)
 
 
 if __name__ == "__main__":
