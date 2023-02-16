@@ -9,15 +9,11 @@
 ###############################################################
 import argparse
 import sys
-import json
 
+import flux
 import fluxacct.accounting
-from fluxacct.accounting import user_subcommands as u
-from fluxacct.accounting import bank_subcommands as b
-from fluxacct.accounting import job_archive_interface as jobs
+
 from fluxacct.accounting import create_db as c
-from fluxacct.accounting import queue_subcommands as qu
-from fluxacct.accounting import project_subcommands as p
 
 
 def add_path_arg(parser):
@@ -502,93 +498,151 @@ def set_output_file(args):
     return output_file
 
 
-def select_accounting_function(args, conn, output_file, parser):
-    return_val = 0
+def select_accounting_function(args, output_file, parser):
     if args.func == "view_user":
-        return_val = u.view_user(conn, args.username)
+        data = {
+            "path": args.path,
+            "username": args.username,
+        }
+        return_val = flux.Flux().rpc("accounting.view_user", data).get()
     elif args.func == "add_user":
-        return_val = u.add_user(
-            conn,
-            args.username,
-            args.bank,
-            args.userid,
-            args.shares,
-            args.max_running_jobs,
-            args.max_active_jobs,
-            args.max_nodes,
-            args.queues,
-            args.projects,
-        )
+        data = {
+            "path": args.path,
+            "username": args.username,
+            "bank": args.bank,
+            "userid": args.userid,
+            "shares": args.shares,
+            "max_running_jobs": args.max_running_jobs,
+            "max_active_jobs": args.max_active_jobs,
+            "max_nodes": args.max_nodes,
+            "queues": args.queues,
+            "projects": args.projects,
+        }
+        return_val = flux.Flux().rpc("accounting.add_user", data).get()
     elif args.func == "delete_user":
-        return_val = u.delete_user(conn, args.username, args.bank)
+        data = {
+            "path": args.path,
+            "username": args.username,
+            "bank": args.bank,
+        }
+        return_val = flux.Flux().rpc("accounting.delete_user", data).get()
     elif args.func == "edit_user":
-        return_val = u.edit_user(
-            conn,
-            args.username,
-            args.bank,
-            args.default_bank,
-            args.shares,
-            args.max_running_jobs,
-            args.max_active_jobs,
-            args.max_nodes,
-            args.queues,
-            args.projects,
-            args.default_project,
-        )
+        data = {
+            "path": args.path,
+            "username": args.username,
+            "bank": args.bank,
+            "default_bank": args.default_bank,
+            "shares": args.shares,
+            "max_running_jobs": args.max_running_jobs,
+            "max_active_jobs": args.max_active_jobs,
+            "max_nodes": args.max_nodes,
+            "queues": args.queues,
+            "projects": args.projects,
+            "default_project": args.default_project,
+        }
+        return_val = flux.Flux().rpc("accounting.edit_user", data).get()
     elif args.func == "view_job_records":
-        return_val = jobs.output_job_records(
-            conn,
-            output_file,
-            jobid=args.jobid,
-            user=args.user,
-            before_end_time=args.before_end_time,
-            after_start_time=args.after_start_time,
-        )
+        data = {
+            "path": args.path,
+            "output_file": output_file,
+            "jobid": args.jobid,
+            "user": args.user,
+            "before_end_time": args.before_end_time,
+            "after_start_time": args.after_start_time,
+        }
+        return_val = flux.Flux().rpc("accounting.view_job_records", data).get()
     elif args.func == "add_bank":
-        return_val = b.add_bank(conn, args.bank, args.shares, args.parent_bank)
+        data = {
+            "path": args.path,
+            "bank": args.bank,
+            "shares": args.shares,
+            "parent_bank": args.parent_bank,
+        }
+        return_val = flux.Flux().rpc("accounting.add_bank", data).get()
     elif args.func == "view_bank":
-        return_val = b.view_bank(conn, args.bank, args.users)
+        data = {
+            "path": args.path,
+            "bank": args.bank,
+            "users": args.users,
+        }
+        return_val = flux.Flux().rpc("accounting.view_bank", data).get()
     elif args.func == "delete_bank":
-        return_val = b.delete_bank(conn, args.bank)
+        data = {
+            "path": args.path,
+            "bank": args.bank,
+        }
+        return_val = flux.Flux().rpc("accounting.delete_bank", data).get()
     elif args.func == "edit_bank":
-        return_val = b.edit_bank(conn, args.bank, args.shares, args.parent_bank)
+        data = {
+            "path": args.path,
+            "bank": args.bank,
+            "shares": args.shares,
+            "parent_bank": args.parent_bank,
+        }
+        return_val = flux.Flux().rpc("accounting.edit_bank", data).get()
     elif args.func == "update_usage":
-        jobs_conn = establish_sqlite_connection(args.job_archive_db_path)
-        jobs.update_job_usage(conn, jobs_conn, args.priority_decay_half_life)
+        data = {
+            "path": args.path,
+            "job_archive_db_path": args.job_archive_db_path,
+            "priority_decay_half_life": args.priority_decay_half_life,
+        }
+        return_val = flux.Flux().rpc("accounting.update_usage", data).get()
     elif args.func == "add_queue":
-        return_val = qu.add_queue(
-            conn,
-            args.queue,
-            args.min_nodes_per_job,
-            args.max_nodes_per_job,
-            args.max_time_per_job,
-            args.priority,
-        )
+        data = {
+            "path": args.path,
+            "queue": args.queue,
+            "min_nodes_per_job": args.min_nodes_per_job,
+            "max_nodes_per_job": args.max_nodes_per_job,
+            "max_time_per_job": args.max_time_per_job,
+            "priority": args.priority,
+        }
+        return_val = flux.Flux().rpc("accounting.add_queue", data).get()
     elif args.func == "view_queue":
-        return_val = qu.view_queue(conn, args.queue)
+        data = {
+            "path": args.path,
+            "queue": args.queue,
+        }
+        return_val = flux.Flux().rpc("accounting.view_queue", data).get()
     elif args.func == "delete_queue":
-        return_val = qu.delete_queue(conn, args.queue)
+        data = {
+            "path": args.path,
+            "queue": args.queue,
+        }
+        return_val = flux.Flux().rpc("accounting.delete_queue", data).get()
     elif args.func == "edit_queue":
-        return_val = qu.edit_queue(
-            conn,
-            args.queue,
-            args.min_nodes_per_job,
-            args.max_nodes_per_job,
-            args.max_time_per_job,
-            args.priority,
-        )
+        data = {
+            "path": args.path,
+            "queue": args.queue,
+            "min_nodes_per_job": args.min_nodes_per_job,
+            "max_nodes_per_job": args.max_nodes_per_job,
+            "max_time_per_job": args.max_time_per_job,
+            "priority": args.priority,
+        }
+        return_val = flux.Flux().rpc("accounting.edit_queue", data).get()
     elif args.func == "add_project":
-        return_val = p.add_project(conn, args.project)
+        data = {
+            "path": args.path,
+            "project": args.project,
+        }
+        return_val = flux.Flux().rpc("accounting.add_project", data).get()
     elif args.func == "view_project":
-        return_val = p.view_project(conn, args.project)
+        data = {
+            "path": args.path,
+            "project": args.project,
+        }
+        return_val = flux.Flux().rpc("accounting.view_project", data).get()
     elif args.func == "delete_project":
-        return_val = p.delete_project(conn, args.project)
+        data = {
+            "path": args.path,
+            "project": args.project,
+        }
+        return_val = flux.Flux().rpc("accounting.delete_project", data).get()
     else:
         print(parser.print_usage())
         return
 
-    if return_val != 0:
-        print(return_val)
+    if list(return_val.values())[0] != 0:
+        print(list(return_val.values())[0])
 
 
 def main():
