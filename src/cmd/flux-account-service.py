@@ -64,6 +64,7 @@ def check_db_version(conn):
         sys.exit(1)
 
 
+# pylint: disable=broad-except
 class AccountingService:
     def __init__(self, flux_handle, conn):
 

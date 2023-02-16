@@ -498,6 +498,7 @@ def set_output_file(args):
     return output_file
 
 
+# pylint: disable=too-many-statements
 def select_accounting_function(args, output_file, parser):
     if args.func == "view_user":
         data = {
