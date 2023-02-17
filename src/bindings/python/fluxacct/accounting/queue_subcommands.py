@@ -97,7 +97,10 @@ def edit_queue(
         if params[field] is not None:
             # check that the passed in value is truly an integer
             if not isinstance(params[field], int):
-                raise ValueError("passed in value must be an integer")
+                try:
+                    raise ValueError("passed in value must be an integer")
+                except ValueError as val_err:
+                    return f"error editing field for queue: {val_err}"
 
             update_stmt = "UPDATE queue_table SET " + field
 
