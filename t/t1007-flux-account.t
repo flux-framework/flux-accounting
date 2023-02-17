@@ -111,6 +111,11 @@ test_expect_success 'edit a field in a bank account' '
 	grep "C" | grep "50" edited_bank.out
 '
 
+test_expect_success 'try to edit a field in a bank account with a bad value' '
+	flux account edit-bank C --shares=-1000 > bad_edited_value.out &&
+	grep "New shares amount must be >= 0" bad_edited_value.out
+'
+
 test_expect_success 'remove a bank (and any corresponding users that belong to that bank)' '
 	flux account -p ${DB_PATH} delete-bank C &&
 	flux account -p ${DB_PATH} view-bank C > deleted_bank.test &&
