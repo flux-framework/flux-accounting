@@ -38,7 +38,9 @@ def add_output_file_arg(parser):
 
 def add_view_user_arg(subparsers):
     subparser_view_user = subparsers.add_parser(
-        "view-user", help="view a user's information in the accounting database"
+        "view-user",
+        help="view a user's information in the accounting database",
+        formatter_class=flux.util.help_formatter(),
     )
     subparser_view_user.set_defaults(func="view_user")
     subparser_view_user.add_argument("username", help="username", metavar=("USERNAME"))
@@ -46,7 +48,9 @@ def add_view_user_arg(subparsers):
 
 def add_add_user_arg(subparsers):
     subparser_add_user = subparsers.add_parser(
-        "add-user", help="add a user to the accounting database"
+        "add-user",
+        help="add a user to the accounting database",
+        formatter_class=flux.util.help_formatter(),
     )
     subparser_add_user.set_defaults(func="add_user")
     subparser_add_user.add_argument(
@@ -105,7 +109,9 @@ def add_add_user_arg(subparsers):
 
 def add_delete_user_arg(subparsers):
     subparser_delete_user = subparsers.add_parser(
-        "delete-user", help="remove a user from the accounting database"
+        "delete-user",
+        help="remove a user from the accounting database",
+        formatter_class=flux.util.help_formatter(),
     )
     subparser_delete_user.set_defaults(func="delete_user")
     subparser_delete_user.add_argument(
@@ -115,7 +121,11 @@ def add_delete_user_arg(subparsers):
 
 
 def add_edit_user_arg(subparsers):
-    subparser_edit_user = subparsers.add_parser("edit-user", help="edit a user's value")
+    subparser_edit_user = subparsers.add_parser(
+        "edit-user",
+        help="edit a user's value",
+        formatter_class=flux.util.help_formatter(),
+    )
     subparser_edit_user.set_defaults(func="edit_user")
     subparser_edit_user.add_argument(
         "username",
@@ -180,7 +190,9 @@ def add_edit_user_arg(subparsers):
 
 def add_view_job_records_arg(subparsers):
     subparser_view_job_records = subparsers.add_parser(
-        "view-job-records", help="view job records"
+        "view-job-records",
+        help="view job records",
+        formatter_class=flux.util.help_formatter(),
     )
     subparser_view_job_records.set_defaults(func="view_job_records")
     subparser_view_job_records.add_argument(
@@ -208,7 +220,9 @@ def add_view_job_records_arg(subparsers):
 
 def add_create_db_arg(subparsers):
     subparser_create_db = subparsers.add_parser(
-        "create-db", help="create the flux-accounting database"
+        "create-db",
+        help="create the flux-accounting database",
+        formatter_class=flux.util.help_formatter(),
     )
     subparser_create_db.set_defaults(func="create_db")
     subparser_create_db.add_argument(
@@ -224,7 +238,9 @@ def add_create_db_arg(subparsers):
 
 
 def add_add_bank_arg(subparsers):
-    subparser_add_bank = subparsers.add_parser("add-bank", help="add a new bank")
+    subparser_add_bank = subparsers.add_parser(
+        "add-bank", help="add a new bank", formatter_class=flux.util.help_formatter()
+    )
     subparser_add_bank.set_defaults(func="add_bank")
     subparser_add_bank.add_argument(
         "bank",
@@ -241,7 +257,9 @@ def add_add_bank_arg(subparsers):
 
 def add_view_bank_arg(subparsers):
     subparser_view_bank = subparsers.add_parser(
-        "view-bank", help="view bank information"
+        "view-bank",
+        help="view bank information",
+        formatter_class=flux.util.help_formatter(),
     )
     subparser_view_bank.set_defaults(func="view_bank")
     subparser_view_bank.add_argument(
@@ -260,7 +278,9 @@ def add_view_bank_arg(subparsers):
 
 
 def add_delete_bank_arg(subparsers):
-    subparser_delete_bank = subparsers.add_parser("delete-bank", help="remove a bank")
+    subparser_delete_bank = subparsers.add_parser(
+        "delete-bank", help="remove a bank", formatter_class=flux.util.help_formatter()
+    )
     subparser_delete_bank.set_defaults(func="delete_bank")
     subparser_delete_bank.add_argument(
         "bank",
@@ -271,7 +291,9 @@ def add_delete_bank_arg(subparsers):
 
 def add_edit_bank_arg(subparsers):
     subparser_edit_bank = subparsers.add_parser(
-        "edit-bank", help="edit a bank's allocation"
+        "edit-bank",
+        help="edit a bank's allocation",
+        formatter_class=flux.util.help_formatter(),
     )
     subparser_edit_bank.set_defaults(func="edit_bank")
     subparser_edit_bank.add_argument(
@@ -293,7 +315,9 @@ def add_edit_bank_arg(subparsers):
 
 def add_update_usage_arg(subparsers):
     subparser_update_usage = subparsers.add_parser(
-        "update-usage", help="update usage factors for associations"
+        "update-usage",
+        help="update usage factors for associations",
+        formatter_class=flux.util.help_formatter(),
     )
     subparser_update_usage.set_defaults(func="update_usage")
     subparser_update_usage.add_argument(
@@ -311,7 +335,9 @@ def add_update_usage_arg(subparsers):
 
 
 def add_add_queue_arg(subparsers):
-    subparser_add_queue = subparsers.add_parser("add-queue", help="add a new queue")
+    subparser_add_queue = subparsers.add_parser(
+        "add-queue", help="add a new queue", formatter_class=flux.util.help_formatter()
+    )
 
     subparser_add_queue.set_defaults(func="add_queue")
     subparser_add_queue.add_argument("queue", help="queue name", metavar="QUEUE")
@@ -343,7 +369,9 @@ def add_add_queue_arg(subparsers):
 
 def add_view_queue_arg(subparsers):
     subparser_view_queue = subparsers.add_parser(
-        "view-queue", help="view queue information"
+        "view-queue",
+        help="view queue information",
+        formatter_class=flux.util.help_formatter(),
     )
 
     subparser_view_queue.set_defaults(func="view_queue")
@@ -352,7 +380,9 @@ def add_view_queue_arg(subparsers):
 
 def add_edit_queue_arg(subparsers):
     subparser_edit_queue = subparsers.add_parser(
-        "edit-queue", help="edit a queue's priority"
+        "edit-queue",
+        help="edit a queue's priority",
+        formatter_class=flux.util.help_formatter(),
     )
 
     subparser_edit_queue.set_defaults(func="edit_queue")
@@ -389,7 +419,9 @@ def add_edit_queue_arg(subparsers):
 
 def add_delete_queue_arg(subparsers):
     subparser_delete_queue = subparsers.add_parser(
-        "delete-queue", help="remove a queue"
+        "delete-queue",
+        help="remove a queue",
+        formatter_class=flux.util.help_formatter(),
     )
 
     subparser_delete_queue.set_defaults(func="delete_queue")
@@ -398,7 +430,9 @@ def add_delete_queue_arg(subparsers):
 
 def add_add_project_arg(subparsers):
     subparser_add_project = subparsers.add_parser(
-        "add-project", help="add a new project"
+        "add-project",
+        help="add a new project",
+        formatter_class=flux.util.help_formatter(),
     )
 
     subparser_add_project.set_defaults(func="add_project")
@@ -409,7 +443,9 @@ def add_add_project_arg(subparsers):
 
 def add_view_project_arg(subparsers):
     subparser_view_project = subparsers.add_parser(
-        "view-project", help="view project information"
+        "view-project",
+        help="view project information",
+        formatter_class=flux.util.help_formatter(),
     )
 
     subparser_view_project.set_defaults(func="view_project")
@@ -420,7 +456,9 @@ def add_view_project_arg(subparsers):
 
 def add_delete_project_arg(subparsers):
     subparser_delete_project = subparsers.add_parser(
-        "delete-project", help="remove a project"
+        "delete-project",
+        help="remove a project",
+        formatter_class=flux.util.help_formatter(),
     )
 
     subparser_delete_project.set_defaults(func="delete_project")
