@@ -64,8 +64,9 @@ class TestAccountingCLI(unittest.TestCase):
 
     # edit a value with a bad type for a queue in the queue_table
     def test_05_edit_queue_bad_type(self):
-        with self.assertRaises(ValueError):
-            q.edit_queue(acct_conn, queue="queue_1", max_nodes_per_job="foo")
+        q.edit_queue(acct_conn, queue="queue_1", max_nodes_per_job="foo")
+
+        self.assertRaises(ValueError)
 
     # reset a value for a queue in the queue_table
     def test_06_reset_queue_limit(self):

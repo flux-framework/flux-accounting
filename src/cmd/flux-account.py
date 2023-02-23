@@ -7,18 +7,13 @@
 #
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
-import sqlite3
 import argparse
 import sys
-import os
 
+import flux
 import fluxacct.accounting
-from fluxacct.accounting import user_subcommands as u
-from fluxacct.accounting import bank_subcommands as b
-from fluxacct.accounting import job_archive_interface as jobs
+
 from fluxacct.accounting import create_db as c
-from fluxacct.accounting import queue_subcommands as qu
-from fluxacct.accounting import project_subcommands as p
 
 
 def add_path_arg(parser):
@@ -38,7 +33,9 @@ def add_output_file_arg(parser):
 
 def add_view_user_arg(subparsers):
     subparser_view_user = subparsers.add_parser(
-        "view-user", help="view a user's information in the accounting database"
+        "view-user",
+        help="view a user's information in the accounting database",
+        formatter_class=flux.util.help_formatter(),
     )
     subparser_view_user.set_defaults(func="view_user")
     subparser_view_user.add_argument("username", help="username", metavar=("USERNAME"))
@@ -46,7 +43,9 @@ def add_view_user_arg(subparsers):
 
 def add_add_user_arg(subparsers):
     subparser_add_user = subparsers.add_parser(
-        "add-user", help="add a user to the accounting database"
+        "add-user",
+        help="add a user to the accounting database",
+        formatter_class=flux.util.help_formatter(),
     )
     subparser_add_user.set_defaults(func="add_user")
     subparser_add_user.add_argument(
@@ -105,7 +104,9 @@ def add_add_user_arg(subparsers):
 
 def add_delete_user_arg(subparsers):
     subparser_delete_user = subparsers.add_parser(
-        "delete-user", help="remove a user from the accounting database"
+        "delete-user",
+        help="remove a user from the accounting database",
+        formatter_class=flux.util.help_formatter(),
     )
     subparser_delete_user.set_defaults(func="delete_user")
     subparser_delete_user.add_argument(
@@ -115,7 +116,11 @@ def add_delete_user_arg(subparsers):
 
 
 def add_edit_user_arg(subparsers):
-    subparser_edit_user = subparsers.add_parser("edit-user", help="edit a user's value")
+    subparser_edit_user = subparsers.add_parser(
+        "edit-user",
+        help="edit a user's value",
+        formatter_class=flux.util.help_formatter(),
+    )
     subparser_edit_user.set_defaults(func="edit_user")
     subparser_edit_user.add_argument(
         "username",
@@ -180,7 +185,9 @@ def add_edit_user_arg(subparsers):
 
 def add_view_job_records_arg(subparsers):
     subparser_view_job_records = subparsers.add_parser(
-        "view-job-records", help="view job records"
+        "view-job-records",
+        help="view job records",
+        formatter_class=flux.util.help_formatter(),
     )
     subparser_view_job_records.set_defaults(func="view_job_records")
     subparser_view_job_records.add_argument(
@@ -208,7 +215,9 @@ def add_view_job_records_arg(subparsers):
 
 def add_create_db_arg(subparsers):
     subparser_create_db = subparsers.add_parser(
-        "create-db", help="create the flux-accounting database"
+        "create-db",
+        help="create the flux-accounting database",
+        formatter_class=flux.util.help_formatter(),
     )
     subparser_create_db.set_defaults(func="create_db")
     subparser_create_db.add_argument(
@@ -224,7 +233,9 @@ def add_create_db_arg(subparsers):
 
 
 def add_add_bank_arg(subparsers):
-    subparser_add_bank = subparsers.add_parser("add-bank", help="add a new bank")
+    subparser_add_bank = subparsers.add_parser(
+        "add-bank", help="add a new bank", formatter_class=flux.util.help_formatter()
+    )
     subparser_add_bank.set_defaults(func="add_bank")
     subparser_add_bank.add_argument(
         "bank",
@@ -241,7 +252,9 @@ def add_add_bank_arg(subparsers):
 
 def add_view_bank_arg(subparsers):
     subparser_view_bank = subparsers.add_parser(
-        "view-bank", help="view bank information"
+        "view-bank",
+        help="view bank information",
+        formatter_class=flux.util.help_formatter(),
     )
     subparser_view_bank.set_defaults(func="view_bank")
     subparser_view_bank.add_argument(
@@ -260,7 +273,9 @@ def add_view_bank_arg(subparsers):
 
 
 def add_delete_bank_arg(subparsers):
-    subparser_delete_bank = subparsers.add_parser("delete-bank", help="remove a bank")
+    subparser_delete_bank = subparsers.add_parser(
+        "delete-bank", help="remove a bank", formatter_class=flux.util.help_formatter()
+    )
     subparser_delete_bank.set_defaults(func="delete_bank")
     subparser_delete_bank.add_argument(
         "bank",
@@ -271,7 +286,9 @@ def add_delete_bank_arg(subparsers):
 
 def add_edit_bank_arg(subparsers):
     subparser_edit_bank = subparsers.add_parser(
-        "edit-bank", help="edit a bank's allocation"
+        "edit-bank",
+        help="edit a bank's allocation",
+        formatter_class=flux.util.help_formatter(),
     )
     subparser_edit_bank.set_defaults(func="edit_bank")
     subparser_edit_bank.add_argument(
@@ -293,7 +310,9 @@ def add_edit_bank_arg(subparsers):
 
 def add_update_usage_arg(subparsers):
     subparser_update_usage = subparsers.add_parser(
-        "update-usage", help="update usage factors for associations"
+        "update-usage",
+        help="update usage factors for associations",
+        formatter_class=flux.util.help_formatter(),
     )
     subparser_update_usage.set_defaults(func="update_usage")
     subparser_update_usage.add_argument(
@@ -311,7 +330,9 @@ def add_update_usage_arg(subparsers):
 
 
 def add_add_queue_arg(subparsers):
-    subparser_add_queue = subparsers.add_parser("add-queue", help="add a new queue")
+    subparser_add_queue = subparsers.add_parser(
+        "add-queue", help="add a new queue", formatter_class=flux.util.help_formatter()
+    )
 
     subparser_add_queue.set_defaults(func="add_queue")
     subparser_add_queue.add_argument("queue", help="queue name", metavar="QUEUE")
@@ -343,7 +364,9 @@ def add_add_queue_arg(subparsers):
 
 def add_view_queue_arg(subparsers):
     subparser_view_queue = subparsers.add_parser(
-        "view-queue", help="view queue information"
+        "view-queue",
+        help="view queue information",
+        formatter_class=flux.util.help_formatter(),
     )
 
     subparser_view_queue.set_defaults(func="view_queue")
@@ -352,7 +375,9 @@ def add_view_queue_arg(subparsers):
 
 def add_edit_queue_arg(subparsers):
     subparser_edit_queue = subparsers.add_parser(
-        "edit-queue", help="edit a queue's priority"
+        "edit-queue",
+        help="edit a queue's priority",
+        formatter_class=flux.util.help_formatter(),
     )
 
     subparser_edit_queue.set_defaults(func="edit_queue")
@@ -389,7 +414,9 @@ def add_edit_queue_arg(subparsers):
 
 def add_delete_queue_arg(subparsers):
     subparser_delete_queue = subparsers.add_parser(
-        "delete-queue", help="remove a queue"
+        "delete-queue",
+        help="remove a queue",
+        formatter_class=flux.util.help_formatter(),
     )
 
     subparser_delete_queue.set_defaults(func="delete_queue")
@@ -398,7 +425,9 @@ def add_delete_queue_arg(subparsers):
 
 def add_add_project_arg(subparsers):
     subparser_add_project = subparsers.add_parser(
-        "add-project", help="add a new project"
+        "add-project",
+        help="add a new project",
+        formatter_class=flux.util.help_formatter(),
     )
 
     subparser_add_project.set_defaults(func="add_project")
@@ -409,7 +438,9 @@ def add_add_project_arg(subparsers):
 
 def add_view_project_arg(subparsers):
     subparser_view_project = subparsers.add_parser(
-        "view-project", help="view project information"
+        "view-project",
+        help="view project information",
+        formatter_class=flux.util.help_formatter(),
     )
 
     subparser_view_project.set_defaults(func="view_project")
@@ -420,7 +451,9 @@ def add_view_project_arg(subparsers):
 
 def add_delete_project_arg(subparsers):
     subparser_delete_project = subparsers.add_parser(
-        "delete-project", help="remove a project"
+        "delete-project",
+        help="remove a project",
+        formatter_class=flux.util.help_formatter(),
     )
 
     subparser_delete_project.set_defaults(func="delete_project")
@@ -458,25 +491,6 @@ def set_db_location(args):
     return path
 
 
-def establish_sqlite_connection(path):
-    # try to open database file; will exit with -1 if database file not found
-    if not os.path.isfile(path):
-        print(f"Database file does not exist: {path}", file=sys.stderr)
-        sys.exit(1)
-
-    db_uri = "file:" + path + "?mode=rw"
-    try:
-        conn = sqlite3.connect(db_uri, uri=True)
-        # set foreign keys constraint
-        conn.execute("PRAGMA foreign_keys = 1")
-    except sqlite3.OperationalError as exc:
-        print(f"Unable to open database file: {db_uri}", file=sys.stderr)
-        print(f"Exception: {exc}")
-        sys.exit(1)
-
-    return conn
-
-
 def set_output_file(args):
     # set path for output file
     output_file = args.output_file if args.output_file else None
@@ -484,93 +498,152 @@ def set_output_file(args):
     return output_file
 
 
-def select_accounting_function(args, conn, output_file, parser):
-    return_val = 0
+# pylint: disable=too-many-statements
+def select_accounting_function(args, output_file, parser):
     if args.func == "view_user":
-        return_val = u.view_user(conn, args.username)
+        data = {
+            "path": args.path,
+            "username": args.username,
+        }
+        return_val = flux.Flux().rpc("accounting.view_user", data).get()
     elif args.func == "add_user":
-        return_val = u.add_user(
-            conn,
-            args.username,
-            args.bank,
-            args.userid,
-            args.shares,
-            args.max_running_jobs,
-            args.max_active_jobs,
-            args.max_nodes,
-            args.queues,
-            args.projects,
-        )
+        data = {
+            "path": args.path,
+            "username": args.username,
+            "bank": args.bank,
+            "userid": args.userid,
+            "shares": args.shares,
+            "max_running_jobs": args.max_running_jobs,
+            "max_active_jobs": args.max_active_jobs,
+            "max_nodes": args.max_nodes,
+            "queues": args.queues,
+            "projects": args.projects,
+        }
+        return_val = flux.Flux().rpc("accounting.add_user", data).get()
     elif args.func == "delete_user":
-        return_val = u.delete_user(conn, args.username, args.bank)
+        data = {
+            "path": args.path,
+            "username": args.username,
+            "bank": args.bank,
+        }
+        return_val = flux.Flux().rpc("accounting.delete_user", data).get()
     elif args.func == "edit_user":
-        return_val = u.edit_user(
-            conn,
-            args.username,
-            args.bank,
-            args.default_bank,
-            args.shares,
-            args.max_running_jobs,
-            args.max_active_jobs,
-            args.max_nodes,
-            args.queues,
-            args.projects,
-            args.default_project,
-        )
+        data = {
+            "path": args.path,
+            "username": args.username,
+            "bank": args.bank,
+            "default_bank": args.default_bank,
+            "shares": args.shares,
+            "max_running_jobs": args.max_running_jobs,
+            "max_active_jobs": args.max_active_jobs,
+            "max_nodes": args.max_nodes,
+            "queues": args.queues,
+            "projects": args.projects,
+            "default_project": args.default_project,
+        }
+        return_val = flux.Flux().rpc("accounting.edit_user", data).get()
     elif args.func == "view_job_records":
-        return_val = jobs.output_job_records(
-            conn,
-            output_file,
-            jobid=args.jobid,
-            user=args.user,
-            before_end_time=args.before_end_time,
-            after_start_time=args.after_start_time,
-        )
+        data = {
+            "path": args.path,
+            "output_file": output_file,
+            "jobid": args.jobid,
+            "user": args.user,
+            "before_end_time": args.before_end_time,
+            "after_start_time": args.after_start_time,
+        }
+        return_val = flux.Flux().rpc("accounting.view_job_records", data).get()
     elif args.func == "add_bank":
-        return_val = b.add_bank(conn, args.bank, args.shares, args.parent_bank)
+        data = {
+            "path": args.path,
+            "bank": args.bank,
+            "shares": args.shares,
+            "parent_bank": args.parent_bank,
+        }
+        return_val = flux.Flux().rpc("accounting.add_bank", data).get()
     elif args.func == "view_bank":
-        return_val = b.view_bank(conn, args.bank, args.users)
+        data = {
+            "path": args.path,
+            "bank": args.bank,
+            "users": args.users,
+        }
+        return_val = flux.Flux().rpc("accounting.view_bank", data).get()
     elif args.func == "delete_bank":
-        return_val = b.delete_bank(conn, args.bank)
+        data = {
+            "path": args.path,
+            "bank": args.bank,
+        }
+        return_val = flux.Flux().rpc("accounting.delete_bank", data).get()
     elif args.func == "edit_bank":
-        return_val = b.edit_bank(conn, args.bank, args.shares, args.parent_bank)
+        data = {
+            "path": args.path,
+            "bank": args.bank,
+            "shares": args.shares,
+            "parent_bank": args.parent_bank,
+        }
+        return_val = flux.Flux().rpc("accounting.edit_bank", data).get()
     elif args.func == "update_usage":
-        jobs_conn = establish_sqlite_connection(args.job_archive_db_path)
-        jobs.update_job_usage(conn, jobs_conn, args.priority_decay_half_life)
+        data = {
+            "path": args.path,
+            "job_archive_db_path": args.job_archive_db_path,
+            "priority_decay_half_life": args.priority_decay_half_life,
+        }
+        return_val = flux.Flux().rpc("accounting.update_usage", data).get()
     elif args.func == "add_queue":
-        return_val = qu.add_queue(
-            conn,
-            args.queue,
-            args.min_nodes_per_job,
-            args.max_nodes_per_job,
-            args.max_time_per_job,
-            args.priority,
-        )
+        data = {
+            "path": args.path,
+            "queue": args.queue,
+            "min_nodes_per_job": args.min_nodes_per_job,
+            "max_nodes_per_job": args.max_nodes_per_job,
+            "max_time_per_job": args.max_time_per_job,
+            "priority": args.priority,
+        }
+        return_val = flux.Flux().rpc("accounting.add_queue", data).get()
     elif args.func == "view_queue":
-        return_val = qu.view_queue(conn, args.queue)
+        data = {
+            "path": args.path,
+            "queue": args.queue,
+        }
+        return_val = flux.Flux().rpc("accounting.view_queue", data).get()
     elif args.func == "delete_queue":
-        return_val = qu.delete_queue(conn, args.queue)
+        data = {
+            "path": args.path,
+            "queue": args.queue,
+        }
+        return_val = flux.Flux().rpc("accounting.delete_queue", data).get()
     elif args.func == "edit_queue":
-        return_val = qu.edit_queue(
-            conn,
-            args.queue,
-            args.min_nodes_per_job,
-            args.max_nodes_per_job,
-            args.max_time_per_job,
-            args.priority,
-        )
+        data = {
+            "path": args.path,
+            "queue": args.queue,
+            "min_nodes_per_job": args.min_nodes_per_job,
+            "max_nodes_per_job": args.max_nodes_per_job,
+            "max_time_per_job": args.max_time_per_job,
+            "priority": args.priority,
+        }
+        return_val = flux.Flux().rpc("accounting.edit_queue", data).get()
     elif args.func == "add_project":
-        return_val = p.add_project(conn, args.project)
+        data = {
+            "path": args.path,
+            "project": args.project,
+        }
+        return_val = flux.Flux().rpc("accounting.add_project", data).get()
     elif args.func == "view_project":
-        return_val = p.view_project(conn, args.project)
+        data = {
+            "path": args.path,
+            "project": args.project,
+        }
+        return_val = flux.Flux().rpc("accounting.view_project", data).get()
     elif args.func == "delete_project":
-        return_val = p.delete_project(conn, args.project)
+        data = {
+            "path": args.path,
+            "project": args.project,
+        }
+        return_val = flux.Flux().rpc("accounting.delete_project", data).get()
     else:
         print(parser.print_usage())
         return
 
-    if return_val != 0:
-        print(return_val)
+    if list(return_val.values())[0] != 0:
+        print(list(return_val.values())[0])
 
 
 def main():
@@ -597,25 +670,9 @@ def main():
         )
         sys.exit(0)
 
-    conn = establish_sqlite_connection(path)
-
-    # check version of database; if not up to date, output message
-    # and exit
-    cur = conn.cursor()
-    cur.execute("PRAGMA user_version")
-    db_version = cur.fetchone()[0]
-    if db_version < 20:
-        print(
-            "flux-accounting database out of date; please update DB with 'flux account-update-db' before running commands"
-        )
-        sys.exit(1)
-
     output_file = set_output_file(args)
 
-    try:
-        select_accounting_function(args, conn, output_file, parser)
-    finally:
-        conn.close()
+    select_accounting_function(args, output_file, parser)
 
 
 if __name__ == "__main__":

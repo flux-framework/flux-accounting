@@ -502,3 +502,5 @@ def update_job_usage(acct_conn, jobs_conn, pdhl=1):
         calc_usage_factor(jobs_conn, acct_conn, pdhl, row[0], row[1], row[2])
 
     check_end_hl(acct_conn, pdhl)
+
+    return 0

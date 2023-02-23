@@ -14,6 +14,14 @@ test_under_flux 1 job
 
 flux setattr log-stderr-level 1
 
+test_expect_success 'create flux-accounting DB' '
+	flux account -p $(pwd)/FluxAccountingTest.db create-db
+'
+
+test_expect_success 'start flux-accounting service' '
+	flux account-service -p ${DB_PATH} -t
+'
+
 test_expect_success 'load multi-factor priority plugin' '
 	flux jobtap load -r .priority-default ${MULTI_FACTOR_PRIORITY}
 '
@@ -29,20 +37,16 @@ test_expect_success HAVE_JQ 'flux jobtap query returns basic information' '
 	jq -e ".path == \"${MULTI_FACTOR_PRIORITY}\"" <query.json
 '
 
-test_expect_success 'create flux-accounting DB' '
-	flux account -p $(pwd)/FluxAccountingTest.db create-db
-'
-
 test_expect_success 'add some banks to the DB' '
-	flux account -p ${DB_PATH} add-bank root 1 &&
-	flux account -p ${DB_PATH} add-bank --parent-bank=root account1 1 &&
-	flux account -p ${DB_PATH} add-bank --parent-bank=root account2 1 &&
-	flux account -p ${DB_PATH} add-bank --parent-bank=root account3 1
+	flux account add-bank root 1 &&
+	flux account add-bank --parent-bank=root account1 1 &&
+	flux account add-bank --parent-bank=root account2 1 &&
+	flux account add-bank --parent-bank=root account3 1
 '
 
 test_expect_success 'add a user with two different banks to the DB' '
-	flux account -p ${DB_PATH} add-user --username=user1001 --userid=1001 --bank=account1 --max-running-jobs=2 &&
-	flux account -p ${DB_PATH} add-user --username=user1001 --userid=1001 --bank=account2
+	flux account add-user --username=user1001 --userid=1001 --bank=account1 --max-running-jobs=2 &&
+	flux account add-user --username=user1001 --userid=1001 --bank=account2
 '
 
 test_expect_success 'send flux-accounting DB information to the plugin' '
@@ -76,7 +80,7 @@ test_expect_success 'cancel jobs' '
 '
 
 test_expect_success 'add another user to flux-accounting DB and send it to plugin' '
-	flux account -p ${DB_PATH} add-user --username=user1002 --userid=1002 --bank=account3 &&
+	flux account add-user --username=user1002 --userid=1002 --bank=account3 &&
 	flux account-priority-update -p $(pwd)/FluxAccountingTest.db
 '
 
@@ -84,6 +88,10 @@ test_expect_success HAVE_JQ 'fetch plugin state again with multiple users' '
 	flux jobtap query mf_priority.so > query_3.json &&
 	jq ".mf_priority_map" query_3.json > internal_state_3.test &&
 	test_cmp ${EXPECTED_FILES}/internal_state_3.expected internal_state_3.test
+'
+
+test_expect_success 'shut down flux-accounting service' '
+	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
 
 test_done

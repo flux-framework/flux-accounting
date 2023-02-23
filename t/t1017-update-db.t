@@ -21,21 +21,25 @@ test_expect_success 'create a flux-accounting DB' '
 	flux account -p $(pwd)/FluxAccountingTestv1.db create-db
 '
 
+test_expect_success 'start flux-accounting service' '
+	flux account-service -p ${DB_PATHv1} -t
+'
+
 test_expect_success 'add some banks to the DB' '
-	flux account -p ${DB_PATHv1} add-bank root 1 &&
-	flux account -p ${DB_PATHv1} add-bank --parent-bank=root A 1 &&
-	flux account -p ${DB_PATHv1} add-bank --parent-bank=root B 1 &&
-	flux account -p ${DB_PATHv1} add-bank --parent-bank=root C 1 &&
-	flux account -p ${DB_PATHv1} add-bank --parent-bank=root D 1 &&
-	flux account -p ${DB_PATHv1} add-bank --parent-bank=D E 1 &&
-	flux account -p ${DB_PATHv1} add-bank --parent-bank=D F 1
+	flux account add-bank root 1 &&
+	flux account add-bank --parent-bank=root A 1 &&
+	flux account add-bank --parent-bank=root B 1 &&
+	flux account add-bank --parent-bank=root C 1 &&
+	flux account add-bank --parent-bank=root D 1 &&
+	flux account add-bank --parent-bank=D E 1 &&
+	flux account add-bank --parent-bank=D F 1
 '
 
 test_expect_success 'add some users to the DB' '
-	flux account -p ${DB_PATHv1} add-user --username=user5011 --userid=5011 --bank=A &&
-	flux account -p ${DB_PATHv1} add-user --username=user5012 --userid=5012 --bank=A &&
-	flux account -p ${DB_PATHv1} add-user --username=user5013 --userid=5013 --bank=B &&
-	flux account -p ${DB_PATHv1} add-user --username=user5014 --userid=5014 --bank=C
+	flux account add-user --username=user5011 --userid=5011 --bank=A &&
+	flux account add-user --username=user5012 --userid=5012 --bank=A &&
+	flux account add-user --username=user5013 --userid=5013 --bank=B &&
+	flux account add-user --username=user5014 --userid=5014 --bank=C
 '
 
 test_expect_success 'create a new flux-accounting DB with an additional table, additional columns in existing tables, and a removed column' '
@@ -99,6 +103,10 @@ test_expect_success 'get all the columns from the queue_table and make sure the 
 	test_cmp queue_table_columns.expected queue_table_columns.test
 '
 
+test_expect_success 'shut down flux-accounting service' '
+	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
+'
+
 # test updating flux-accounting databases from older versions,
 # starting with v0.10.0
 for db in ${SHARNESS_TEST_SRCDIR}/expected/test_dbs/*; do
@@ -108,12 +116,16 @@ for db in ${SHARNESS_TEST_SRCDIR}/expected/test_dbs/*; do
 		chmod +rw $tmp_db
 		test_expect_success 'update old DB: '$(basename $db) \
 			"flux account-update-db -p $tmp_db"
+		test_expect_success 'start flux-accounting service' \
+			"flux account-service -p $tmp_db -t"
 		test_expect_success 'add a bank: '$(basename $db) \
-			"flux account -p $tmp_db add-bank root 1"
+			"flux account add-bank root 1"
 		test_expect_success 'add a user: '$(basename $db) \
-			"flux account -p $tmp_db add-user --username=fluxuser --bank=root"
+			"flux account add-user --username=fluxuser --bank=root"
 		test_expect_success 'check validity of DB: '$(basename $db) \
 			"flux python ${DB_INTEGRITY_CHECK} $tmp_db > result.out && grep 'ok' result.out"
+		test_expect_success 'shutdown flux-accounting service' \
+			"flux python -c 'import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()'"
 	fi
 done
 
@@ -145,8 +157,8 @@ test_expect_success 'check that mf_priority plugin is loaded' '
 	flux jobtap list | grep mf_priority
 '
 
-test_expect_success 'try to call a flux account command when the old DB has not updated' '
-	test_must_fail flux account -p ${OLD_DB} add-bank root 1 > out_of_date.out &&
+test_expect_success 'trying to load flux-accounting service with an old DB should fail' '
+	test_must_fail flux account-service -p ${OLD_DB} > out_of_date.out 2>&1 &&
 	grep "flux-accounting database out of date" out_of_date.out
 '
 
@@ -154,13 +166,21 @@ test_expect_success 'try to send information to plugin when old DB has not been 
 	flux account-priority-update -p ${OLD_DB}
 '
 
+test_expect_success 'start flux-accounting service after updating DB' '
+	flux account-service -p ${OLD_DB} -t
+'
+
 test_expect_success 'successfully call a flux account command after the old DB has been updated' '
-	flux account -p ${OLD_DB} add-bank root 1
+	flux account add-bank root 1
 '
 
 test_expect_success 'call update-db from the / directory to make sure command works' '
 	cd / &&
 	flux account-update-db -p ${OLD_DB}
+'
+
+test_expect_success 'shut down flux-accounting service' '
+	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
 
 test_done

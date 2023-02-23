@@ -12,6 +12,8 @@ QUERYCMD="flux python ${SHARNESS_TEST_SRCDIR}/scripts/query.py"
 export FLUX_CONF_DIR=$(pwd)
 test_under_flux 4 job
 
+flux setattr log-stderr-level 1
+
 # wait for job to be stored in job archive
 # arg1 - jobid
 # arg2 - database path
@@ -37,19 +39,23 @@ test_expect_success 'create flux-accounting DB' '
 	flux account -p $(pwd)/FluxAccountingTest.db create-db
 '
 
+test_expect_success 'start flux-accounting service' '
+	flux account-service -p ${DB_PATH} -t
+'
+
 test_expect_success 'add some banks to the DB' '
-	flux account -p ${DB_PATH} add-bank root 1 &&
-	flux account -p ${DB_PATH} add-bank --parent-bank=root account1 1 &&
-	flux account -p ${DB_PATH} add-bank --parent-bank=root account2 1
+	flux account add-bank root 1 &&
+	flux account add-bank --parent-bank=root account1 1 &&
+	flux account add-bank --parent-bank=root account2 1
 '
 
 test_expect_success 'add some users to the DB' '
 	username=$(whoami) &&
 	uid=$(id -u) &&
-	flux account -p ${DB_PATH} add-user --username=$username --userid=$uid --bank=account1 --shares=1 &&
-	flux account -p ${DB_PATH} add-user --username=$username --userid=$uid --bank=account2 --shares=1 &&
-	flux account -p ${DB_PATH} add-user --username=user5011 --userid=5011 --bank=account1 --shares=1 &&
-	flux account -p ${DB_PATH} add-user --username=user5012 --userid=5012 --bank=account1 --shares=1
+	flux account add-user --username=$username --userid=$uid --bank=account1 --shares=1 &&
+	flux account add-user --username=$username --userid=$uid --bank=account2 --shares=1 &&
+	flux account add-user --username=user5011 --userid=5011 --bank=account1 --shares=1 &&
+	flux account add-user --username=user5012 --userid=5012 --bank=account1 --shares=1
 '
 
 test_expect_success 'job-archive: set up config file' '
@@ -76,7 +82,7 @@ test_expect_success 'submit some sleep 1 jobs under one user' '
 '
 
 test_expect_success 'run update-usage and update-fshare commands' '
-	flux account -p ${DB_PATH} update-usage ${ARCHIVEDB} &&
+	flux account update-usage ${ARCHIVEDB} &&
 	flux account-update-fshare -p ${DB_PATH}
 '
 
@@ -95,7 +101,7 @@ test_expect_success 'submit some sleep 1 jobs under the secondary bank of the sa
 '
 
 test_expect_success 'run update-usage and update-fshare commands' '
-	flux account -p ${DB_PATH} update-usage ${ARCHIVEDB} &&
+	flux account update-usage ${ARCHIVEDB} &&
 	flux account-update-fshare -p ${DB_PATH}
 '
 
@@ -110,6 +116,10 @@ test_expect_success 'remove flux-accounting DB' '
 
 test_expect_success 'job-archive: unload module' '
 	flux module unload job-archive
+'
+
+test_expect_success 'shut down flux-accounting service' '
+	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
 
 test_done

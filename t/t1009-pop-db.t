@@ -6,8 +6,18 @@ test_description='Test populating a flux-accounting DB with pop-db command and .
 DB_PATH=$(pwd)/FluxAccountingTest.db
 EXPECTED_FILES=${SHARNESS_TEST_SRCDIR}/expected/pop_db
 
+export TEST_UNDER_FLUX_NO_JOB_EXEC=y
+export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
+test_under_flux 1 job
+
+flux setattr log-stderr-level 1
+
 test_expect_success 'create flux-accounting DB' '
 	flux account -p $(pwd)/FluxAccountingTest.db create-db
+'
+
+test_expect_success 'start flux-accounting service' '
+	flux account-service -p ${DB_PATH} -t
 '
 
 test_expect_success 'create a banks.csv file containing bank information' '
@@ -60,6 +70,10 @@ test_expect_success 'populate flux-accounting DB with users_optional_vals.csv' '
 test_expect_success 'check database hierarchy to make sure new users were added' '
 	flux account-shares -p ${DB_PATH} > db_hierarchy_new_users.test &&
 	test_cmp ${EXPECTED_FILES}/db_hierarchy_new_users.expected db_hierarchy_new_users.test
+'
+
+test_expect_success 'shut down flux-accounting service' '
+	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
 
 test_done

@@ -13,6 +13,14 @@ test_under_flux 1 job
 
 flux setattr log-stderr-level 1
 
+test_expect_success 'create flux-accounting DB' '
+	flux account -p $(pwd)/FluxAccountingTest.db create-db
+'
+
+test_expect_success 'start flux-accounting service' '
+	flux account-service -p ${DB_PATH} -t
+'
+
 test_expect_success 'load multi-factor priority plugin' '
 	flux jobtap load -r .priority-default ${MULTI_FACTOR_PRIORITY}
 '
@@ -21,23 +29,19 @@ test_expect_success 'check that mf_priority plugin is loaded' '
 	flux jobtap list | grep mf_priority
 '
 
-test_expect_success 'create flux-accounting DB' '
-	flux account -p $(pwd)/FluxAccountingTest.db create-db
-'
-
 test_expect_success 'add some banks to the DB' '
-	flux account -p ${DB_PATH} add-bank root 1 &&
-	flux account -p ${DB_PATH} add-bank --parent-bank=root account1 1
+	flux account add-bank root 1 &&
+	flux account add-bank --parent-bank=root account1 1
 '
 
 test_expect_success 'add some users to the DB' '
-	flux account -p ${DB_PATH} add-user --username=user5011 --userid=5011 --bank=account1 &&
-	flux account -p ${DB_PATH} add-user --username=user5012 --userid=5012 --bank=account1 &&
-	flux account -p ${DB_PATH} add-user --username=user5013 --userid=5013 --bank=account1
+	flux account add-user --username=user5011 --userid=5011 --bank=account1 &&
+	flux account add-user --username=user5012 --userid=5012 --bank=account1 &&
+	flux account add-user --username=user5013 --userid=5013 --bank=account1
 '
 
 test_expect_success 'add a queue to the DB' '
-	flux account -p ${DB_PATH} add-queue default --priority=0
+	flux account add-queue default --priority=0
 '
 
 test_expect_success 'send the user information to the plugin' '
@@ -53,6 +57,10 @@ test_expect_success 'successfully submit jobs as each user' '
 	jobid2=$(flux python ${SUBMIT_AS} 5012 hostname) &&
 	jobid3=$(flux python ${SUBMIT_AS} 5013 hostname) &&
 	flux jobs -A | grep "$jobid1\|$jobid2\|$jobid3"
+'
+
+test_expect_success 'shut down flux-accounting service' '
+	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
 
 test_done

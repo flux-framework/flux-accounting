@@ -78,8 +78,8 @@ def add_bank(conn, bank, shares, parent_bank=""):
     try:
         if parent_bank != "":
             validate_parent_bank(cur, parent_bank)
-    except ValueError:
-        return "Parent bank not found in bank table"
+    except ValueError as val_err:
+        return f"error adding bank: {val_err}"
     except sqlite3.OperationalError as e_database_error:
         return e_database_error
 
@@ -197,10 +197,16 @@ def edit_bank(
     for field in editable_fields:
         if params[field] is not None:
             if field == "parent_bank":
-                validate_parent_bank(cur, params[field])
+                try:
+                    validate_parent_bank(cur, params[field])
+                except ValueError as val_err:
+                    return f"error editing parent bank: {val_err}"
             if field == "shares":
                 if int(shares) <= 0:
-                    raise ValueError("New shares amount must be >= 0")
+                    try:
+                        raise ValueError("New shares amount must be >= 0")
+                    except ValueError as val_err:
+                        return f"error editing shares value for bank: {val_err}"
 
             update_stmt = "UPDATE bank_table SET " + field
 
