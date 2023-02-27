@@ -95,6 +95,11 @@ AC_SUBST(acct_db_path)
 
 X_AC_EXPAND_INSTALL_DIRS
 
+##
+# Check for systemd
+##
+RRA_WITH_SYSTEMD_UNITDIR
+
 fluxplugin_ldflags="-avoid-version -export-symbols-regex '^flux_plugin_init\$\$' --disable-static -shared -export-dynamic"
 AC_SUBST(fluxplugin_ldflags)
 
