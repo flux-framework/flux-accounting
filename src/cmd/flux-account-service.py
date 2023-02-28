@@ -274,6 +274,7 @@ class AccountingService:
                 msg, 0, f"a non-OSError exception was caught: {str(exc)}"
             )
 
+    # pylint: disable=no-self-use
     def view_job_records(self, handle, watcher, msg, arg):
         try:
             # connect to job-archive DB
