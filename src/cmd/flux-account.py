@@ -552,6 +552,13 @@ def select_accounting_function(args, output_file, parser):
             "after_start_time": args.after_start_time,
         }
         return_val = flux.Flux().rpc("accounting.view_job_records", data).get()
+        # the return value of view-job-records without
+        # an output file is a list of strings, so just
+        # iterate through that list here and then return
+        job_record_list = list(return_val.values())
+        for job_record in job_record_list[0]:
+            print(job_record)
+        return
     elif args.func == "add_bank":
         data = {
             "path": args.path,
