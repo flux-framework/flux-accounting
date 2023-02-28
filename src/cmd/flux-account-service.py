@@ -276,17 +276,21 @@ class AccountingService:
 
     def view_job_records(self, handle, watcher, msg, arg):
         try:
+            # connect to job-archive DB
+            jobs_conn = establish_sqlite_connection(msg.payload["path"])
+
             val = jobs.output_job_records(
-                self.conn,
+                jobs_conn,
                 msg.payload["output_file"],
-                msg.payload["jobid"],
-                msg.payload["user"],
-                msg.payload["before_end_time"],
-                msg.payload["after_start_time"],
+                jobid=msg.payload["jobid"],
+                user=msg.payload["user"],
+                before_end_time=msg.payload["before_end_time"],
+                after_start_time=msg.payload["after_start_time"],
             )
 
             payload = {"view_job_records": val}
 
+            jobs_conn.close()
             handle.respond(msg, payload)
         except KeyError as exc:
             handle.respond_error(msg, 0, f"missing key in payload: {exc}")
