@@ -1,0 +1,18 @@
+[Unit]
+Description=Flux accounting service
+Requires=flux.service
+After=flux.service
+
+[Service]
+TimeoutStopSec=90
+KillMode=mixed
+ExecStart=@X_BINDIR@/flux account-service
+SyslogIdentifier=flux-accounting
+Restart=always
+RestartSec=10s
+
+User=flux
+Group=flux
+
+[Install]
+WantedBy=flux.service

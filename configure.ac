@@ -95,6 +95,11 @@ AC_SUBST(acct_db_path)
 
 X_AC_EXPAND_INSTALL_DIRS
 
+##
+# Check for systemd
+##
+RRA_WITH_SYSTEMD_UNITDIR
+
 fluxplugin_ldflags="-avoid-version -export-symbols-regex '^flux_plugin_init\$\$' --disable-static -shared -export-dynamic"
 AC_SUBST(fluxplugin_ldflags)
 
@@ -108,6 +113,8 @@ AC_CONFIG_FILES([Makefile
   src/bindings/python/fluxacct/accounting/Makefile
   src/bindings/python/fluxacct/accounting/__init__.py
   src/plugins/Makefile
+  etc/Makefile
+  etc/flux-accounting.service
   t/Makefile
   ])
 AC_OUTPUT
