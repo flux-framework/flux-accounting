@@ -65,25 +65,29 @@ def write_records_to_file(job_records, output_file):
 
 
 def fetch_job_records(job_records):
-    job_record_str = ""
-    job_record_str += "{:<10} {:<10} {:<10} {:<15} {:<15} {:<15} {:<10}".format(
-        "UserID",
-        "Username",
-        "JobID",
-        "T_Submit",
-        "T_Run",
-        "T_Inactive",
-        "Nodes",
+    job_record_str = []
+    job_record_str.append(
+        "{:<10} {:<10} {:<20} {:<20} {:<20} {:<20} {:<10}".format(
+            "UserID",
+            "Username",
+            "JobID",
+            "T_Submit",
+            "T_Run",
+            "T_Inactive",
+            "Nodes",
+        )
     )
     for record in job_records:
-        job_record_str += "{:<10} {:<10} {:<10} {:<15} {:<15} {:<15} {:<10}".format(
-            record.userid,
-            record.username,
-            record.jobid,
-            record.t_submit,
-            record.t_run,
-            record.t_inactive,
-            record.nnodes,
+        job_record_str.append(
+            "{:<10} {:<10} {:<20} {:<20} {:<20} {:<20} {:<10}".format(
+                record.userid,
+                record.username,
+                record.jobid,
+                record.t_submit,
+                record.t_run,
+                record.t_inactive,
+                record.nnodes,
+            )
         )
 
     return job_record_str
@@ -242,15 +246,17 @@ def get_job_records(conn, bank, default_bank, **kwargs):
 
 
 def output_job_records(conn, output_file, **kwargs):
+    job_record_str = ""
     job_records = get_job_records(conn, None, None, **kwargs)
 
+    job_record_str = fetch_job_records(job_records)
+
     if output_file is None:
-        job_record_str = fetch_job_records(job_records)
         return job_record_str
 
     write_records_to_file(job_records, output_file)
 
-    return job_records
+    return job_record_str
 
 
 def update_t_inactive(acct_conn, last_t_inactive, user, bank):
