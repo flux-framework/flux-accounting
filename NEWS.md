@@ -1,3 +1,16 @@
+flux-accounting version 0.22.0 - 2023-03-03
+-------------------------------------------
+
+#### Fixes
+
+* `view-job-records`: fix arguments passed in via `flux-account-service.py` (#316)
+
+#### Features
+
+* Add new service for `flux account` commands (#308)
+
+* Add systemd unit file for flux-accounting service (#315)
+
 flux-accounting version 0.21.0 - 2022-12-12
 -------------------------------------------
 
