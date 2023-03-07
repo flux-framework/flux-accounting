@@ -108,9 +108,9 @@ test_expect_success 'viewing a bank with users in it should print all user info 
 	test_cmp ${EXPECTED_FILES}/A_bank.expected A_bank.test
 '
 
-test_expect_success 'trying to view a user who does not exist in the DB should return an error message' '
-	flux account view-user user9999 > bad_user.out &&
-	grep "User not found in association_table" bad_user.out
+test_expect_success 'trying to view a user who does not exist in the DB should raise a ValueError' '
+	test_must_fail flux account view-user user9999 > user_nonexistent.out 2>&1 &&
+	grep "User user9999 not found in association_table" user_nonexistent.out
 '
 
 test_expect_success 'trying to view a user that does exist in the DB should return some information' '

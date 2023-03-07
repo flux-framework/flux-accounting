@@ -196,11 +196,9 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(cursor.fetchone()[0], "other_test_bank")
 
-    @unittest.mock.patch("sys.stdout", new_callable=io.StringIO)
-    def test_10_view_nonexistent_user(self, mock_stdout):
-        test_output = u.view_user(acct_conn, "foo")
-        expected_output = "User not found in association_table"
-        self.assertEqual(test_output, expected_output)
+    def test_10_view_nonexistent_user(self):
+        with self.assertRaises(ValueError):
+            u.view_user(acct_conn, "foo")
 
     # disable a user who belongs to multiple banks; make sure that the default_bank
     # is updated to the next earliest associated bank
