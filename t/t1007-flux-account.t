@@ -93,9 +93,9 @@ test_expect_success 'remove a queue' '
 	grep "Queue not found in queue_table" deleted_queue.out
 '
 
-test_expect_success 'trying to view a bank that does not exist in the DB should return an error message' '
-	flux account view-bank foo > bad_bank.out &&
-	grep "Bank not found in bank_table" bad_bank.out
+test_expect_success 'trying to view a bank that does not exist in the DB should raise a ValueError' '
+	test_must_fail flux account view-bank foo > bank_nonexistent.out 2>&1 &&
+	grep "Bank foo not found in bank_table" bank_nonexistent.out
 '
 
 test_expect_success 'viewing the root bank with no optional args should show just the bank info' '

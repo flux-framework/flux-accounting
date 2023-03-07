@@ -141,6 +141,11 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertRaises(ValueError)
 
+    # trying to view a bank that does not exist should raise a ValueError
+    def test_11_view_bank_nonexistent(self):
+        with self.assertRaises(ValueError):
+            b.view_bank(acct_conn, bank="foo")
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):
