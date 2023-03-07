@@ -21,7 +21,7 @@ def view_queue(conn, queue):
         headers = [description[0] for description in cur.description]
         queue_str = ""
         if not rows:
-            return "Queue not found in queue_table"
+            raise ValueError(f"Queue {queue} not found in queue_table")
 
         # print column names of queue_table
         for header in headers:
