@@ -248,6 +248,18 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertRaises(ValueError)
 
+    # edit a user's userid
+    def test_14_edit_user_userid(self):
+        cur = acct_conn.cursor()
+        u.add_user(acct_conn, username="test_user5", bank="A")
+
+        cur.execute("SELECT userid FROM association_table WHERE username='test_user5'")
+        self.assertEqual(cur.fetchone()[0], 65534)
+
+        u.edit_user(acct_conn, username="test_user5", userid="12345")
+        cur.execute("SELECT userid FROM association_table WHERE username='test_user5'")
+        self.assertEqual(cur.fetchone()[0], 12345)
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):
