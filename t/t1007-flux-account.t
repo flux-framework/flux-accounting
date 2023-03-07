@@ -89,8 +89,8 @@ test_expect_success 'edit a queue priority' '
 
 test_expect_success 'remove a queue' '
 	flux account delete-queue special &&
-	flux account view-queue special > deleted_queue.out &&
-	grep "Queue not found in queue_table" deleted_queue.out
+	test_must_fail flux account view-queue special > deleted_queue.out 2>&1 &&
+	grep "Queue special not found in queue_table" deleted_queue.out
 '
 
 test_expect_success 'trying to view a bank that does not exist in the DB should raise a ValueError' '
@@ -173,10 +173,9 @@ test_expect_success 'reset a queue limit' '
 	grep "queue_1" | grep "1" | grep "1" | grep "120" | grep "0" reset_limit.out
 '
 
-test_expect_success 'remove a queue from the queue_table' '
-	flux account delete-queue queue_2 &&
-	flux account view-queue queue_2 > deleted_queue.out &&
-	grep "Queue not found in queue_table" deleted_queue.out
+test_expect_success 'Trying to view a queue that does not exist should raise a ValueError' '
+	test_must_fail flux account view-queue foo > queue_nonexistent.out 2>&1 &&
+	grep "Queue foo not found in queue_table" queue_nonexistent.out
 '
 
 test_expect_success 'Add a user to two different banks' '
