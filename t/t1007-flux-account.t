@@ -229,15 +229,15 @@ test_expect_success 'editing a user project list with a non-existing project sho
 
 test_expect_success 'remove a project from the project_table that is still referenced by at least one user' '
 	flux account delete-project project_1 > warning_message.out &&
-	flux account view-project project_1 > deleted_project.out &&
+	test_must_fail flux account view-project project_1 > deleted_project.out 2>&1 &&
 	grep "WARNING: user(s) in the assocation_table still reference this project." warning_message.out &&
-	grep "Project not found in project_table" deleted_project.out
+	grep "Project project_1 not found in project_table" deleted_project.out
 '
 
 test_expect_success 'remove a project that is not referenced by any users' '
 	flux account delete-project project_4 &&
-	flux account view-project project_4 > deleted_project_2.out &&
-	grep "Project not found in project_table" deleted_project_2.out
+	test_must_fail flux account view-project project_4 > deleted_project_2.out 2>&1 &&
+	grep "Project project_4 not found in project_table" deleted_project_2.out
 '
 
 test_expect_success 'add a user to the accounting DB without specifying any projects' '
