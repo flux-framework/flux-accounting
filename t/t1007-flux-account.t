@@ -48,6 +48,13 @@ test_expect_success 'view some user information' '
 	grep "user5011" | grep "5011" | grep "A" user_info.out
 '
 
+test_expect_success 'edit a userid for a user' '
+	flux account edit-user user5011 --userid=12345 &&
+	flux account view-user user5011 > edit_userid.out &&
+	grep "user5011" | grep "12345" | grep "A" edit_userid.out &&
+	flux account edit-user user5011 --userid=5011
+'
+
 test_expect_success 'add a queue to an existing user account' '
 	flux account edit-user user5011 --queue="expedite"
 '

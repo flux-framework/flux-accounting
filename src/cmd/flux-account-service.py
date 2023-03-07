@@ -184,6 +184,7 @@ class AccountingService:
                 self.conn,
                 msg.payload["username"],
                 msg.payload["bank"],
+                msg.payload["userid"],
                 msg.payload["default_bank"],
                 msg.payload["shares"],
                 msg.payload["max_running_jobs"],

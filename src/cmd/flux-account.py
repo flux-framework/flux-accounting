@@ -134,6 +134,11 @@ def add_edit_user_arg(subparsers):
         metavar="BANK",
     )
     subparser_edit_user.add_argument(
+        "--userid",
+        default=None,
+        metavar="USERID",
+    )
+    subparser_edit_user.add_argument(
         "--default-bank",
         help="default bank",
         default=None,
@@ -532,6 +537,7 @@ def select_accounting_function(args, output_file, parser):
             "path": args.path,
             "username": args.username,
             "bank": args.bank,
+            "userid": args.userid,
             "default_bank": args.default_bank,
             "shares": args.shares,
             "max_running_jobs": args.max_running_jobs,
