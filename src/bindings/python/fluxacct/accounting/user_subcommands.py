@@ -329,6 +329,7 @@ def edit_user(
     conn,
     username,
     bank=None,
+    userid=None,
     default_bank=None,
     shares=None,
     max_running_jobs=None,
@@ -342,6 +343,7 @@ def edit_user(
     editable_fields = [
         "username",
         "bank",
+        "userid",
         "default_bank",
         "shares",
         "max_running_jobs",
