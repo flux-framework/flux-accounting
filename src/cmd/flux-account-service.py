@@ -133,6 +133,8 @@ class AccountingService:
             handle.respond(msg, payload)
         except KeyError as exc:
             handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+        except ValueError as val_err:
+            handle.respond_error(msg, 0, f"error in view-user: {val_err}")
         except Exception as exc:
             # fall through to a non-OSError exception
             handle.respond_error(

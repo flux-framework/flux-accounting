@@ -191,7 +191,7 @@ def view_user(conn, user):
         rows = cur.fetchall()
         headers = [description[0] for description in cur.description]  # column names
         if not rows:
-            return "User not found in association_table"
+            raise ValueError(f"User {user} not found in association_table")
 
         user_str = get_user_rows(headers, rows)
 
