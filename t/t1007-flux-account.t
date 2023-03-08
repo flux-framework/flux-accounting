@@ -89,13 +89,13 @@ test_expect_success 'edit a queue priority' '
 
 test_expect_success 'remove a queue' '
 	flux account delete-queue special &&
-	flux account view-queue special > deleted_queue.out &&
-	grep "Queue not found in queue_table" deleted_queue.out
+	test_must_fail flux account view-queue special > deleted_queue.out 2>&1 &&
+	grep "Queue special not found in queue_table" deleted_queue.out
 '
 
-test_expect_success 'trying to view a bank that does not exist in the DB should return an error message' '
-	flux account view-bank foo > bad_bank.out &&
-	grep "Bank not found in bank_table" bad_bank.out
+test_expect_success 'trying to view a bank that does not exist in the DB should raise a ValueError' '
+	test_must_fail flux account view-bank foo > bank_nonexistent.out 2>&1 &&
+	grep "Bank foo not found in bank_table" bank_nonexistent.out
 '
 
 test_expect_success 'viewing the root bank with no optional args should show just the bank info' '
@@ -108,9 +108,9 @@ test_expect_success 'viewing a bank with users in it should print all user info 
 	test_cmp ${EXPECTED_FILES}/A_bank.expected A_bank.test
 '
 
-test_expect_success 'trying to view a user who does not exist in the DB should return an error message' '
-	flux account view-user user9999 > bad_user.out &&
-	grep "User not found in association_table" bad_user.out
+test_expect_success 'trying to view a user who does not exist in the DB should raise a ValueError' '
+	test_must_fail flux account view-user user9999 > user_nonexistent.out 2>&1 &&
+	grep "User user9999 not found in association_table" user_nonexistent.out
 '
 
 test_expect_success 'trying to view a user that does exist in the DB should return some information' '
@@ -173,10 +173,9 @@ test_expect_success 'reset a queue limit' '
 	grep "queue_1" | grep "1" | grep "1" | grep "120" | grep "0" reset_limit.out
 '
 
-test_expect_success 'remove a queue from the queue_table' '
-	flux account delete-queue queue_2 &&
-	flux account view-queue queue_2 > deleted_queue.out &&
-	grep "Queue not found in queue_table" deleted_queue.out
+test_expect_success 'Trying to view a queue that does not exist should raise a ValueError' '
+	test_must_fail flux account view-queue foo > queue_nonexistent.out 2>&1 &&
+	grep "Queue foo not found in queue_table" queue_nonexistent.out
 '
 
 test_expect_success 'Add a user to two different banks' '
@@ -230,15 +229,15 @@ test_expect_success 'editing a user project list with a non-existing project sho
 
 test_expect_success 'remove a project from the project_table that is still referenced by at least one user' '
 	flux account delete-project project_1 > warning_message.out &&
-	flux account view-project project_1 > deleted_project.out &&
+	test_must_fail flux account view-project project_1 > deleted_project.out 2>&1 &&
 	grep "WARNING: user(s) in the assocation_table still reference this project." warning_message.out &&
-	grep "Project not found in project_table" deleted_project.out
+	grep "Project project_1 not found in project_table" deleted_project.out
 '
 
 test_expect_success 'remove a project that is not referenced by any users' '
 	flux account delete-project project_4 &&
-	flux account view-project project_4 > deleted_project_2.out &&
-	grep "Project not found in project_table" deleted_project_2.out
+	test_must_fail flux account view-project project_4 > deleted_project_2.out 2>&1 &&
+	grep "Project project_4 not found in project_table" deleted_project_2.out
 '
 
 test_expect_success 'add a user to the accounting DB without specifying any projects' '

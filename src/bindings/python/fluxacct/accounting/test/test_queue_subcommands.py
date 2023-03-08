@@ -83,6 +83,11 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(len(rows), 0)
 
+    # trying to view a queue that does not exist should raise a ValueError
+    def test_08_view_queue_nonexistent(self):
+        with self.assertRaises(ValueError):
+            q.view_queue(acct_conn, "foo")
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):

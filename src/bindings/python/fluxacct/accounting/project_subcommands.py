@@ -21,7 +21,7 @@ def view_project(conn, project):
         headers = [description[0] for description in cur.description]
         project_str = ""
         if not rows:
-            return "Project not found in project_table"
+            raise ValueError(f"Project {project} not found in project_table")
 
         for header in headers:
             project_str += header.ljust(18)

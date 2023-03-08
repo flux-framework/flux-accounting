@@ -114,7 +114,7 @@ def view_bank(conn, bank, users=False):
         if rows:
             bank_str = get_bank_rows(cur, rows, bank)
         else:
-            return "Bank not found in bank_table"
+            raise ValueError(f"Bank {bank} not found in bank_table")
 
         # if users is passed in, print out all potential users under
         # the passed in bank

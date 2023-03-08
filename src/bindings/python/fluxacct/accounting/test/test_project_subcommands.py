@@ -108,6 +108,11 @@ class TestAccountingCLI(unittest.TestCase):
         u.edit_user(acct_conn, username="user5002", bank="A", projects="foo")
         self.assertRaises(ValueError)
 
+    # trying to view a project that does not exist should raise a ValueError
+    def test_08_view_project_nonexistent(self):
+        with self.assertRaises(ValueError):
+            p.view_project(acct_conn, "foo")
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):
