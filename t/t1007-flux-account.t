@@ -59,14 +59,14 @@ test_expect_success 'add a queue to an existing user account' '
 	flux account edit-user user5011 --queue="expedite"
 '
 
-test_expect_success 'trying to add a non-existent queue to a user account should return an error' '
-	flux account edit-user user5011 --queue="foo" > bad_queue.out &&
-	grep "Queue specified does not exist in queue_table" bad_queue.out
+test_expect_success 'trying to add a non-existent queue to a user account should raise a ValueError' '
+	test_must_fail flux account edit-user user5011 --queue="foo" > bad_queue.out 2>&1 &&
+	grep "Queue foo does not exist in queue_table" bad_queue.out
 '
 
 test_expect_success 'trying to add a user with a non-existent queue should also return an error' '
-	flux account add-user --username=user5015 --userid=5015 --bank=A --queue="foo" > bad_queue2.out &&
-	grep "Queue specified does not exist in queue_table" bad_queue2.out
+	test_must_fail flux account add-user --username=user5015 --bank=A --queue="foo" > bad_queue2.out 2>&1 &&
+	grep "Queue foo does not exist in queue_table" bad_queue2.out
 '
 
 test_expect_success 'add multiple queues to an existing user account' '
@@ -222,8 +222,8 @@ test_expect_success 'add a user with some specified projects to the association_
 '
 
 test_expect_success 'adding a user with a non-existing project should fail' '
-	flux account add-user --username=user5016 --bank=A --projects="project_1,foo" > bad_project.out &&
-	grep "Project \"foo\" does not exist in project_table" bad_project.out
+	test_must_fail flux account add-user --username=user5016 --bank=A --projects="project_1,foo" > bad_project.out 2>&1 &&
+	grep "Project foo does not exist in project_table" bad_project.out
 '
 
 test_expect_success 'successfully edit a projects list for a user' '
@@ -233,8 +233,8 @@ test_expect_success 'successfully edit a projects list for a user' '
 '
 
 test_expect_success 'editing a user project list with a non-existing project should fail' '
-	flux account edit-user user5015 --bank=A --projects="project_1,foo" > bad_project_2.out &&
-	grep "Project \"foo\" does not exist in project_table" bad_project_2.out
+	test_must_fail flux account edit-user user5015 --bank=A --projects="project_1,foo" > bad_project_2.out 2>&1 &&
+	grep "Project foo does not exist in project_table" bad_project_2.out
 '
 
 test_expect_success 'remove a project from the project_table that is still referenced by at least one user' '
@@ -286,8 +286,8 @@ test_expect_success 'edit the default project of a user' '
 '
 
 test_expect_success 'trying to add a user to a nonexistent bank should raise a ValueError' '
-	flux account add-user --username=user5019 --bank=foo > nonexistent_bank.out &&
-	grep "Bank \"foo\" does not exist in bank_table" nonexistent_bank.out
+	test_must_fail flux account add-user --username=user5019 --bank=foo > nonexistent_bank.out 2>&1 &&
+	grep "Bank foo does not exist in bank_table" nonexistent_bank.out
 '
 
 test_expect_success 'remove flux-accounting DB' '
