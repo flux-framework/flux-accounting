@@ -212,6 +212,7 @@ class AccountingService:
             val = b.view_bank(
                 self.conn,
                 msg.payload["bank"],
+                msg.payload["tree"],
                 msg.payload["users"],
             )
 

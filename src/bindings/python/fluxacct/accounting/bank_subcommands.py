@@ -51,6 +51,29 @@ def get_bank_rows(cur, rows, bank):
     return bank_str
 
 
+# helper function to traverse the bank table and delete all sub banks and users
+def print_sub_banks(conn, bank, bank_str, indent=""):
+    select_stmt = "SELECT bank FROM bank_table WHERE parent_bank=?"
+    cur = conn.cursor()
+    cur.execute(select_stmt, (bank,))
+    rows = cur.fetchall()
+
+    # we've reached a bank with no sub banks
+    if len(rows) == 0:
+        cur.execute("SELECT username FROM association_table WHERE bank=?", (bank,))
+        rows = cur.fetchall()
+        if rows:
+            for row in rows:
+                bank_str += indent + " " + row[0] + "\n"
+    # else, delete all of its sub banks and continue traversing
+    else:
+        for row in rows:
+            bank_str += indent + " " + row[0] + "\n"
+            bank_str = print_sub_banks(conn, row[0], bank_str, indent + " ")
+
+    return bank_str
+
+
 def validate_parent_bank(cur, parent_bank):
     try:
         cur.execute("SELECT shares FROM bank_table WHERE bank=?", (parent_bank,))
@@ -105,7 +128,7 @@ def add_bank(conn, bank, shares, parent_bank=""):
         return integrity_error
 
 
-def view_bank(conn, bank, users=False):
+def view_bank(conn, bank, tree=False, users=False):
     cur = conn.cursor()
     try:
         cur.execute("SELECT * FROM bank_table WHERE bank=?", (bank,))
@@ -116,6 +139,18 @@ def view_bank(conn, bank, users=False):
         else:
             raise ValueError(f"Bank {bank} not found in bank_table")
 
+        # print out the hierarchy view with the specified bank as the root of the tree
+        if tree is True:
+            # get all potential sub banks
+            cur.execute("SELECT * FROM bank_table WHERE parent_bank=?", (bank,))
+            rows = cur.fetchall()
+
+            if rows:
+                bank_hierarchy_str = bank + "\n"
+                bank_hierarchy_str = print_sub_banks(conn, bank, bank_hierarchy_str, "")
+                bank_str += "\n" + bank_hierarchy_str
+            else:
+                bank_str += "No sub banks under " + bank
         # if users is passed in, print out all potential users under
         # the passed in bank
         if users is True:
