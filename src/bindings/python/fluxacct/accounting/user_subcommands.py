@@ -113,6 +113,23 @@ def set_default_bank(cur, username, bank):
     return row[0]
 
 
+# check if association already exists and is active in association_table;
+# if so, raise sqlite3.IntegrityError
+def association_is_active(cur, username, bank):
+    cur.execute(
+        "SELECT active FROM association_table WHERE username=? AND bank=?",
+        (
+            username,
+            bank,
+        ),
+    )
+    is_active = cur.fetchall()
+    if len(is_active) > 0 and is_active[0][0] == 1:
+        return True
+
+    return False
+
+
 # check if user/bank entry already exists but was disabled first; if so,
 # just update the 'active' column in already existing row
 def check_if_user_disabled(conn, cur, username, bank):
@@ -220,6 +237,18 @@ def add_user(
 
     userid = set_uid(username, uid)
 
+    # if true, association (user, bank) is already active
+    # in association_table
+    if association_is_active(cur, username, bank):
+        raise sqlite3.IntegrityError(
+            f"association {username},{bank} already active in association_table"
+        )
+
+    # if true, association already exists in table but is not
+    # active, so re-activate the association and return
+    if check_if_user_disabled(conn, cur, username, bank):
+        return 0
+
     # validate the bank specified if one was passed in
     try:
         validate_bank(conn, bank)
@@ -235,10 +264,6 @@ def add_user(
             validate_queue(conn, queues)
         except ValueError as bad_queue:
             raise ValueError(f"Queue {bad_queue} does not exist in queue_table")
-
-    # if True, we don't need to execute an add statement, so just return
-    if check_if_user_disabled(conn, cur, username, bank):
-        return 0
 
     # validate the project(s) specified if any were passed in;
     # add default project name ('*') to project(s) specified if
