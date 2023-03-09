@@ -58,24 +58,23 @@ class TestAccountingCLI(unittest.TestCase):
     # adding a user with the same primary key (username, bank) should
     # return an IntegrityError
     def test_02_add_duplicate_primary_key(self):
-        u.add_user(
-            acct_conn,
-            username="fluxuser",
-            uid="1234",
-            bank="acct",
-            shares="10",
-            queues="",
-        )
-        u.add_user(
-            acct_conn,
-            username="fluxuser",
-            uid="1234",
-            bank="acct",
-            shares="10",
-            queues="",
-        )
-
-        self.assertRaises(sqlite3.IntegrityError)
+        with self.assertRaises(sqlite3.IntegrityError):
+            u.add_user(
+                acct_conn,
+                username="fluxuser",
+                uid="1234",
+                bank="acct",
+                shares="10",
+                queues="",
+            )
+            u.add_user(
+                acct_conn,
+                username="fluxuser",
+                uid="1234",
+                bank="acct",
+                shares="10",
+                queues="",
+            )
 
     # add a user with the same username but a different bank
     def test_03_add_duplicate_user(self):
@@ -242,9 +241,8 @@ class TestAccountingCLI(unittest.TestCase):
 
     # adding a user to a nonexistent bank should raise a ValueError
     def test_13_add_user_to_nonexistent_bank(self):
-        u.add_user(acct_conn, username="test_user4", bank="foo")
-
-        self.assertRaises(ValueError)
+        with self.assertRaises(ValueError):
+            u.add_user(acct_conn, username="test_user4", bank="foo")
 
     # edit a user's userid
     def test_14_edit_user_userid(self):

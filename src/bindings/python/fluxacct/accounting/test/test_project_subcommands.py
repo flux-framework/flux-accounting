@@ -105,8 +105,8 @@ class TestAccountingCLI(unittest.TestCase):
 
     # editing a user's project list with a bad project name should raise a ValueError
     def test_07_edit_projects_list_bad_name(self):
-        u.edit_user(acct_conn, username="user5002", bank="A", projects="foo")
-        self.assertRaises(ValueError)
+        with self.assertRaises(ValueError):
+            u.edit_user(acct_conn, username="user5002", bank="A", projects="foo")
 
     # trying to view a project that does not exist should raise a ValueError
     def test_08_view_project_nonexistent(self):
