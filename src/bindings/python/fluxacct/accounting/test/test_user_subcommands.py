@@ -256,6 +256,16 @@ class TestAccountingCLI(unittest.TestCase):
         cur.execute("SELECT userid FROM association_table WHERE username='test_user5'")
         self.assertEqual(cur.fetchone()[0], 12345)
 
+    # adding a user with a nonexistent queue should raise a ValueError
+    def test_15_add_user_with_nonexistent_queue(self):
+        with self.assertRaises(ValueError):
+            u.add_user(acct_conn, username="test_user4", bank="A", queues="foo")
+
+    # adding a user with a nonexistent project should raise a ValueError
+    def test_15_add_user_with_nonexistent_project(self):
+        with self.assertRaises(ValueError):
+            u.add_user(acct_conn, username="test_user4", bank="A", projects="foo")
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):
