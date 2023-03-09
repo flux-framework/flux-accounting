@@ -1,6 +1,7 @@
-bank_id         bank            active          parent_bank     shares          
-5               D               1               root            1               
+bank_id        bank           active         parent_bank    shares         
+5              D              1              root           1              
 
 D
  E
  F
+

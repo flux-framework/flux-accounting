@@ -103,9 +103,19 @@ test_expect_success 'viewing the root bank with no optional args should show jus
 	test_cmp ${EXPECTED_FILES}/root_bank.expected root_bank.test
 '
 
+test_expect_success 'viewing the root bank with -t should show the entire hierarchy' '
+	flux account -p ${DB_PATH} view-bank root -t > full_hierarchy.test &&
+	test_cmp ${EXPECTED_FILES}/full_hierarchy.expected full_hierarchy.test
+'
+
 test_expect_success 'viewing a bank with users in it should print all user info under that bank as well' '
 	flux account view-bank A -u > A_bank.test &&
 	test_cmp ${EXPECTED_FILES}/A_bank.expected A_bank.test
+'
+
+test_expect_success 'viewing a bank with sub banks should return a smaller hierarchy tree' '
+	flux account -p ${DB_PATH} view-bank D -t > D_bank.test &&
+	test_cmp ${EXPECTED_FILES}/D_bank.expected D_bank.test
 '
 
 test_expect_success 'trying to view a user who does not exist in the DB should raise a ValueError' '
