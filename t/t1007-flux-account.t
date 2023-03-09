@@ -43,6 +43,11 @@ test_expect_success 'add some queues to the DB' '
 	flux account add-queue special --priority=99999
 '
 
+test_expect_success 'trying to add an association that already exists should raise an IntegrityError' '
+	test_must_fail flux account add-user --username=user5011 --userid=5011 --bank=A > already_exists.out 2>&1 &&
+	grep "association user5011,A already active in association_table" already_exists.out
+'
+
 test_expect_success 'view some user information' '
 	flux account view-user user5011 > user_info.out &&
 	grep "user5011" | grep "5011" | grep "A" user_info.out
