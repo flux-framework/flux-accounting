@@ -1,3 +1,15 @@
+flux-accounting version 0.22.1 - 2023-03-10
+-------------------------------------------
+
+#### Fixes
+
+* `edit-user`: make "userid" an editable field (#319)
+
+* `view-*` commands: raise `ValueError` when item cannot be found in
+flux-accounting DB (#320)
+
+* `view-bank`: re-add `-t` option to command (#322)
+
 flux-accounting version 0.22.0 - 2023-03-03
 -------------------------------------------
 
