@@ -268,6 +268,14 @@ def add_view_bank_arg(subparsers):
         metavar="BANK",
     )
     subparser_view_bank.add_argument(
+        "-t",
+        "--tree",
+        action="store_const",
+        const=True,
+        help="list all sub banks in a tree format with specified bank as root of tree",
+        metavar="TREE",
+    )
+    subparser_view_bank.add_argument(
         "-u",
         "--users",
         action="store_const",
@@ -577,6 +585,7 @@ def select_accounting_function(args, output_file, parser):
         data = {
             "path": args.path,
             "bank": args.bank,
+            "tree": args.tree,
             "users": args.users,
         }
         return_val = flux.Flux().rpc("accounting.view_bank", data).get()
