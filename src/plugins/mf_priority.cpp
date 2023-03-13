@@ -605,10 +605,9 @@ static int priority_cb (flux_plugin_t *p,
                 return -1;
 
             // if we get here, the bank was unknown when this job was first
-            // accepted, and therefore the active and run job counts for this
+            // accepted, and therefore the active job counts for this
             // job need to be incremented here
             bank_it->second.cur_active_jobs++;
-            bank_it->second.cur_run_jobs++;
 
             // update current job with user/bank information
             if (flux_jobtap_job_aux_set (p,
@@ -633,8 +632,6 @@ static int priority_cb (flux_plugin_t *p,
                   flux_plugin_arg_strerror (args));
         return -1;
     }
-
-    b->cur_run_jobs++;
 
     return 0;
 }
