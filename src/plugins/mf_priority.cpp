@@ -977,8 +977,14 @@ static int inactive_cb (flux_plugin_t *p,
         return -1;
     }
 
-    b->cur_run_jobs--;
     b->cur_active_jobs--;
+    // nothing more to do if this job was never running
+    if (!flux_jobtap_job_event_posted (p, FLUX_JOBTAP_CURRENT_JOB, "alloc"))
+        return 0;
+
+    // this job was running, so decrement the current running jobs count
+    // and look to see if any held jobs can be released
+    b->cur_run_jobs--;
 
     // if the user/bank combo has any currently held jobs and the user is now
     // under their max jobs limit, remove the dependency from first held job
