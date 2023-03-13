@@ -914,6 +914,34 @@ static int depend_cb (flux_plugin_t *p,
 }
 
 
+static int run_cb (flux_plugin_t *p,
+                   const char *topic,
+                   flux_plugin_arg_t *args,
+                   void *data)
+{
+    int userid;
+    struct bank_info *b;
+
+    b = static_cast<bank_info *>
+        (flux_jobtap_job_aux_get (p,
+                                  FLUX_JOBTAP_CURRENT_JOB,
+                                  "mf_priority:bank_info"));
+
+    if (b == NULL) {
+        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "mf_priority",
+                                     0, "job.state.run: bank info is " \
+                                     "missing");
+
+        return -1;
+    }
+
+    // increment the user's current running jobs count
+    b->cur_run_jobs++;
+
+    return 0;
+}
+
+
 static int inactive_cb (flux_plugin_t *p,
                         const char *topic,
                         flux_plugin_arg_t *args,
@@ -977,6 +1005,7 @@ static const struct flux_plugin_handler tab[] = {
     { "job.priority.get", priority_cb, NULL },
     { "job.state.inactive", inactive_cb, NULL },
     { "job.state.depend", depend_cb, NULL },
+    { "job.state.run", run_cb, NULL},
     { "plugin.query", query_cb, NULL},
     { 0 },
 };
