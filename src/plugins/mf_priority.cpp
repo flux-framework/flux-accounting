@@ -605,10 +605,9 @@ static int priority_cb (flux_plugin_t *p,
                 return -1;
 
             // if we get here, the bank was unknown when this job was first
-            // accepted, and therefore the active and run job counts for this
+            // accepted, and therefore the active job counts for this
             // job need to be incremented here
             bank_it->second.cur_active_jobs++;
-            bank_it->second.cur_run_jobs++;
 
             // update current job with user/bank information
             if (flux_jobtap_job_aux_set (p,
@@ -633,8 +632,6 @@ static int priority_cb (flux_plugin_t *p,
                   flux_plugin_arg_strerror (args));
         return -1;
     }
-
-    b->cur_run_jobs++;
 
     return 0;
 }
@@ -917,6 +914,34 @@ static int depend_cb (flux_plugin_t *p,
 }
 
 
+static int run_cb (flux_plugin_t *p,
+                   const char *topic,
+                   flux_plugin_arg_t *args,
+                   void *data)
+{
+    int userid;
+    struct bank_info *b;
+
+    b = static_cast<bank_info *>
+        (flux_jobtap_job_aux_get (p,
+                                  FLUX_JOBTAP_CURRENT_JOB,
+                                  "mf_priority:bank_info"));
+
+    if (b == NULL) {
+        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "mf_priority",
+                                     0, "job.state.run: bank info is " \
+                                     "missing");
+
+        return -1;
+    }
+
+    // increment the user's current running jobs count
+    b->cur_run_jobs++;
+
+    return 0;
+}
+
+
 static int inactive_cb (flux_plugin_t *p,
                         const char *topic,
                         flux_plugin_arg_t *args,
@@ -952,8 +977,14 @@ static int inactive_cb (flux_plugin_t *p,
         return -1;
     }
 
-    b->cur_run_jobs--;
     b->cur_active_jobs--;
+    // nothing more to do if this job was never running
+    if (!flux_jobtap_job_event_posted (p, FLUX_JOBTAP_CURRENT_JOB, "alloc"))
+        return 0;
+
+    // this job was running, so decrement the current running jobs count
+    // and look to see if any held jobs can be released
+    b->cur_run_jobs--;
 
     // if the user/bank combo has any currently held jobs and the user is now
     // under their max jobs limit, remove the dependency from first held job
@@ -980,6 +1011,7 @@ static const struct flux_plugin_handler tab[] = {
     { "job.priority.get", priority_cb, NULL },
     { "job.state.inactive", inactive_cb, NULL },
     { "job.state.depend", depend_cb, NULL },
+    { "job.state.run", run_cb, NULL},
     { "plugin.query", query_cb, NULL},
     { 0 },
 };
