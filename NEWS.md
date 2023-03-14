@@ -1,3 +1,11 @@
+flux-accounting version 0.22.2 - 2023-03-14
+-------------------------------------------
+
+#### Fixes
+
+* plugin: rework increment/decrement of running and active job counts for
+associations (#325)
+
 flux-accounting version 0.22.1 - 2023-03-10
 -------------------------------------------
 
