@@ -231,6 +231,8 @@ class AccountingService:
             handle.respond_error(msg, 0, f"missing key in payload: {exc}")
         except ValueError as val_err:
             handle.respond_error(msg, 0, f"error in view-bank: {val_err}")
+        except sqlite3.OperationalError as sql_err:
+            handle.respond_error(msg, 0, f"sqlite3.OperationalError: {sql_err}")
         except Exception as exc:
             handle.respond_error(
                 msg, 0, f"a non-OSError exception was caught: {str(exc)}"
@@ -250,6 +252,12 @@ class AccountingService:
             handle.respond(msg, payload)
         except KeyError as exc:
             handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+        except ValueError as val_err:
+            handle.respond_error(msg, 0, f"error in add_bank: {val_err}")
+        except sqlite3.IntegrityError as integ_err:
+            handle.respond_error(msg, 0, f"error in add_bank: {integ_err}")
+        except sqlite3.OperationalError as sql_err:
+            handle.respond_error(msg, 0, f"sqlite3.OperationalError: {sql_err}")
         except Exception as exc:
             handle.respond_error(
                 msg, 0, f"a non-OSError exception was caught: {str(exc)}"
@@ -264,6 +272,8 @@ class AccountingService:
             handle.respond(msg, payload)
         except KeyError as exc:
             handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+        except sqlite3.OperationalError as sql_err:
+            handle.respond_error(msg, 0, f"sqlite3.OperationalError: {sql_err}")
         except Exception as exc:
             handle.respond_error(
                 msg, 0, f"a non-OSError exception was caught: {str(exc)}"
@@ -283,6 +293,8 @@ class AccountingService:
             handle.respond(msg, payload)
         except KeyError as exc:
             handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+        except ValueError as val_err:
+            handle.respond_error(msg, 0, f"error in edit_bank: {val_err}")
         except Exception as exc:
             handle.respond_error(
                 msg, 0, f"a non-OSError exception was caught: {str(exc)}"

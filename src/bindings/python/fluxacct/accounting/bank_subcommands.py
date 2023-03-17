@@ -79,11 +79,54 @@ def validate_parent_bank(cur, parent_bank):
         cur.execute("SELECT shares FROM bank_table WHERE bank=?", (parent_bank,))
         row = cur.fetchone()
         if row is None:
-            raise ValueError("Parent bank not found in bank table")
+            raise ValueError(parent_bank)
 
         return 0
-    except sqlite3.OperationalError as e_database_error:
-        return e_database_error
+    except sqlite3.OperationalError as exc:
+        raise sqlite3.OperationalError(f"an sqlite3.OperationalError occurred: {exc}")
+
+
+# check if bank already exists and is active in bank_table;
+# if so, return True
+def bank_is_active(cur, bank, parent_bank):
+    cur.execute(
+        "SELECT active FROM bank_table WHERE bank=? AND parent_bank=?",
+        (
+            bank,
+            parent_bank,
+        ),
+    )
+    is_active = cur.fetchall()
+    if len(is_active) > 0 and is_active[0][0] == 1:
+        return True
+
+    return False
+
+
+# check if bank already exists but was disabled first; if so,
+# just update the 'active' column in already existing row
+def check_if_bank_disabled(cur, bank, parent_bank):
+    cur.execute(
+        "SELECT * FROM bank_table WHERE bank=? AND parent_bank=?",
+        (bank, parent_bank),
+    )
+    rows = cur.fetchall()
+    if len(rows) == 1:
+        return True
+
+    return False
+
+
+# re-enable bank in bank_table by setting "active" to 1
+def reactivate_bank(conn, cur, bank, parent_bank):
+    cur.execute(
+        "UPDATE bank_table SET active=1 WHERE bank=? AND parent_bank=?",
+        (
+            bank,
+            parent_bank,
+        ),
+    )
+    conn.commit()
 
 
 ###############################################################
@@ -101,10 +144,21 @@ def add_bank(conn, bank, shares, parent_bank=""):
     try:
         if parent_bank != "":
             validate_parent_bank(cur, parent_bank)
-    except ValueError as val_err:
-        return f"error adding bank: {val_err}"
-    except sqlite3.OperationalError as e_database_error:
-        return e_database_error
+    except ValueError as bad_parent_bank:
+        raise ValueError(f"parent bank {bad_parent_bank} not found in bank table")
+    except sqlite3.OperationalError as exc:
+        raise sqlite3.OperationalError(exc)
+
+    # check if bank already exists and is active in bank_table; if so, raise
+    # a sqlite3.IntegrityError
+    if bank_is_active(cur, bank, parent_bank):
+        raise sqlite3.IntegrityError(f"bank {bank} already exists in bank_table")
+
+    # if true, bank already exists in table but is not
+    # active, so re-activate the bank and return
+    if check_if_bank_disabled(cur, bank, parent_bank):
+        reactivate_bank(conn, cur, bank, parent_bank)
+        return 0
 
     # insert the bank values into the database
     try:
@@ -124,8 +178,8 @@ def add_bank(conn, bank, shares, parent_bank=""):
 
         return 0
     # make sure entry is unique
-    except sqlite3.IntegrityError as integrity_error:
-        return integrity_error
+    except sqlite3.IntegrityError:
+        raise sqlite3.IntegrityError(f"bank {bank} already exists in bank_table")
 
 
 def view_bank(conn, bank, tree=False, users=False):
@@ -137,7 +191,7 @@ def view_bank(conn, bank, tree=False, users=False):
         if rows:
             bank_str = get_bank_rows(cur, rows, bank)
         else:
-            raise ValueError(f"Bank {bank} not found in bank_table")
+            raise ValueError(f"bank {bank} not found in bank_table")
 
         # print out the hierarchy view with the specified bank as the root of the tree
         if tree is True:
@@ -150,7 +204,7 @@ def view_bank(conn, bank, tree=False, users=False):
                 bank_hierarchy_str = print_sub_banks(conn, bank, bank_hierarchy_str, "")
                 bank_str += "\n" + bank_hierarchy_str
             else:
-                bank_str += "No sub banks under " + bank
+                bank_str += "no sub banks under " + bank
         # if users is passed in, print out all potential users under
         # the passed in bank
         if users is True:
@@ -169,11 +223,11 @@ def view_bank(conn, bank, tree=False, users=False):
                 user_str = print_user_rows(cur, rows, bank)
                 bank_str += user_str
             else:
-                bank_str += "\nNo users under {bank_name}".format(bank_name=bank)
+                bank_str += "\nno users under {bank_name}".format(bank_name=bank)
 
         return bank_str
-    except sqlite3.OperationalError as e_database_error:
-        return e_database_error
+    except sqlite3.OperationalError as exc:
+        raise sqlite3.OperationalError(f"an sqlite3.OperationalError occurred: {exc}")
 
 
 def delete_bank(conn, bank):
@@ -208,9 +262,9 @@ def delete_bank(conn, bank):
     # if an exception occcurs while recursively deleting
     # the parent banks, then throw the exception and roll
     # back the changes made to the DB
-    except sqlite3.OperationalError as exception:
+    except sqlite3.OperationalError as exc:
         conn.rollback()
-        return exception
+        raise sqlite3.OperationalError(f"an sqlite3.OperationalError occurred: {exc}")
 
     # commit changes
     conn.commit()
@@ -234,14 +288,15 @@ def edit_bank(
             if field == "parent_bank":
                 try:
                     validate_parent_bank(cur, params[field])
-                except ValueError as val_err:
-                    return f"error editing parent bank: {val_err}"
+                except ValueError as bad_parent_bank:
+                    raise ValueError(
+                        f"parent bank {bad_parent_bank} not found in bank table"
+                    )
+                except sqlite3.OperationalError as exc:
+                    raise sqlite3.OperationalError(exc)
             if field == "shares":
                 if int(shares) <= 0:
-                    try:
-                        raise ValueError("New shares amount must be >= 0")
-                    except ValueError as val_err:
-                        return f"error editing shares value for bank: {val_err}"
+                    raise ValueError("new shares amount must be >= 0")
 
             update_stmt = "UPDATE bank_table SET " + field
 
