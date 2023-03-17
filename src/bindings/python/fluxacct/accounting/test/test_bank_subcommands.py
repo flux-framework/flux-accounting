@@ -143,6 +143,21 @@ class TestAccountingCLI(unittest.TestCase):
         with self.assertRaises(ValueError):
             b.view_bank(acct_conn, bank="foo")
 
+    # try to add a bank that is currently disabled and make sure that it
+    # gets reactivated
+    def test_12_reactivate_bank(self):
+        # check that bank is disabled
+        cur.execute("SELECT active FROM bank_table WHERE bank='G'")
+        rows = cur.fetchall()
+        self.assertEqual(rows[0][0], 0)
+
+        # re-add bank
+        b.add_bank(acct_conn, bank="G", parent_bank="C", shares=1)
+
+        cur.execute("SELECT active FROM bank_table WHERE bank='G'")
+        rows = cur.fetchall()
+        self.assertEqual(rows[0][0], 1)
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):
