@@ -119,7 +119,7 @@ for db in ${SHARNESS_TEST_SRCDIR}/expected/test_dbs/*; do
 		test_expect_success 'start flux-accounting service' \
 			"flux account-service -p $tmp_db -t"
 		test_expect_success 'add a bank: '$(basename $db) \
-			"flux account add-bank root 1"
+			"flux account add-bank --parent-bank=root G 1"
 		test_expect_success 'add a user: '$(basename $db) \
 			"flux account add-user --username=fluxuser --bank=root"
 		test_expect_success 'check validity of DB: '$(basename $db) \
