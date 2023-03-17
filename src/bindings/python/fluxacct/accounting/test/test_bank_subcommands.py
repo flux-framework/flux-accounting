@@ -41,20 +41,19 @@ class TestAccountingCLI(unittest.TestCase):
 
     # check for an IntegrityError when trying to add a duplicate bank
     def test_02_add_dup_bank(self):
-        b.add_bank(acct_conn, bank="root", shares=100)
-        self.assertRaises(sqlite3.IntegrityError)
+        with self.assertRaises(sqlite3.IntegrityError):
+            b.add_bank(acct_conn, bank="root", shares=100)
 
     # trying to add a sub account with an invalid parent bank
     # name should result in a ValueError
     def test_03_add_with_invalid_parent_bank(self):
-        b.add_bank(
-            acct_conn,
-            bank="bad_subaccount",
-            parent_bank="bad_parentaccount",
-            shares=1,
-        )
-
-        self.assertRaises(ValueError)
+        with self.assertRaises(ValueError):
+            b.add_bank(
+                acct_conn,
+                bank="bad_subaccount",
+                parent_bank="bad_parentaccount",
+                shares=1,
+            )
 
     # add a couple sub accounts whose parent is 'root'
     def test_04_add_sub_banks(self):
@@ -129,17 +128,15 @@ class TestAccountingCLI(unittest.TestCase):
     # trying to edit a bank's parent bank to a bank that does not
     # exist should raise a ValueError
     def test_09_edit_parent_bank_failure(self):
-        b.edit_bank(acct_conn, bank="C", parent_bank="foo")
-
-        self.assertRaises(ValueError)
+        with self.assertRaises(ValueError):
+            b.edit_bank(acct_conn, bank="C", parent_bank="foo")
 
     # trying to edit a bank's shares <= 0 should raise
     # a ValueError
     def test_10_edit_bank_value_fail(self):
-        b.add_bank(acct_conn, bank="bad_bank", shares=10)
-        b.edit_bank(acct_conn, bank="bad_bank", shares=-1)
-
-        self.assertRaises(ValueError)
+        with self.assertRaises(ValueError):
+            b.add_bank(acct_conn, bank="bad_bank", shares=10)
+            b.edit_bank(acct_conn, bank="bad_bank", shares=-1)
 
     # trying to view a bank that does not exist should raise a ValueError
     def test_11_view_bank_nonexistent(self):
