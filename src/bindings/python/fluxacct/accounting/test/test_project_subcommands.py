@@ -41,8 +41,8 @@ class TestAccountingCLI(unittest.TestCase):
     # let's make sure if we try to add it a second time,
     # it fails gracefully
     def test_02_add_dup_project(self):
-        p.add_project(acct_conn, project="project_1")
-        self.assertRaises(sqlite3.IntegrityError)
+        with self.assertRaises(sqlite3.IntegrityError):
+            p.add_project(acct_conn, project="project_1")
 
     # remove a project currently in the project_table
     def test_03_delete_project(self):

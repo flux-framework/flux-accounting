@@ -39,8 +39,8 @@ class TestAccountingCLI(unittest.TestCase):
     # let's make sure if we try to add it a second time,
     # it fails gracefully
     def test_02_add_dup_queue(self):
-        q.add_queue(acct_conn, queue="queue_1")
-        self.assertRaises(sqlite3.IntegrityError)
+        with self.assertRaises(sqlite3.IntegrityError):
+            q.add_queue(acct_conn, queue="queue_1")
 
     # edit a value for a queue in the queue_table
     def test_03_edit_queue_successfully(self):
@@ -64,9 +64,8 @@ class TestAccountingCLI(unittest.TestCase):
 
     # edit a value with a bad type for a queue in the queue_table
     def test_05_edit_queue_bad_type(self):
-        q.edit_queue(acct_conn, queue="queue_1", max_nodes_per_job="foo")
-
-        self.assertRaises(ValueError)
+        with self.assertRaises(ValueError):
+            q.edit_queue(acct_conn, queue="queue_1", max_nodes_per_job="foo")
 
     # reset a value for a queue in the queue_table
     def test_06_reset_queue_limit(self):
