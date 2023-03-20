@@ -100,7 +100,7 @@ test_expect_success 'remove a queue' '
 
 test_expect_success 'trying to view a bank that does not exist in the DB should raise a ValueError' '
 	test_must_fail flux account view-bank foo > bank_nonexistent.out 2>&1 &&
-	grep "Bank foo not found in bank_table" bank_nonexistent.out
+	grep "bank foo not found in bank_table" bank_nonexistent.out
 '
 
 test_expect_success 'viewing the root bank with no optional args should show just the bank info' '
@@ -144,8 +144,8 @@ test_expect_success 'edit a field in a bank account' '
 '
 
 test_expect_success 'try to edit a field in a bank account with a bad value' '
-	flux account edit-bank C --shares=-1000 > bad_edited_value.out &&
-	grep "New shares amount must be >= 0" bad_edited_value.out
+	test_must_fail flux account edit-bank C --shares=-1000 > bad_edited_value.out 2>&1 &&
+	grep "new shares amount must be >= 0" bad_edited_value.out
 '
 
 test_expect_success 'remove a bank (and any corresponding users that belong to that bank)' '
