@@ -263,7 +263,7 @@ def add_user(
         try:
             validate_queue(conn, queues)
         except ValueError as bad_queue:
-            raise ValueError(f"Queue {bad_queue} does not exist in queue_table")
+            raise ValueError(f"queue {bad_queue} does not exist in queue_table")
 
     # validate the project(s) specified if any were passed in;
     # add default project name ('*') to project(s) specified if
@@ -388,7 +388,7 @@ def edit_user(
                 try:
                     validate_queue(conn, params[field])
                 except ValueError as bad_queue:
-                    raise ValueError(f"Queue {bad_queue} does not exist in queue_table")
+                    raise ValueError(f"queue {bad_queue} does not exist in queue_table")
             if field == "projects":
                 try:
                     params[field] = validate_project(conn, params[field])
