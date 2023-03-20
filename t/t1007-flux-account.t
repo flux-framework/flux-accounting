@@ -66,12 +66,12 @@ test_expect_success 'add a queue to an existing user account' '
 
 test_expect_success 'trying to add a non-existent queue to a user account should raise a ValueError' '
 	test_must_fail flux account edit-user user5011 --queue="foo" > bad_queue.out 2>&1 &&
-	grep "Queue foo does not exist in queue_table" bad_queue.out
+	grep "queue foo does not exist in queue_table" bad_queue.out
 '
 
 test_expect_success 'trying to add a user with a non-existent queue should also return an error' '
 	test_must_fail flux account add-user --username=user5015 --bank=A --queue="foo" > bad_queue2.out 2>&1 &&
-	grep "Queue foo does not exist in queue_table" bad_queue2.out
+	grep "queue foo does not exist in queue_table" bad_queue2.out
 '
 
 test_expect_success 'add multiple queues to an existing user account' '
@@ -95,7 +95,7 @@ test_expect_success 'edit a queue priority' '
 test_expect_success 'remove a queue' '
 	flux account delete-queue special &&
 	test_must_fail flux account view-queue special > deleted_queue.out 2>&1 &&
-	grep "Queue special not found in queue_table" deleted_queue.out
+	grep "queue special not found in queue_table" deleted_queue.out
 '
 
 test_expect_success 'trying to view a bank that does not exist in the DB should raise a ValueError' '
@@ -169,7 +169,9 @@ test_expect_success 'add a queue with no optional args to the queue_table' '
 '
 
 test_expect_success 'add another queue with some optional args' '
-	flux account add-queue queue_2 --min-nodes-per-job=1 --max-nodes-per-job=10 --max-time-per-job=120
+	flux account add-queue queue_2 --min-nodes-per-job=1 --max-nodes-per-job=10 --max-time-per-job=120 &&
+	flux account view-queue queue_2 > new_queue2.out &&
+	grep "queue_1" | grep "1" | grep "10" | grep "120" new_queue2.out
 '
 
 test_expect_success 'edit some queue information' '
@@ -179,7 +181,9 @@ test_expect_success 'edit some queue information' '
 '
 
 test_expect_success 'edit multiple columns for one queue' '
-	flux account edit-queue queue_1 --min-nodes-per-job 1 --max-nodes-per-job 128 --max-time-per-job 120
+	flux account edit-queue queue_1 --min-nodes-per-job 1 --max-nodes-per-job 128 --max-time-per-job 120 &&
+	flux account view-queue queue_1 > edited_queue_multiple.out &&
+	grep "queue_1" | grep "1" | grep "128" | grep "120" edited_queue_multiple.out
 '
 
 test_expect_success 'reset a queue limit' '
@@ -188,9 +192,9 @@ test_expect_success 'reset a queue limit' '
 	grep "queue_1" | grep "1" | grep "1" | grep "120" | grep "0" reset_limit.out
 '
 
-test_expect_success 'Trying to view a queue that does not exist should raise a ValueError' '
+test_expect_success 'trying to view a queue that does not exist should raise a ValueError' '
 	test_must_fail flux account view-queue foo > queue_nonexistent.out 2>&1 &&
-	grep "Queue foo not found in queue_table" queue_nonexistent.out
+	grep "queue foo not found in queue_table" queue_nonexistent.out
 '
 
 test_expect_success 'Add a user to two different banks' '
@@ -228,7 +232,7 @@ test_expect_success 'add a user with some specified projects to the association_
 
 test_expect_success 'adding a user with a non-existing project should fail' '
 	test_must_fail flux account add-user --username=user5016 --bank=A --projects="project_1,foo" > bad_project.out 2>&1 &&
-	grep "Project foo does not exist in project_table" bad_project.out
+	grep "project foo does not exist in project_table" bad_project.out
 '
 
 test_expect_success 'successfully edit a projects list for a user' '
@@ -239,20 +243,20 @@ test_expect_success 'successfully edit a projects list for a user' '
 
 test_expect_success 'editing a user project list with a non-existing project should fail' '
 	test_must_fail flux account edit-user user5015 --bank=A --projects="project_1,foo" > bad_project_2.out 2>&1 &&
-	grep "Project foo does not exist in project_table" bad_project_2.out
+	grep "project foo does not exist in project_table" bad_project_2.out
 '
 
 test_expect_success 'remove a project from the project_table that is still referenced by at least one user' '
 	flux account delete-project project_1 > warning_message.out &&
 	test_must_fail flux account view-project project_1 > deleted_project.out 2>&1 &&
 	grep "WARNING: user(s) in the assocation_table still reference this project." warning_message.out &&
-	grep "Project project_1 not found in project_table" deleted_project.out
+	grep "project project_1 not found in project_table" deleted_project.out
 '
 
 test_expect_success 'remove a project that is not referenced by any users' '
 	flux account delete-project project_4 &&
 	test_must_fail flux account view-project project_4 > deleted_project_2.out 2>&1 &&
-	grep "Project project_4 not found in project_table" deleted_project_2.out
+	grep "project project_4 not found in project_table" deleted_project_2.out
 '
 
 test_expect_success 'add a user to the accounting DB without specifying any projects' '
