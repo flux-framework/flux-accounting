@@ -41,20 +41,19 @@ class TestAccountingCLI(unittest.TestCase):
 
     # check for an IntegrityError when trying to add a duplicate bank
     def test_02_add_dup_bank(self):
-        b.add_bank(acct_conn, bank="root", shares=100)
-        self.assertRaises(sqlite3.IntegrityError)
+        with self.assertRaises(sqlite3.IntegrityError):
+            b.add_bank(acct_conn, bank="root", shares=100)
 
     # trying to add a sub account with an invalid parent bank
     # name should result in a ValueError
     def test_03_add_with_invalid_parent_bank(self):
-        b.add_bank(
-            acct_conn,
-            bank="bad_subaccount",
-            parent_bank="bad_parentaccount",
-            shares=1,
-        )
-
-        self.assertRaises(ValueError)
+        with self.assertRaises(ValueError):
+            b.add_bank(
+                acct_conn,
+                bank="bad_subaccount",
+                parent_bank="bad_parentaccount",
+                shares=1,
+            )
 
     # add a couple sub accounts whose parent is 'root'
     def test_04_add_sub_banks(self):
@@ -129,22 +128,35 @@ class TestAccountingCLI(unittest.TestCase):
     # trying to edit a bank's parent bank to a bank that does not
     # exist should raise a ValueError
     def test_09_edit_parent_bank_failure(self):
-        b.edit_bank(acct_conn, bank="C", parent_bank="foo")
-
-        self.assertRaises(ValueError)
+        with self.assertRaises(ValueError):
+            b.edit_bank(acct_conn, bank="C", parent_bank="foo")
 
     # trying to edit a bank's shares <= 0 should raise
     # a ValueError
     def test_10_edit_bank_value_fail(self):
-        b.add_bank(acct_conn, bank="bad_bank", shares=10)
-        b.edit_bank(acct_conn, bank="bad_bank", shares=-1)
-
-        self.assertRaises(ValueError)
+        with self.assertRaises(ValueError):
+            b.add_bank(acct_conn, bank="bad_bank", shares=10)
+            b.edit_bank(acct_conn, bank="bad_bank", shares=-1)
 
     # trying to view a bank that does not exist should raise a ValueError
     def test_11_view_bank_nonexistent(self):
         with self.assertRaises(ValueError):
             b.view_bank(acct_conn, bank="foo")
+
+    # try to add a bank that is currently disabled and make sure that it
+    # gets reactivated
+    def test_12_reactivate_bank(self):
+        # check that bank is disabled
+        cur.execute("SELECT active FROM bank_table WHERE bank='G'")
+        rows = cur.fetchall()
+        self.assertEqual(rows[0][0], 0)
+
+        # re-add bank
+        b.add_bank(acct_conn, bank="G", parent_bank="C", shares=1)
+
+        cur.execute("SELECT active FROM bank_table WHERE bank='G'")
+        rows = cur.fetchall()
+        self.assertEqual(rows[0][0], 1)
 
     # remove database and log file
     @classmethod
