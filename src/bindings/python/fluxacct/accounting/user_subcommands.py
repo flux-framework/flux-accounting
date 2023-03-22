@@ -272,7 +272,7 @@ def add_user(
         try:
             projects = validate_project(conn, projects)
         except ValueError as bad_project:
-            raise ValueError(f"Project {bad_project} does not exist in project_table")
+            raise ValueError(f"project {bad_project} does not exist in project_table")
 
     # determine default_project for user; if no other projects
     # were specified, use '*' as the default. If a project was
@@ -394,7 +394,7 @@ def edit_user(
                     params[field] = validate_project(conn, params[field])
                 except ValueError as bad_project:
                     raise ValueError(
-                        f"Project {bad_project} does not exist in project_table"
+                        f"project {bad_project} does not exist in project_table"
                     )
 
             update_stmt = "UPDATE association_table SET " + field
