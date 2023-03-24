@@ -263,7 +263,7 @@ def add_user(
         try:
             validate_queue(conn, queues)
         except ValueError as bad_queue:
-            raise ValueError(f"Queue {bad_queue} does not exist in queue_table")
+            raise ValueError(f"queue {bad_queue} does not exist in queue_table")
 
     # validate the project(s) specified if any were passed in;
     # add default project name ('*') to project(s) specified if
@@ -272,7 +272,7 @@ def add_user(
         try:
             projects = validate_project(conn, projects)
         except ValueError as bad_project:
-            raise ValueError(f"Project {bad_project} does not exist in project_table")
+            raise ValueError(f"project {bad_project} does not exist in project_table")
 
     # determine default_project for user; if no other projects
     # were specified, use '*' as the default. If a project was
@@ -388,13 +388,13 @@ def edit_user(
                 try:
                     validate_queue(conn, params[field])
                 except ValueError as bad_queue:
-                    raise ValueError(f"Queue {bad_queue} does not exist in queue_table")
+                    raise ValueError(f"queue {bad_queue} does not exist in queue_table")
             if field == "projects":
                 try:
                     params[field] = validate_project(conn, params[field])
                 except ValueError as bad_project:
                     raise ValueError(
-                        f"Project {bad_project} does not exist in project_table"
+                        f"project {bad_project} does not exist in project_table"
                     )
 
             update_stmt = "UPDATE association_table SET " + field

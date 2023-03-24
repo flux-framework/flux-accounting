@@ -12,6 +12,34 @@
 import sqlite3
 
 
+###############################################################
+#                                                             #
+#                      Helper Functions                       #
+#                                                             #
+###############################################################
+
+
+# check if project already exists and is active in project_table;
+# if so, return True
+def project_is_active(cur, project):
+    cur.execute(
+        "SELECT * FROM project_table WHERE project=?",
+        (project,),
+    )
+    project_exists = cur.fetchall()
+    if len(project_exists) > 0:
+        return True
+
+    return False
+
+
+###############################################################
+#                                                             #
+#                   Subcommand Functions                      #
+#                                                             #
+###############################################################
+
+
 def view_project(conn, project):
     cur = conn.cursor()
     try:
@@ -21,7 +49,7 @@ def view_project(conn, project):
         headers = [description[0] for description in cur.description]
         project_str = ""
         if not rows:
-            raise ValueError(f"Project {project} not found in project_table")
+            raise ValueError(f"project {project} not found in project_table")
 
         for header in headers:
             project_str += header.ljust(18)
@@ -32,11 +60,18 @@ def view_project(conn, project):
             project_str += "\n"
 
         return project_str
-    except sqlite3.OperationalError as e_database_error:
-        return e_database_error
+    except sqlite3.OperationalError as exc:
+        raise sqlite3.OperationalError(f"an sqlite3.OperationalError occurred: {exc}")
 
 
 def add_project(conn, project):
+    cur = conn.cursor()
+
+    if project_is_active(cur, project):
+        raise sqlite3.IntegrityError(
+            f"project {project} already exists in project_table"
+        )
+
     try:
         insert_stmt = "INSERT INTO project_table (project) VALUES (?)"
         conn.execute(
@@ -48,8 +83,10 @@ def add_project(conn, project):
 
         return 0
     # make sure entry is unique
-    except sqlite3.IntegrityError as integrity_error:
-        return integrity_error
+    except sqlite3.IntegrityError:
+        raise sqlite3.IntegrityError(
+            f"project {project} already exists in project_table"
+        )
 
 
 def delete_project(conn, project):
