@@ -39,15 +39,14 @@ def main():
         if "urgency" in arg:
             submitcmd.append(arg)
 
-    minicmd = [
+    runcmd = [
         "flux",
-        "mini",
         "run",
         "--dry-run",
         "--setattr=system.exec.test.duration=0.1",
         *sys.argv[2:],
     ]
-    jobspec = run_process(minicmd)
+    jobspec = run_process(runcmd)
 
     signedJ = SecurityContext().sign_wrap_as(userid, jobspec, mech_type="none")
 

@@ -73,9 +73,9 @@ test_expect_success 'load job-archive module' '
 '
 
 test_expect_success 'submit some sleep 1 jobs under one user' '
-	jobid1=$(flux mini submit -N 1 sleep 1) &&
-	jobid2=$(flux mini submit -N 1 sleep 1) &&
-	jobid3=$(flux mini submit -n 2 -N 2 sleep 1) &&
+	jobid1=$(flux submit -N 1 sleep 1) &&
+	jobid2=$(flux submit -N 1 sleep 1) &&
+	jobid3=$(flux submit -n 2 -N 2 sleep 1) &&
 	wait_db $jobid1 ${ARCHIVEDB} &&
 	wait_db $jobid2 ${ARCHIVEDB} &&
 	wait_db $jobid3 ${ARCHIVEDB}
@@ -100,9 +100,9 @@ test_expect_success 'check that job usage and fairshare values get updated' '
 '
 
 test_expect_success 'submit some sleep 1 jobs under the secondary bank of the same user ' '
-	jobid1=$(flux mini submit --setattr=system.bank=account2 -N 1 sleep 1) &&
-	jobid2=$(flux mini submit --setattr=system.bank=account2 -N 1 sleep 1) &&
-	jobid3=$(flux mini submit --setattr=system.bank=account2 -n 2 -N 2 sleep 1) &&
+	jobid1=$(flux submit --setattr=system.bank=account2 -N 1 sleep 1) &&
+	jobid2=$(flux submit --setattr=system.bank=account2 -N 1 sleep 1) &&
+	jobid3=$(flux submit --setattr=system.bank=account2 -n 2 -N 2 sleep 1) &&
 	wait_db $jobid1 ${ARCHIVEDB} &&
 	wait_db $jobid2 ${ARCHIVEDB} &&
 	wait_db $jobid3 ${ARCHIVEDB}

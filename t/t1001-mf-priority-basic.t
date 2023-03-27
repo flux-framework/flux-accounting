@@ -85,7 +85,7 @@ test_expect_success 'update plugin with sample test data' '
 '
 
 test_expect_success 'submit a job with default urgency' '
-	jobid=$(flux mini submit --setattr=system.bank=account3 -n1 hostname) &&
+	jobid=$(flux submit --setattr=system.bank=account3 -n1 hostname) &&
 	flux job wait-event -f json $jobid priority | jq '.context.priority' > job1.test &&
 	cat <<-EOF >job1.expected &&
 	45321
@@ -95,7 +95,7 @@ test_expect_success 'submit a job with default urgency' '
 '
 
 test_expect_success 'submit a job with custom urgency' '
-	jobid=$(flux mini submit --setattr=system.bank=account3 --urgency=15 -n1 hostname) &&
+	jobid=$(flux submit --setattr=system.bank=account3 --urgency=15 -n1 hostname) &&
 	flux job wait-event -f json $jobid priority | jq '.context.priority' > job2.test &&
 	cat <<-EOF >job2.expected &&
 	45320
@@ -105,7 +105,7 @@ test_expect_success 'submit a job with custom urgency' '
 '
 
 test_expect_success 'submit a job with urgency of 0' '
-	jobid=$(flux mini submit --setattr=system.bank=account3 --urgency=0 -n1 hostname) &&
+	jobid=$(flux submit --setattr=system.bank=account3 --urgency=0 -n1 hostname) &&
 	flux job wait-event -f json $jobid priority | jq '.context.priority' > job3.test &&
 	cat <<-EOF >job3.expected &&
 	0
@@ -115,7 +115,7 @@ test_expect_success 'submit a job with urgency of 0' '
 '
 
 test_expect_success 'submit a job with urgency of 31' '
-	jobid=$(flux mini submit --setattr=system.bank=account3 --urgency=31 -n1 hostname) &&
+	jobid=$(flux submit --setattr=system.bank=account3 --urgency=31 -n1 hostname) &&
 	flux job wait-event -f json $jobid priority | jq '.context.priority' > job4.test &&
 	cat <<-EOF >job4.expected &&
 	4294967295
@@ -125,7 +125,7 @@ test_expect_success 'submit a job with urgency of 31' '
 '
 
 test_expect_success 'submit a job with other bank' '
-	jobid=$(flux mini submit --setattr=system.bank=account2 -n1 hostname) &&
+	jobid=$(flux submit --setattr=system.bank=account2 -n1 hostname) &&
 	flux job wait-event -f json $jobid priority | jq '.context.priority' > job5.test &&
 	cat <<-EOF >job5.expected &&
 	11345
@@ -135,7 +135,7 @@ test_expect_success 'submit a job with other bank' '
 '
 
 test_expect_success 'submit a job using default bank' '
-	jobid=$(flux mini submit -n1 hostname) &&
+	jobid=$(flux submit -n1 hostname) &&
 	flux job wait-event -f json $jobid priority | jq '.context.priority' > job6.test &&
 	cat <<-EOF >job6.expected &&
 	45321
@@ -145,13 +145,13 @@ test_expect_success 'submit a job using default bank' '
 '
 
 test_expect_success 'submit a job using a bank the user does not belong to' '
-	test_must_fail flux mini submit --setattr=system.bank=account1 -n1 hostname > bad_bank.out 2>&1 &&
+	test_must_fail flux submit --setattr=system.bank=account1 -n1 hostname > bad_bank.out 2>&1 &&
 	test_debug "cat bad_bank.out" &&
 	grep "user does not belong to specified bank" bad_bank.out
 '
 
 test_expect_success 'reject job when invalid bank format is passed in' '
-	test_must_fail flux mini submit --setattr=system.bank=1 -n1 hostname > invalid_fmt.out 2>&1 &&
+	test_must_fail flux submit --setattr=system.bank=1 -n1 hostname > invalid_fmt.out 2>&1 &&
 	test_debug "cat invalid_fmt.out" &&
 	grep "unable to unpack bank arg" invalid_fmt.out
 '

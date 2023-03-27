@@ -45,7 +45,7 @@ test_expect_success 'send flux-accounting DB information to the plugin' '
 '
 
 test_expect_success 'submit a job successfully under default bank' '
-	jobid1=$(flux mini submit -n1 hostname) &&
+	jobid1=$(flux submit -n1 hostname) &&
 	flux job wait-event -f json $jobid1 priority | jq '.context.priority' > job1.test &&
 	cat <<-EOF >job1.expected &&
 	50000
@@ -54,7 +54,7 @@ test_expect_success 'submit a job successfully under default bank' '
 '
 
 test_expect_success 'submit a job successfully under second bank' '
-	jobid2=$(flux mini submit --setattr=system.bank=account2 -n1 hostname) &&
+	jobid2=$(flux submit --setattr=system.bank=account2 -n1 hostname) &&
 	flux job wait-event -f json $jobid2 priority | jq '.context.priority' > job2.test &&
 	cat <<-EOF >job2.expected &&
 	50000
@@ -68,7 +68,7 @@ test_expect_success 'disable second user/bank entry and update plugin' '
 '
 
 test_expect_success 'try to submit job under second user/bank entry' '
-	test_must_fail flux mini submit --setattr=system.bank=account2 -n1 hostname > deleted_entry1.out 2>&1 &&
+	test_must_fail flux submit --setattr=system.bank=account2 -n1 hostname > deleted_entry1.out 2>&1 &&
 	test_debug "cat deleted_entry1.out" &&
 	grep "user/bank entry has been disabled from flux-accounting DB" deleted_entry1.out
 '
@@ -79,7 +79,7 @@ test_expect_success 're-add second user/bank entry and update-plugin' '
 '
 
 test_expect_success 'submit a job successfully under second bank' '
-	jobid3=$(flux mini submit --setattr=system.bank=account2 -n1 hostname) &&
+	jobid3=$(flux submit --setattr=system.bank=account2 -n1 hostname) &&
 	flux job wait-event -f json $jobid3 priority | jq '.context.priority' > job3.test &&
 	cat <<-EOF >job3.expected &&
 	50000
@@ -93,7 +93,7 @@ test_expect_success 'disable first (and default) bank entry for user (will updat
 '
 
 test_expect_success 'try to submit job under new default user/bank entry' '
-	jobid4=$(flux mini submit -n1 hostname) &&
+	jobid4=$(flux submit -n1 hostname) &&
 	flux job wait-event -f json $jobid4 priority | jq '.context.priority' > job4.test &&
 	cat <<-EOF >job4.expected &&
 	50000
@@ -102,7 +102,7 @@ test_expect_success 'try to submit job under new default user/bank entry' '
 '
 
 test_expect_success 'disabling a user while they have an active job should not kill the job' '
-	jobid5=$(flux mini submit -n1 sleep 60) &&
+	jobid5=$(flux submit -n1 sleep 60) &&
 	flux account delete-user $username account2 &&
 	flux account-priority-update -p $(pwd)/FluxAccountingTest.db &&
 	test $(flux jobs -no {state} ${jobid5}) = RUN &&
@@ -110,7 +110,7 @@ test_expect_success 'disabling a user while they have an active job should not k
 '
 
 test_expect_success 'trying to submit a job now should result in a job rejection' '
-	test_must_fail flux mini submit --setattr=system.bank=account2 -n1 hostname > deleted_entry2.out 2>&1 &&
+	test_must_fail flux submit --setattr=system.bank=account2 -n1 hostname > deleted_entry2.out 2>&1 &&
 	test_debug "cat deleted_entry2.out" &&
 	grep "user/bank entry has been disabled from flux-accounting DB" deleted_entry2.out
 '
