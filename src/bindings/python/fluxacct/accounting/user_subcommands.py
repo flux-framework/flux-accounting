@@ -195,6 +195,26 @@ def update_mod_time(conn, username, bank):
     conn.execute(update_stmt, mod_time_tup)
 
 
+def clear_queues(conn, username, bank=None):
+    if bank is None:
+        conn.execute(
+            "UPDATE association_table SET queues='' WHERE username=?", (username,)
+        )
+    else:
+        conn.execute(
+            "UPDATE association_table SET queues='' WHERE username=? AND bank=?",
+            (
+                username,
+                bank,
+            ),
+        )
+        update_mod_time(conn, username, bank)
+
+    conn.commit()
+
+    return 0
+
+
 ###############################################################
 #                                                             #
 #                   Subcommand Functions                      #
@@ -385,6 +405,11 @@ def edit_user(
     for field in editable_fields:
         if params[field] is not None:
             if field == "queues":
+                # if --queues is empty, clear the available
+                # queues to the user
+                if params[field] == "":
+                    clear_queues(conn, username, bank=None)
+                    return 0
                 try:
                     validate_queue(conn, params[field])
                 except ValueError as bad_queue:
