@@ -21,7 +21,8 @@ TESTSCRIPTS = \
 	t1017-update-db.t \
 	t1018-mf-priority-disable-entry.t \
 	t1019-mf-priority-info-fetch.t \
-	t1020-mf-priority-issue262.t
+	t1020-mf-priority-issue262.t \
+	t1021-mf-priority-issue332.t
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
