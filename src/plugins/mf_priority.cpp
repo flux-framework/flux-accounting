@@ -476,6 +476,9 @@ static void rec_q_cb (flux_t *h,
     }
     num_data = json_array_size (data);
 
+    // clear queues map
+    queues.clear ();
+
     for (int i = 0; i < num_data; i++) {
         json_t *el = json_array_get(data, i);
 
