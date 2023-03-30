@@ -436,6 +436,7 @@ static void rec_update_cb (flux_t *h,
         b->active = active;
 
         // split queues comma-delimited string and add it to b->queues vector
+        b->queues.clear ();
         split_string (queues, b);
 
         users_def_bank[uid] = def_bank;
@@ -474,6 +475,9 @@ static void rec_q_cb (flux_t *h,
         goto error;
     }
     num_data = json_array_size (data);
+
+    // clear queues map
+    queues.clear ();
 
     for (int i = 0; i < num_data; i++) {
         json_t *el = json_array_get(data, i);
