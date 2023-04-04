@@ -1,3 +1,12 @@
+flux-accounting version 0.23.0 - 2023-04-04
+-------------------------------------------
+
+#### Fixes
+
+* bindings: raise error to caller (#327, #328, #329)
+
+* plugin: clear queues on flux-accounting DB update (#334)
+
 flux-accounting version 0.22.2 - 2023-03-14
 -------------------------------------------
 
