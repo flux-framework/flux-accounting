@@ -1,6 +1,6 @@
 [Unit]
 Description=Flux accounting service
-Requires=flux.service
+BindTo=flux.service
 After=flux.service
 
 [Service]
