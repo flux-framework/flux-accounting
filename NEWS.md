@@ -1,3 +1,10 @@
+flux-accounting version 0.23.1 - 2023-04-07
+-------------------------------------------
+
+#### Fixes
+
+* flux-accounting service: change Requires to BindTo (#338)
+
 flux-accounting version 0.23.0 - 2023-04-04
 -------------------------------------------
 
