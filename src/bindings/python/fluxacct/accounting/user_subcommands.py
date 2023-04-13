@@ -85,16 +85,13 @@ def set_default_project(projects):
 
 
 def get_user_rows(headers, rows):
-    # find length of longest column name
-    col_width = len(sorted(headers, key=len)[-1])
     user_str = ""
 
-    for header in headers:
-        user_str += header.ljust(col_width)
-    user_str += "\n"
     for row in rows:
-        for col in list(row):
-            user_str += str(col).ljust(col_width)
+        # iterate through column names of association_table and
+        # print out its associated value
+        for key, value in zip(headers, list(row)):
+            user_str += key + ": " + str(value) + "\n"
         user_str += "\n"
 
     return user_str
