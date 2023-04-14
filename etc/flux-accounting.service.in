@@ -1,6 +1,6 @@
 [Unit]
 Description=Flux accounting service
-BindTo=flux.service
+BindsTo=flux.service
 After=flux.service
 
 [Service]
