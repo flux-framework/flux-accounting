@@ -142,6 +142,7 @@ class AccountingService:
                 self.conn,
                 msg.payload["username"],
                 msg.payload["parseable"],
+                msg.payload["json"],
             )
 
             payload = {"view_user": val}
