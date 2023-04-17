@@ -53,6 +53,11 @@ test_expect_success 'view some user information' '
 	grep "user5011" | grep "5011" | grep "A" user_info.out
 '
 
+test_expect_success 'view some user information with --parseable' '
+	flux account view-user --parseable user5011 > user_info_parseable.out &&
+	grep -w "user5011\|5011\|A" user_info_parseable.out
+'
+
 test_expect_success 'edit a userid for a user' '
 	flux account edit-user user5011 --userid=12345 &&
 	flux account view-user user5011 > edit_userid.out &&

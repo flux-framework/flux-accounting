@@ -84,8 +84,21 @@ def set_default_project(projects):
     return "*"
 
 
-def get_user_rows(headers, rows):
+def get_user_rows(headers, rows, parseable):
     user_str = ""
+
+    if parseable is True:
+        # find length of longest column name
+        col_width = len(sorted(headers, key=len)[-1])
+
+        for header in headers:
+            user_str += header.ljust(col_width)
+        user_str += "\n"
+        for row in rows:
+            for col in list(row):
+                user_str += str(col).ljust(col_width)
+
+        return user_str
 
     for row in rows:
         # iterate through column names of association_table and
@@ -217,7 +230,7 @@ def clear_queues(conn, username, bank=None):
 #                   Subcommand Functions                      #
 #                                                             #
 ###############################################################
-def view_user(conn, user):
+def view_user(conn, user, parseable=False):
     cur = conn.cursor()
     try:
         # get the information pertaining to a user in the DB
@@ -227,7 +240,7 @@ def view_user(conn, user):
         if not rows:
             raise ValueError(f"User {user} not found in association_table")
 
-        user_str = get_user_rows(headers, rows)
+        user_str = get_user_rows(headers, rows, parseable)
 
         return user_str
     # this kind of exception is raised for errors related to the DB's operation,

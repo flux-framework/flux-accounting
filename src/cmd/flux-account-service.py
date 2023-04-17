@@ -138,7 +138,11 @@ class AccountingService:
     def view_user(self, handle, watcher, msg, arg):
         try:
             # call view-user function
-            val = u.view_user(self.conn, msg.payload["username"])
+            val = u.view_user(
+                self.conn,
+                msg.payload["username"],
+                msg.payload["parseable"],
+            )
 
             payload = {"view_user": val}
 
