@@ -129,7 +129,7 @@ def rename_tmp_table(old_cur, table):
 # in the old flux-accounting DB. It will look at the table schema for the table
 # that doesn't yet exist and create a "CREATE TABLE ..." statement to add to the
 # old flux-accounting DB
-def update_tables(old_conn, old_cur, new_cur):
+def update_tables(old_cur, new_cur):
     print("checking for new tables...")
 
     # get all tables from old database
@@ -181,7 +181,7 @@ def update_tables(old_conn, old_cur, new_cur):
 # If it does, it will create a new version of the table with any added or removed
 # columns from a newer version of flux-accounting, copy any and all existing rows
 # from the old table, and DROP the old table to be replaced with the new table
-def update_columns(old_conn, old_cur, new_cur):
+def update_columns(old_cur, new_cur):
     print("checking for new columns to add in tables...")
 
     # get all table names from the temporary new database
@@ -232,9 +232,9 @@ def update_db(path, new_db):
 
             new_cur = new_conn.cursor()
 
-            update_tables(old_conn, old_cur, new_cur)
+            update_tables(old_cur, new_cur)
 
-            update_columns(old_conn, old_cur, new_cur)
+            update_columns(old_cur, new_cur)
 
             # update user_version for DB
             old_cur.execute(
