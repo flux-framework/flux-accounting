@@ -50,13 +50,23 @@ test_expect_success 'trying to add an association that already exists should rai
 
 test_expect_success 'view some user information' '
 	flux account view-user user5011 > user_info.out &&
-	grep "user5011" | grep "5011" | grep "A" user_info.out
+	grep -w "username: user5011\|userid: 5011\|bank: A" user_info.out
+'
+
+test_expect_success 'view some user information with --parseable' '
+	flux account view-user --parseable user5011 > user_info_parseable.out &&
+	grep -w "user5011\|5011\|A" user_info_parseable.out
+'
+
+test_expect_success 'view some user information with --json' '
+	flux account view-user --json user5014 > user_info_json.out &&
+	grep -w "\"username\": \"user5014\"\|\"userid\": 5014\|\"bank\": \"C\"" user_info_json.out
 '
 
 test_expect_success 'edit a userid for a user' '
 	flux account edit-user user5011 --userid=12345 &&
 	flux account view-user user5011 > edit_userid.out &&
-	grep "user5011" | grep "12345" | grep "A" edit_userid.out &&
+	grep -w "user5011\|12345\|A" edit_userid.out &&
 	flux account edit-user user5011 --userid=5011
 '
 
@@ -83,7 +93,7 @@ test_expect_success 'add multiple queues to an existing user account' '
 test_expect_success 'edit the max_active_jobs of an existing user' '
 	flux account edit-user user5011 --max-active-jobs 999 &&
 	flux account view-user user5011 > edited_shares.out &&
-	grep "user5011" | grep "5011" | grep "999" edited_shares.out
+	grep -w "user5011\|5011\|999" edited_shares.out
 '
 
 test_expect_success 'edit a queue priority' '
@@ -130,7 +140,7 @@ test_expect_success 'trying to view a user who does not exist in the DB should r
 
 test_expect_success 'trying to view a user that does exist in the DB should return some information' '
 	flux account view-user user5011 > good_user.out &&
-	grep "user5011" | grep "5011" | grep "A" good_user.out
+	grep -w "user5011\|5011\|A" good_user.out
 '
 
 test_expect_success 'edit a field in a user account' '
@@ -140,7 +150,7 @@ test_expect_success 'edit a field in a user account' '
 test_expect_success 'edit a field in a bank account' '
 	flux account edit-bank C --shares=50 &&
 	flux account view-bank C > edited_bank.out &&
-	grep "C" | grep "50" edited_bank.out
+	grep -w "C\|50" edited_bank.out
 '
 
 test_expect_success 'try to edit a field in a bank account with a bad value' '
@@ -165,31 +175,31 @@ test_expect_success 'remove a user account' '
 test_expect_success 'add a queue with no optional args to the queue_table' '
 	flux account add-queue queue_1
 	flux account view-queue queue_1 > new_queue.out &&
-	grep "queue_1" | grep "1" | grep "1" | grep "60" | grep "0" new_queue.out
+	grep -w "queue_1\|1\|1\|60\|0" new_queue.out
 '
 
 test_expect_success 'add another queue with some optional args' '
 	flux account add-queue queue_2 --min-nodes-per-job=1 --max-nodes-per-job=10 --max-time-per-job=120 &&
 	flux account view-queue queue_2 > new_queue2.out &&
-	grep "queue_1" | grep "1" | grep "10" | grep "120" new_queue2.out
+	grep -w "queue_1\|1\|10\|120" new_queue2.out
 '
 
 test_expect_success 'edit some queue information' '
 	flux account edit-queue queue_1 --max-nodes-per-job 100 &&
 	flux account view-queue queue_1 > edited_max_nodes.out &&
-	grep "queue_1" | grep "100" edited_max_nodes.out
+	grep -w "queue_1\|100" edited_max_nodes.out
 '
 
 test_expect_success 'edit multiple columns for one queue' '
 	flux account edit-queue queue_1 --min-nodes-per-job 1 --max-nodes-per-job 128 --max-time-per-job 120 &&
 	flux account view-queue queue_1 > edited_queue_multiple.out &&
-	grep "queue_1" | grep "1" | grep "128" | grep "120" edited_queue_multiple.out
+	grep -w "queue_1\|1\|128\|120" edited_queue_multiple.out
 '
 
 test_expect_success 'reset a queue limit' '
 	flux account edit-queue queue_1 --max-nodes-per-job -1 &&
 	flux account view-queue queue_1 > reset_limit.out &&
-	grep "queue_1" | grep "1" | grep "1" | grep "120" | grep "0" reset_limit.out
+	grep -w "queue_1\|1\|1\|120\|0" reset_limit.out
 '
 
 test_expect_success 'trying to view a queue that does not exist should raise a ValueError' '
@@ -209,7 +219,7 @@ test_expect_success 'Delete user default bank row' '
 test_expect_success 'Check that user default bank gets updated to other bank' '
 	flux account view-user user5015 > new_default_bank.out &&
 	cat new_default_bank.out &&
-	grep "user5015" | grep "F" | grep "F" new_default_bank.out
+	grep -w "username: user5015\|bank: F\|default_bank: F" new_default_bank.out
 '
 
 test_expect_success 'add some projects to the project_table' '
@@ -221,13 +231,13 @@ test_expect_success 'add some projects to the project_table' '
 
 test_expect_success 'view project information from the project_table' '
 	flux account view-project project_1 > project_1.out &&
-	grep "1" | grep "project_1" project_1.out
+	grep -w "1\|project_1" project_1.out
 '
 
 test_expect_success 'add a user with some specified projects to the association_table' '
 	flux account add-user --username=user5015 --bank=A --projects="project_1,project_3" &&
 	flux account view-user user5015 > user5015_info.out &&
-	grep "user5015" | grep "project_1,project_3,*" user5015_info.out
+	grep -w "username: user5015\|projects: project_1,project_3,*" user5015_info.out
 '
 
 test_expect_success 'adding a user with a non-existing project should fail' '
@@ -238,7 +248,7 @@ test_expect_success 'adding a user with a non-existing project should fail' '
 test_expect_success 'successfully edit a projects list for a user' '
 	flux account edit-user user5015 --bank=A --projects="project_1,project_2,project_3" &&
 	flux account view-user user5015 > user5015_edited_info.out &&
-	grep "user5015" | grep "project_1,project_2,project_3,*" user5015_edited_info.out
+	grep -w "username: user5015\|projects: project_1,project_2,project_3,*" user5015_edited_info.out
 '
 
 test_expect_success 'editing a user project list with a non-existing project should fail' '

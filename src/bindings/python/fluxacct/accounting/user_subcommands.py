@@ -12,6 +12,7 @@
 import sqlite3
 import time
 import pwd
+import json
 
 ###############################################################
 #                                                             #
@@ -84,17 +85,76 @@ def set_default_project(projects):
     return "*"
 
 
-def get_user_rows(headers, rows):
-    # find length of longest column name
-    col_width = len(sorted(headers, key=len)[-1])
+def create_json_object(conn, user):
+    cur = conn.cursor()
+    main_headers = ["username", "userid", "default_bank"]
+    secondary_headers = [
+        "bank",
+        "active",
+        "shares",
+        "job_usage",
+        "fairshare",
+        "max_running_jobs",
+        "max_active_jobs",
+        "max_nodes",
+        "queues",
+        "projects",
+        "default_project",
+    ]
+
+    cur.execute(
+        """SELECT username, userid, default_bank
+        FROM association_table WHERE username=?""",
+        (user,),
+    )
+    rows = cur.fetchall()
+    user_info_dict = dict(zip(main_headers, list(rows)[0]))
+
+    cur.execute(
+        """SELECT bank, active, shares, job_usage, fairshare,
+        max_running_jobs, max_active_jobs, max_nodes,
+        queues, projects, default_project FROM association_table
+        WHERE username=?""",
+        (user,),
+    )
+    rows = cur.fetchall()
+
+    # store all information pertaining to each bank as a separate
+    # entry in a list
+    user_info_dict["banks"] = []
+    for row in rows:
+        user_info_dict["banks"].append(dict(zip(secondary_headers, list(row))))
+
+    user_info_json = json.dumps(user_info_dict, indent=4)
+    return user_info_json
+
+
+def get_user_rows(conn, user, headers, rows, parseable, json_fmt):
     user_str = ""
 
-    for header in headers:
-        user_str += header.ljust(col_width)
-    user_str += "\n"
+    if parseable is True:
+        # find length of longest column name
+        col_width = len(sorted(headers, key=len)[-1])
+
+        for header in headers:
+            user_str += header.ljust(col_width)
+        user_str += "\n"
+        for row in rows:
+            for col in list(row):
+                user_str += str(col).ljust(col_width)
+
+        return user_str
+
+    if json_fmt is True:
+        user_str += create_json_object(conn, user)
+
+        return user_str
+
     for row in rows:
-        for col in list(row):
-            user_str += str(col).ljust(col_width)
+        # iterate through column names of association_table and
+        # print out its associated value
+        for key, value in zip(headers, list(row)):
+            user_str += key + ": " + str(value) + "\n"
         user_str += "\n"
 
     return user_str
@@ -220,7 +280,7 @@ def clear_queues(conn, username, bank=None):
 #                   Subcommand Functions                      #
 #                                                             #
 ###############################################################
-def view_user(conn, user):
+def view_user(conn, user, parseable=False, json_fmt=False):
     cur = conn.cursor()
     try:
         # get the information pertaining to a user in the DB
@@ -230,7 +290,7 @@ def view_user(conn, user):
         if not rows:
             raise ValueError(f"User {user} not found in association_table")
 
-        user_str = get_user_rows(headers, rows)
+        user_str = get_user_rows(conn, user, headers, rows, parseable, json_fmt)
 
         return user_str
     # this kind of exception is raised for errors related to the DB's operation,
