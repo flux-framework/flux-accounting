@@ -15,6 +15,7 @@ import argparse
 import logging
 
 import flux
+import flux.constants
 import fluxacct.accounting
 
 from flux.constants import FLUX_MSGTYPE_REQUEST
@@ -82,28 +83,40 @@ class AccountingService:
         self.handle.signal_watcher_create(signal.SIGTERM, self.shutdown).start()
         self.handle.signal_watcher_create(signal.SIGINT, self.shutdown).start()
 
-        endpoints = [
+        general_endpoints = [
             "view_user",
+            "view_bank",
+            "view_job_records",
+            "view_queue",
+            "view_project",
+        ]
+
+        privileged_endpoints = [
             "add_user",
             "delete_user",
             "edit_user",
-            "view_bank",
             "add_bank",
             "delete_bank",
             "edit_bank",
-            "view_job_records",
             "update_usage",
             "add_queue",
-            "view_queue",
             "delete_queue",
             "edit_queue",
             "add_project",
-            "view_project",
             "delete_project",
             "shutdown_service",
         ]
 
-        for name in endpoints:
+        for name in general_endpoints:
+            watcher = self.handle.msg_watcher_create(
+                getattr(self, name), FLUX_MSGTYPE_REQUEST, f"accounting.{name}", self
+            )
+            self.handle.msg_handler_allow_rolemask(
+                watcher.handle, flux.constants.FLUX_ROLE_USER
+            )
+            watcher.start()
+
+        for name in privileged_endpoints:
             self.handle.msg_watcher_create(
                 getattr(self, name), FLUX_MSGTYPE_REQUEST, f"accounting.{name}", self
             ).start()
