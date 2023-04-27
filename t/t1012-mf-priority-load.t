@@ -54,7 +54,7 @@ test_expect_success 'create fake_payload.py' '
 '
 
 test_expect_success 'submitting a job specifying an incorrect bank with no user data results in a job exception' '
-	jobid0=$(flux mini submit --setattr=system.bank=account4 -n1 sleep 60) &&
+	jobid0=$(flux submit --setattr=system.bank=account4 -n1 sleep 60) &&
 	flux python fake_payload.py &&
 	flux job wait-event -v ${jobid0} exception > exception.test &&
 	grep "not a member of account4" exception.test
@@ -67,7 +67,7 @@ test_expect_success 'unload and reload mf_priority.so' '
 '
 
 test_expect_success 'submit sleep 60 jobs with no data update' '
-	jobid1=$(flux mini submit -n1 sleep 60)
+	jobid1=$(flux submit -n1 sleep 60)
 '
 
 test_expect_success 'check that submitted job is in state PRIORITY' '
@@ -83,8 +83,8 @@ test_expect_success 'check that previously held job transitions to RUN' '
 '
 
 test_expect_success 'submit 2 more sleep jobs' '
-	jobid2=$(flux mini submit -n1 sleep 60) &&
-	jobid3=$(flux mini submit -n1 sleep 60)
+	jobid2=$(flux submit -n1 sleep 60) &&
+	jobid3=$(flux submit -n1 sleep 60)
 '
 
 test_expect_success 'check flux jobs - should have 1 running job, 2 pending jobs' '
@@ -106,7 +106,7 @@ test_expect_success 'unload mf_priority.so' '
 '
 
 test_expect_success 'submit a job with no plugin loaded' '
-	jobid4=$(flux mini submit -n 1 sleep 60) &&
+	jobid4=$(flux submit -n 1 sleep 60) &&
 	test $(flux jobs -no {state} ${jobid4}) = PRIORITY
 '
 

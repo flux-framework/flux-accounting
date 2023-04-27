@@ -19,9 +19,9 @@ test_expect_success 'check that mf_priority plugin is loaded' '
 '
 
 test_expect_success 'submit a number of jobs with no user/bank info loaded to plugin' '
-	jobid1=$(flux mini submit --wait-event=depend hostname) &&
-	jobid2=$(flux mini submit --wait-event=depend hostname) &&
-	jobid3=$(flux mini submit --wait-event=depend hostname)
+	jobid1=$(flux submit --wait-event=depend hostname) &&
+	jobid2=$(flux submit --wait-event=depend hostname) &&
+	jobid3=$(flux submit --wait-event=depend hostname)
 '
 
 test_expect_success 'make sure jobs get held in state PRIORITY' '
@@ -37,7 +37,7 @@ test_expect_success 'cancel held jobs' '
 '
 
 test_expect_success 'submit job #1 with no user/bank info loaded to plugin' '
-	jobid1=$(flux mini submit --wait-event=depend hostname)
+	jobid1=$(flux submit --wait-event=depend hostname)
 '
 
 test_expect_success 'check that job #1 is in state PRIORITY' '
@@ -85,7 +85,7 @@ test_expect_success 'send the user/bank information to the plugin without reprio
 '
 
 test_expect_success 'submit job #2 which should run before job #1' '
-	jobid2=$(flux mini submit hostname) &&
+	jobid2=$(flux submit hostname) &&
 	flux job wait-event -t 15 $jobid2 clean
 '
 
