@@ -1,3 +1,21 @@
+flux-accounting version 0.24.0 - 2023-05-02
+-------------------------------------------
+
+#### Fixes
+
+* flux-accounting service: make certain commands accessible to all users (#330)
+
+* flux-accounting service: change BindTo to BindsTo (#341)
+
+* `view-user`: improve formatting of output of command (#342)
+
+* `update-db`: fix SQLite statement when updating a table with no primary key
+(#343)
+
+#### Testsuite
+
+* replace `flux mini` usage (#344)
+
 flux-accounting version 0.23.1 - 2023-04-07
 -------------------------------------------
 
