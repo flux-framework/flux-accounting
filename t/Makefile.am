@@ -22,7 +22,8 @@ TESTSCRIPTS = \
 	t1018-mf-priority-disable-entry.t \
 	t1019-mf-priority-info-fetch.t \
 	t1020-mf-priority-issue262.t \
-	t1021-mf-priority-issue332.t
+	t1021-mf-priority-issue332.t \
+	t1022-mf-priority-issue346.t
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
