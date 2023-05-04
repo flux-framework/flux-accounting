@@ -695,13 +695,24 @@ static int validate_cb (flux_plugin_t *p,
         return flux_jobtap_reject_job (p, args, "unable to unpack bank arg");
     }
 
-    // make sure user belongs to flux-accounting DB
+    // make sure user belongs to flux-accounting DB; there are two behaviors
+    // supported in this plugin:
+    //
+    // if the plugin has SOME data about users/banks and the user does not
+    // have an entry in the plugin, the job will be rejected.
+    //
+    // if the plugin has NO data about users/banks and the user does not have
+    // an entry in the plugin, the job will be held until data is received by
+    // the plugin.
     it = users.find (userid);
     if (it == users.end ()) {
-        // user does not exist in internal map yet, so create a bank_info
-        // struct that signifies it's going to be held in PRIORITY
-        add_missing_bank_info (p, h, userid);
-        return 0;
+        if (users.empty ()) {
+            add_missing_bank_info (p, h, userid);
+            return 0;
+        } else {
+            return flux_jobtap_reject_job (p, args,
+                                    "no bank found for user: %i", userid);
+        }
     }
 
     // make sure user belongs to bank they specified; if no bank was passed in,
