@@ -1,3 +1,11 @@
+flux-accounting version 0.25.0 - 2023-05-04
+-------------------------------------------
+
+#### Fixes
+
+* plugin: improve handling of submitted jobs based on data presence in
+plugin (#347)
+
 flux-accounting version 0.24.0 - 2023-05-02
 -------------------------------------------
 
