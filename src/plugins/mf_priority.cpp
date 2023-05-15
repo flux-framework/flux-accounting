@@ -462,6 +462,36 @@ static bank_info_result get_bank_info (int userid, char *bank)
 }
 
 
+static int update_jobspec_project (flux_plugin_t *p, int userid, char *bank)
+{
+    std::string project;
+
+    // look up user/bank info based on unpacked information
+    bank_info_result lookup_result = get_bank_info (userid, bank);
+
+    if (lookup_result.first == BANK_USER_NOT_FOUND
+        || lookup_result.first == BANK_INVALID
+        || lookup_result.first == BANK_NO_DEFAULT)
+        return -1;
+
+    // set bank_info to the struct that holds the user/bank information
+    // and get user's default project
+    auto bank_info = lookup_result.second->second;
+    project = bank_info.def_project;
+
+    if (!project.empty ()) {
+        // post jobspec-update event
+        if (flux_jobtap_jobspec_update_pack (p,
+                                             "{s:s}",
+                                             "attributes.system.project",
+                                             project.c_str ()) < 0)
+            return -1;
+    }
+
+    return 0;
+}
+
+
 /******************************************************************************
  *                                                                            *
  *                               Callbacks                                    *
