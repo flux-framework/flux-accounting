@@ -199,4 +199,22 @@ def create_db(
     conn.execute("INSERT INTO project_table (project) VALUES ('*')")
     conn.commit()
 
+    # Jobs Table
+    # stores job records for associations
+    logging.info("Creating jobs table in DB...")
+    conn.execute(
+        """
+            CREATE TABLE IF NOT EXISTS jobs (
+                id                  char(16)   PRIMARY KEY NOT NULL,
+                userid              integer                NOT NULL,
+                t_submit            real                   NOT NULL,
+                t_run               real                   NOT NULL,
+                t_inactive          real                   NOT NULL,
+                ranks               text                   NOT NULL,
+                R                   text                   NOT NULL,
+                jobspec             text                   NOT NULL
+            );"""
+    )
+    logging.info("Created jobs table successfully")
+
     conn.close()
