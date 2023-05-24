@@ -11,7 +11,6 @@ TESTSCRIPTS = \
 	t1007-flux-account-users.t \
 	t1008-mf-priority-update.t \
 	t1009-pop-db.t \
-	t1010-update-usage.t \
 	t1011-job-archive-interface.t \
 	t1012-mf-priority-load.t \
 	t1013-mf-priority-queues.t \
@@ -98,9 +97,6 @@ EXTRA_DIST= \
 	expected/flux_account/F_bank_users.expected \
 	expected/pop_db/db_hierarchy_base.expected \
 	expected/pop_db/db_hierarchy_new_users.expected \
-	expected/job_usage/pre_update.expected \
-	expected/job_usage/post_update1.expected \
-	expected/job_usage/post_update2.expected \
 	expected/plugin_state/internal_state_1.expected \
 	expected/plugin_state/internal_state_3.expected \
 	expected/plugin_state/internal_state_3.expected \
