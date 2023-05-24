@@ -343,11 +343,6 @@ def add_update_usage_arg(subparsers):
     )
     subparser_update_usage.set_defaults(func="update_usage")
     subparser_update_usage.add_argument(
-        "job_archive_db_path",
-        help="job-archive DB location",
-        metavar="JOB-ARCHIVE_DB_PATH",
-    )
-    subparser_update_usage.add_argument(
         "--priority-decay-half-life",
         default=1,
         type=int,
@@ -622,7 +617,6 @@ def select_accounting_function(args, output_file, parser):
     elif args.func == "update_usage":
         data = {
             "path": args.path,
-            "job_archive_db_path": args.job_archive_db_path,
             "priority_decay_half_life": args.priority_decay_half_life,
         }
         return_val = flux.Flux().rpc("accounting.update_usage", data).get()
