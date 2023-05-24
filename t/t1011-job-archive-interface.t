@@ -35,12 +35,23 @@ wait_db() {
 		return 0
 }
 
+# select job records from flux-accounting DB
+select_job_records() {
+		local dbpath=$1
+		query="SELECT * FROM jobs;"
+		${QUERYCMD} -t 100 ${dbpath} "${query}"
+}
+
 test_expect_success 'create flux-accounting DB' '
 	flux account -p $(pwd)/FluxAccountingTest.db create-db
 '
 
 test_expect_success 'start flux-accounting service' '
 	flux account-service -p ${DB_PATH} -t
+'
+
+test_expect_success 'run fetch-job-records script with no jobs in jobs_table' '
+	flux account-fetch-job-records -p ${DB_PATH}
 '
 
 test_expect_success 'add some banks to the DB' '
@@ -72,6 +83,23 @@ test_expect_success 'load job-archive module' '
 	flux module load job-archive
 '
 
+test_expect_success 'submit some jobs so they populate flux-core job-archive' '
+	jobid1=$(flux submit -N 1 hostname) &&
+	jobid2=$(flux submit -N 1 hostname) &&
+	jobid3=$(flux submit -N 2 hostname) &&
+	jobid4=$(flux submit -N 1 hostname) &&
+	wait_db $jobid1 ${ARCHIVEDB} &&
+	wait_db $jobid2 ${ARCHIVEDB} &&
+	wait_db $jobid3 ${ARCHIVEDB} &&
+	wait_db $jobid4 ${ARCHIVEDB}
+'
+
+test_expect_success 'call --copy argument to populate jobs table from job-archive DB' '
+	flux account-fetch-job-records --copy ${ARCHIVEDB} -p ${DB_PATH} &&
+	select_job_records ${DB_PATH} > records.out &&
+	grep "hostname" records.out
+'
+
 test_expect_success 'submit some sleep 1 jobs under one user' '
 	jobid1=$(flux submit -N 1 sleep 1) &&
 	jobid2=$(flux submit -N 1 sleep 1) &&
@@ -81,16 +109,20 @@ test_expect_success 'submit some sleep 1 jobs under one user' '
 	wait_db $jobid3 ${ARCHIVEDB}
 '
 
+test_expect_success 'run fetch-job-records script' '
+	flux account-fetch-job-records -p ${DB_PATH}
+'
+
 test_expect_success 'view job records for a user' '
-	flux account -p ${ARCHIVEDB} view-job-records --user $username
+	flux account -p ${DB_PATH} view-job-records --user $username
 '
 
 test_expect_success 'view job records for a user and direct it to a file' '
-	flux account -p ${ARCHIVEDB} --output-file $(pwd)/test.txt view-job-records --user $username
+	flux account -p ${DB_PATH} --output-file $(pwd)/test.txt view-job-records --user $username
 '
 
 test_expect_success 'run update-usage and update-fshare commands' '
-	flux account update-usage ${ARCHIVEDB} &&
+	flux account -p ${DB_PATH} update-usage &&
 	flux account-update-fshare -p ${DB_PATH}
 '
 
@@ -108,8 +140,12 @@ test_expect_success 'submit some sleep 1 jobs under the secondary bank of the sa
 	wait_db $jobid3 ${ARCHIVEDB}
 '
 
+test_expect_success 'run custom job-list script' '
+	flux account-fetch-job-records -p ${DB_PATH}
+'
+
 test_expect_success 'run update-usage and update-fshare commands' '
-	flux account update-usage ${ARCHIVEDB} &&
+	flux account -p ${DB_PATH} update-usage &&
 	flux account-update-fshare -p ${DB_PATH}
 '
 
