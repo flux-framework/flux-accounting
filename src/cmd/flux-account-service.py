@@ -321,11 +321,8 @@ class AccountingService:
     # pylint: disable=no-self-use
     def view_job_records(self, handle, watcher, msg, arg):
         try:
-            # connect to job-archive DB
-            jobs_conn = establish_sqlite_connection(msg.payload["path"])
-
             val = jobs.output_job_records(
-                jobs_conn,
+                self.conn,
                 msg.payload["output_file"],
                 jobid=msg.payload["jobid"],
                 user=msg.payload["user"],
@@ -335,7 +332,6 @@ class AccountingService:
 
             payload = {"view_job_records": val}
 
-            jobs_conn.close()
             handle.respond(msg, payload)
         except KeyError as exc:
             handle.respond_error(msg, 0, f"missing key in payload: {exc}")
@@ -346,11 +342,8 @@ class AccountingService:
 
     def update_usage(self, handle, watcher, msg, arg):
         try:
-            jobs_conn = establish_sqlite_connection(msg.payload["job_archive_db_path"])
-
             val = jobs.update_job_usage(
                 self.conn,
-                jobs_conn,
                 msg.payload["priority_decay_half_life"],
             )
 
