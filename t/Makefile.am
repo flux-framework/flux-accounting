@@ -23,7 +23,8 @@ TESTSCRIPTS = \
 	t1019-mf-priority-info-fetch.t \
 	t1020-mf-priority-issue262.t \
 	t1021-mf-priority-issue332.t \
-	t1022-mf-priority-issue346.t
+	t1022-mf-priority-issue346.t \
+	python/t1000-example.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
