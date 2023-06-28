@@ -123,7 +123,8 @@ def create_db(
                 bank        text                NOT NULL,
                 active      int(11) DEFAULT 1   NOT NULL,
                 parent_bank text    DEFAULT '',
-                shares      int                 NOT NULL
+                shares      int                 NOT NULL,
+                job_usage   real    DEFAULT 0.0 NOT NULL
         );"""
     )
     logging.info("Created bank_table successfully")
