@@ -1,5 +1,5 @@
-bank_id        bank           active         parent_bank    shares         
-1              root           1                             1              
+bank_id        bank           active         parent_bank    shares         job_usage      
+1              root           1                             1              0.0            
 
 root
  A
