@@ -498,14 +498,83 @@ def check_end_hl(acct_conn, pdhl):
         acct_conn.commit()
 
 
+def calc_bank_usage(acct_conn, cur, bank):
+    # fetch the job_usage value for every user under the passed-in bank
+    s_associations = "SELECT job_usage FROM association_table WHERE bank=?"
+    cur.execute(s_associations, (bank,))
+    job_usage_list = cur.fetchall()
+
+    total_usage = 0.0
+    if job_usage_list:
+        # aggregate job usage for bank
+        for job_usage in job_usage_list:
+            total_usage += job_usage[0]
+
+    # update the bank_table with the total job usage for the bank
+    u_job_usage = "UPDATE bank_table SET job_usage=? WHERE bank=?"
+    cur.execute(
+        u_job_usage,
+        (
+            total_usage,
+            bank,
+        ),
+    )
+
+    # commit changes
+    acct_conn.commit()
+
+    return total_usage
+
+
+def calc_parent_bank_usage(acct_conn, cur, bank, total_usage=0.0):
+    # find all sub banks
+    cur.execute("SELECT bank FROM bank_table WHERE parent_bank=?", (bank,))
+    sub_banks = cur.fetchall()
+
+    if len(sub_banks) == 0:
+        # we've reached a bank with no sub banks, so take the usage from that bank
+        # and add it to the total usage for the parent bank
+        job_usage = calc_bank_usage(acct_conn, cur, bank)
+        total_usage += job_usage
+    else:
+        # for each sub bank, keep traversing to find the usage for
+        # each bank with users in it
+        for sub_bank in sub_banks:
+            total_usage = calc_parent_bank_usage(
+                acct_conn, cur, sub_bank[0], total_usage
+            )
+            # update the bank_table with the total job usage
+            u_job_usage = "UPDATE bank_table SET job_usage=? WHERE bank=?"
+            cur.execute(
+                u_job_usage,
+                (
+                    total_usage,
+                    bank,
+                ),
+            )
+            acct_conn.commit()
+
+    return total_usage
+
+
 def update_job_usage(acct_conn, jobs_conn, pdhl=1):
     s_assoc = "SELECT username, bank, default_bank FROM association_table"
     cur = acct_conn.cursor()
     cur.execute(s_assoc)
     rows = cur.fetchall()
 
+    # update the job usage for every user in the association_table
     for row in rows:
         calc_usage_factor(jobs_conn, acct_conn, pdhl, row[0], row[1], row[2])
+
+    # find the root bank in the flux-accounting database
+    s_root_bank = "SELECT bank FROM bank_table WHERE parent_bank=''"
+    cur.execute(s_root_bank)
+    rows = cur.fetchall()
+    parent_bank = rows[0][0]  # store the name of the root bank
+
+    # update the job usage for every bank in the bank_table
+    calc_parent_bank_usage(acct_conn, cur, parent_bank, 0.0)
 
     check_end_hl(acct_conn, pdhl)
 
