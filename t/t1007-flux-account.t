@@ -128,6 +128,16 @@ test_expect_success 'viewing a bank with users in it should print all user info 
 	test_cmp ${EXPECTED_FILES}/A_bank.expected A_bank.test
 '
 
+test_expect_success 'viewing a leaf bank in hierarchy mode with no users in it works' '
+	flux account view-bank F -t > F_bank_tree.test &&
+	test_cmp ${EXPECTED_FILES}/F_bank_tree.expected F_bank_tree.test
+'
+
+test_expect_success 'viewing a leaf bank in users mode with no users in it works' '
+	flux account view-bank F -u > F_bank_users.test &&
+	test_cmp ${EXPECTED_FILES}/F_bank_users.expected F_bank_users.test
+'
+
 test_expect_success 'viewing a bank with sub banks should return a smaller hierarchy tree' '
 	flux account -p ${DB_PATH} view-bank D -t > D_bank.test &&
 	test_cmp ${EXPECTED_FILES}/D_bank.expected D_bank.test
