@@ -75,6 +75,8 @@ EXTRA_DIST= \
 	expected/flux_account/root_bank.expected \
 	expected/flux_account/deleted_user.expected \
 	expected/flux_account/deleted_bank.expected \
+	expected/flux_account/F_bank_tree.expected \
+	expected/flux_account/F_bank_users.expected \
 	expected/pop_db/db_hierarchy_base.expected \
 	expected/pop_db/db_hierarchy_new_users.expected \
 	expected/job_usage/pre_update.expected \

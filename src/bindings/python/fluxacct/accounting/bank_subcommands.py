@@ -129,6 +129,51 @@ def reactivate_bank(conn, cur, bank, parent_bank):
     conn.commit()
 
 
+def print_hierarchy(cur, bank, hierarchy_str, indent=""):
+    # look for all sub banks under this parent bank
+    select_stmt = "SELECT bank,shares,job_usage FROM bank_table WHERE parent_bank=?"
+    cur.execute(select_stmt, (bank,))
+    sub_banks = cur.fetchall()
+
+    if len(sub_banks) == 0:
+        # we've reached a bank with no sub banks, so print out every user
+        # under this bank
+        cur.execute(
+            "SELECT username,shares,job_usage,fairshare FROM association_table WHERE bank=?",
+            (bank,),
+        )
+        users = cur.fetchall()
+        if users:
+            for user in users:
+                hierarchy_str += (
+                    indent
+                    + " "
+                    + bank.ljust(20)
+                    + str(user[0]).rjust(20 - (len(indent) + 1))
+                    + str(user[1]).rjust(20)
+                    + str(user[2]).rjust(20)
+                    + str(user[3]).rjust(20)
+                    + "\n"
+                )
+    else:
+        # continue traversing the hierarchy
+        for sub_bank in sub_banks:
+            hierarchy_str += (
+                indent
+                + " "
+                + str(sub_bank[0]).ljust(20)
+                + "".rjust(20 - (len(indent) + 1))  # this skips the "Username" column
+                + str(sub_bank[1]).rjust(20)
+                + str(sub_bank[2]).rjust(20)
+                + "\n"
+            )
+            hierarchy_str = print_hierarchy(
+                cur, sub_bank[0], hierarchy_str, indent + " "
+            )
+
+    return hierarchy_str
+
+
 ###############################################################
 #                                                             #
 #                   Subcommand Functions                      #
@@ -184,6 +229,7 @@ def add_bank(conn, bank, shares, parent_bank=""):
 
 def view_bank(conn, bank, tree=False, users=False):
     cur = conn.cursor()
+    bank_str = ""
     try:
         cur.execute("SELECT * FROM bank_table WHERE bank=?", (bank,))
         rows = cur.fetchall()
@@ -195,16 +241,44 @@ def view_bank(conn, bank, tree=False, users=False):
 
         # print out the hierarchy view with the specified bank as the root of the tree
         if tree is True:
+            # get specific information about bank passed in
+            cur.execute(
+                "SELECT bank,shares,job_usage FROM bank_table WHERE bank=?", (bank,)
+            )
+            parent_bank = cur.fetchall()
+            name = parent_bank[0][0]
+            shares = parent_bank[0][1]
+            usage = parent_bank[0][2]
+
+            # create headers for the hierarchy string
+            hierarchy_str = (
+                "Bank".ljust(20)
+                + "Username".rjust(20)
+                + "RawShares".rjust(20)
+                + "RawUsage".rjust(20)
+                + "Fairshare".rjust(20)
+                + "\n"
+            )
+            # add the bank passed in to the hierarchy string
+            hierarchy_str += (
+                name.ljust(20)
+                + "".rjust(20)
+                + str(shares).rjust(20)
+                + str(round(usage, 2)).rjust(20)
+                + "\n"
+            )
+
             # get all potential sub banks
-            cur.execute("SELECT * FROM bank_table WHERE parent_bank=?", (bank,))
+            cur.execute("SELECT * FROM bank_table WHERE parent_bank=?", (name,))
             rows = cur.fetchall()
 
             if rows:
-                bank_hierarchy_str = bank + "\n"
-                bank_hierarchy_str = print_sub_banks(conn, bank, bank_hierarchy_str, "")
-                bank_str += "\n" + bank_hierarchy_str
+                # traverse the user/bank hierarchy and add the information from all
+                # banks and users to the hiearchy string
+                hierarchy_str = print_hierarchy(cur, name, hierarchy_str, "")
+                bank_str += "\n" + hierarchy_str
             else:
-                bank_str += "no sub banks under " + bank
+                bank_str += "\n" + hierarchy_str
         # if users is passed in, print out all potential users under
         # the passed in bank
         if users is True:
