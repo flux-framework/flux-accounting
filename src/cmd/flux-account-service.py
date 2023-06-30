@@ -519,7 +519,7 @@ def main():
     cur = conn.cursor()
     cur.execute("PRAGMA user_version")
     db_version = cur.fetchone()[0]
-    if db_version < 20:
+    if db_version < 21:
         LOGGER.error(
             "flux-accounting database out of date; please update DB with 'flux account-update-db' before running commands"
         )
