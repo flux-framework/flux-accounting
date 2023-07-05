@@ -1,3 +1,20 @@
+flux-accounting version 0.26.0 - 2023-07-07
+-------------------------------------------
+
+#### Fixes
+
+* database: update DB schema version (#361)
+
+#### Features
+
+* bank_table: add new job_usage column (#359)
+
+* `view-bank`: improve `-t` option (#359)
+
+#### Testsuite
+
+* t: add new Python test directory in `t/` (#358)
+
 flux-accounting version 0.25.0 - 2023-05-04
 -------------------------------------------
 
