@@ -1,5 +1,5 @@
 db_dir = "@X_LOCALSTATEDIR@/lib/flux/"
 db_path = "@X_LOCALSTATEDIR@/lib/flux/FluxAccounting.db"
-db_schema_version = 20
+db_schema_version = 21
 
 __all__ = ["db_dir", "db_path", "db_schema_version"]
