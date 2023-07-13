@@ -7,14 +7,12 @@
  *
  * SPDX-License-Identifier: LGPL-3.0
 \************************************************************/
-#include <iostream>
-#include <iomanip>
-
-extern "C" {
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-}
+
+#include <iostream>
+#include <iomanip>
 
 #include "src/fairness/writer/data_writer_stdout.hpp"
 

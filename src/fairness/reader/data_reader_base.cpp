@@ -7,6 +7,10 @@
  *
  * SPDX-License-Identifier: LGPL-3.0
 \************************************************************/
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "src/fairness/reader/data_reader_base.hpp"
 
 using namespace Flux::reader;
