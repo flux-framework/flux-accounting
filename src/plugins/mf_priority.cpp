@@ -11,12 +11,10 @@
 /* mf_priority.cpp - custom basic job priority plugin
  *
  */
-
-extern "C" {
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-}
+
 #include <flux/core.h>
 #include <flux/jobtap.h>
 #include <jansson.h>
