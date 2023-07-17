@@ -8,7 +8,7 @@ TESTSCRIPTS = \
 	t1004-mf-priority-small-tie-all.t \
 	t1005-max-jobs-limits.t \
 	t1006-update-fshare.t \
-	t1007-flux-account.t \
+	t1007-flux-account-users.t \
 	t1008-mf-priority-update.t \
 	t1009-pop-db.t \
 	t1010-update-usage.t \
@@ -24,6 +24,10 @@ TESTSCRIPTS = \
 	t1020-mf-priority-issue262.t \
 	t1021-mf-priority-issue332.t \
 	t1022-mf-priority-issue346.t \
+	t1023-flux-account-banks.t \
+	t1024-flux-account-queues.t \
+	t1025-flux-account-projects.t \
+	t1026-flux-account-perms.t \
 	python/t1000-example.py
 
 dist_check_SCRIPTS = \
