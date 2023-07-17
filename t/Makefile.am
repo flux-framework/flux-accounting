@@ -27,6 +27,7 @@ TESTSCRIPTS = \
 	t1023-flux-account-banks.t \
 	t1024-flux-account-queues.t \
 	t1025-flux-account-projects.t \
+	t1026-flux-account-perms.t \
 	python/t1000-example.py
 
 dist_check_SCRIPTS = \
