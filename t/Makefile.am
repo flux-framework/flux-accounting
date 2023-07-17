@@ -24,6 +24,7 @@ TESTSCRIPTS = \
 	t1020-mf-priority-issue262.t \
 	t1021-mf-priority-issue332.t \
 	t1022-mf-priority-issue346.t \
+	t1023-flux-account-banks.t \
 	python/t1000-example.py
 
 dist_check_SCRIPTS = \
