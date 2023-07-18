@@ -78,7 +78,7 @@ test_expect_success 'update-usage should not be accessible by all users' '
 	newid=$(($(id -u)+1)) &&
 	( export FLUX_HANDLE_ROLEMASK=0x2 &&
 	  export FLUX_HANDLE_USERID=$newid &&
-		test_must_fail flux account update-usage path_to_db.db > no_access_update-usage.out 2>&1 &&
+		test_must_fail flux account update-usage > no_access_update-usage.out 2>&1 &&
 		grep "Request requires owner credentials" no_access_update-usage.out
 	)
 '
