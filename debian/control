@@ -1,0 +1,21 @@
+Source: flux-accounting
+Section: devel
+Priority: optional
+Maintainer: Christopher Moussa <moussa1@llnl.gov>
+Standards-Version: 4.1.2
+Build-Depends:
+  debhelper (>= 10),
+  flux-core,
+  libjansson-dev,
+  libsqlite3-dev,
+  sqlite3
+
+Homepage: https://github.com/flux-framework/flux-accounting
+Package: flux-accounting
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description:  accounting support for the Flux resource manager framework
+ flux-accounting provides a persistent accounting database and a Flux jobtap
+ plugin for multi-factor priority calculation.
+ Note: This package is for testing purposes only and may not comply
+ with all Debian packaging guidelines.

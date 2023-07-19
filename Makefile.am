@@ -17,3 +17,10 @@ CODE_COVERAGE_LCOV_OPTIONS =
 
 dist_fluxrc1_SCRIPTS = \
     etc/01-flux-account-priority-update
+
+export DEB_BUILD_OPTIONS ?= nocheck terse
+deb: debian scripts/debbuild.sh
+	@$(top_srcdir)/scripts/debbuild.sh $(abs_top_srcdir)
+
+clean-local:
+	@rm -rf debbuild
