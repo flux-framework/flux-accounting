@@ -51,7 +51,10 @@ test_expect_success 'create fake_payload.py' '
 				"fairshare": 0.45321,
 				"max_running_jobs": 10,
 				"max_active_jobs": 12,
-				"queues": "standby,special"
+				"queues": "standby,special",
+				"active": 1,
+				"projects": "*",
+				"def_project": "*"
 			},
 			{
 				"userid": userid,
@@ -60,7 +63,10 @@ test_expect_success 'create fake_payload.py' '
 				"fairshare": 0.11345,
 				"max_running_jobs": 10,
 				"max_active_jobs": 12,
-				"queues": "standby"
+				"queues": "standby",
+				"active": 1,
+				"projects": "*",
+				"def_project": "*"
 			}
 		]
 	}
@@ -167,7 +173,10 @@ test_expect_success 'pass special key to user/bank struct to nullify information
 				"fairshare": 0.45321,
 				"max_running_jobs": -1,
 				"max_active_jobs": 12,
-				"queues": "standby,special"
+				"queues": "standby,special",
+				"active": 1,
+				"projects": "*",
+				"def_project": "*"
 			}
 		]
 	}
@@ -195,7 +204,10 @@ test_expect_success 'resend user/bank information with valid data and successful
 				"fairshare": 0.45321,
 				"max_running_jobs": 2,
 				"max_active_jobs": 4,
-				"queues": "standby,special"
+				"queues": "standby,special",
+				"active": 1,
+				"projects": "*",
+				"def_project": "*"
 			}
 		]
 	}
