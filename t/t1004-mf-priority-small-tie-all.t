@@ -6,6 +6,7 @@ test_description='Test multi-factor priority plugin with many ties'
 MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
 SUBMIT_AS=${SHARNESS_TEST_SRCDIR}/scripts/submit_as.py
 SEND_PAYLOAD=${SHARNESS_TEST_SRCDIR}/scripts/send_payload.py
+SMALL_TIE_ALL=${SHARNESS_TEST_SRCDIR}/expected/sample_payloads/small_tie_all.json
 
 export TEST_UNDER_FLUX_NO_JOB_EXEC=y
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
@@ -21,26 +22,8 @@ test_expect_success 'check that mf_priority plugin is loaded' '
 	flux jobtap list | grep mf_priority
 '
 
-test_expect_success 'create a group of users with many ties in fairshare values' '
-	cat <<-EOF >fake_small_tie_all.json
-	{
-	    "data" : [
-	        {"userid": 5011, "bank": "account1", "def_bank": "account1", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""},
-	        {"userid": 5012, "bank": "account1", "def_bank": "account1", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""},
-	        {"userid": 5013, "bank": "account1", "def_bank": "account1", "fairshare": 1, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""},
-	        {"userid": 5021, "bank": "account2", "def_bank": "account2", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""},
-	        {"userid": 5022, "bank": "account2", "def_bank": "account2", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""},
-	        {"userid": 5023, "bank": "account2", "def_bank": "account2", "fairshare": 1, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""},
-	        {"userid": 5031, "bank": "account3", "def_bank": "account3", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""},
-	        {"userid": 5032, "bank": "account3", "def_bank": "account3", "fairshare": 0.666667, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""},
-	        {"userid": 5033, "bank": "account3", "def_bank": "account3", "fairshare": 1, "max_running_jobs": 5, "max_active_jobs": 7, "queues": ""}
-	    ]
-	}
-	EOF
-'
-
 test_expect_success 'send the user information to the plugin' '
-	flux python ${SEND_PAYLOAD} fake_small_tie_all.json
+	flux python ${SEND_PAYLOAD} ${SMALL_TIE_ALL}
 '
 
 test_expect_success 'add a default queue and send it to the plugin' '
