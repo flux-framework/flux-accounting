@@ -5,7 +5,7 @@ queue_rules:
       - status-success="validate commits"
       - status-success="python format"
       - status-success="python lint"
-      - status-success="bionic - py3.6"
+      - status-success="jammy - py3.6"
       - status-success="el8 - py3.6"
       - status-success="el8 - distcheck"
       - status-success="coverage"
