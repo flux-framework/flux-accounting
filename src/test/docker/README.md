@@ -6,7 +6,7 @@ Docker is used under CI to speed up deployment of an environment with correct bu
 
 ### Local Testing
 
-Developers can test the docker images themselves. If new dependencies are needed, they can update the `$image` Dockerfiles manually (where `$image` is one of `bionic` or `el8`). To run inside a local Docker image, run the command:
+Developers can test the docker images themselves. If new dependencies are needed, they can update the `$image` Dockerfiles manually (where `$image` is one of `jammy` or `el8`). To run inside a local Docker image, run the command:
 
 ```console
 docker-run-checks.sh -i $image [options] -- [arguments]
@@ -14,7 +14,7 @@ docker-run-checks.sh -i $image [options] -- [arguments]
 
 ### Interactive Testing
 
-While running in an interactive Docker container, you can build, test, and interact with flux-accounting. The `bionic` image has multiple versions of Python installed, which you can configure and build against (the default version for both images is Python version `3.6`).
+While running in an interactive Docker container, you can build, test, and interact with flux-accounting.
 
 Remember to install the required dependencies before you build and add the appropriate install location to your `PYTHONPATH`. Below is an example of configuring and building against Python version `3.7` while running inside the Docker container.
 

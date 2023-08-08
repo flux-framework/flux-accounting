@@ -65,7 +65,7 @@ class BuildMatrix:
     def add_build(
         self,
         name=None,
-        image="bionic",
+        image="jammy",
         args=default_args,
         jobs=4,
         env=None,
@@ -148,10 +148,10 @@ matrix.add_build(
     docker_tag=True,
 )
 
-# Bionic
+# jammy
 matrix.add_build(
-    name="bionic - py3.6",
-    image="bionic",
+    name="jammy - py3.6",
+    image="jammy",
     docker_tag=True,
 )
 
