@@ -62,6 +62,7 @@ typedef std::pair<bank_info_codes, std::map<std::string, struct bank_info>::iter
 
 std::map<int, std::map<std::string, struct bank_info>> users;
 std::map<std::string, struct queue_info> queues;
+std::vector<std::string> projects;
 std::map<int, std::string> users_def_bank;
 
 struct bank_info {
@@ -74,6 +75,8 @@ struct bank_info {
     std::vector<std::string> queues;
     int queue_factor;
     int active;
+    std::vector<std::string> projects;
+    std::string def_project;
 };
 
 // min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
@@ -485,7 +488,7 @@ static void rec_update_cb (flux_t *h,
                            const flux_msg_t *msg,
                            void *arg)
 {
-    char *bank, *def_bank, *queues = NULL;
+    char *bank, *def_bank, *queues, *projects, *def_project = NULL;
     int uid, max_running_jobs, max_active_jobs = 0;
     double fshare = 0.0;
     json_t *data, *jtemp = NULL;
@@ -499,9 +502,6 @@ static void rec_update_cb (flux_t *h,
         goto error;
     }
 
-    if (flux_respond (h, msg, NULL) < 0)
-        flux_log_error (h, "flux_respond");
-
     if (!data || !json_is_array (data)) {
         flux_log (h, LOG_ERR, "mf_priority: invalid bulk_update payload");
         goto error;
@@ -512,7 +512,8 @@ static void rec_update_cb (flux_t *h,
         json_t *el = json_array_get(data, i);
 
         if (json_unpack_ex (el, &error, 0,
-                            "{s:i, s:s, s:s, s:F, s:i, s:i, s:s, s:i}",
+                            "{s:i, s:s, s:s, s:F, s:i,"
+                            " s:i, s:s, s:i, s:s, s:s}",
                             "userid", &uid,
                             "bank", &bank,
                             "def_bank", &def_bank,
@@ -520,7 +521,9 @@ static void rec_update_cb (flux_t *h,
                             "max_running_jobs", &max_running_jobs,
                             "max_active_jobs", &max_active_jobs,
                             "queues", &queues,
-                            "active", &active) < 0)
+                            "active", &active,
+                            "projects", &projects,
+                            "def_project", &def_project) < 0)
             flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
 
         struct bank_info *b;
@@ -530,13 +533,21 @@ static void rec_update_cb (flux_t *h,
         b->max_run_jobs = max_running_jobs;
         b->max_active_jobs = max_active_jobs;
         b->active = active;
+        b->def_project = def_project;
 
         // split queues comma-delimited string and add it to b->queues vector
         b->queues.clear ();
         split_string_and_push_back (queues, &b->queues);
 
+        // split projects comma-delimited string and add it to b->projects vector
+        b->projects.clear (); // clear existing projects from vector
+        split_string_and_push_back (projects, &b->projects);
+
         users_def_bank[uid] = def_bank;
     }
+
+    if (flux_respond (h, msg, NULL) < 0)
+        flux_log_error (h, "flux_respond");
 
     return;
 error:
@@ -594,6 +605,55 @@ static void rec_q_cb (flux_t *h,
         q->max_nodes_per_job = max_nodes_per_job;
         q->max_time_per_job = max_time_per_job;
         q->priority = priority;
+    }
+
+    return;
+error:
+    flux_respond_error (h, msg, errno, flux_msg_last_error (msg));
+}
+
+
+/*
+ * Unpack a payload from an external bulk update service and place it in the
+ * multimap datastructure.
+ */
+static void rec_p_cb (flux_t *h,
+                      flux_msg_handler_t *mh,
+                      const flux_msg_t *msg,
+                      void *arg)
+{
+    char *project = NULL;
+    json_t *data, *jtemp = NULL;
+    json_error_t error;
+    int num_data = 0;
+
+    if (flux_request_unpack (msg, NULL, "{s:o}", "data", &data) < 0) {
+        flux_log_error (h, "failed to unpack custom_priority.trigger msg");
+        goto error;
+    }
+
+    if (flux_respond (h, msg, NULL) < 0)
+        flux_log_error (h, "flux_respond");
+
+    if (!data || !json_is_array (data)) {
+        flux_log (h, LOG_ERR, "mf_priority: invalid project info payload");
+        goto error;
+    }
+    num_data = json_array_size (data);
+
+    // clear projects map
+    projects.clear ();
+
+    for (int i = 0; i < num_data; i++) {
+        json_t *el = json_array_get(data, i);
+
+        if (json_unpack_ex (el, &error, 0, "{s:s}",
+                            "project", &project) < 0) {
+            flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
+            goto error;
+        }
+
+        projects.push_back (project);
     }
 
     return;
@@ -1221,7 +1281,11 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
     if (flux_plugin_register (p, "mf_priority", tab) < 0
         || flux_jobtap_service_register (p, "rec_update", rec_update_cb, p)
         || flux_jobtap_service_register (p, "reprioritize", reprior_cb, p)
-        || flux_jobtap_service_register (p, "rec_q_update", rec_q_cb, p) < 0)
+        || flux_jobtap_service_register (p, "rec_q_update", rec_q_cb, p)
+        || flux_jobtap_service_register (p,
+                                         "rec_project_update",
+                                         rec_p_cb,
+                                         p) < 0)
         return -1;
 
     return 0;
