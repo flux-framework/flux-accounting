@@ -45,6 +45,19 @@ extern "C" {
 // the association does not have permission to run jobs under
 #define INVALID_QUEUE -6
 
+// different codes to return as a result of looking up user/bank information:
+//
+// BANK_SUCCESS: we found an entry for the passed-in user/bank
+// INVALID_BANK: the user specified a bank they don't belong to
+// NO_DEFAULT_BANK: the user does not have a default bank in the plugin map
+enum bank_info_codes {
+    BANK_SUCCESS,
+    INVALID_BANK,
+    NO_DEFAULT_BANK
+};
+
+typedef std::pair<bank_info_codes, std::map<std::string, struct bank_info>::iterator> bank_info_result;
+
 std::map<int, std::map<std::string, struct bank_info>> users;
 std::map<std::string, struct queue_info> queues;
 std::map<int, std::string> users_def_bank;
@@ -331,6 +344,30 @@ error:
 }
 
 
+static bank_info_result get_bank_info (
+        std::map<int, std::map<std::string, struct bank_info>>::iterator it,
+        int userid,
+        char *bank)
+{
+    std::map<std::string, struct bank_info>::iterator bank_it;
+
+    // make sure user belongs to bank they specified; if no bank was passed in,
+    // look up their default bank
+    if (bank != NULL) {
+        bank_it = it->second.find (std::string (bank));
+        if (bank_it == it->second.end ())
+            return {INVALID_BANK, bank_it};
+    } else {
+        bank = const_cast<char*> (users_def_bank[userid].c_str ());
+        bank_it = it->second.find (std::string (bank));
+        if (bank_it == it->second.end ())
+            return {NO_DEFAULT_BANK, bank_it};
+    }
+
+    return {BANK_SUCCESS, bank_it};
+}
+
+
 /******************************************************************************
  *                                                                            *
  *                               Callbacks                                    *
@@ -575,26 +612,23 @@ static int priority_cb (flux_plugin_t *p,
         if (it == users.end ()) {
             return flux_jobtap_priority_unavail (p, args);
         } else {
-            // make sure user belongs to bank they specified; if no bank was
-            // passed in, look up their default bank
-            if (bank != NULL) {
-                bank_it = it->second.find (std::string (bank));
-                if (bank_it == it->second.end ()) {
-                    flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
-                                                 "mf_priority", 0,
-                                                 "not a member of %s", bank);
-                    return -1;
-                }
-            } else {
-                bank = const_cast<char*> (users_def_bank[userid].c_str ());
-                bank_it = it->second.find (std::string (bank));
-                if (bank_it == it->second.end ()) {
-                    flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
-                                                 "mf_priority", 0,
-                                                 "user/default bank entry "
-                                                 "does not exist");
-                    return -1;
-                }
+            // validate and look up user/bank info based on information sent in
+            bank_info_result lookup_result = get_bank_info (it, userid, bank);
+            if (lookup_result.first == BANK_SUCCESS)
+                bank_it = lookup_result.second;
+            else if (lookup_result.first == INVALID_BANK) {
+                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                             "mf_priority", 0,
+                                             "job.state.priority: not a "
+                                             "member of %s", bank);
+                return -1;
+            } else if (lookup_result.first == NO_DEFAULT_BANK) {
+                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                             "mf_priority", 0,
+                                             "job.state.priority: "
+                                             "user/default bank entry does "
+                                             "not exist");
+                return -1;
             }
 
             if (bank_it->second.max_run_jobs == BANK_INFO_MISSING) {
@@ -715,20 +749,16 @@ static int validate_cb (flux_plugin_t *p,
         }
     }
 
-    // make sure user belongs to bank they specified; if no bank was passed in,
-    // look up their default bank
-    if (bank != NULL) {
-        bank_it = it->second.find (std::string (bank));
-        if (bank_it == it->second.end ())
-            return flux_jobtap_reject_job (p, args,
-                                     "user does not belong to specified bank");
-    } else {
-        bank = const_cast<char*> (users_def_bank[userid].c_str ());
-        bank_it = it->second.find (std::string (bank));
-        if (bank_it == it->second.end ())
-            return flux_jobtap_reject_job (p, args,
-                                     "user/default bank entry does not exist");
-    }
+    // validate and look up user/bank info based on information sent in
+    bank_info_result lookup_result = get_bank_info (it, userid, bank);
+    if (lookup_result.first == BANK_SUCCESS)
+        bank_it = lookup_result.second;
+    else if (lookup_result.first == INVALID_BANK)
+        return flux_jobtap_reject_job (p, args,
+                                       "user does not belong to specified bank");
+    else if (lookup_result.first == NO_DEFAULT_BANK)
+        return flux_jobtap_reject_job (p, args,
+                                       "user/default bank entry does not exist");
 
     // if user/bank entry was disabled, reject job with a message saying the
     // entry has been disabled
@@ -805,27 +835,22 @@ static int new_cb (flux_plugin_t *p,
             return 0;
         }
 
-        // make sure user belongs to bank they specified; if no bank was passed
-        // in, look up their default bank
-        if (bank != NULL) {
-            bank_it = it->second.find (std::string (bank));
-            if (bank_it == it->second.end ()) {
-                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
-                                             "mf_priority", 0,
-                                             "job.new: not a member of %s",
-                                             bank);
-                return -1;
-            }
-        } else {
-            bank = const_cast<char*> (users_def_bank[userid].c_str ());
-            bank_it = it->second.find (std::string (bank));
-            if (bank_it == it->second.end ()) {
-                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
-                                             "mf_priority", 0,
-                                             "job.new: user/default bank "
-                                             "entry does not exist");
-                return -1;
-            }
+        // validate and look up user/bank info based on information sent in
+        bank_info_result lookup_result = get_bank_info (it, userid, bank);
+        if (lookup_result.first == BANK_SUCCESS) {
+            bank_it = lookup_result.second;
+        } else if (lookup_result.first == INVALID_BANK) {
+            flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                         "mf_priority", 0,
+                                         "job.new: not a member of %s",
+                                         bank);
+            return -1;
+        } else if (lookup_result.first == NO_DEFAULT_BANK) {
+            flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                         "mf_priority", 0,
+                                         "job.new: user/default bank "
+                                         "entry does not exist");
+            return -1;
         }
 
         // fetch priority associated with passed-in queue (or default queue)
