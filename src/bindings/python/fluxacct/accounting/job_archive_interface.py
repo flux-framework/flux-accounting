@@ -35,7 +35,7 @@ def get_uid(username):
 def write_records_to_file(job_records, output_file):
     with open(output_file, "w", newline="") as csvfile:
         spamwriter = csv.writer(
-            csvfile, delimiter="|", quotechar="", escapechar="'", quoting=csv.QUOTE_NONE
+            csvfile, delimiter="|", escapechar="'", quoting=csv.QUOTE_NONE
         )
         spamwriter.writerow(
             (
