@@ -1,0 +1,11 @@
+#!/bin/bash -e
+
+# test loading multi-factor priority plugin
+MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
+
+set -x
+
+flux jobtap load -r .priority-default ${MULTI_FACTOR_PRIORITY}
+flux jobtap list | grep mf_priority
+
+flux submit -n 1 /bin/true --wait

@@ -28,12 +28,18 @@ TESTSCRIPTS = \
 	t1024-flux-account-queues.t \
 	t1025-flux-account-projects.t \
 	t1026-flux-account-perms.t \
+	t5000-valgrind.t \
 	python/t1000-example.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
 	pycotap \
-	scripts
+	scripts \
+	valgrind/valgrind-workload.sh \
+	valgrind/workload.d/job
+
+dist_check_DATA = \
+	valgrind/valgrind.supp
 
 TESTS = $(TESTSCRIPTS)
 
