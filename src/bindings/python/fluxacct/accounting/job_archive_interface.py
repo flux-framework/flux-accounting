@@ -223,22 +223,22 @@ def get_job_records(conn, bank, default_bank, **kwargs):
 
     cur = conn.cursor()
     cur.execute(select_stmt, (*tuple(params_list),))
-    rows = cur.fetchall()
+    result = cur.fetchall()
     # if the length of dataframe is 0, that means no job records were found
     # in the jobs table, so just return an empty list
-    if len(rows) == 0:
+    if len(result) == 0:
         return job_records
 
     if bank is None and default_bank is None:
         # special case for unit tests in test_job_archive_interface.py
-        job_records = add_job_records(rows)
+        job_records = add_job_records(result)
 
         return job_records
 
     if bank != default_bank:
-        jobs = sec_bank_jobs(rows, bank)
+        jobs = sec_bank_jobs(result, bank)
     else:
-        jobs = def_bank_jobs(rows, default_bank)
+        jobs = def_bank_jobs(result, default_bank)
 
     job_records = add_job_records(jobs)
 
@@ -561,17 +561,17 @@ def update_job_usage(acct_conn, jobs_conn, pdhl=1):
     s_assoc = "SELECT username, bank, default_bank FROM association_table"
     cur = acct_conn.cursor()
     cur.execute(s_assoc)
-    rows = cur.fetchall()
+    result = cur.fetchall()
 
     # update the job usage for every user in the association_table
-    for row in rows:
+    for row in result:
         calc_usage_factor(jobs_conn, acct_conn, pdhl, row[0], row[1], row[2])
 
     # find the root bank in the flux-accounting database
     s_root_bank = "SELECT bank FROM bank_table WHERE parent_bank=''"
     cur.execute(s_root_bank)
-    rows = cur.fetchall()
-    parent_bank = rows[0][0]  # store the name of the root bank
+    result = cur.fetchall()
+    parent_bank = result[0][0]  # store the name of the root bank
 
     # update the job usage for every bank in the bank_table
     calc_parent_bank_usage(acct_conn, cur, parent_bank, 0.0)

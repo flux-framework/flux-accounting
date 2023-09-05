@@ -17,17 +17,17 @@ def view_queue(conn, queue):
     try:
         # get the information pertaining to a queue in the DB
         cur.execute("SELECT * FROM queue_table where queue=?", (queue,))
-        rows = cur.fetchall()
+        result = cur.fetchall()
         headers = [description[0] for description in cur.description]
         queue_str = ""
-        if not rows:
+        if not result:
             raise ValueError(f"queue {queue} not found in queue_table")
 
         # print column names of queue_table
         for header in headers:
             queue_str += header.ljust(18)
         queue_str += "\n"
-        for row in rows:
+        for row in result:
             for col in list(row):
                 queue_str += str(col).ljust(18)
             queue_str += "\n"

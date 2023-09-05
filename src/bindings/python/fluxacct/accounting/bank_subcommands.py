@@ -56,18 +56,18 @@ def print_sub_banks(conn, bank, bank_str, indent=""):
     select_stmt = "SELECT bank FROM bank_table WHERE parent_bank=?"
     cur = conn.cursor()
     cur.execute(select_stmt, (bank,))
-    rows = cur.fetchall()
+    result = cur.fetchall()
 
     # we've reached a bank with no sub banks
-    if len(rows) == 0:
+    if len(result) == 0:
         cur.execute("SELECT username FROM association_table WHERE bank=?", (bank,))
-        rows = cur.fetchall()
-        if rows:
-            for row in rows:
+        result = cur.fetchall()
+        if result:
+            for row in result:
                 bank_str += indent + " " + row[0] + "\n"
     # else, delete all of its sub banks and continue traversing
     else:
-        for row in rows:
+        for row in result:
             bank_str += indent + " " + row[0] + "\n"
             bank_str = print_sub_banks(conn, row[0], bank_str, indent + " ")
 
@@ -77,8 +77,8 @@ def print_sub_banks(conn, bank, bank_str, indent=""):
 def validate_parent_bank(cur, parent_bank):
     try:
         cur.execute("SELECT shares FROM bank_table WHERE bank=?", (parent_bank,))
-        row = cur.fetchone()
-        if row is None:
+        result = cur.fetchone()
+        if result is None:
             raise ValueError(parent_bank)
 
         return 0
@@ -110,8 +110,8 @@ def check_if_bank_disabled(cur, bank, parent_bank):
         "SELECT * FROM bank_table WHERE bank=? AND parent_bank=?",
         (bank, parent_bank),
     )
-    rows = cur.fetchall()
-    if len(rows) == 1:
+    result = cur.fetchall()
+    if len(result) == 1:
         return True
 
     return False
@@ -232,10 +232,10 @@ def view_bank(conn, bank, tree=False, users=False):
     bank_str = ""
     try:
         cur.execute("SELECT * FROM bank_table WHERE bank=?", (bank,))
-        rows = cur.fetchall()
+        result = cur.fetchall()
 
-        if rows:
-            bank_str = get_bank_rows(cur, rows, bank)
+        if result:
+            bank_str = get_bank_rows(cur, result, bank)
         else:
             raise ValueError(f"bank {bank} not found in bank_table")
 
@@ -270,9 +270,9 @@ def view_bank(conn, bank, tree=False, users=False):
 
             # get all potential sub banks
             cur.execute("SELECT * FROM bank_table WHERE parent_bank=?", (name,))
-            rows = cur.fetchall()
+            result = cur.fetchall()
 
-            if rows:
+            if result:
                 # traverse the user/bank hierarchy and add the information from all
                 # banks and users to the hiearchy string
                 hierarchy_str = print_hierarchy(cur, name, hierarchy_str, "")
@@ -291,10 +291,10 @@ def view_bank(conn, bank, tree=False, users=False):
                 select_stmt,
                 (bank,),
             )
-            rows = cur.fetchall()
+            result = cur.fetchall()
 
-            if rows:
-                user_str = print_user_rows(cur, rows, bank)
+            if result:
+                user_str = print_user_rows(cur, result, bank)
                 bank_str += user_str
             else:
                 bank_str += "\nno users under {bank_name}".format(bank_name=bank)
@@ -314,10 +314,10 @@ def delete_bank(conn, bank):
         def get_sub_banks(bank):
             select_stmt = "SELECT bank FROM bank_table WHERE parent_bank=?"
             cursor.execute(select_stmt, (bank,))
-            rows = cursor.fetchall()
+            result = cursor.fetchall()
 
             # we've reached a bank with no sub banks
-            if len(rows) == 0:
+            if len(result) == 0:
                 select_assoc_stmt = """
                     SELECT username, bank
                     FROM association_table WHERE bank=?
@@ -326,7 +326,7 @@ def delete_bank(conn, bank):
                     u.delete_user(conn, username=assoc_row[0], bank=assoc_row[1])
             # else, disable all of its sub banks and continue traversing
             else:
-                for row in rows:
+                for row in result:
                     cursor.execute(
                         "UPDATE bank_table SET active=0 WHERE bank=?", (row[0],)
                     )

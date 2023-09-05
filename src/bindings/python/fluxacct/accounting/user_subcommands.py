@@ -48,8 +48,8 @@ def validate_queue(conn, queues):
 
     for queue in queue_list:
         cur.execute("SELECT queue FROM queue_table WHERE queue=?", (queue,))
-        row = cur.fetchone()
-        if row is None:
+        result = cur.fetchone()
+        if result is None:
             raise ValueError(queue)
 
 
@@ -60,8 +60,8 @@ def validate_project(conn, projects):
 
     for project in project_list:
         cur.execute("SELECT project FROM project_table WHERE project=?", (project,))
-        row = cur.fetchone()
-        if row is None:
+        result = cur.fetchone()
+        if result is None:
             raise ValueError(project)
 
     return ",".join(project_list)
@@ -71,8 +71,8 @@ def validate_bank(conn, bank):
     cur = conn.cursor()
 
     cur.execute("SELECT bank FROM bank_table WHERE bank=?", (bank,))
-    row = cur.fetchone()
-    if row is None:
+    result = cur.fetchone()
+    if result is None:
         # return the name of the bank that was invalid
         raise ValueError(bank)
 
@@ -107,8 +107,8 @@ def create_json_object(conn, user):
         FROM association_table WHERE username=?""",
         (user,),
     )
-    rows = cur.fetchall()
-    user_info_dict = dict(zip(main_headers, list(rows)[0]))
+    result = cur.fetchall()
+    user_info_dict = dict(zip(main_headers, list(result)[0]))
 
     cur.execute(
         """SELECT bank, active, shares, job_usage, fairshare,
@@ -117,13 +117,13 @@ def create_json_object(conn, user):
         WHERE username=?""",
         (user,),
     )
-    rows = cur.fetchall()
+    result = cur.fetchall()
 
     # store all information pertaining to each bank as a separate
     # entry in a list
     user_info_dict["banks"] = []
-    for row in rows:
-        user_info_dict["banks"].append(dict(zip(secondary_headers, list(row))))
+    for _ in result:
+        user_info_dict["banks"].append(dict(zip(secondary_headers, list(_))))
 
     user_info_json = json.dumps(user_info_dict, indent=4)
     return user_info_json
@@ -165,12 +165,12 @@ def get_user_rows(conn, user, headers, rows, parseable, json_fmt):
 def set_default_bank(cur, username, bank):
     select_stmt = "SELECT default_bank FROM association_table WHERE username=?"
     cur.execute(select_stmt, (username,))
-    row = cur.fetchone()
+    result = cur.fetchone()
 
-    if row is None:
+    if result is None:
         return bank
 
-    return row[0]
+    return result[0]
 
 
 # check if association already exists and is active in association_table;
@@ -200,8 +200,8 @@ def check_if_user_disabled(conn, cur, username, bank):
             bank,
         ),
     )
-    rows = cur.fetchall()
-    if len(rows) == 1:
+    result = cur.fetchall()
+    if len(result) == 1:
         cur.execute(
             "UPDATE association_table SET active=1 WHERE username=? AND bank=?",
             (
@@ -218,9 +218,9 @@ def check_if_user_disabled(conn, cur, username, bank):
 def get_default_bank(cur, username):
     select_stmt = "SELECT default_bank FROM association_table WHERE username=?"
     cur.execute(select_stmt, (username,))
-    rows = cur.fetchall()
+    result = cur.fetchall()
 
-    return rows[0][0]
+    return result[0][0]
 
 
 # helper function that is called when a user's default_bank row gets disabled from
@@ -231,12 +231,12 @@ def update_default_bank(conn, cur, username):
     select_stmt = """SELECT bank FROM association_table WHERE active=1 AND username=?
                      ORDER BY creation_time"""
     cur.execute(select_stmt, (username,))
-    rows = cur.fetchall()
-    # if len(rows) == 0, then the user only belongs to one bank (the bank they are being
+    result = cur.fetchall()
+    # if len(result) == 0, then the user only belongs to one bank (the bank they are being
     # disabled in); thus the user's default bank does not need to be updated
-    if len(rows) > 0:
-        # update user rows to have a new default bank (the next earliest user/bank row created)
-        new_default_bank = rows[0][0]
+    if len(result) > 0:
+        # update user rows to have a new default bank (the next earliest user/bank created)
+        new_default_bank = result[0][0]
         edit_user(conn, username, default_bank=new_default_bank)
 
 
@@ -285,12 +285,12 @@ def view_user(conn, user, parseable=False, json_fmt=False):
     try:
         # get the information pertaining to a user in the DB
         cur.execute("SELECT * FROM association_table where username=?", (user,))
-        rows = cur.fetchall()
+        result = cur.fetchall()
         headers = [description[0] for description in cur.description]  # column names
-        if not rows:
+        if not result:
             raise ValueError(f"User {user} not found in association_table")
 
-        user_str = get_user_rows(conn, user, headers, rows, parseable, json_fmt)
+        user_str = get_user_rows(conn, user, headers, result, parseable, json_fmt)
 
         return user_str
     # this kind of exception is raised for errors related to the DB's operation,

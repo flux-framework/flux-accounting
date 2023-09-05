@@ -45,16 +45,16 @@ def view_project(conn, project):
     try:
         # get the information pertaining to a project in the DB
         cur.execute("SELECT * FROM project_table where project=?", (project,))
-        rows = cur.fetchall()
+        result = cur.fetchall()
         headers = [description[0] for description in cur.description]
         project_str = ""
-        if not rows:
+        if not result:
             raise ValueError(f"project {project} not found in project_table")
 
         for header in headers:
             project_str += header.ljust(18)
         project_str += "\n"
-        for row in rows:
+        for row in result:
             for col in list(row):
                 project_str += str(col).ljust(18)
             project_str += "\n"
@@ -95,7 +95,7 @@ def delete_project(conn, project):
     # look for any rows in the association_table that reference this project
     select_stmt = "SELECT * FROM association_table WHERE projects LIKE ?"
     cursor.execute(select_stmt, ("%" + project + "%",))
-    rows = cursor.fetchall()
+    result = cursor.fetchall()
     warning_stmt = (
         "WARNING: user(s) in the assocation_table still "
         "reference this project. Make sure to edit user rows to "
@@ -110,7 +110,7 @@ def delete_project(conn, project):
     # if len(rows) > 0, this means that at least one association in the
     # association_table references this project. If this is the case,
     # return the warning message after deleting the project.
-    if len(rows) > 0:
+    if len(result) > 0:
         return warning_stmt
 
     return 0
