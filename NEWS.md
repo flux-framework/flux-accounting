@@ -1,3 +1,31 @@
+flux-accounting version 0.27.0 - 2023-09-06
+-------------------------------------------
+
+#### Fixes
+
+* `.cpp`: add `config.h` include to source code (#366)
+
+* `.cpp`: wrap `"config.h"`, C headers in `extern "C"` (#368)
+
+* python: remove empty `quotechar` argument from `csv.writer` object
+initialization (#372)
+
+* python: rename `rows` variable to something more descriptive (#374)
+
+* plugin: check for `FLUX_JOB_STATE_NEW` in `validate_cb ()` (#378)
+
+#### Testsuite
+
+* build: add `make deb` target for test packaging (#363)
+
+* t: reorganize `t1007-flux-account.t` into multiple sharness tests (#367)
+
+* docker: transition `bionic` container to `jammy` (#369)
+
+* t: add valgrind folder to flux-accounting (#373)
+
+* ci: update github actions `main.yml` file (#375)
+
 flux-accounting version 0.26.0 - 2023-07-07
 -------------------------------------------
 
