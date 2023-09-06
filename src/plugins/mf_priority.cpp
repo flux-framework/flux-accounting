@@ -678,6 +678,7 @@ static int validate_cb (flux_plugin_t *p,
     int userid;
     char *bank = NULL;
     char *queue = NULL;
+    flux_job_state_t state;
     int max_run_jobs, cur_active_jobs, max_active_jobs = 0;
     double fairshare = 0.0;
 
@@ -688,8 +689,9 @@ static int validate_cb (flux_plugin_t *p,
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s{s{s{s?s, s?s}}}}",
+                                "{s:i, s:i, s{s{s{s?s, s?s}}}}",
                                 "userid", &userid,
+                                "state", &state,
                                 "jobspec", "attributes", "system",
                                 "bank", &bank, "queue", &queue) < 0) {
         return flux_jobtap_reject_job (p, args, "unable to unpack bank arg");
@@ -753,8 +755,12 @@ static int validate_cb (flux_plugin_t *p,
 
     // if a user/bank has reached their max_active_jobs limit, subsequently
     // submitted jobs will be rejected
-    if (max_active_jobs > 0 && cur_active_jobs >= max_active_jobs)
-        return flux_jobtap_reject_job (p, args, "user has max active jobs");
+    if (state == FLUX_JOB_STATE_NEW) {
+        if (max_active_jobs > 0 && cur_active_jobs >= max_active_jobs)
+            return flux_jobtap_reject_job (p,
+                                           args,
+                                           "user has max active jobs");
+    }
 
     return 0;
 }
