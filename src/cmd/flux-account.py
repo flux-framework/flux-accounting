@@ -173,13 +173,13 @@ def add_edit_user_arg(subparsers):
     subparser_edit_user.add_argument(
         "--max-active-jobs",
         help="max number of both pending and running jobs",
-        default=7,
+        default=None,
         metavar="max_active_jobs",
     )
     subparser_edit_user.add_argument(
         "--max-nodes",
         help="max number of nodes a user can have across all of their running jobs",
-        default=5,
+        default=None,
         metavar="MAX_NODES",
     )
     subparser_edit_user.add_argument(
