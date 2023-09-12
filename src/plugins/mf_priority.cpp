@@ -183,15 +183,17 @@ static int get_queue_info (
 }
 
 
-static void split_string (char *queues, struct bank_info *b)
+static void split_string_and_push_back (char *list,
+                                        std::vector<std::string> *vec)
 {
     std::stringstream s_stream;
 
-    s_stream << queues; // create string stream from string
+    s_stream << list; // create string stream from string
+
     while (s_stream.good ()) {
         std::string substr;
         getline (s_stream, substr, ','); // get string delimited by comma
-        b->queues.push_back (substr);
+        vec->push_back (substr);
     }
 }
 
@@ -531,7 +533,7 @@ static void rec_update_cb (flux_t *h,
 
         // split queues comma-delimited string and add it to b->queues vector
         b->queues.clear ();
-        split_string (queues, b);
+        split_string_and_push_back (queues, &b->queues);
 
         users_def_bank[uid] = def_bank;
     }
