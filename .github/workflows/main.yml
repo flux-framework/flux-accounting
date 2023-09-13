@@ -136,13 +136,3 @@ jobs:
         files: flux-accounting*.tar.gz
         body: |
           View [Release Notes](https://github.com/${{ github.repository }}/blob/${{ matrix.tag }}/NEWS.md) for flux-accounting ${{ matrix.tag }}
-
-    - name: upload tarball
-      id: upload-tarball
-      if: success() && matrix.create_release
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ steps.prep_release.outputs.tarball }}
-        asset_name: ${{ steps.prep_release.outputs.tarball }}
-        asset_content_type: "application/gzip"
