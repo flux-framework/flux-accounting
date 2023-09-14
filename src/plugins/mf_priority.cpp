@@ -698,7 +698,7 @@ static int validate_cb (flux_plugin_t *p,
     char *bank = NULL;
     char *queue = NULL;
     flux_job_state_t state;
-    int max_run_jobs, cur_active_jobs, max_active_jobs = 0;
+    int max_run_jobs, cur_active_jobs, max_active_jobs, queue_factor = 0;
     double fairshare = 0.0;
     bool only_dne_data;
 
@@ -761,13 +761,11 @@ static int validate_cb (flux_plugin_t *p,
         return flux_jobtap_reject_job (p, args, "user/bank entry has been "
                                        "disabled from flux-accounting DB");
 
-    // fetch priority associated with passed-in queue; if a queue cannot be
-    // found, use a default factor for the queue (UNKOWN_QUEUE). If a queue
-    // is found but is determined that a user does not have access to submit
-    // jobs to it, it can still be rejected.
-    bank_it->second.queue_factor = get_queue_info (queue, bank_it);
+    // validate the queue if one is passed in; if the user does not have access
+    // to the queue they specified, reject the job
+    queue_factor = get_queue_info (queue, bank_it);
 
-    if (bank_it->second.queue_factor == INVALID_QUEUE)
+    if (queue_factor == INVALID_QUEUE)
         return flux_jobtap_reject_job (p, args, "Queue not valid for user: %s",
                                        queue);
 
@@ -857,14 +855,6 @@ static int new_cb (flux_plugin_t *p,
             }
         }
 
-        // fetch priority associated with passed-in queue (or default queue)
-        bank_it->second.queue_factor = get_queue_info (queue, bank_it);
-        if (check_queue_factor (p,
-                                bank_it->second.queue_factor,
-                                queue,
-                                (char *) "job.new: ") < 0)
-            return -1;
-
         max_run_jobs = bank_it->second.max_run_jobs;
         fairshare = bank_it->second.fairshare;
         cur_active_jobs = bank_it->second.cur_active_jobs;
@@ -872,6 +862,10 @@ static int new_cb (flux_plugin_t *p,
 
         b = &bank_it->second;
     }
+
+    // assign priority associated with validated queue to bank_info struct
+    // associated with job
+    b->queue_factor = get_queue_info (queue, bank_it);
 
     // if a user/bank has reached their max_active_jobs limit, subsequently
     // submitted jobs will be rejected
