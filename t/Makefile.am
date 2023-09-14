@@ -29,6 +29,7 @@ TESTSCRIPTS = \
 	t1025-flux-account-projects.t \
 	t1026-flux-account-perms.t \
 	t1027-mf-priority-issue376.t \
+	t1028-mf-priority-issue385.t \
 	t5000-valgrind.t \
 	python/t1000-example.py
 

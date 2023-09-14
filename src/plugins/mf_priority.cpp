@@ -331,6 +331,25 @@ error:
 }
 
 
+// Scan the users map and look at each user's default bank to see if any one
+// of them have a valid bank (i.e one that is not "DNE"; if any of the users do
+// do have a valid bank, it will return false)
+static bool check_map_for_dne_only ()
+{
+    // the users map iterated through in this for-loop, along with the
+    // users_def_bank map used to look up a user's default bank, are
+    // both global variables
+    for (const auto& entry : users) {
+        auto def_bank_it = users_def_bank.find(entry.first);
+        if (def_bank_it != users_def_bank.end() &&
+                def_bank_it->second != "DNE")
+            return false;
+    }
+
+    return true;
+}
+
+
 /******************************************************************************
  *                                                                            *
  *                               Callbacks                                    *
@@ -681,6 +700,7 @@ static int validate_cb (flux_plugin_t *p,
     flux_job_state_t state;
     int max_run_jobs, cur_active_jobs, max_active_jobs = 0;
     double fairshare = 0.0;
+    bool only_dne_data;
 
     std::map<int, std::map<std::string, struct bank_info>>::iterator it;
     std::map<std::string, struct bank_info>::iterator bank_it;
@@ -708,7 +728,10 @@ static int validate_cb (flux_plugin_t *p,
     // the plugin.
     it = users.find (userid);
     if (it == users.end ()) {
-        if (users.empty ()) {
+        // check if the map only contains DNE entries
+        bool only_dne_data = check_map_for_dne_only ();
+
+        if (users.empty () || only_dne_data) {
             add_missing_bank_info (p, h, userid);
             return 0;
         } else {
