@@ -350,6 +350,34 @@ static bool check_map_for_dne_only ()
 }
 
 
+/*
+ * Update the jobspec with the default bank the association used to
+ * submit their job under.
+ */
+static int update_jobspec_bank (flux_plugin_t *p, int userid)
+{
+    char *bank = NULL;
+    std::map<int, std::map<std::string, struct bank_info>>::iterator it;
+
+    it = users.find (userid);
+    if (it == users.end ()) {
+        return -1;
+    }
+
+    // look up default bank
+    bank = const_cast<char*> (users_def_bank[userid].c_str ());
+
+    // post jobspec-update event
+    if (flux_jobtap_jobspec_update_pack (p,
+                                         "{s:s}",
+                                         "attributes.system.bank",
+                                         bank) < 0)
+        return -1;
+
+    return 0;
+}
+
+
 /******************************************************************************
  *                                                                            *
  *                               Callbacks                                    *
@@ -639,6 +667,17 @@ static int priority_cb (flux_plugin_t *p,
                                          &bank_it->second,
                                          NULL) < 0)
                 flux_log_error (h, "flux_jobtap_job_aux_set");
+
+            // now that we know the user/bank info associated with this job,
+            // we need to update jobspec with the default bank used to
+            // submit this job under
+            if (update_jobspec_bank (p, userid) < 0) {
+                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                             "mf_priority", 0,
+                                             "failed to update jobspec "
+                                             "with bank name");
+                return -1;
+            }
         }
     }
 
@@ -851,6 +890,14 @@ static int new_cb (flux_plugin_t *p,
                                              "mf_priority", 0,
                                              "job.new: user/default bank "
                                              "entry does not exist");
+                return -1;
+            }
+            // update jobspec with default bank
+            if (update_jobspec_bank (p, userid) < 0) {
+                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                            "mf_priority", 0,
+                                            "failed to update jobspec "
+                                            "with bank name");
                 return -1;
             }
         }
