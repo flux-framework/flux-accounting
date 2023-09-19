@@ -90,10 +90,10 @@ test_expect_success HAVE_JQ 'fetch plugin state and make sure that jobs are refl
 	jq -e ".mf_priority_map[0].banks[0].cur_active_jobs == 3" <query_2.json
 '
 
-test_expect_success 'cancel jobs' '
-	flux job cancel $jobid1 &&
+test_expect_success 'cancel jobs in reverse order so last job does not get alloc event' '
+	flux job cancel $jobid3 &&
 	flux job cancel $jobid2 &&
-	flux job cancel $jobid3
+	flux job cancel $jobid1
 '
 
 test_expect_success 'add another user to flux-accounting DB and send it to plugin' '
