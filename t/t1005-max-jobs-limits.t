@@ -90,14 +90,16 @@ test_expect_success 'submit max number of jobs' '
 	jobid2=$(flux python ${SUBMIT_AS} 5011 sleep 60)
 '
 
-test_expect_success 'submit job while already having max number of running jobs' '
+test_expect_success 'a submitted job while at max-running-jobs limit will have a dependency added to it' '
 	jobid3=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
-	test $(flux jobs -no {state} ${jobid3}) = DEPEND
+	flux job wait-event -vt 60 \
+		--match-context=description="max-running-jobs-user-limit" \
+		$jobid3 dependency-add
 '
 
 test_expect_success 'a job transitioning to job.state.inactive should release a held job (if any)' '
 	flux job cancel $jobid1 &&
-	test $(flux jobs -no {state} ${jobid3}) = RUN &&
+	flux job wait-event -vt 60 $jobid3 alloc &&
 	flux job cancel $jobid2 &&
 	flux job cancel $jobid3
 '
@@ -106,9 +108,11 @@ test_expect_success 'submit max number of jobs with other bank' '
 	jobid1=$(flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account2 sleep 60)
 '
 
-test_expect_success 'submit a job while already having max number of running jobs' '
-	jobid2=$(flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account2 sleep 60)
-	test $(flux jobs -no {state} ${jobid2}) = DEPEND &&
+test_expect_success 'a submitted job while at max-running-jobs limit will have a dependency added to it' '
+	jobid2=$(flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account2 sleep 60) &&
+	flux job wait-event -vt 60 \
+		--match-context=description="max-running-jobs-user-limit" \
+		$jobid2 dependency-add &&
 	flux job cancel $jobid1 &&
 	flux job cancel $jobid2
 '
@@ -118,9 +122,11 @@ test_expect_success 'submit max number of jobs with a mix of default bank and ex
 	jobid2=$(flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account3 -n 1 sleep 60)
 '
 
-test_expect_success 'submit a job while already having max number of running jobs' '
+test_expect_success 'a submitted job while at max-running-jobs limit will have a dependency added to it' '
 	jobid3=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
-	test $(flux jobs -no {state} ${jobid3}) = DEPEND &&
+	flux job wait-event -vt 60 \
+		--match-context=description="max-running-jobs-user-limit" \
+		$jobid3 dependency-add &&
 	flux job cancel $jobid3
 '
 
@@ -150,8 +156,8 @@ test_expect_success 'update plugin with same new sample test data' '
 '
 
 test_expect_success 'make sure jobs are still running' '
-	test $(flux jobs -no {state} ${jobid1}) = RUN &&
-	test $(flux jobs -no {state} ${jobid2}) = RUN
+	flux job wait-event -vt 10 $jobid1 alloc &&
+	flux job wait-event -vt 10 $jobid2 alloc
 '
 
 test_expect_success 'cancel all remaining jobs' '
