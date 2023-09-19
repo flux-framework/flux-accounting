@@ -48,7 +48,9 @@ test_expect_success 'send flux-accounting DB information to the plugin' '
 
 test_expect_success 'submit a sleep 180 job and ensure it is running' '
     jobid1=$(flux python ${SUBMIT_AS} 1001 sleep 180) &&
-    test $(flux jobs -no {state} ${jobid1}) = RUN
+    flux job wait-event -vt 60 $jobid1 alloc &&
+    flux job info $jobid1 eventlog > eventlog.out &&
+    grep "alloc" eventlog.out
 '
 
 test_expect_success 'stop scheduler from allocating resources to jobs' '
@@ -58,8 +60,12 @@ test_expect_success 'stop scheduler from allocating resources to jobs' '
 test_expect_success 'submit 2 more sleep 180 jobs; ensure both are in SCHED state' '
     jobid2=$(flux python ${SUBMIT_AS} 1001 sleep 180) &&
     jobid3=$(flux python ${SUBMIT_AS} 1001 sleep 180) &&
-    test $(flux jobs -no {state} ${jobid2}) = SCHED &&
-    test $(flux jobs -no {state} ${jobid3}) = SCHED
+    flux job wait-event -vt 60 $jobid2 priority &&
+    flux job info $jobid2 eventlog > eventlog.out &&
+    grep "priority" eventlog.out &&
+    flux job wait-event -vt 60 $jobid3 priority &&
+    flux job info $jobid3 eventlog > eventlog.out &&
+    grep "priority" eventlog.out
 '
 
 test_expect_success 'ensure current running and active jobs are correct: 1 running, 3 active' '

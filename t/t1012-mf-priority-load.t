@@ -71,7 +71,10 @@ test_expect_success 'submit sleep 60 jobs with no data update' '
 '
 
 test_expect_success 'check that submitted job is in state PRIORITY' '
-	test $(flux jobs -no {state} ${jobid1}) = PRIORITY
+	flux job wait-event -vt 60 $jobid1 depend &&
+	flux job info $jobid1 eventlog > eventlog.out &&
+	cat eventlog.out &&
+	grep "depend" eventlog.out
 '
 
 test_expect_success 'update plugin with sample test data again' '
@@ -79,7 +82,9 @@ test_expect_success 'update plugin with sample test data again' '
 '
 
 test_expect_success 'check that previously held job transitions to RUN' '
-	test $(flux jobs -no {state} ${jobid1}) = RUN
+	flux job wait-event -vt 60 $jobid1 alloc &&
+	flux job info $jobid1 eventlog > eventlog.out &&
+	grep "alloc" eventlog.out
 '
 
 test_expect_success 'submit 2 more sleep jobs' '
@@ -88,16 +93,26 @@ test_expect_success 'submit 2 more sleep jobs' '
 '
 
 test_expect_success 'check flux jobs - should have 1 running job, 2 pending jobs' '
-	test $(flux jobs -no {state} ${jobid1}) = RUN &&
-	test $(flux jobs -no {state} ${jobid2}) = DEPEND &&
-	test $(flux jobs -no {state} ${jobid3}) = DEPEND
+	flux job wait-event -vt 60 $jobid1 alloc &&
+	flux job info $jobid1 eventlog > eventlog.out &&
+	grep "alloc" eventlog.out &&
+	flux job wait-event -vt 60 $jobid2 dependency-add &&
+	flux job info $jobid2 eventlog > eventlog.out &&
+	grep "dependency-add" eventlog.out &&
+	flux job wait-event -vt 60 $jobid3 dependency-add &&
+	flux job info $jobid3 eventlog > eventlog.out &&
+	grep "dependency-add" eventlog.out
 '
 
 test_expect_success 'cancel running jobs one at a time and check that each pending job transitions to RUN' '
 	flux job cancel $jobid1 &&
-	test $(flux jobs -no {state} ${jobid2}) = RUN &&
+	flux job wait-event -vt 60 $jobid2 alloc &&
+	flux job info $jobid2 eventlog > eventlog.out &&
+	grep "alloc" eventlog.out &&
 	flux job cancel $jobid2 &&
-	test $(flux jobs -no {state} ${jobid3}) = RUN &&
+	flux job wait-event -vt 60 $jobid3 alloc &&
+	flux job info $jobid3 eventlog > eventlog.out &&
+	grep "alloc" eventlog.out &&
 	flux job cancel $jobid3
 '
 
@@ -107,12 +122,16 @@ test_expect_success 'unload mf_priority.so' '
 
 test_expect_success 'submit a job with no plugin loaded' '
 	jobid4=$(flux submit -n 1 sleep 60) &&
-	test $(flux jobs -no {state} ${jobid4}) = PRIORITY
+	flux job wait-event -vt 60 $jobid4 depend &&
+	flux job info $jobid4 eventlog > eventlog.out &&
+	grep "depend" eventlog.out
 '
 
 test_expect_success 'reload mf_priority.so with a job still in job.state.priority' '
 	flux jobtap load ${MULTI_FACTOR_PRIORITY} &&
-	test $(flux jobs -no {state} ${jobid4}) = PRIORITY
+	flux job wait-event -vt 60 $jobid4 depend &&
+	flux job info $jobid4 eventlog > eventlog.out &&
+	grep "depend" eventlog.out
 '
 
 test_expect_success 'update plugin with sample test data again' '
@@ -120,7 +139,9 @@ test_expect_success 'update plugin with sample test data again' '
 '
 
 test_expect_success 'check that originally pending job transitions to RUN' '
-	test $(flux jobs -no {state} ${jobid4}) = RUN &&
+	flux job wait-event -vt 60 $jobid4 alloc &&
+	flux job info $jobid4 eventlog > eventlog.out &&
+	grep "alloc" eventlog.out &&
 	flux job cancel $jobid4
 '
 

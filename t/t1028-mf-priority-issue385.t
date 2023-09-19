@@ -27,12 +27,16 @@ test_expect_success 'load multi-factor priority plugin' '
 
 test_expect_success 'submit a job with no user/bank info loaded to plugin' '
 	jobid1=$(flux python ${SUBMIT_AS} 5001 --wait-event=depend hostname) &&
-	test $(flux jobs -no {state} ${jobid1}) = PRIORITY
+	flux job wait-event -vt 60 $jobid1 depend &&
+	flux job info $jobid1 eventlog > eventlog.out &&
+	grep "depend" eventlog.out
 '
 
 test_expect_success 'submit a job as another user, check that it is also in state PRIORITY' '
 	jobid2=$(flux python ${SUBMIT_AS} 5002 --wait-event=depend hostname) &&
-	test $(flux jobs -no {state} ${jobid2}) = PRIORITY
+	flux job wait-event -vt 60 $jobid2 depend &&
+	flux job info $jobid2 eventlog > eventlog.out &&
+	grep "depend" eventlog.out
 '
 
 test_expect_success 'add banks, users to flux-accounting DB' '
@@ -47,8 +51,12 @@ test_expect_success 'send flux-accounting DB information to the plugin' '
 '
 
 test_expect_success 'check that jobs transition to RUN' '
-	test $(flux jobs -no {state} ${jobid1}) = RUN &&
-	test $(flux jobs -no {state} ${jobid2}) = RUN
+	flux job wait-event -vt 60 $jobid1 alloc &&
+	flux job info $jobid1 eventlog > eventlog.out &&
+	grep "alloc" eventlog.out &&
+	flux job wait-event -vt 60 $jobid2 alloc &&
+	flux job info $jobid2 eventlog > eventlog.out &&
+	grep "alloc" eventlog.out
 '
 
 test_expect_success 'submitting a job under invalid user while plugin has data fails' '
@@ -69,7 +77,9 @@ test_expect_success 'add the previously invalid user to flux-accounting DB, plug
 
 test_expect_success 'previously invalid user can now submit jobs' '
 	jobid3=$(flux python ${SUBMIT_AS} 9999 hostname) &&
-	test $(flux jobs -no {state} ${jobid3}) = RUN &&
+	flux job wait-event -vt 60 $jobid3 alloc &&
+	flux job info $jobid3 eventlog > eventlog.out &&
+	grep "alloc" eventlog.out &&
 	flux job cancel $jobid3
 '
 

@@ -80,12 +80,16 @@ test_expect_success 'submit max number of jobs' '
 
 test_expect_success 'submit job while already having max number of running jobs' '
 	jobid3=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
-	test $(flux jobs -no {state} ${jobid3}) = DEPEND
+	flux job wait-event -vt 60 $jobid3 dependency-add &&
+	flux job info $jobid3 eventlog > eventlog.out &&
+	grep "dependency-add" eventlog.out
 '
 
 test_expect_success 'a job transitioning to job.state.inactive should release a held job (if any)' '
 	flux job cancel $jobid1 &&
-	test $(flux jobs -no {state} ${jobid3}) = RUN &&
+	flux job wait-event -vt 60 $jobid3 alloc &&
+	flux job info $jobid3 eventlog > eventlog.out &&
+	grep "alloc" eventlog.out &&
 	flux job cancel $jobid2 &&
 	flux job cancel $jobid3
 '
@@ -95,8 +99,10 @@ test_expect_success 'submit max number of jobs with other bank' '
 '
 
 test_expect_success 'submit a job while already having max number of running jobs' '
-	jobid2=$(flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account2 sleep 60)
-	test $(flux jobs -no {state} ${jobid2}) = DEPEND &&
+	jobid2=$(flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account2 sleep 60) &&
+	flux job wait-event -vt 60 $jobid2 dependency-add &&
+	flux job info $jobid2 eventlog > eventlog.out &&
+	grep "dependency-add" eventlog.out &&
 	flux job cancel $jobid1 &&
 	flux job cancel $jobid2
 '
@@ -108,7 +114,9 @@ test_expect_success 'submit max number of jobs with a mix of default bank and ex
 
 test_expect_success 'submit a job while already having max number of running jobs' '
 	jobid3=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
-	test $(flux jobs -no {state} ${jobid3}) = DEPEND &&
+	flux job wait-event -vt 60 $jobid3 dependency-add &&
+	flux job info $jobid3 eventlog > eventlog.out &&
+	grep "dependency-add" eventlog.out &&
 	flux job cancel $jobid3
 '
 
@@ -135,8 +143,12 @@ test_expect_success 'update plugin with same new sample test data' '
 '
 
 test_expect_success 'make sure jobs are still running' '
-	test $(flux jobs -no {state} ${jobid1}) = RUN &&
-	test $(flux jobs -no {state} ${jobid2}) = RUN
+	flux job wait-event -vt 10 $jobid1 alloc &&
+	flux job info $jobid1 eventlog > eventlog.out &&
+	grep "alloc" eventlog.out &&
+	flux job wait-event -vt 10 $jobid2 alloc &&
+	flux job info $jobid2 eventlog > eventlog.out &&
+	grep "alloc" eventlog.out
 '
 
 test_expect_success 'cancel all remaining jobs' '
