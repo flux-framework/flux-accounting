@@ -45,6 +45,21 @@ extern "C" {
 // the association does not have permission to run jobs under
 #define INVALID_QUEUE -6
 
+// different codes to return as a result of looking up user/bank information:
+//
+// BANK_SUCCESS: we found an entry for the passed-in user/bank
+// BANK_USER_NOT_FOUND: the user could not be found in the plugin map
+// BANK_INVALID: the user specified a bank they don't belong to
+// BANK_NO_DEFAULT: the user does not have a default bank in the plugin map
+enum bank_info_codes {
+    BANK_SUCCESS,
+    BANK_USER_NOT_FOUND,
+    BANK_INVALID,
+    BANK_NO_DEFAULT
+};
+
+typedef std::pair<bank_info_codes, std::map<std::string, struct bank_info>::iterator> bank_info_result;
+
 std::map<int, std::map<std::string, struct bank_info>> users;
 std::map<std::string, struct queue_info> queues;
 std::map<int, std::string> users_def_bank;
@@ -375,6 +390,38 @@ static int update_jobspec_bank (flux_plugin_t *p, int userid)
         return -1;
 
     return 0;
+}
+
+
+// Given a userid and an optional bank, locate the associated information in
+// the plugin's internal users map. The return value is a pair: the first value
+// is a return code to indicate success or the type of failure, and the second
+// value is an iterator that points to the appropriate user/bank's information
+// associated with the submitted job
+static bank_info_result get_bank_info (int userid, char *bank)
+{
+    std::map<int, std::map<std::string, struct bank_info>>::iterator it;
+    std::map<std::string, struct bank_info>::iterator bank_it;
+
+    it = users.find (userid);
+    if (it == users.end ()) {
+        return {BANK_USER_NOT_FOUND, bank_it};
+    }
+
+    // make sure user belongs to bank they specified; if no bank was passed in,
+    // look up their default bank
+    if (bank != NULL) {
+        bank_it = it->second.find (std::string (bank));
+        if (bank_it == it->second.end ())
+            return {BANK_INVALID, bank_it};
+    } else {
+        bank = const_cast<char*> (users_def_bank[userid].c_str ());
+        bank_it = it->second.find (std::string (bank));
+        if (bank_it == it->second.end ())
+            return {BANK_NO_DEFAULT, bank_it};
+    }
+
+    return {BANK_SUCCESS, bank_it};
 }
 
 
@@ -1027,6 +1074,70 @@ static int run_cb (flux_plugin_t *p,
 }
 
 
+static int job_updated (flux_plugin_t *p,
+                        const char *topic,
+                        flux_plugin_arg_t *args,
+                        void *data)
+{
+    std::map<std::string, struct bank_info>::iterator bank_it;
+    int userid;
+    char *bank = NULL;
+    char *queue = NULL;
+    struct bank_info *b;
+
+    if (flux_plugin_arg_unpack (args,
+                                FLUX_PLUGIN_ARG_IN,
+                                "{s:i, s{s{s{s?s, s?s}}}}",
+                                "userid", &userid,
+                                "jobspec", "attributes", "system",
+                                "bank", &bank, "queue", &queue) < 0) {
+        return flux_jobtap_reject_job (p, args, "unable to unpack bank arg");
+    }
+
+    // grab bank_info struct for user/bank (if any)
+    b = static_cast<bank_info *> (flux_jobtap_job_aux_get (
+                                                    p,
+                                                    FLUX_JOBTAP_CURRENT_JOB,
+                                                    "mf_priority:bank_info"));
+
+    if (b == NULL) {
+        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "mf_priority",
+                                     0, "job.update: bank info is missing");
+
+        return -1;
+    }
+
+    // look up user/bank info based on unpacked information
+    bank_info_result lookup_result = get_bank_info (userid, bank);
+
+    if (lookup_result.first == BANK_USER_NOT_FOUND) {
+        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                     "mf_priority", 0,
+                                     "job.update: cannot find info for user: ",
+                                     userid);
+    } else if (lookup_result.first == BANK_INVALID) {
+        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                     "mf_priority", 0,
+                                     "job.update: not a member of %s",
+                                     bank);
+    } else if (lookup_result.first == BANK_NO_DEFAULT) {
+        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                     "mf_priority", 0,
+                                     "job.update: user/default bank "
+                                     "entry does not exist");
+    } else if (lookup_result.first == BANK_SUCCESS) {
+        bank_it = lookup_result.second;
+    }
+
+    // fetch the priority of the validated queue; assign it to the bank_info
+    // struct associated with the job
+    int queue_factor = get_queue_info (queue, bank_it);
+    b->queue_factor = queue_factor;
+
+    return 0;
+}
+
+
 static int inactive_cb (flux_plugin_t *p,
                         const char *topic,
                         flux_plugin_arg_t *args,
@@ -1096,6 +1207,7 @@ static const struct flux_plugin_handler tab[] = {
     { "job.priority.get", priority_cb, NULL },
     { "job.state.inactive", inactive_cb, NULL },
     { "job.state.depend", depend_cb, NULL },
+    { "job.update", job_updated, NULL},
     { "job.state.run", run_cb, NULL},
     { "plugin.query", query_cb, NULL},
     { 0 },
