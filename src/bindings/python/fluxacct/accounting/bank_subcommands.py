@@ -268,17 +268,8 @@ def view_bank(conn, bank, tree=False, users=False):
                 + "\n"
             )
 
-            # get all potential sub banks
-            cur.execute("SELECT * FROM bank_table WHERE parent_bank=?", (name,))
-            result = cur.fetchall()
-
-            if result:
-                # traverse the user/bank hierarchy and add the information from all
-                # banks and users to the hiearchy string
-                hierarchy_str = print_hierarchy(cur, name, hierarchy_str, "")
-                bank_str += "\n" + hierarchy_str
-            else:
-                bank_str += "\n" + hierarchy_str
+            hierarchy_str = print_hierarchy(cur, name, hierarchy_str, "")
+            bank_str += "\n" + hierarchy_str
         # if users is passed in, print out all potential users under
         # the passed in bank
         if users is True:
