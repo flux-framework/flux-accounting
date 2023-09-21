@@ -86,6 +86,7 @@ EXTRA_DIST= \
 	expected/test_dbs/FluxAccountingv0-25-0.db \
 	expected/flux_account/A_bank.expected \
 	expected/flux_account/D_bank.expected \
+	expected/flux_account/E_bank.expected \
 	expected/flux_account/full_hierarchy.expected \
 	expected/flux_account/root_bank.expected \
 	expected/flux_account/deleted_user.expected \

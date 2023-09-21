@@ -78,6 +78,13 @@ test_expect_success 'viewing a bank with sub banks should return a smaller hiera
 	test_cmp ${EXPECTED_FILES}/D_bank.expected D_bank.test
 '
 
+test_expect_success 'view a bank with sub banks with users in it' '
+	flux account add-user --username=user5030 --userid=5030 --bank=E &&
+	flux account add-user --username=user5031 --userid=5031 --bank=E &&
+	flux account -p ${DB_PATH} view-bank E -t > E_bank.test &&
+	test_cmp ${EXPECTED_FILES}/E_bank.expected E_bank.test
+'
+
 test_expect_success 'edit a field in a bank account' '
 	flux account edit-bank C --shares=50 &&
 	flux account view-bank C > edited_bank.out &&
