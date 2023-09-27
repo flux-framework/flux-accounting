@@ -65,6 +65,7 @@ std::map<std::string, struct queue_info> queues;
 std::map<int, std::string> users_def_bank;
 
 struct bank_info {
+    std::string bank_name;
     double fairshare;
     int max_run_jobs;
     int cur_run_jobs;
@@ -524,6 +525,7 @@ static void rec_update_cb (flux_t *h,
         struct bank_info *b;
         b = &users[uid][bank];
 
+        b->bank_name = bank;
         b->fairshare = fshare;
         b->max_run_jobs = max_running_jobs;
         b->max_active_jobs = max_active_jobs;
@@ -755,6 +757,7 @@ static void add_missing_bank_info (flux_plugin_t *p, flux_t *h, int userid)
     b = &users[userid]["DNE"];
     users_def_bank[userid] = "DNE";
 
+    b->bank_name = "DNE";
     b->fairshare = 0.1;
     b->max_run_jobs = BANK_INFO_MISSING;
     b->cur_run_jobs = 0;
