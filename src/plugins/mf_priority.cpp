@@ -1074,6 +1074,10 @@ static int run_cb (flux_plugin_t *p,
 }
 
 
+/*
+ *  apply an update on a job with regard to its queue once it has been
+ *  validated.
+ */
 static int job_updated (flux_plugin_t *p,
                         const char *topic,
                         flux_plugin_arg_t *args,
@@ -1087,12 +1091,12 @@ static int job_updated (flux_plugin_t *p,
 
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s{s{s{s?s, s?s}}}}",
+                                "{s:i, s{s{s{s?s}}}, s:{s?s}}",
                                 "userid", &userid,
-                                "jobspec", "attributes", "system",
-                                "bank", &bank, "queue", &queue) < 0) {
-        return flux_jobtap_reject_job (p, args, "unable to unpack bank arg");
-    }
+                                "jobspec", "attributes", "system", "bank", &bank,
+                                "updates",
+                                    "attributes.system.queue", &queue) < 0)
+        return flux_jobtap_error (p, args, "unable to unpack plugin args");
 
     // grab bank_info struct for user/bank (if any)
     b = static_cast<bank_info *> (flux_jobtap_job_aux_get (
@@ -1129,10 +1133,70 @@ static int job_updated (flux_plugin_t *p,
         bank_it = lookup_result.second;
     }
 
-    // fetch the priority of the validated queue; assign it to the bank_info
-    // struct associated with the job
-    int queue_factor = get_queue_info (queue, bank_it);
-    b->queue_factor = queue_factor;
+    // if the queue for the job has been updated, fetch the priority of the
+    // validated queue and assign it to the associated bank_info struct
+    if (queue != NULL) {
+        int queue_factor = get_queue_info (queue, bank_it);
+        b->queue_factor = queue_factor;
+    }
+
+    return 0;
+}
+
+
+/*
+ *  check for an updated queue and validate it for a user/bank; if the
+ *  user/bank does not have access to the queue they are trying to update
+ *  their job for, reject the update and keep the job in its current queue.
+ */
+static int update_queue_cb (flux_plugin_t *p,
+                            const char *topic,
+                            flux_plugin_arg_t *args,
+                            void *data)
+{
+    std::map<std::string, struct bank_info>::iterator bank_it;
+    int userid;
+    char *bank = NULL;
+    char *queue = NULL;
+
+    if (flux_plugin_arg_unpack (args,
+                                FLUX_PLUGIN_ARG_IN,
+                                "{s:i, s:s, s{s{s{s?s}}}}",
+                                "userid", &userid,
+                                "value", &queue,
+                                "jobspec", "attributes", "system", "bank",
+                                &bank) < 0)
+        return flux_jobtap_error (p, args, "unable to unpack plugin args");
+
+    // look up user/bank info based on unpacked information
+    bank_info_result lookup_result = get_bank_info (userid, bank);
+
+    if (lookup_result.first == BANK_USER_NOT_FOUND) {
+        return flux_jobtap_error (p,
+                                  args,
+                                  "mf_priority: cannot find info for user ",
+                                  userid);
+    } else if (lookup_result.first == BANK_INVALID) {
+        return flux_jobtap_error (p,
+                                  args,
+                                  "mf_priority: not a member of %s",
+                                  bank);
+    } else if (lookup_result.first == BANK_NO_DEFAULT) {
+        return flux_jobtap_error (p,
+                                  args,
+                                  "mf_priority: user/default bank entry does "
+                                  "not exist");
+    } else if (lookup_result.first == BANK_SUCCESS) {
+        bank_it = lookup_result.second;
+
+        // validate the updated queue and make sure the user/bank has
+        // access to it; if not, reject the update
+        if (get_queue_info (queue, bank_it) == INVALID_QUEUE)
+            return flux_jobtap_error (p,
+                                      args,
+                                      "mf_priority: queue not valid for user: %s",
+                                      queue);
+    }
 
     return 0;
 }
@@ -1210,6 +1274,7 @@ static const struct flux_plugin_handler tab[] = {
     { "job.update", job_updated, NULL},
     { "job.state.run", run_cb, NULL},
     { "plugin.query", query_cb, NULL},
+    { "job.update.attributes.system.queue", update_queue_cb, NULL },
     { 0 },
 };
 
