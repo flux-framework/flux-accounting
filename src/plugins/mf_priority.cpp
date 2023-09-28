@@ -809,8 +809,8 @@ static int validate_cb (flux_plugin_t *p,
     // if the plugin has NO data about users/banks and the user does not have
     // an entry in the plugin, the job will be held until data is received by
     // the plugin.
-    it = users.find (userid);
-    if (it == users.end ()) {
+    bank_info_result lookup_result = get_bank_info (userid, bank);
+    if (lookup_result.first == BANK_USER_NOT_FOUND) {
         // check if the map only contains DNE entries
         bool only_dne_data = check_map_for_dne_only ();
 
@@ -821,21 +821,18 @@ static int validate_cb (flux_plugin_t *p,
             return flux_jobtap_reject_job (p, args,
                                     "no bank found for user: %i", userid);
         }
-    }
-
-    // make sure user belongs to bank they specified; if no bank was passed in,
-    // look up their default bank
-    if (bank != NULL) {
-        bank_it = it->second.find (std::string (bank));
-        if (bank_it == it->second.end ())
-            return flux_jobtap_reject_job (p, args,
-                                     "user does not belong to specified bank");
-    } else {
-        bank = const_cast<char*> (users_def_bank[userid].c_str ());
-        bank_it = it->second.find (std::string (bank));
-        if (bank_it == it->second.end ())
-            return flux_jobtap_reject_job (p, args,
-                                     "user/default bank entry does not exist");
+    } else if (lookup_result.first == BANK_INVALID) {
+        return flux_jobtap_reject_job (p,
+                                       args,
+                                       "user does not belong to specified "
+                                       "bank");
+    } else if (lookup_result.first == BANK_NO_DEFAULT) {
+        return flux_jobtap_reject_job (p,
+                                       args,
+                                       "user/default bank entry does not "
+                                       "exist");
+    } else if (lookup_result.first == BANK_SUCCESS) {
+        bank_it = lookup_result.second;
     }
 
     // if user/bank entry was disabled, reject job with a message saying the
