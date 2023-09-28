@@ -784,13 +784,10 @@ static int validate_cb (flux_plugin_t *p,
     char *bank = NULL;
     char *queue = NULL;
     flux_job_state_t state;
-    int max_run_jobs, cur_active_jobs, max_active_jobs, queue_factor = 0;
-    double fairshare = 0.0;
+    int cur_active_jobs, max_active_jobs = 0;
     bool only_dne_data;
 
-    std::map<int, std::map<std::string, struct bank_info>>::iterator it;
     std::map<std::string, struct bank_info>::iterator bank_it;
-    std::map<std::string, struct queue_info>::iterator q_it;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
@@ -849,14 +846,10 @@ static int validate_cb (flux_plugin_t *p,
 
     // validate the queue if one is passed in; if the user does not have access
     // to the queue they specified, reject the job
-    queue_factor = get_queue_info (queue, bank_it);
-
-    if (queue_factor == INVALID_QUEUE)
+    if (get_queue_info (queue, bank_it) == INVALID_QUEUE)
         return flux_jobtap_reject_job (p, args, "Queue not valid for user: %s",
                                        queue);
 
-    max_run_jobs = bank_it->second.max_run_jobs;
-    fairshare = bank_it->second.fairshare;
     cur_active_jobs = bank_it->second.cur_active_jobs;
     max_active_jobs = bank_it->second.max_active_jobs;
 
