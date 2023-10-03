@@ -1,3 +1,30 @@
+flux-accounting version 0.28.0 - 2023-10-02
+-------------------------------------------
+
+#### Fixes
+
+* `edit-user`: fix default values for optional args (#382)
+
+* plugin: improve check of internal user/bank map in `job.validate` (#386)
+
+* plugin: move queue priority assignment to `job.new` callback (#388)
+
+* `view-bank`: fix `-t` option for a sub bank with users in it (#395)
+
+#### Features
+
+* plugin: record bank name to jobspec in PRIORITY event (#301)
+
+* plugin: add queue update validation (#389)
+
+#### Testsuite
+
+* load content module in rc scripts (#383)
+
+* ci: remove `upload-tarball` step from workflow (#387)
+
+* testsuite: allow sharness tests to be run by hand (#392)
+
 flux-accounting version 0.27.0 - 2023-09-06
 -------------------------------------------
 
