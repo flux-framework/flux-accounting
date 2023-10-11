@@ -78,7 +78,7 @@ test_expect_success 'update of queue of pending job works' '
 test_expect_success 'updating a job using a queue the user does not belong to fails' '
 	test_must_fail flux update $jobid1 queue=gold > unavail_queue.out 2>&1 &&
 	test_debug "cat unavail_queue.out" &&
-	grep "ERROR: Queue not valid for user: gold" unavail_queue.out
+	grep "ERROR: mf_priority: queue not valid for user: gold" unavail_queue.out
 '
 
 test_expect_success 'cancel job' '
