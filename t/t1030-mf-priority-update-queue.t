@@ -31,7 +31,8 @@ test_expect_success 'load multi-factor priority plugin' '
 
 test_expect_success 'add some banks to the DB' '
 	flux account add-bank root 1 &&
-	flux account add-bank --parent-bank=root A 1
+	flux account add-bank --parent-bank=root A 1 &&
+	flux account add-bank --parent-bank=root B 1
 '
 
 test_expect_success 'add some queues to the DB' '
@@ -44,6 +45,10 @@ test_expect_success 'add a user to the DB' '
 	flux account add-user --username=user5001 \
 		--userid=5001 \
 		--bank=A \
+		--queues="bronze,silver" &&
+	flux account add-user --username=user5001 \
+		--userid=5001 \
+		--bank=B \
 		--queues="bronze,silver"
 '
 
@@ -78,11 +83,36 @@ test_expect_success 'update of queue of pending job works' '
 test_expect_success 'updating a job using a queue the user does not belong to fails' '
 	test_must_fail flux update $jobid1 queue=gold > unavail_queue.out 2>&1 &&
 	test_debug "cat unavail_queue.out" &&
-	grep "ERROR: Queue not valid for user: gold" unavail_queue.out
+	grep "ERROR: mf_priority: queue not valid for user: gold" unavail_queue.out
 '
 
 test_expect_success 'cancel job' '
 	flux job cancel $jobid1
+'
+
+test_expect_success 'submit job for testing under non-default bank' '
+	jobid2=$(flux python ${SUBMIT_AS} 5001 --setattr=bank=B --queue=bronze sleep 30) &&
+	flux job wait-event -f json $jobid2 priority \
+		| jq '.context.priority' > job2_bronze.test &&
+	grep 1050000 job2_bronze.test
+'
+
+test_expect_success 'update of queue of pending job under a non-default bank works' '
+	flux update $jobid2 queue=silver &&
+	flux job wait-event -f json $jobid2 priority &&
+	flux job eventlog $jobid2 > eventlog.out &&
+	grep "attributes.system.queue=\"silver\"" eventlog.out &&
+	grep 2050000 eventlog.out
+'
+
+test_expect_success 'updating a job under non-default bank using a queue the user does not belong to fails' '
+	test_must_fail flux update $jobid2 queue=gold > unavail_queue.out 2>&1 &&
+	test_debug "cat unavail_queue.out" &&
+	grep "ERROR: mf_priority: queue not valid for user: gold" unavail_queue.out
+'
+
+test_expect_success 'cancel job' '
+	flux job cancel $jobid2
 '
 
 test_expect_success 'shut down flux-accounting service' '
