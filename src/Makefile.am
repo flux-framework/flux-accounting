@@ -17,7 +17,8 @@ noinst_HEADERS = \
 	fairness/reader/data_reader_db.hpp \
 	fairness/writer/data_writer_base.hpp \
 	fairness/writer/data_writer_db.hpp \
-	fairness/writer/data_writer_stdout.hpp
+	fairness/writer/data_writer_stdout.hpp \
+	plugins/bank_info.hpp
 
 fairness_libweighted_tree_la_SOURCES = \
 	fairness/account/account.cpp \
