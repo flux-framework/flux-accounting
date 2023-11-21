@@ -15,6 +15,8 @@
 
 #include <vector>
 #include <string>
+#include <map>
+#include <iterator>
 
 // all attributes are per-user/bank
 class user_bank_info {
@@ -30,5 +32,13 @@ public:
     int queue_factor;                // priority factor associated with queue
     int active;                      // active status
 };
+
+// these data structures are defined in the priority plugin
+extern std::map<int, std::map<std::string, user_bank_info>> users;
+extern std::map<int, std::string> users_def_bank;
+
+// get a user_bank_info object that points to user/bank
+// information in users map; return NULL on failure
+user_bank_info* get_user_info (int userid, char *bank);
 
 #endif // BANK_INFO_H
