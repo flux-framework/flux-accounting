@@ -48,19 +48,6 @@ extern "C" {
 // the association does not have permission to run jobs under
 #define INVALID_QUEUE -6
 
-// different codes to return as a result of looking up user/bank information:
-//
-// BANK_SUCCESS: we found an entry for the passed-in user/bank
-// BANK_USER_NOT_FOUND: the user could not be found in the plugin map
-// BANK_INVALID: the user specified a bank they don't belong to
-// BANK_NO_DEFAULT: the user does not have a default bank in the plugin map
-enum bank_info_codes {
-    BANK_SUCCESS,
-    BANK_USER_NOT_FOUND,
-    BANK_INVALID,
-    BANK_NO_DEFAULT
-};
-
 typedef std::pair<bank_info_codes, std::map<std::string, user_bank_info>::iterator> bank_info_result;
 
 std::map<int, std::map<std::string, user_bank_info>> users;
@@ -780,10 +767,9 @@ static int validate_cb (flux_plugin_t *p,
     int max_run_jobs, cur_active_jobs, max_active_jobs, queue_factor = 0;
     double fairshare = 0.0;
     bool only_dne_data;
+    user_bank_info user_bank;
 
     std::map<int, std::map<std::string, user_bank_info>>::iterator it;
-    std::map<std::string, user_bank_info>::iterator bank_it;
-    std::map<std::string, user_bank_info>::iterator q_it;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
@@ -805,8 +791,9 @@ static int validate_cb (flux_plugin_t *p,
     // if the plugin has NO data about users/banks and the user does not have
     // an entry in the plugin, the job will be held until data is received by
     // the plugin.
-    it = users.find (userid);
-    if (it == users.end ()) {
+    int lookup_result = user_bank_lookup(userid, bank);
+
+    if (lookup_result == BANK_USER_NOT_FOUND) {
         // check if the map only contains DNE entries
         bool only_dne_data = check_map_for_dne_only ();
 
@@ -817,26 +804,25 @@ static int validate_cb (flux_plugin_t *p,
             return flux_jobtap_reject_job (p, args,
                                     "no bank found for user: %i", userid);
         }
-    }
-
-    // make sure user belongs to bank they specified; if no bank was passed in,
-    // look up their default bank
-    if (bank != NULL) {
-        bank_it = it->second.find (std::string (bank));
-        if (bank_it == it->second.end ())
-            return flux_jobtap_reject_job (p, args,
-                                     "user does not belong to specified bank");
+    } else if (lookup_result == BANK_INVALID) {
+        return flux_jobtap_reject_job (p,
+                                       args,
+                                       "user does not belong to specified "
+                                       "bank");
+    } else if (lookup_result == BANK_NO_DEFAULT) {
+        return flux_jobtap_reject_job (p,
+                                       args,
+                                       "user/default bank entry does not "
+                                       "exist");
     } else {
-        bank = const_cast<char*> (users_def_bank[userid].c_str ());
-        bank_it = it->second.find (std::string (bank));
-        if (bank_it == it->second.end ())
-            return flux_jobtap_reject_job (p, args,
-                                     "user/default bank entry does not exist");
+        // bank/default bank has been validated & found, so we can
+        // fetch their information
+        user_bank = get_user_info (userid, bank);
     }
 
     // if user/bank entry was disabled, reject job with a message saying the
     // entry has been disabled
-    if (bank_it->second.active == 0)
+    if (user_bank.active == 0)
         return flux_jobtap_reject_job (p, args, "user/bank entry has been "
                                        "disabled from flux-accounting DB");
 
@@ -848,10 +834,8 @@ static int validate_cb (flux_plugin_t *p,
         return flux_jobtap_reject_job (p, args, "Queue not valid for user: %s",
                                        queue);
 
-    max_run_jobs = bank_it->second.max_run_jobs;
-    fairshare = bank_it->second.fairshare;
-    cur_active_jobs = bank_it->second.cur_active_jobs;
-    max_active_jobs = bank_it->second.max_active_jobs;
+    cur_active_jobs = user_bank.cur_active_jobs;
+    max_active_jobs = user_bank.max_active_jobs;
 
     // if a user/bank has reached their max_active_jobs limit, subsequently
     // submitted jobs will be rejected
