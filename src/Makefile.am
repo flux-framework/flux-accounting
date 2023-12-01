@@ -47,7 +47,8 @@ fairness_libweighted_tree_la_CXXFLAGS = \
 TESTS = \
 	weighted_tree_test01.t \
 	data_reader_db_test01.t \
-	data_writer_db_test01.t
+	data_writer_db_test01.t \
+	user_bank_info_test01.t
 check_PROGRAMS = $(TESTS)
 
 TEST_EXTENSIONS = .t
@@ -92,6 +93,14 @@ data_writer_db_test01_t_CXXFLAGS = $(AM_CXXFLAGS) -I$(top_srcdir) $(SQLITE_CFLAG
 data_writer_db_test01_t_LDFLAGS = $(SQLITE_LIBS)
 data_writer_db_test01_t_LDADD = \
 	fairness/libweighted_tree.la \
+	common/libtap/libtap.la
+
+user_bank_info_test01_t_SOURCES = \
+	plugins/test/user_bank_info_test01.cpp \
+	plugins/bank_info.cpp \
+	plugins/bank_info.hpp
+user_bank_info_test01_t_CXXFLAGS = $(AM_CXXFLAGS) -I$(top_srcdir)
+user_bank_info_test01_t_LDADD = \
 	common/libtap/libtap.la
 
 noinst_PROGRAMS = \
