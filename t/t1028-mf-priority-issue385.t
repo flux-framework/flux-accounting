@@ -54,7 +54,7 @@ test_expect_success 'check that jobs transition to RUN' '
 test_expect_success 'submitting a job under invalid user while plugin has data fails' '
 	test_must_fail flux python ${SUBMIT_AS} 9999 hostname > invalid_user.out 2>&1 &&
 	test_debug "cat invalid_user.out" &&
-	grep "flux-job: no bank found for user: 9999" invalid_user.out
+	grep "cannot find user/bank or user/default bank entry for: 9999" invalid_user.out
 '
 
 test_expect_success 'cancel running jobs' '

@@ -66,7 +66,7 @@ test_expect_success 'cancel job' '
 
 test_expect_success 'submit a job to plugin while not having an entry in the plugin' '
 	test_must_fail flux python ${SUBMIT_AS} 1003 hostname > no_user_entry.out 2>&1 &&
-	grep "no bank found for user" no_user_entry.out
+	grep "cannot find user/bank or user/default bank entry for:" no_user_entry.out
 '
 
 test_expect_success 'shut down flux-accounting service' '

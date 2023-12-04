@@ -147,7 +147,7 @@ test_expect_success 'submit a job using default bank' '
 test_expect_success 'submit a job using a bank the user does not belong to' '
 	test_must_fail flux submit --setattr=system.bank=account1 -n1 hostname > bad_bank.out 2>&1 &&
 	test_debug "cat bad_bank.out" &&
-	grep "user does not belong to specified bank" bad_bank.out
+	grep "cannot find user/bank or user/default bank entry for:" bad_bank.out
 '
 
 test_expect_success 'reject job when invalid bank format is passed in' '
