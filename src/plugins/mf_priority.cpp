@@ -792,8 +792,7 @@ static int validate_cb (flux_plugin_t *p,
     char *bank = NULL;
     char *queue = NULL;
     flux_job_state_t state;
-    int max_run_jobs, cur_active_jobs, max_active_jobs, queue_factor = 0;
-    double fairshare = 0.0;
+    int cur_active_jobs, max_active_jobs = 0;
     bool only_dne_data;
     user_bank_info *user_bank;
 
