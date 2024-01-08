@@ -1,3 +1,16 @@
+flux-accounting version 0.29.0 - 2024-01-08
+-------------------------------------------
+
+#### Fixes
+
+* plugin: keep jobs in `PRIORITY` after reprioritization (#407)
+
+* plugin: add callback specific for validating an updated queue (#399)
+
+#### Testsuite
+
+* feat: developer container environment (#398)
+
 flux-accounting version 0.28.0 - 2023-10-02
 -------------------------------------------
 
