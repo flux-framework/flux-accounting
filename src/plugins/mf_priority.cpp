@@ -666,7 +666,9 @@ static int priority_cb (flux_plugin_t *p,
     if (b->max_run_jobs == BANK_INFO_MISSING) {
         // try to look up user again
         it = users.find (userid);
-        if (it == users.end ()) {
+        if (it == users.end () || check_map_for_dne_only () == true) {
+            // the plugin could still be waiting on flux-accounting data
+            // to be loaded in; keep the job in PRIORITY state
             return flux_jobtap_priority_unavail (p, args);
         } else {
             // make sure user belongs to bank they specified; if no bank was
