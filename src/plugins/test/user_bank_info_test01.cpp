@@ -81,6 +81,25 @@ void initialize_map (
 }
 
 
+/*
+ * helper function to add special "does not exist" ("DNE") user/bank info to
+ * the plugin; this simulates a scenario where the plugin is waiting on
+ * user/bank information to be loaded from the flux-accounting DB
+ */
+void initialize_map_dne_only (
+    std::map<int, std::map<std::string, user_bank_info>> &users)
+{
+    user_bank_info user1 = {"DNE", 0.5, 5, 0, 7, 0, {}, {}, 0, 1};
+    user_bank_info user2 = {"DNE", 0.5, 5, 0, 7, 0, {}, {}, 0, 1};
+
+    add_user_to_map (users, 1001, "DNE", user1);
+    add_user_to_def_bank_map (users_def_bank, 1001, "DNE");
+
+    add_user_to_map (users, 1002, "DNE", user2);
+    add_user_to_def_bank_map (users_def_bank, 1001, "DNE");
+}
+
+
 static void test_basic_string_comparison ()
 {
     const std::string string1 = "hello, world!";
@@ -94,7 +113,7 @@ static void test_basic_string_comparison ()
 static void test_direct_map_access (
     std::map<int, std::map<std::string, user_bank_info>> &users)
 {
-    ok (users[1001]["bank_A"].bank_name == "bank_A", 
+    ok (users[1001]["bank_A"].bank_name == "bank_A",
         "a user/bank from users map can be accessed directly");
 }
 
@@ -136,10 +155,33 @@ static void test_get_user_info_user_no_default_bank ()
 }
 
 
+// ensure check_map_for_dne_only () will return false since both maps that
+// store user/bank information have valid entries
+static void test_check_map_valid_entries ()
+{
+    bool only_dne_data = check_map_for_dne_only (users, users_def_bank);
+    ok (only_dne_data == false, "maps have valid user/bank data");
+}
+
+
+// clear the map and only put temporary "does not exist" ("DNE") data in both
+// maps and re-run the check
+static void test_check_map_only_dne_entries ()
+{
+    users.clear ();
+    users_def_bank.clear ();
+
+    initialize_map_dne_only (users);
+
+    bool only_dne_data = check_map_for_dne_only (users, users_def_bank);
+    ok (only_dne_data == true, "maps have only 'DNE' user/bank data");
+}
+
+
 int main (int argc, char* argv[])
 {
     // declare the number of tests that we plan to run
-    plan (5);
+    plan (7);
 
     // add users to the test map
     initialize_map (users);
@@ -149,6 +191,8 @@ int main (int argc, char* argv[])
     test_get_user_info_success ();
     test_get_user_info_user_noexist ();
     test_get_user_info_user_no_default_bank ();
+    test_check_map_valid_entries ();
+    test_check_map_only_dne_entries ();
 
     // indicate we are done testing
     done_testing ();
