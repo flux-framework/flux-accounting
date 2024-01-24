@@ -42,4 +42,11 @@ user_bank_info* get_user_info (int userid,
                                             &users,
                                std::map<int, std::string> &users_def_bank);
 
+// scan the users map and look at each user's default bank to see if any one
+// of them have a valid bank (i.e one that is not "DNE"; if any of the users do
+// do have a valid bank, return false)
+bool check_map_for_dne_only (
+                std::map<int, std::map<std::string, user_bank_info>> &users,
+                std::map<int, std::string> &users_def_bank);
+
 #endif // BANK_INFO_H
