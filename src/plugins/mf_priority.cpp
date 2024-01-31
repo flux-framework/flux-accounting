@@ -766,9 +766,21 @@ static void add_missing_bank_info (flux_plugin_t *p, flux_t *h, int userid)
 
 
 /*
- * Look up the userid of the submitted job in the multimap; if user is not found
- * in the map, reject the job saying the user wasn't found in the
- * flux-accounting database.
+ * Perform basic validation of a user/bank's submitted job. If a bank or
+ * queue is specified on submission, ensure that the user is allowed to
+ * submit a job under them. Check the active job limits for the user/bank
+ * on submission as well to make sure that they are under this limit when
+ * the job is submitted.
+ *
+ * This callback will also make sure that the user/bank belongs to
+ * the flux-accounting DB; there are two behaviors supported here:
+ *
+ * if the plugin has SOME data about users/banks and the user does not have
+ * an entry in the plugin, the job will be rejected.
+ *
+ * if the plugin has NO data about users/banks and the user does not have an
+ * entry in the plugin, the job will be held until data is received by the
+ * plugin.
  */
 static int validate_cb (flux_plugin_t *p,
                         const char *topic,
@@ -782,11 +794,10 @@ static int validate_cb (flux_plugin_t *p,
     int max_run_jobs, cur_active_jobs, max_active_jobs, queue_factor = 0;
     double fairshare = 0.0;
     bool only_dne_data;
+    Association *a;
 
-    std::map<int, std::map<std::string, Association>>::iterator it;
-    std::map<std::string, Association>::iterator bank_it;
-    std::map<std::string, Association>::iterator q_it;
-
+    // unpack the attributes of the user/bank's submitted job when it
+    // enters job.validate and place them into their respective variables
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
@@ -798,47 +809,29 @@ static int validate_cb (flux_plugin_t *p,
         return flux_jobtap_reject_job (p, args, "unable to unpack bank arg");
     }
 
-    // make sure user belongs to flux-accounting DB; there are two behaviors
-    // supported in this plugin:
-    //
-    // if the plugin has SOME data about users/banks and the user does not
-    // have an entry in the plugin, the job will be rejected.
-    //
-    // if the plugin has NO data about users/banks and the user does not have
-    // an entry in the plugin, the job will be held until data is received by
-    // the plugin.
-    it = users.find (userid);
-    if (it == users.end ()) {
-        // check if the map only contains DNE entries
+    // perform a lookup in the users map of the unpacked user/bank
+    a = get_association (userid, bank, users, users_def_bank);
+
+    if (a == nullptr) {
+        // the assocation could not be found in the plugin's internal map,
+        // so perform a check to see if the map has any loaded
+        // flux-accounting data before rejecting the job
         bool only_dne_data = check_map_for_dne_only ();
 
         if (users.empty () || only_dne_data) {
             add_missing_bank_info (p, h, userid);
             return 0;
         } else {
-            return flux_jobtap_reject_job (p, args,
-                                    "no bank found for user: %i", userid);
+            return flux_jobtap_reject_job (p,
+                                           args,
+                                           "cannot find user/bank or "
+                                           "user/default bank entry "
+                                           "for uid: %i", userid);
         }
     }
 
-    // make sure user belongs to bank they specified; if no bank was passed in,
-    // look up their default bank
-    if (bank != NULL) {
-        bank_it = it->second.find (std::string (bank));
-        if (bank_it == it->second.end ())
-            return flux_jobtap_reject_job (p, args,
-                                     "user does not belong to specified bank");
-    } else {
-        bank = const_cast<char*> (users_def_bank[userid].c_str ());
-        bank_it = it->second.find (std::string (bank));
-        if (bank_it == it->second.end ())
-            return flux_jobtap_reject_job (p, args,
-                                     "user/default bank entry does not exist");
-    }
-
-    // if user/bank entry was disabled, reject job with a message saying the
-    // entry has been disabled
-    if (bank_it->second.active == 0)
+    if (a->active == 0)
+        // the association entry was disabled; reject the job
         return flux_jobtap_reject_job (p, args, "user/bank entry has been "
                                        "disabled from flux-accounting DB");
 
@@ -848,15 +841,13 @@ static int validate_cb (flux_plugin_t *p,
         return flux_jobtap_reject_job (p, args, "Queue not valid for user: %s",
                                        queue);
 
-    max_run_jobs = bank_it->second.max_run_jobs;
-    fairshare = bank_it->second.fairshare;
-    cur_active_jobs = bank_it->second.cur_active_jobs;
-    max_active_jobs = bank_it->second.max_active_jobs;
+    cur_active_jobs = a->cur_active_jobs;
+    max_active_jobs = a->max_active_jobs;
 
-    // if a user/bank has reached their max_active_jobs limit, subsequently
-    // submitted jobs will be rejected
     if (state == FLUX_JOB_STATE_NEW) {
         if (max_active_jobs > 0 && cur_active_jobs >= max_active_jobs)
+            // the association is already at their max_active_jobs limit;
+            // reject the job
             return flux_jobtap_reject_job (p,
                                            args,
                                            "user has max active jobs");
