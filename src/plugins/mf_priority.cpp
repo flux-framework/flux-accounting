@@ -140,9 +140,8 @@ int64_t priority_calculation (flux_plugin_t *p,
 }
 
 
-static int get_queue_info (
-                      char *queue,
-                      std::map<std::string, Association>::iterator bank_it)
+static int get_queue_info (char *queue,
+                           std::vector<std::string> permissible_queues)
 {
     std::map<std::string, struct queue_info>::iterator q_it;
 
@@ -159,10 +158,10 @@ static int get_queue_info (
 
         // check #2) the queue passed in is a valid option to pass for user
         std::vector<std::string>::iterator vect_it;
-        vect_it = std::find (bank_it->second.queues.begin (),
-                             bank_it->second.queues.end (), queue);
+        vect_it = std::find (permissible_queues.begin (),
+                             permissible_queues.end (), queue);
 
-        if (vect_it == bank_it->second.queues.end ())
+        if (vect_it == permissible_queues.end ())
             return INVALID_QUEUE;
         else
             // add priority associated with the passed in queue to bank_info
@@ -690,7 +689,8 @@ static int priority_cb (flux_plugin_t *p,
             }
 
             // fetch priority associated with passed-in queue (or default queue)
-            bank_it->second.queue_factor = get_queue_info (queue, bank_it);
+            bank_it->second.queue_factor = get_queue_info (queue,
+                                                           bank_it->second.queues);
             if (check_queue_factor (p,
                                     bank_it->second.queue_factor,
                                     queue) < 0)
@@ -842,11 +842,9 @@ static int validate_cb (flux_plugin_t *p,
         return flux_jobtap_reject_job (p, args, "user/bank entry has been "
                                        "disabled from flux-accounting DB");
 
-    // validate the queue if one is passed in; if the user does not have access
-    // to the queue they specified, reject the job
-    queue_factor = get_queue_info (queue, bank_it);
-
-    if (queue_factor == INVALID_QUEUE)
+    if (get_queue_info (queue, a->queues) == INVALID_QUEUE)
+        // the user/bank specified a queue that they do not belong to;
+        // reject the job
         return flux_jobtap_reject_job (p, args, "Queue not valid for user: %s",
                                        queue);
 
@@ -954,7 +952,7 @@ static int new_cb (flux_plugin_t *p,
 
     // assign priority associated with validated queue to bank_info struct
     // associated with job
-    b->queue_factor = get_queue_info (queue, bank_it);
+    b->queue_factor = get_queue_info (queue, b->queues);
 
     // if a user/bank has reached their max_active_jobs limit, subsequently
     // submitted jobs will be rejected
@@ -1131,7 +1129,7 @@ static int job_updated (flux_plugin_t *p,
     // if the queue for the job has been updated, fetch the priority of the
     // validated queue and assign it to the associated bank_info struct
     if (queue != NULL) {
-        int queue_factor = get_queue_info (queue, bank_it);
+        int queue_factor = get_queue_info (queue, bank_it->second.queues);
         b->queue_factor = queue_factor;
     }
 
@@ -1186,7 +1184,7 @@ static int update_queue_cb (flux_plugin_t *p,
 
         // validate the updated queue and make sure the user/bank has
         // access to it; if not, reject the update
-        if (get_queue_info (queue, bank_it) == INVALID_QUEUE)
+        if (get_queue_info (queue, bank_it->second.queues) == INVALID_QUEUE)
             return flux_jobtap_error (p,
                                       args,
                                       "mf_priority: queue not valid for user: %s",
