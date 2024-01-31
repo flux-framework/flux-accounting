@@ -33,4 +33,12 @@ public:
     int active;                      // active status
 };
 
+// get an Association object that points to user/bank in the users map;
+// return nullptr on failure
+Association* get_association (int userid,
+                              const char *bank,
+                              std::map<int, std::map<std::string, Association>>
+                                &users,
+                              std::map<int, std::string> &users_def_bank);
+
 #endif // ACCOUNTING_H
