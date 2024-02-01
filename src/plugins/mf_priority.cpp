@@ -29,6 +29,9 @@ extern "C" {
 #include <vector>
 #include <sstream>
 
+// custom bank_info class file
+#include "accounting.hpp"
+
 // the plugin does not know about the association who submitted a job and will
 // assign default values to the association until it receives information from
 // flux-accounting
@@ -58,23 +61,11 @@ enum bank_info_codes {
     BANK_NO_DEFAULT
 };
 
-typedef std::pair<bank_info_codes, std::map<std::string, struct bank_info>::iterator> bank_info_result;
+typedef std::pair<bank_info_codes, std::map<std::string, Association>::iterator> bank_info_result;
 
-std::map<int, std::map<std::string, struct bank_info>> users;
+std::map<int, std::map<std::string, Association>> users;
 std::map<std::string, struct queue_info> queues;
 std::map<int, std::string> users_def_bank;
-
-struct bank_info {
-    double fairshare;
-    int max_run_jobs;
-    int cur_run_jobs;
-    int max_active_jobs;
-    int cur_active_jobs;
-    std::vector<long int> held_jobs;
-    std::vector<std::string> queues;
-    int queue_factor;
-    int active;
-};
 
 // min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
 // currently used or enforced in this plugin, so their values have no
@@ -112,7 +103,7 @@ int64_t priority_calculation (flux_plugin_t *p,
     double fshare_factor = 0.0, priority = 0.0;
     int queue_factor = 0;
     int fshare_weight, queue_weight;
-    struct bank_info *b;
+    Association *b;
 
     fshare_weight = 100000;
     queue_weight = 10000;
@@ -123,7 +114,7 @@ int64_t priority_calculation (flux_plugin_t *p,
     if (urgency == FLUX_JOB_URGENCY_EXPEDITE)
         return FLUX_JOB_PRIORITY_MAX;
 
-    b = static_cast<bank_info *> (flux_jobtap_job_aux_get (
+    b = static_cast<Association *> (flux_jobtap_job_aux_get (
                                                     p,
                                                     FLUX_JOBTAP_CURRENT_JOB,
                                                     "mf_priority:bank_info"));
@@ -151,7 +142,7 @@ int64_t priority_calculation (flux_plugin_t *p,
 
 static int get_queue_info (
                       char *queue,
-                      std::map<std::string, struct bank_info>::iterator bank_it)
+                      std::map<std::string, Association>::iterator bank_it)
 {
     std::map<std::string, struct queue_info>::iterator q_it;
 
@@ -183,7 +174,7 @@ static int get_queue_info (
 }
 
 
-static void split_string (char *queues, struct bank_info *b)
+static void split_string (char *queues, Association *b)
 {
     std::stringstream s_stream;
 
@@ -217,7 +208,7 @@ int check_queue_factor (flux_plugin_t *p,
  * Add held job IDs to a JSON array to be added to a bank_info JSON object.
  */
 static json_t *add_held_jobs (
-                            const std::pair<std::string, struct bank_info> &b)
+                            const std::pair<std::string, Association> &b)
 {
     json_t *held_jobs = NULL;
 
@@ -248,7 +239,7 @@ error:
  * Create a JSON object for a bank that a user belongs to.
  */
 static json_t *pack_bank_info_object (
-                            const std::pair<std::string, struct bank_info> &b)
+                            const std::pair<std::string, Association> &b)
 {
     json_t *bank_info, *held_jobs = NULL;
 
@@ -281,7 +272,7 @@ error:
  */
 static json_t *banks_to_json (
                     flux_plugin_t *p,
-                    std::pair<int, std::map<std::string, struct bank_info>> &u)
+                    std::pair<int, std::map<std::string, Association>> &u)
 {
     json_t *bank_info, *banks = NULL;
 
@@ -313,7 +304,7 @@ error:
  */
 static json_t *user_to_json (
                     flux_plugin_t *p,
-                    std::pair<int, std::map<std::string, struct bank_info>> u)
+                    std::pair<int, std::map<std::string, Association>> u)
 {
     json_t *user = json_object (); // JSON object for one user
     json_t *userid, *banks = NULL;
@@ -372,7 +363,7 @@ static bool check_map_for_dne_only ()
 static int update_jobspec_bank (flux_plugin_t *p, int userid)
 {
     char *bank = NULL;
-    std::map<int, std::map<std::string, struct bank_info>>::iterator it;
+    std::map<int, std::map<std::string, Association>>::iterator it;
 
     it = users.find (userid);
     if (it == users.end ()) {
@@ -400,8 +391,8 @@ static int update_jobspec_bank (flux_plugin_t *p, int userid)
 // associated with the submitted job
 static bank_info_result get_bank_info (int userid, char *bank)
 {
-    std::map<int, std::map<std::string, struct bank_info>>::iterator it;
-    std::map<std::string, struct bank_info>::iterator bank_it;
+    std::map<int, std::map<std::string, Association>>::iterator it;
+    std::map<std::string, Association>::iterator bank_it;
 
     it = users.find (userid);
     if (it == users.end ()) {
@@ -521,9 +512,10 @@ static void rec_update_cb (flux_t *h,
                             "active", &active) < 0)
             flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
 
-        struct bank_info *b;
+        Association *b;
         b = &users[uid][bank];
 
+        b->bank_name = bank;
         b->fairshare = fshare;
         b->max_run_jobs = max_running_jobs;
         b->max_active_jobs = max_active_jobs;
@@ -631,7 +623,7 @@ static int priority_cb (flux_plugin_t *p,
     char *bank = NULL;
     char *queue = NULL;
     int64_t priority;
-    struct bank_info *b;
+    Association *b;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
@@ -648,7 +640,7 @@ static int priority_cb (flux_plugin_t *p,
         return -1;
     }
 
-    b = static_cast<bank_info *> (flux_jobtap_job_aux_get (
+    b = static_cast<Association *> (flux_jobtap_job_aux_get (
                                                     p,
                                                     FLUX_JOBTAP_CURRENT_JOB,
                                                     "mf_priority:bank_info"));
@@ -660,8 +652,8 @@ static int priority_cb (flux_plugin_t *p,
         return -1;
     }
 
-    std::map<int, std::map<std::string, struct bank_info>>::iterator it;
-    std::map<std::string, struct bank_info>::iterator bank_it;
+    std::map<int, std::map<std::string, Association>>::iterator it;
+    std::map<std::string, Association>::iterator bank_it;
 
     if (b->max_run_jobs == BANK_INFO_MISSING) {
         // try to look up user again
@@ -750,11 +742,12 @@ static int priority_cb (flux_plugin_t *p,
 
 static void add_missing_bank_info (flux_plugin_t *p, flux_t *h, int userid)
 {
-    struct bank_info *b;
+    Association *b;
 
     b = &users[userid]["DNE"];
     users_def_bank[userid] = "DNE";
 
+    b->bank_name = "DNE";
     b->fairshare = 0.1;
     b->max_run_jobs = BANK_INFO_MISSING;
     b->cur_run_jobs = 0;
@@ -790,9 +783,9 @@ static int validate_cb (flux_plugin_t *p,
     double fairshare = 0.0;
     bool only_dne_data;
 
-    std::map<int, std::map<std::string, struct bank_info>>::iterator it;
-    std::map<std::string, struct bank_info>::iterator bank_it;
-    std::map<std::string, struct queue_info>::iterator q_it;
+    std::map<int, std::map<std::string, Association>>::iterator it;
+    std::map<std::string, Association>::iterator bank_it;
+    std::map<std::string, Association>::iterator q_it;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
@@ -885,10 +878,10 @@ static int new_cb (flux_plugin_t *p,
     char *queue = NULL;
     int max_run_jobs, cur_active_jobs, max_active_jobs = 0;
     double fairshare = 0.0;
-    struct bank_info *b;
+    Association *b;
 
-    std::map<int, std::map<std::string, struct bank_info>>::iterator it;
-    std::map<std::string, struct bank_info>::iterator bank_it;
+    std::map<int, std::map<std::string, Association>>::iterator it;
+    std::map<std::string, Association>::iterator bank_it;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
@@ -900,7 +893,7 @@ static int new_cb (flux_plugin_t *p,
         return flux_jobtap_reject_job (p, args, "unable to unpack bank arg");
     }
 
-    b = static_cast<bank_info *> (flux_jobtap_job_aux_get (
+    b = static_cast<Association *> (flux_jobtap_job_aux_get (
                                                     p,
                                                     FLUX_JOBTAP_CURRENT_JOB,
                                                     "mf_priority:bank_info"));
@@ -1002,7 +995,7 @@ static int depend_cb (flux_plugin_t *p,
 {
     int userid;
     long int id;
-    struct bank_info *b;
+    Association *b;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
@@ -1016,7 +1009,7 @@ static int depend_cb (flux_plugin_t *p,
         return -1;
     }
 
-    b = static_cast<bank_info *> (flux_jobtap_job_aux_get (
+    b = static_cast<Association *> (flux_jobtap_job_aux_get (
                                                     p,
                                                     FLUX_JOBTAP_CURRENT_JOB,
                                                     "mf_priority:bank_info"));
@@ -1054,9 +1047,9 @@ static int run_cb (flux_plugin_t *p,
                    void *data)
 {
     int userid;
-    struct bank_info *b;
+    Association *b;
 
-    b = static_cast<bank_info *>
+    b = static_cast<Association *>
         (flux_jobtap_job_aux_get (p,
                                   FLUX_JOBTAP_CURRENT_JOB,
                                   "mf_priority:bank_info"));
@@ -1085,11 +1078,11 @@ static int job_updated (flux_plugin_t *p,
                         flux_plugin_arg_t *args,
                         void *data)
 {
-    std::map<std::string, struct bank_info>::iterator bank_it;
+    std::map<std::string, Association>::iterator bank_it;
     int userid;
     char *bank = NULL;
     char *queue = NULL;
-    struct bank_info *b;
+    Association *b;
 
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
@@ -1101,7 +1094,7 @@ static int job_updated (flux_plugin_t *p,
         return flux_jobtap_error (p, args, "unable to unpack plugin args");
 
     // grab bank_info struct for user/bank (if any)
-    b = static_cast<bank_info *> (flux_jobtap_job_aux_get (
+    b = static_cast<Association *> (flux_jobtap_job_aux_get (
                                                     p,
                                                     FLUX_JOBTAP_CURRENT_JOB,
                                                     "mf_priority:bank_info"));
@@ -1156,7 +1149,7 @@ static int update_queue_cb (flux_plugin_t *p,
                             flux_plugin_arg_t *args,
                             void *data)
 {
-    std::map<std::string, struct bank_info>::iterator bank_it;
+    std::map<std::string, Association>::iterator bank_it;
     int userid;
     char *bank = NULL;
     char *queue = NULL;
@@ -1210,9 +1203,9 @@ static int inactive_cb (flux_plugin_t *p,
                         void *data)
 {
     int userid;
-    struct bank_info *b;
-    std::map<int, std::map<std::string, struct bank_info>>::iterator it;
-    std::map<std::string, struct bank_info>::iterator bank_it;
+    Association *b;
+    std::map<int, std::map<std::string, Association>>::iterator it;
+    std::map<std::string, Association>::iterator bank_it;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
@@ -1226,7 +1219,7 @@ static int inactive_cb (flux_plugin_t *p,
         return -1;
     }
 
-    b = static_cast<bank_info *> (flux_jobtap_job_aux_get (
+    b = static_cast<Association *> (flux_jobtap_job_aux_get (
                                                     p,
                                                     FLUX_JOBTAP_CURRENT_JOB,
                                                     "mf_priority:bank_info"));
