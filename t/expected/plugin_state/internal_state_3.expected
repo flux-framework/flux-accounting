@@ -3,23 +3,31 @@
     "userid": 1001,
     "banks": [
       {
-        "bank": "account1",
+        "bank_name": "account1",
         "fairshare": 0.5,
         "max_run_jobs": 2,
         "cur_run_jobs": 0,
         "max_active_jobs": 7,
         "cur_active_jobs": 0,
         "held_jobs": [],
+        "queues": [
+          ""
+        ],
+        "queue_factor": 0,
         "active": 1
       },
       {
-        "bank": "account2",
+        "bank_name": "account2",
         "fairshare": 0.5,
         "max_run_jobs": 5,
         "cur_run_jobs": 0,
         "max_active_jobs": 7,
         "cur_active_jobs": 0,
         "held_jobs": [],
+        "queues": [
+          ""
+        ],
+        "queue_factor": 0,
         "active": 1
       }
     ]
@@ -28,13 +36,17 @@
     "userid": 1002,
     "banks": [
       {
-        "bank": "account3",
+        "bank_name": "account3",
         "fairshare": 0.5,
         "max_run_jobs": 5,
         "cur_run_jobs": 0,
         "max_active_jobs": 7,
         "cur_active_jobs": 0,
         "held_jobs": [],
+        "queues": [
+          ""
+        ],
+        "queue_factor": 0,
         "active": 1
       }
     ]
