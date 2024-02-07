@@ -54,6 +54,9 @@ if test "X$PYTHON" = "X"; then
   AC_MSG_ERROR([could not find python])
 fi
 
+# checks for packages
+PKG_CHECK_MODULES([JANSSON], [jansson >= 2.10], [], [])
+
 #
 # Project directories
 #

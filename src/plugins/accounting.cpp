@@ -35,3 +35,93 @@ Association* get_association (int userid,
 
     return &bank_it->second;
 }
+
+
+json_t* Association::to_json () const
+{
+    json_t *held_job_ids = json_array ();
+    if (!held_job_ids) {
+        return nullptr;
+    }
+    for (const auto &job_id : held_jobs) {
+        json_t *temp;
+        if (!(temp = json_integer (job_id))
+            || json_array_append_new (held_job_ids, temp) < 0) {
+            json_decref (held_job_ids);
+            return nullptr;
+        }
+    }
+
+    json_t *user_queues = json_array ();
+    if (!user_queues) {
+        json_decref (held_job_ids);
+        return nullptr;
+    }
+    for (const auto &queue : queues) {
+        json_t *temp;
+        if (!(temp = json_string (queue.c_str ()))
+            || json_array_append_new (user_queues, temp) < 0) {
+            json_decref (held_job_ids);
+            json_decref (user_queues);
+            return nullptr;
+        }
+    }
+
+    // 'o' steals the reference for both held_job_ids and user_queues
+    json_t *u = json_pack ("{s:s, s:f, s:i, s:i, s:i, s:i, s:o, s:o, s:i, s:i}",
+                           "bank_name", bank_name.c_str (),
+                           "fairshare", fairshare,
+                           "max_run_jobs", max_run_jobs,
+                           "cur_run_jobs", cur_run_jobs,
+                           "max_active_jobs", max_active_jobs,
+                           "cur_active_jobs", cur_active_jobs,
+                           "held_jobs", held_job_ids,
+                           "queues", user_queues,
+                           "queue_factor", queue_factor,
+                           "active", active);
+
+    if (!u)
+        return nullptr;
+
+    return u;
+}
+
+
+json_t* convert_map_to_json (std::map<int, std::map<std::string, Association>>
+                                &users)
+{
+    json_t *accounting_data = json_array ();
+    if (!accounting_data)
+        return nullptr;
+
+    // each Association in the users map is a pair; the first item is the
+    // userid and the second is a list of banks they belong to
+    for (const auto& association : users) {
+        json_t *banks = json_array ();
+        if (!banks) {
+            json_decref (accounting_data);
+            return nullptr;
+        }
+        for (const auto &bank : association.second) {
+            // bank.second refers to an Association object
+            json_t *b = bank.second.to_json ();
+            if (!b || json_array_append_new (banks, b) < 0) {
+                json_decref (accounting_data);
+                json_decref (banks);
+                return nullptr;
+            }
+        }
+
+        json_t *u = json_pack ("{siso}",
+                               "userid",
+                               association.first,
+                               "banks", banks);
+        if (!u || json_array_append_new (accounting_data, u) < 0) {
+            json_decref (accounting_data);
+            json_decref (banks);
+            return nullptr;
+        }
+    }
+
+    return accounting_data;
+}

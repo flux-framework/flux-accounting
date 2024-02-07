@@ -99,9 +99,10 @@ accounting_test01_t_SOURCES = \
 	plugins/test/accounting_test01.cpp \
 	plugins/accounting.cpp \
 	plugins/accounting.hpp
-accounting_test01_t_CXXFLAGS = $(AM_CXXFLAGS) -I$(top_srcdir)
+accounting_test01_t_CXXFLAGS = $(AM_CXXFLAGS) -I$(top_srcdir) $(JANSSON_CFLAGS)
 accounting_test01_t_LDADD = \
-	common/libtap/libtap.la
+	common/libtap/libtap.la \
+	$(JANSSON_LIBS)
 
 noinst_PROGRAMS = \
 	cmd/flux-account-update-fshare \
