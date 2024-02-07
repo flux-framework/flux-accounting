@@ -79,15 +79,52 @@ static void test_direct_map_access (
 }
 
 
+// ensure an Assocation* is returned on success
+static void test_get_association_success ()
+{
+    // retrieve user_bank_info object
+    Association *user1 = get_association (1001,
+                                          const_cast<char *> ("bank_A"),
+                                          users,
+                                          users_def_bank);
+    ok (user1->bank_name == "bank_A",
+        "get_association () successfully returns a pointer to an Association");
+}
+
+
+// ensure nullptr is returned when a user cannot be found in the map
+static void test_get_association_noexist ()
+{
+    Association *user_foo = get_association (9999,
+                                             const_cast<char *> ("bank_A"),
+                                             users,
+                                             users_def_bank);
+    ok (user_foo == nullptr,
+        "get_association () fails when an association cannot be found");
+}
+
+
+// ensure nullptr is returned when a user does not have a default bank
+static void test_get_association_no_default_bank ()
+{
+    Association *user2 = get_association (1002, NULL, users, users_def_bank);
+    ok (user2 == nullptr,
+        "get_association () fails when a user does not have a default bank");
+}
+
+
 int main (int argc, char* argv[])
 {
     // declare the number of tests that we plan to run
-    plan (1);
+    plan (4);
 
     // add users to the test map
     initialize_map (users);
 
     test_direct_map_access (users);
+    test_get_association_success ();
+    test_get_association_noexist ();
+    test_get_association_no_default_bank ();
 
     // indicate we are done testing
     done_testing ();
