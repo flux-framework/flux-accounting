@@ -297,21 +297,21 @@ static int query_cb (flux_plugin_t *p,
                      void *data)
 {
     flux_t *h = flux_jobtap_get_flux (p);
-    json_t *all_users = convert_map_to_json (users);
+    json_t *accounting_data = convert_map_to_json (users);
 
-    if (!all_users)
+    if (!accounting_data)
         return -1;
 
     if (flux_plugin_arg_pack (args,
                               FLUX_PLUGIN_ARG_OUT,
                               "{s:O}",
                               "mf_priority_map",
-                              all_users) < 0)
+                              accounting_data) < 0)
         flux_log_error (flux_jobtap_get_flux (p),
                         "mf_priority: query_cb: flux_plugin_arg_pack: %s",
                         flux_plugin_arg_strerror (args));
 
-    json_decref (all_users);
+    json_decref (accounting_data);
 
     return 0;
 }
