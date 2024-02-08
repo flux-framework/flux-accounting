@@ -44,6 +44,12 @@ test_expect_success 'add some banks to the DB' '
 	flux account add-bank --parent-bank=root account3 1
 '
 
+test_expect_success 'add some queues to the DB' '
+	flux account add-queue bronze --priority=100 &&
+	flux account add-queue silver --priority=200 &&
+	flux account add-queue gold --priority=300
+'
+
 test_expect_success 'add a user with two different banks to the DB' '
 	flux account add-user --username=user1001 --userid=1001 --bank=account1 --max-running-jobs=2 &&
 	flux account add-user --username=user1001 --userid=1001 --bank=account2
@@ -80,7 +86,7 @@ test_expect_success 'cancel jobs' '
 '
 
 test_expect_success 'add another user to flux-accounting DB and send it to plugin' '
-	flux account add-user --username=user1002 --userid=1002 --bank=account3 &&
+	flux account add-user --username=user1002 --userid=1002 --bank=account3 --queues="bronze" &&
 	flux account-priority-update -p $(pwd)/FluxAccountingTest.db
 '
 

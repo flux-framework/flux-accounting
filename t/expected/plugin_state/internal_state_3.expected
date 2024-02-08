@@ -44,7 +44,7 @@
         "cur_active_jobs": 0,
         "held_jobs": [],
         "queues": [
-          ""
+          "bronze"
         ],
         "queue_factor": 0,
         "active": 1
