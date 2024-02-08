@@ -125,3 +125,18 @@ json_t* convert_map_to_json (std::map<int, std::map<std::string, Association>>
 
     return accounting_data;
 }
+
+
+void split_string_and_push_back (const char *list,
+                                 std::vector<std::string> &vec)
+{
+    std::stringstream s_stream;
+
+    s_stream << list; // create string stream from string
+
+    while (s_stream.good ()) {
+        std::string substr;
+        getline (s_stream, substr, ','); // get string delimited by comma
+        vec.push_back (substr);
+    }
+}

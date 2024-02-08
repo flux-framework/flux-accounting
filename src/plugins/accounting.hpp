@@ -25,6 +25,7 @@ extern "C" {
 #include <string>
 #include <map>
 #include <iterator>
+#include <sstream>
 
 // all attributes are per-user/bank
 class Association {
@@ -56,5 +57,9 @@ Association* get_association (int userid,
 // iterate through the users map and construct a JSON object of each user/bank
 json_t* convert_map_to_json (std::map<int, std::map<std::string, Association>>
                                  &users);
+
+// split a list of items and add them to a vector in an Association object
+void split_string_and_push_back (const char *list,
+                                 std::vector<std::string> &vec);
 
 #endif // ACCOUNTING_H
