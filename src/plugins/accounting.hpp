@@ -9,6 +9,14 @@
 \************************************************************/
 
 // header file for the Accounting class
+extern "C" {
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
+#include <flux/core.h>
+#include <flux/jobtap.h>
+#include <jansson.h>
+}
 
 #ifndef ACCOUNTING_H
 #define ACCOUNTING_H
@@ -21,6 +29,7 @@
 // all attributes are per-user/bank
 class Association {
 public:
+    // attributes
     std::string bank_name;           // name of bank
     double fairshare;                // fair share value
     int max_run_jobs;                // max number of running jobs
@@ -31,6 +40,9 @@ public:
     std::vector<std::string> queues; // list of accessible queues
     int queue_factor;                // priority factor associated with queue
     int active;                      // active status
+
+    // methods
+    json_t* to_json () const;    // convert object to JSON string
 };
 
 // get an Association object that points to user/bank in the users map;
@@ -40,5 +52,9 @@ Association* get_association (int userid,
                               std::map<int, std::map<std::string, Association>>
                                 &users,
                               std::map<int, std::string> &users_def_bank);
+
+// iterate through the users map and construct a JSON object of each user/bank
+json_t* convert_map_to_json (std::map<int, std::map<std::string, Association>>
+                                 &users);
 
 #endif // ACCOUNTING_H
