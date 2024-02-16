@@ -375,7 +375,7 @@ static void rec_update_cb (flux_t *h,
 
         // split queues comma-delimited string and add it to b->queues vector
         b->queues.clear ();
-        split_string (queues, b);
+        split_string_and_push_back (queues, b->queues);
 
         users_def_bank[uid] = def_bank;
     }
