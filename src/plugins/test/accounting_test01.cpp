@@ -113,10 +113,22 @@ static void test_get_association_no_default_bank ()
 }
 
 
+// ensure split_string_and_push_back () works with a list of items
+static void split_string_and_push_back_success ()
+{
+    const char *assoc_queues = "bronze,silver,gold";
+    std::vector<std::string> expected_queues = {"bronze", "silver", "gold"};
+
+    split_string_and_push_back (assoc_queues, users[1001]["bank_A"].queues);
+    ok (users[1001]["bank_A"].queues == expected_queues,
+        "split_string_and_push_back () works");
+}
+
+
 int main (int argc, char* argv[])
 {
     // declare the number of tests that we plan to run
-    plan (4);
+    plan (5);
 
     // add users to the test map
     initialize_map (users);
@@ -125,6 +137,7 @@ int main (int argc, char* argv[])
     test_get_association_success ();
     test_get_association_noexist ();
     test_get_association_no_default_bank ();
+    split_string_and_push_back_success ();
 
     // indicate we are done testing
     done_testing ();

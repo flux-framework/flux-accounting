@@ -326,7 +326,7 @@ static void rec_update_cb (flux_t *h,
                            const flux_msg_t *msg,
                            void *arg)
 {
-    char *bank, *def_bank, *queues = NULL;
+    char *bank, *def_bank, *assoc_queues = NULL;
     int uid, max_running_jobs, max_active_jobs = 0;
     double fshare = 0.0;
     json_t *data, *jtemp = NULL;
@@ -360,7 +360,7 @@ static void rec_update_cb (flux_t *h,
                             "fairshare", &fshare,
                             "max_running_jobs", &max_running_jobs,
                             "max_active_jobs", &max_active_jobs,
-                            "queues", &queues,
+                            "queues", &assoc_queues,
                             "active", &active) < 0)
             flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
 
@@ -375,7 +375,7 @@ static void rec_update_cb (flux_t *h,
 
         // split queues comma-delimited string and add it to b->queues vector
         b->queues.clear ();
-        split_string (queues, b);
+        split_string_and_push_back (assoc_queues, b->queues);
 
         users_def_bank[uid] = def_bank;
     }
