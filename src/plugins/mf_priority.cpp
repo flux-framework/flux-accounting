@@ -720,9 +720,9 @@ static int validate_cb (flux_plugin_t *p,
  * jobspec for this job to contain the bank name as well.
  */
 static int new_cb (flux_plugin_t *p,
-                        const char *topic,
-                        flux_plugin_arg_t *args,
-                        void *data)
+                   const char *topic,
+                   flux_plugin_arg_t *args,
+                   void *data)
 {
     int userid;
     char *bank = NULL;
@@ -761,9 +761,9 @@ static int new_cb (flux_plugin_t *p,
             // as a result, update the jobspec with their default bank name
             if (update_jobspec_bank (p, userid) < 0) {
                 flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
-                                            "mf_priority", 0,
-                                            "failed to update jobspec "
-                                            "with bank name");
+                                             "mf_priority", 0,
+                                             "failed to update jobspec "
+                                             "with bank name");
                 return -1;
             }
         }
@@ -793,7 +793,6 @@ static int new_cb (flux_plugin_t *p,
 
         return 0;
     }
-
 
     if (flux_jobtap_job_aux_set (p,
                                  FLUX_JOBTAP_CURRENT_JOB,
