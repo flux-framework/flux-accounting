@@ -900,8 +900,8 @@ static int job_updated (flux_plugin_t *p,
 {
     int userid;
     char *bank = NULL;
-    char *queue = NULL;
-    Association *b;
+    char *updated_queue = NULL;
+    Association *a;
 
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
@@ -909,16 +909,16 @@ static int job_updated (flux_plugin_t *p,
                                 "userid", &userid,
                                 "jobspec", "attributes", "system", "bank", &bank,
                                 "updates",
-                                    "attributes.system.queue", &queue) < 0)
+                                "attributes.system.queue", &updated_queue) < 0)
         return flux_jobtap_error (p, args, "unable to unpack plugin args");
 
     // grab Association object from job
-    b = static_cast<Association *> (flux_jobtap_job_aux_get (
+    a = static_cast<Association *> (flux_jobtap_job_aux_get (
                                                     p,
                                                     FLUX_JOBTAP_CURRENT_JOB,
                                                     "mf_priority:bank_info"));
 
-    if (b == NULL) {
+    if (a == NULL) {
         flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "mf_priority",
                                      0, "job.update: bank info is missing");
 
@@ -926,9 +926,9 @@ static int job_updated (flux_plugin_t *p,
     }
 
     // look up association
-    b = get_association (userid, bank, users, users_def_bank);
+    a = get_association (userid, bank, users, users_def_bank);
 
-    if (b == nullptr)
+    if (a == nullptr)
         flux_jobtap_raise_exception (p,
                                      FLUX_JOBTAP_CURRENT_JOB,
                                      "mf_priority",
@@ -937,11 +937,11 @@ static int job_updated (flux_plugin_t *p,
                                      "user/default bank entry "
                                      "for uid: %i", userid);
 
-    if (queue != NULL)
+    if (updated_queue != NULL)
         // the queue for the job has been updated, so fetch the priority
         // associated with this queue and assign it to the Association object
         // associated with the job
-        b->queue_factor = get_queue_info (queue, b->queues);
+        a->queue_factor = get_queue_info (updated_queue, a->queues);
 
     return 0;
 }
@@ -959,14 +959,14 @@ static int update_queue_cb (flux_plugin_t *p,
 {
     int userid;
     char *bank = NULL;
-    char *queue = NULL;
+    char *updated_queue = NULL;
     Association *a;
 
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
                                 "{s:i, s:s, s{s{s{s?s}}}}",
                                 "userid", &userid,
-                                "value", &queue,
+                                "value", &updated_queue,
                                 "jobspec", "attributes", "system", "bank",
                                 &bank) < 0)
         return flux_jobtap_error (p, args, "unable to unpack plugin args");
@@ -981,13 +981,13 @@ static int update_queue_cb (flux_plugin_t *p,
                                        "user/default bank entry "
                                        "for uid: %i", userid);
 
-    // validate the updated queue for the association
-    if (get_queue_info (queue, a->queues) == INVALID_QUEUE)
-        // association does not have access to this queue; reject the update
+    // validate the updated queue and make sure the user/bank has access to it;
+    if (get_queue_info (updated_queue, a->queues) == INVALID_QUEUE)
+        // user/bank does not have access to this queue; reject the update
         return flux_jobtap_error (p,
                                   args,
                                   "mf_priority: queue not valid for user: %s",
-                                  queue);
+                                  updated_queue);
 
     return 0;
 }
