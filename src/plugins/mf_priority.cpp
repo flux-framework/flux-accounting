@@ -890,7 +890,7 @@ static int run_cb (flux_plugin_t *p,
 
 
 /*
- *  apply an update on a job with regard to its queue once it has been
+ *  Apply an update on a job with regard to its queue once it has been
  *  validated.
  */
 static int job_updated (flux_plugin_t *p,
@@ -912,7 +912,7 @@ static int job_updated (flux_plugin_t *p,
                                     "attributes.system.queue", &queue) < 0)
         return flux_jobtap_error (p, args, "unable to unpack plugin args");
 
-    // grab bank_info struct for user/bank (if any)
+    // grab Association object from job
     b = static_cast<Association *> (flux_jobtap_job_aux_get (
                                                     p,
                                                     FLUX_JOBTAP_CURRENT_JOB,
@@ -925,7 +925,7 @@ static int job_updated (flux_plugin_t *p,
         return -1;
     }
 
-    // look up user/bank info based on unpacked information
+    // look up association
     b = get_association (userid, bank, users, users_def_bank);
 
     if (b == nullptr)
@@ -937,9 +937,10 @@ static int job_updated (flux_plugin_t *p,
                                      "user/default bank entry "
                                      "for uid: %i", userid);
 
-    // if the queue for the job has been updated, fetch the priority of the
-    // validated queue and assign it to the associated bank_info struct
     if (queue != NULL)
+        // the queue for the job has been updated, so fetch the priority
+        // associated with this queue and assign it to the Association object
+        // associated with the job
         b->queue_factor = get_queue_info (queue, b->queues);
 
     return 0;
@@ -947,8 +948,8 @@ static int job_updated (flux_plugin_t *p,
 
 
 /*
- *  check for an updated queue and validate it for a user/bank; if the
- *  user/bank does not have access to the queue they are trying to update
+ *  Check for an updated queue and validate it for an association; if the
+ *  association does not have access to the queue they are trying to update
  *  their job for, reject the update and keep the job in its current queue.
  */
 static int update_queue_cb (flux_plugin_t *p,
@@ -980,9 +981,9 @@ static int update_queue_cb (flux_plugin_t *p,
                                        "user/default bank entry "
                                        "for uid: %i", userid);
 
-    // validate the updated queue and make sure the user/bank has access to it;
+    // validate the updated queue for the association
     if (get_queue_info (queue, a->queues) == INVALID_QUEUE)
-        // user/bank does not have access to this queue; reject the update
+        // association does not have access to this queue; reject the update
         return flux_jobtap_error (p,
                                   args,
                                   "mf_priority: queue not valid for user: %s",
