@@ -48,21 +48,6 @@ extern "C" {
 // the association does not have permission to run jobs under
 #define INVALID_QUEUE -6
 
-// different codes to return as a result of looking up user/bank information:
-//
-// BANK_SUCCESS: we found an entry for the passed-in user/bank
-// BANK_USER_NOT_FOUND: the user could not be found in the plugin map
-// BANK_INVALID: the user specified a bank they don't belong to
-// BANK_NO_DEFAULT: the user does not have a default bank in the plugin map
-enum bank_info_codes {
-    BANK_SUCCESS,
-    BANK_USER_NOT_FOUND,
-    BANK_INVALID,
-    BANK_NO_DEFAULT
-};
-
-typedef std::pair<bank_info_codes, std::map<std::string, Association>::iterator> bank_info_result;
-
 std::map<int, std::map<std::string, Association>> users;
 std::map<std::string, struct queue_info> queues;
 std::map<int, std::string> users_def_bank;
@@ -247,38 +232,6 @@ static int update_jobspec_bank (flux_plugin_t *p, int userid)
         return -1;
 
     return 0;
-}
-
-
-// Given a userid and an optional bank, locate the associated information in
-// the plugin's internal users map. The return value is a pair: the first value
-// is a return code to indicate success or the type of failure, and the second
-// value is an iterator that points to the appropriate user/bank's information
-// associated with the submitted job
-static bank_info_result get_bank_info (int userid, char *bank)
-{
-    std::map<int, std::map<std::string, Association>>::iterator it;
-    std::map<std::string, Association>::iterator bank_it;
-
-    it = users.find (userid);
-    if (it == users.end ()) {
-        return {BANK_USER_NOT_FOUND, bank_it};
-    }
-
-    // make sure user belongs to bank they specified; if no bank was passed in,
-    // look up their default bank
-    if (bank != NULL) {
-        bank_it = it->second.find (std::string (bank));
-        if (bank_it == it->second.end ())
-            return {BANK_INVALID, bank_it};
-    } else {
-        bank = const_cast<char*> (users_def_bank[userid].c_str ());
-        bank_it = it->second.find (std::string (bank));
-        if (bank_it == it->second.end ())
-            return {BANK_NO_DEFAULT, bank_it};
-    }
-
-    return {BANK_SUCCESS, bank_it};
 }
 
 
