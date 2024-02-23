@@ -57,7 +57,7 @@ test_expect_success 'submitting a job specifying an incorrect bank with no user 
 	jobid0=$(flux submit --setattr=system.bank=account4 -n1 sleep 60) &&
 	flux python fake_payload.py &&
 	flux job wait-event -v ${jobid0} exception > exception.test &&
-	grep "not a member of account4" exception.test
+	grep "cannot find user/bank or user/default bank entry for uid:" exception.test
 '
 
 test_expect_success 'unload and reload mf_priority.so' '

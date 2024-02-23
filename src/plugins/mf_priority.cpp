@@ -457,67 +457,58 @@ static int priority_cb (flux_plugin_t *p,
         return -1;
     }
 
-    std::map<int, std::map<std::string, Association>>::iterator it;
-    std::map<std::string, Association>::iterator bank_it;
-
     if (b->max_run_jobs == BANK_INFO_MISSING) {
-        // try to look up user again
-        it = users.find (userid);
-        if (it == users.end () || check_map_for_dne_only () == true) {
-            // the plugin could still be waiting on flux-accounting data
-            // to be loaded in; keep the job in PRIORITY state
-            return flux_jobtap_priority_unavail (p, args);
-        } else {
-            // make sure user belongs to bank they specified; if no bank was
-            // passed in, look up their default bank
-            if (bank != NULL) {
-                bank_it = it->second.find (std::string (bank));
-                if (bank_it == it->second.end ()) {
-                    flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
-                                                 "mf_priority", 0,
-                                                 "not a member of %s", bank);
-                    return -1;
-                }
-            } else {
-                bank = const_cast<char*> (users_def_bank[userid].c_str ());
-                bank_it = it->second.find (std::string (bank));
-                if (bank_it == it->second.end ()) {
-                    flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
-                                                 "mf_priority", 0,
-                                                 "user/default bank entry "
-                                                 "does not exist");
-                    return -1;
-                }
-            }
-
-            if (bank_it->second.max_run_jobs == BANK_INFO_MISSING) {
+        // the association that this job is submitted under could not be found
+        // in the plugin's internal map when the job was first submitted and is
+        // held in PRIORITY by assigning special temporary values to the job;
+        // try to look up the association for this job again
+        Association *assoc = get_association (userid,
+                                              bank,
+                                              users,
+                                              users_def_bank);
+        if (assoc == nullptr) {
+            if (check_map_for_dne_only () == true)
+                // the plugin is still waiting on flux-accounting data to be
+                // loaded in; keep the job in PRIORITY
                 return flux_jobtap_priority_unavail (p, args);
-            }
 
-            // fetch priority associated with passed-in queue (or default queue)
-            bank_it->second.queue_factor = get_queue_info (queue,
-                                                           bank_it->second.queues);
-            if (check_queue_factor (p,
-                                    bank_it->second.queue_factor,
-                                    queue) < 0)
+            // association no longer exists in internal map
+            flux_jobtap_raise_exception (p,
+                                         FLUX_JOBTAP_CURRENT_JOB,
+                                         "mf_priority",
+                                         0,
+                                         "cannot find user/bank or "
+                                         "user/default bank entry for uid: %i",
+                                         userid);
+            return -1;
+        } else {
+            if (assoc->bank_name == "DNE")
+                // the association still does not have a valid entry in the
+                // users map, so keep it in PRIORITY
+                return flux_jobtap_priority_unavail (p, args);
+
+            // fetch priority of the associated queue
+            assoc->queue_factor = get_queue_info (queue, assoc->queues);
+            if (assoc->queue_factor == INVALID_QUEUE)
+                // the queue the association specified is invalid
                 return -1;
 
-            // if we get here, the bank was unknown when this job was first
-            // accepted, and therefore the active job counts for this
-            // job need to be incremented here
-            bank_it->second.cur_active_jobs++;
+            // the bank this job was submitted under was unknown when the job
+            // was first accepted, so the active jobs count for the association
+            // must be incremented
+            assoc->cur_active_jobs++;
 
-            // update current job with user/bank information
+            // update this job with the now-found association's information
             if (flux_jobtap_job_aux_set (p,
                                          FLUX_JOBTAP_CURRENT_JOB,
                                          "mf_priority:bank_info",
-                                         &bank_it->second,
+                                         assoc,
                                          NULL) < 0)
                 flux_log_error (h, "flux_jobtap_job_aux_set");
 
-            // now that we know the user/bank info associated with this job,
-            // we need to update jobspec with the default bank used to
-            // submit this job under
+            // now that we know the association information related to this
+            // job, we need to update the jobspec with the default bank used
+            // to submit this job under
             if (update_jobspec_bank (p, userid) < 0) {
                 flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
                                              "mf_priority", 0,
