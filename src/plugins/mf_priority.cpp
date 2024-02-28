@@ -104,23 +104,6 @@ int64_t priority_calculation (flux_plugin_t *p,
 }
 
 
-int check_queue_factor (flux_plugin_t *p,
-                        int queue_factor,
-                        char *queue,
-                        char *prefix = (char *) "")
-{
-    if (queue_factor == INVALID_QUEUE) {
-        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
-                                     "mf_priority", 0,
-                                     "%sQueue not valid for user: %s",
-                                     prefix, queue);
-        return -1;
-    }
-
-    return 0;
-}
-
-
 // Scan the users map and look at each user's default bank to see if any one
 // of them have a valid bank (i.e one that is not "DNE"; if any of the users do
 // do have a valid bank, it will return false)
