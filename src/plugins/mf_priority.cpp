@@ -158,19 +158,6 @@ static int get_queue_info (char *queue,
 }
 
 
-static void split_string (char *queues, Association *b)
-{
-    std::stringstream s_stream;
-
-    s_stream << queues; // create string stream from string
-    while (s_stream.good ()) {
-        std::string substr;
-        getline (s_stream, substr, ','); // get string delimited by comma
-        b->queues.push_back (substr);
-    }
-}
-
-
 int check_queue_factor (flux_plugin_t *p,
                         int queue_factor,
                         char *queue,
