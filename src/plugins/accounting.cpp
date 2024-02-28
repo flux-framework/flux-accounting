@@ -173,3 +173,17 @@ int get_queue_info (char *queue,
     // no queue was specified, so just use a default queue factor
     return NO_QUEUE_SPECIFIED;
 }
+
+
+bool check_map_for_dne_only (std::map<int, std::map<std::string, Association>>
+                               &users,
+                             std::map<int, std::string> &users_def_bank)
+{
+    for (const auto& entry : users) {
+        auto it = users_def_bank.find(entry.first);
+        if (it != users_def_bank.end() && it->second != "DNE")
+            return false;
+    }
+
+    return true;
+}

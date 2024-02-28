@@ -104,25 +104,6 @@ int64_t priority_calculation (flux_plugin_t *p,
 }
 
 
-// Scan the users map and look at each user's default bank to see if any one
-// of them have a valid bank (i.e one that is not "DNE"; if any of the users do
-// do have a valid bank, it will return false)
-static bool check_map_for_dne_only ()
-{
-    // the users map iterated through in this for-loop, along with the
-    // users_def_bank map used to look up a user's default bank, are
-    // both global variables
-    for (const auto& entry : users) {
-        auto def_bank_it = users_def_bank.find(entry.first);
-        if (def_bank_it != users_def_bank.end() &&
-                def_bank_it->second != "DNE")
-            return false;
-    }
-
-    return true;
-}
-
-
 /*
  * Update the jobspec with the default bank the association used to
  * submit their job under.
@@ -383,7 +364,7 @@ static int priority_cb (flux_plugin_t *p,
                                               users,
                                               users_def_bank);
         if (assoc == nullptr) {
-            if (check_map_for_dne_only () == true)
+            if (check_map_for_dne_only (users, users_def_bank) == true)
                 // the plugin is still waiting on flux-accounting data to be
                 // loaded in; keep the job in PRIORITY
                 return flux_jobtap_priority_unavail (p, args);
@@ -531,7 +512,7 @@ static int validate_cb (flux_plugin_t *p,
         // the assocation could not be found in the plugin's internal map,
         // so perform a check to see if the map has any loaded
         // flux-accounting data before rejecting the job
-        bool only_dne_data = check_map_for_dne_only ();
+        bool only_dne_data = check_map_for_dne_only (users, users_def_bank);
 
         if (users.empty () || only_dne_data) {
             add_missing_bank_info (p, h, userid);

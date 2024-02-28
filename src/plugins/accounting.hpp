@@ -89,4 +89,11 @@ int get_queue_info (char *queue,
                     const std::vector<std::string> &permissible_queues,
                     const std::map<std::string, Queue> &queues);
 
+// check the contents of the users map to see if every user's bank is a
+// temporary "DNE" value; if it is, the plugin is still waiting on
+// flux-accounting data
+bool check_map_for_dne_only (std::map<int, std::map<std::string, Association>>
+                               &users,
+                             std::map<int, std::string> &users_def_bank);
+
 #endif // ACCOUNTING_H
