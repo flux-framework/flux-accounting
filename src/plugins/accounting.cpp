@@ -143,8 +143,8 @@ void split_string_and_push_back (const char *list,
 
 
 int get_queue_info (char *queue,
-                    std::vector<std::string> permissible_queues,
-                    std::map<std::string, struct queue_info> queues)
+                    const std::vector<std::string> &permissible_queues,
+                    const std::map<std::string, Queue> &queues)
 {
     if (queue != NULL) {
         // check #1) the queue passed in exists in the queues map;
@@ -163,7 +163,11 @@ int get_queue_info (char *queue,
             // the queue passed in is not valid for the association
             return INVALID_QUEUE;
 
-        return queues[queue].priority;
+        try {
+            return queues.at (queue).priority;
+        } catch (const std::out_of_range &e) {
+            return UNKNOWN_QUEUE;
+        }
     }
 
     // no queue was specified, so just use a default queue factor

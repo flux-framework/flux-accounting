@@ -59,7 +59,8 @@ public:
 // min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
 // currently used or enforced in this plugin, so their values have no
 // effect in queue limit enforcement.
-struct queue_info {
+class Queue {
+public:
     int min_nodes_per_job;
     int max_nodes_per_job;
     int max_time_per_job;
@@ -85,7 +86,7 @@ void split_string_and_push_back (const char *list,
 // validate a potentially passed-in queue by an association and return the
 // integer priority associated with the queue
 int get_queue_info (char *queue,
-                    std::vector<std::string> permissible_queues,
-                    std::map<std::string, struct queue_info> queues);
+                    const std::vector<std::string> &permissible_queues,
+                    const std::map<std::string, Queue> &queues);
 
 #endif // ACCOUNTING_H

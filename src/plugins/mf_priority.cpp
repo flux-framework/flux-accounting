@@ -38,7 +38,7 @@ extern "C" {
 #define BANK_INFO_MISSING 999
 
 std::map<int, std::map<std::string, Association>> users;
-std::map<std::string, struct queue_info> queues;
+std::map<std::string, Queue> queues;
 std::map<int, std::string> users_def_bank;
 
 /******************************************************************************
@@ -315,7 +315,7 @@ static void rec_q_cb (flux_t *h,
                             "priority", &priority) < 0)
             flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
 
-        struct queue_info *q;
+        Queue *q;
         q = &queues[queue];
 
         q->min_nodes_per_job = min_nodes_per_job;
