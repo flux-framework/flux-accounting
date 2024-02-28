@@ -37,30 +37,9 @@ extern "C" {
 // flux-accounting
 #define BANK_INFO_MISSING 999
 
-// a queue is specified for a submitted job that flux-accounting does not know
-// about
-#define UNKNOWN_QUEUE 0
-
-// no queue is specified for a submitted job
-#define NO_QUEUE_SPECIFIED 0
-
-// a queue was specified for a submitted job that flux-accounting knows about and
-// the association does not have permission to run jobs under
-#define INVALID_QUEUE -6
-
 std::map<int, std::map<std::string, Association>> users;
 std::map<std::string, struct queue_info> queues;
 std::map<int, std::string> users_def_bank;
-
-// min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
-// currently used or enforced in this plugin, so their values have no
-// effect in queue limit enforcement.
-struct queue_info {
-    int min_nodes_per_job;
-    int max_nodes_per_job;
-    int max_time_per_job;
-    int priority;
-};
 
 /******************************************************************************
  *                                                                            *
@@ -122,39 +101,6 @@ int64_t priority_calculation (flux_plugin_t *p,
         return FLUX_JOB_PRIORITY_MIN;
 
     return priority;
-}
-
-
-static int get_queue_info (char *queue,
-                           std::vector<std::string> permissible_queues)
-{
-    std::map<std::string, struct queue_info>::iterator q_it;
-
-    // make sure that if a queue is passed in, it is a valid queue for the
-    // user to run jobs in
-    if (queue != NULL) {
-        // check #1) the queue passed in exists in the queues map;
-        // if the queue cannot be found, this means that flux-accounting
-        // does not know about the queue, and thus should return a default
-        // factor
-        q_it = queues.find (queue);
-        if (q_it == queues.end ())
-            return UNKNOWN_QUEUE;
-
-        // check #2) the queue passed in is a valid option to pass for user
-        std::vector<std::string>::iterator vect_it;
-        vect_it = std::find (permissible_queues.begin (),
-                             permissible_queues.end (), queue);
-
-        if (vect_it == permissible_queues.end ())
-            return INVALID_QUEUE;
-        else
-            // add priority associated with the passed in queue to bank_info
-            return queues[queue].priority;
-    } else {
-        // no queue was specified, so just use a default queue factor
-        return NO_QUEUE_SPECIFIED;
-    }
 }
 
 
@@ -475,7 +421,9 @@ static int priority_cb (flux_plugin_t *p,
                 return flux_jobtap_priority_unavail (p, args);
 
             // fetch priority of the associated queue
-            assoc->queue_factor = get_queue_info (queue, assoc->queues);
+            assoc->queue_factor = get_queue_info (queue,
+                                                  assoc->queues,
+                                                  queues);
             if (assoc->queue_factor == INVALID_QUEUE)
                 // the queue the association specified is invalid
                 return -1;
@@ -619,7 +567,7 @@ static int validate_cb (flux_plugin_t *p,
         return flux_jobtap_reject_job (p, args, "user/bank entry has been "
                                        "disabled from flux-accounting DB");
 
-    if (get_queue_info (queue, a->queues) == INVALID_QUEUE)
+    if (get_queue_info (queue, a->queues, queues) == INVALID_QUEUE)
         // the user/bank specified a queue that they do not belong to;
         // reject the job
         return flux_jobtap_reject_job (p, args, "Queue not valid for user: %s",
@@ -701,7 +649,7 @@ static int new_cb (flux_plugin_t *p,
     }
 
     // assign priority associated with validated queue
-    b->queue_factor = get_queue_info (queue, b->queues);
+    b->queue_factor = get_queue_info (queue, b->queues, queues);
 
     max_run_jobs = b->max_run_jobs;
     cur_active_jobs = b->cur_active_jobs;
@@ -872,7 +820,7 @@ static int job_updated (flux_plugin_t *p,
         // the queue for the job has been updated, so fetch the priority
         // associated with this queue and assign it to the Association object
         // associated with the job
-        a->queue_factor = get_queue_info (updated_queue, a->queues);
+        a->queue_factor = get_queue_info (updated_queue, a->queues, queues);
 
     return 0;
 }
@@ -913,7 +861,7 @@ static int update_queue_cb (flux_plugin_t *p,
                                        "for uid: %i", userid);
 
     // validate the updated queue and make sure the user/bank has access to it;
-    if (get_queue_info (updated_queue, a->queues) == INVALID_QUEUE)
+    if (get_queue_info (updated_queue, a->queues, queues) == INVALID_QUEUE)
         // user/bank does not have access to this queue; reject the update
         return flux_jobtap_error (p,
                                   args,

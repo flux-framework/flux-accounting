@@ -140,3 +140,37 @@ void split_string_and_push_back (const char *list,
         vec.push_back (substr);
     }
 }
+
+
+int get_queue_info (char *queue,
+                    std::vector<std::string> permissible_queues,
+                    std::map<std::string, struct queue_info> queues)
+{
+    std::map<std::string, struct queue_info>::iterator q_it;
+
+    // make sure that if a queue is passed in, it is a valid queue for the
+    // user to run jobs in
+    if (queue != NULL) {
+        // check #1) the queue passed in exists in the queues map;
+        // if the queue cannot be found, this means that flux-accounting
+        // does not know about the queue, and thus should return a default
+        // factor
+        q_it = queues.find (queue);
+        if (q_it == queues.end ())
+            return UNKNOWN_QUEUE;
+
+        // check #2) the queue passed in is a valid option to pass for user
+        std::vector<std::string>::iterator vect_it;
+        vect_it = std::find (permissible_queues.begin (),
+                             permissible_queues.end (), queue);
+
+        if (vect_it == permissible_queues.end ())
+            return INVALID_QUEUE;
+        else
+            // add priority associated with the passed in queue to bank_info
+            return queues[queue].priority;
+    } else {
+        // no queue was specified, so just use a default queue factor
+        return NO_QUEUE_SPECIFIED;
+    }
+}
