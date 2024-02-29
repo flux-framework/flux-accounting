@@ -189,10 +189,35 @@ static void test_get_queue_info_invalid_queue ()
 }
 
 
+// ensure false is returned because we have valid flux-accounting data in map
+static void test_check_map_dne_false ()
+{
+    bool result = check_map_for_dne_only (users, users_def_bank);
+
+    ok (result == false, "valid flux-accounting data has been loaded");
+}
+
+
+// ensure true is returned because no flux-accounting data is loaded
+static void test_check_map_dne_true ()
+{
+    users.clear ();
+    users_def_bank.clear ();
+
+    Association tmp_user = {"DNE", 0.5, 5, 0, 7, 0, {}, {}, 0, 1};
+    add_user_to_map (users, 9999, "DNE", tmp_user);
+    users_def_bank[9999] = "DNE";
+
+    bool result = check_map_for_dne_only (users, users_def_bank);
+
+    ok (result == true, "no flux-accounting data has been loaded");
+}
+
+
 int main (int argc, char* argv[])
 {
     // declare the number of tests that we plan to run
-    plan (9);
+    plan (11);
 
     // add users to the test map
     initialize_map (users);
@@ -208,6 +233,9 @@ int main (int argc, char* argv[])
     test_get_queue_info_no_queue_specified ();
     test_get_queue_info_unknown_queue ();
     test_get_queue_info_invalid_queue ();
+    test_check_map_dne_false ();
+    test_check_map_dne_true ();
+
     // indicate we are done testing
     done_testing ();
 
