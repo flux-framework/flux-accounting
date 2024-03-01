@@ -1,3 +1,24 @@
+flux-accounting version 0.30.0 - 2024-03-04
+-------------------------------------------
+
+#### Fixes
+
+* plugin: improve callback for `job.validate` (#415)
+
+* plugin: move helper functions for `plugin.query` callback (#417)
+
+* plugin: move `split_string ()` out of plugin code (#418)
+
+* plugin: improve callback for `job.new` (#421)
+
+* plugin: improve `job.update/job.update...queue` callbacks (#423)
+
+* plugin: improve `job.state.priority` callback (#425)
+
+#### Features
+
+* plugin: add external `Association` class to be used in plugin (#412)
+
 flux-accounting version 0.29.0 - 2024-01-08
 -------------------------------------------
 
