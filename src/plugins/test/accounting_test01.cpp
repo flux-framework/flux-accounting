@@ -26,6 +26,8 @@ extern "C" {
 // define a test users map to run tests on
 std::map<int, std::map<std::string, Association>> users;
 std::map<int, std::string> users_def_bank;
+// define a test queues map
+std::map<std::string, Queue> queues;
 
 
 /*
@@ -67,6 +69,16 @@ void initialize_map (
 
     // purposely do not add user2 to the def_bank_map
     add_user_to_map (users, 1002, "bank_A", user2);
+}
+
+
+/*
+ * helper function to add test queues to the queues map
+ */
+void initialize_queues () {
+    queues["bronze"] = {0, 5, 60, 100};
+    queues["silver"] = {0, 5, 60, 200};
+    queues["gold"] = {0, 5, 60, 300};
 }
 
 
@@ -125,19 +137,104 @@ static void split_string_and_push_back_success ()
 }
 
 
+// ensure the correct priority factor is returned for a valid queue
+static void test_get_queue_info_success ()
+{
+    Association a = users[1001]["bank_A"];
+    a.queues = {"bronze", "silver"};
+    a.queue_factor = get_queue_info (const_cast<char *> ("bronze"),
+                                     a.queues,
+                                     queues);
+
+    ok (a.queue_factor == 100,
+        "get_queue_info () returns the associated priority on success");
+}
+
+
+// ensure NO_QUEUE_SPECIFIED is returned when queue is NULL
+static void test_get_queue_info_no_queue_specified ()
+{
+    Association a = users[1001]["bank_A"];
+    a.queue_factor = get_queue_info (NULL, a.queues, queues);
+
+    ok (a.queue_factor == NO_QUEUE_SPECIFIED,
+        "NO_QUEUE_SPECIFIED is returned when no queue is passed in");
+}
+
+
+// ensure UNKOWN_QUEUE is returned when an unrecognized queue is passed in
+static void test_get_queue_info_unknown_queue ()
+{
+    Association a = users[1001]["bank_A"];
+    a.queue_factor = get_queue_info (const_cast<char *> ("platinum"),
+                                     a.queues,
+                                     queues);
+
+    ok (a.queue_factor == UNKNOWN_QUEUE,
+        "UNKNOWN_QUEUE is returned when an unrecognized queue is passed in");
+}
+
+
+// ensure INVALID_QUEUE is returned when an unrecognized queue is passed in
+static void test_get_queue_info_invalid_queue ()
+{
+    Association a = users[1001]["bank_A"];
+    a.queues = {"bronze", "silver"};
+    a.queue_factor = get_queue_info (const_cast<char *> ("gold"),
+                                     a.queues,
+                                     queues);
+
+    ok (a.queue_factor == INVALID_QUEUE,
+        "INVALID_QUEUE is returned when an inaccessible queue is passed in");
+}
+
+
+// ensure false is returned because we have valid flux-accounting data in map
+static void test_check_map_dne_false ()
+{
+    bool result = check_map_for_dne_only (users, users_def_bank);
+
+    ok (result == false, "valid flux-accounting data has been loaded");
+}
+
+
+// ensure true is returned because no flux-accounting data is loaded
+static void test_check_map_dne_true ()
+{
+    users.clear ();
+    users_def_bank.clear ();
+
+    Association tmp_user = {"DNE", 0.5, 5, 0, 7, 0, {}, {}, 0, 1};
+    add_user_to_map (users, 9999, "DNE", tmp_user);
+    users_def_bank[9999] = "DNE";
+
+    bool result = check_map_for_dne_only (users, users_def_bank);
+
+    ok (result == true, "no flux-accounting data has been loaded");
+}
+
+
 int main (int argc, char* argv[])
 {
     // declare the number of tests that we plan to run
-    plan (5);
+    plan (11);
 
     // add users to the test map
     initialize_map (users);
+    // add queues to the test queues map
+    initialize_queues ();
 
     test_direct_map_access (users);
     test_get_association_success ();
     test_get_association_noexist ();
     test_get_association_no_default_bank ();
     split_string_and_push_back_success ();
+    test_get_queue_info_success ();
+    test_get_queue_info_no_queue_specified ();
+    test_get_queue_info_unknown_queue ();
+    test_get_queue_info_invalid_queue ();
+    test_check_map_dne_false ();
+    test_check_map_dne_true ();
 
     // indicate we are done testing
     done_testing ();

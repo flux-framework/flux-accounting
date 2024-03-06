@@ -140,3 +140,50 @@ void split_string_and_push_back (const char *list,
         vec.push_back (substr);
     }
 }
+
+
+int get_queue_info (char *queue,
+                    const std::vector<std::string> &permissible_queues,
+                    const std::map<std::string, Queue> &queues)
+{
+    if (queue != NULL) {
+        // check #1) the queue passed in exists in the queues map;
+        // if the queue cannot be found, this means that flux-accounting
+        // does not know about the queue, and thus should return a default
+        // factor
+        auto q_it = queues.find (queue);
+        if (q_it == queues.end ())
+            return UNKNOWN_QUEUE;
+
+        // check #2) the queue passed in is valid for the association
+        auto vect_it = std::find (permissible_queues.begin (),
+                                  permissible_queues.end (),
+                                  queue);
+        if (vect_it == permissible_queues.end ())
+            // the queue passed in is not valid for the association
+            return INVALID_QUEUE;
+
+        try {
+            return queues.at (queue).priority;
+        } catch (const std::out_of_range &e) {
+            return UNKNOWN_QUEUE;
+        }
+    }
+
+    // no queue was specified, so just use a default queue factor
+    return NO_QUEUE_SPECIFIED;
+}
+
+
+bool check_map_for_dne_only (std::map<int, std::map<std::string, Association>>
+                               &users,
+                             std::map<int, std::string> &users_def_bank)
+{
+    for (const auto& entry : users) {
+        auto it = users_def_bank.find(entry.first);
+        if (it != users_def_bank.end() && it->second != "DNE")
+            return false;
+    }
+
+    return true;
+}

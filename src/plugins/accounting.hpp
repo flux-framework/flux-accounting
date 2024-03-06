@@ -26,6 +26,7 @@ extern "C" {
 #include <map>
 #include <iterator>
 #include <sstream>
+#include <algorithm>
 
 // all attributes are per-user/bank
 class Association {
@@ -46,6 +47,26 @@ public:
     json_t* to_json () const;    // convert object to JSON string
 };
 
+// - UKNOWN_QUEUE: a queue is specified for a submitted job that flux-accounting
+// does not know about
+// - NO_QUEUE_SPECIFIED: no queue was specified for this job
+// - INVALID_QUEUE: the association does not have permission to run jobs under
+// this queue
+#define UNKNOWN_QUEUE 0
+#define NO_QUEUE_SPECIFIED 0
+#define INVALID_QUEUE -6
+
+// min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
+// currently used or enforced in this plugin, so their values have no
+// effect in queue limit enforcement.
+class Queue {
+public:
+    int min_nodes_per_job;
+    int max_nodes_per_job;
+    int max_time_per_job;
+    int priority;
+};
+
 // get an Association object that points to user/bank in the users map;
 // return nullptr on failure
 Association* get_association (int userid,
@@ -61,5 +82,18 @@ json_t* convert_map_to_json (std::map<int, std::map<std::string, Association>>
 // split a list of items and add them to a vector in an Association object
 void split_string_and_push_back (const char *list,
                                  std::vector<std::string> &vec);
+
+// validate a potentially passed-in queue by an association and return the
+// integer priority associated with the queue
+int get_queue_info (char *queue,
+                    const std::vector<std::string> &permissible_queues,
+                    const std::map<std::string, Queue> &queues);
+
+// check the contents of the users map to see if every user's bank is a
+// temporary "DNE" value; if it is, the plugin is still waiting on
+// flux-accounting data
+bool check_map_for_dne_only (std::map<int, std::map<std::string, Association>>
+                               &users,
+                             std::map<int, std::string> &users_def_bank);
 
 #endif // ACCOUNTING_H
