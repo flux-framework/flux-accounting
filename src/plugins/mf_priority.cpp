@@ -768,18 +768,6 @@ static int job_updated (flux_plugin_t *p,
         return -1;
     }
 
-    // look up association
-    a = get_association (userid, bank, users, users_def_bank);
-
-    if (a == nullptr)
-        flux_jobtap_raise_exception (p,
-                                     FLUX_JOBTAP_CURRENT_JOB,
-                                     "mf_priority",
-                                     0,
-                                     "cannot find user/bank or "
-                                     "user/default bank entry "
-                                     "for uid: %i", userid);
-
     if (updated_queue != NULL)
         // the queue for the job has been updated, so fetch the priority
         // associated with this queue and assign it to the Association object
