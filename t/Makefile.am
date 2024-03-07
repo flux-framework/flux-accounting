@@ -33,6 +33,7 @@ TESTSCRIPTS = \
 	t1029-mf-priority-default-bank.t \
 	t1030-mf-priority-update-queue.t \
 	t1031-mf-priority-issue406.t \
+	t1032-mf-priority-update-bank.t \
 	t5000-valgrind.t \
 	python/t1000-example.py
 
