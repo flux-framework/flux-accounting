@@ -40,6 +40,7 @@ extern "C" {
 std::map<int, std::map<std::string, Association>> users;
 std::map<std::string, Queue> queues;
 std::map<int, std::string> users_def_bank;
+std::vector<std::string> projects;
 
 /******************************************************************************
  *                                                                            *
@@ -205,7 +206,7 @@ static void rec_update_cb (flux_t *h,
                            const flux_msg_t *msg,
                            void *arg)
 {
-    char *bank, *def_bank, *assoc_queues = NULL;
+    char *bank, *def_bank, *assoc_queues, *projects, *def_project = NULL;
     int uid, max_running_jobs, max_active_jobs = 0;
     double fshare = 0.0;
     json_t *data, *jtemp = NULL;
@@ -232,7 +233,8 @@ static void rec_update_cb (flux_t *h,
         json_t *el = json_array_get(data, i);
 
         if (json_unpack_ex (el, &error, 0,
-                            "{s:i, s:s, s:s, s:F, s:i, s:i, s:s, s:i}",
+                            "{s:i, s:s, s:s, s:F, s:i,"
+                            " s:i, s:s, s:i, s:s, s:s}",
                             "userid", &uid,
                             "bank", &bank,
                             "def_bank", &def_bank,
@@ -240,7 +242,9 @@ static void rec_update_cb (flux_t *h,
                             "max_running_jobs", &max_running_jobs,
                             "max_active_jobs", &max_active_jobs,
                             "queues", &assoc_queues,
-                            "active", &active) < 0)
+                            "active", &active,
+                            "projects", &projects,
+                            "def_project", &def_project) < 0)
             flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
 
         Association *b;
@@ -251,10 +255,14 @@ static void rec_update_cb (flux_t *h,
         b->max_run_jobs = max_running_jobs;
         b->max_active_jobs = max_active_jobs;
         b->active = active;
+        b->def_project = def_project;
 
         // split queues comma-delimited string and add it to b->queues vector
         b->queues.clear ();
         split_string_and_push_back (assoc_queues, b->queues);
+        // do the same thing for the association's projects
+        b->projects.clear ();
+        split_string_and_push_back (projects, b->projects);
 
         users_def_bank[uid] = def_bank;
     }
@@ -316,6 +324,53 @@ static void rec_q_cb (flux_t *h,
         q->max_time_per_job = max_time_per_job;
         q->priority = priority;
     }
+
+    return;
+error:
+    flux_respond_error (h, msg, errno, flux_msg_last_error (msg));
+}
+
+
+/*
+ * Unpack a payload from an external bulk update service and place it in the
+ * "projects" vector.
+ */
+static void rec_proj_cb (flux_t *h,
+                         flux_msg_handler_t *mh,
+                         const flux_msg_t *msg,
+                         void *arg)
+{
+    char *project = NULL;
+    json_t *data, *jtemp = NULL;
+    json_error_t error;
+    int num_data = 0;
+    size_t index;
+    json_t *el;
+
+    if (flux_request_unpack (msg, NULL, "{s:o}", "data", &data) < 0) {
+        flux_log_error (h, "failed to unpack custom_priority.trigger msg");
+        goto error;
+    }
+
+    if (!data || !json_is_array (data)) {
+        flux_log (h, LOG_ERR, "mf_priority: invalid project info payload");
+        goto error;
+    }
+    num_data = json_array_size (data);
+
+    // clear the projects vector
+    projects.clear ();
+
+    json_array_foreach (data, index, el) {
+        if (json_unpack_ex (el, &error, 0, "{s:s}", "project", &project) < 0) {
+            flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
+            goto error;
+        }
+        projects.push_back (project);
+    }
+
+    if (flux_respond (h, msg, NULL) < 0)
+        flux_log_error (h, "flux_respond");
 
     return;
 error:
@@ -1007,7 +1062,9 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
     if (flux_plugin_register (p, "mf_priority", tab) < 0
         || flux_jobtap_service_register (p, "rec_update", rec_update_cb, p)
         || flux_jobtap_service_register (p, "reprioritize", reprior_cb, p)
-        || flux_jobtap_service_register (p, "rec_q_update", rec_q_cb, p) < 0)
+        || flux_jobtap_service_register (p, "rec_q_update", rec_q_cb, p)
+        || flux_jobtap_service_register (p, "rec_proj_update", rec_proj_cb, p)
+        < 0)
         return -1;
 
     return 0;
