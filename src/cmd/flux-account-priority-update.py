@@ -71,12 +71,14 @@ def bulk_update(path):
     data = {}
     bulk_user_data = []
     bulk_q_data = []
+    bulk_proj_data = []
 
     # fetch all rows from association_table (will print out tuples)
     for row in cur.execute(
         """SELECT userid, bank, default_bank,
            fairshare, max_running_jobs, max_active_jobs,
-           queues, active FROM association_table"""
+           queues, active, projects, default_project
+           FROM association_table"""
     ):
         # create a JSON payload with the results of the query
         single_user_data = {
@@ -88,6 +90,8 @@ def bulk_update(path):
             "max_active_jobs": int(row[5]),
             "queues": str(row[6]),
             "active": int(row[7]),
+            "projects": str(row[8]),
+            "def_project": str(row[9]),
         }
         bulk_user_data.append(single_user_data)
 
@@ -110,6 +114,17 @@ def bulk_update(path):
     data = {"data": bulk_q_data}
 
     flux.Flux().rpc("job-manager.mf_priority.rec_q_update", json.dumps(data)).get()
+
+    # fetch all rows from project_table
+    for row in cur.execute("SELECT project FROM project_table"):
+        # create a JSON payload with the results of the query
+        single_project = {
+            "project": str(row[0]),
+        }
+        bulk_proj_data.append(single_project)
+
+    data = {"data": bulk_proj_data}
+    flux.Flux().rpc("job-manager.mf_priority.rec_proj_update", data).get()
 
     flux.Flux().rpc("job-manager.mf_priority.reprioritize")
 
