@@ -733,8 +733,8 @@ static int run_cb (flux_plugin_t *p,
 
 
 /*
- *  Apply an update on a job with regard to its queue once it has been
- *  validated.
+ *  Apply an update on a job with regard to its queue or associated bank once
+ *  it has been validated.
  */
 static int job_updated (flux_plugin_t *p,
                         const char *topic,
@@ -744,15 +744,19 @@ static int job_updated (flux_plugin_t *p,
     int userid;
     char *bank = NULL;
     char *updated_queue = NULL;
+    char *updated_bank = NULL;
     Association *a;
 
+    flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s{s{s{s?s}}}, s:{s?s}}",
+                                "{s:i, s{s{s{s?s}}}, s:{s?s, s?s}}",
                                 "userid", &userid,
-                                "jobspec", "attributes", "system", "bank", &bank,
+                                "jobspec", "attributes", "system", "bank",
+                                &bank,
                                 "updates",
-                                "attributes.system.queue", &updated_queue) < 0)
+                                  "attributes.system.queue", &updated_queue,
+                                  "attributes.system.bank", &updated_bank) < 0)
         return flux_jobtap_error (p, args, "unable to unpack plugin args");
 
     // grab Association object from job
@@ -768,17 +772,40 @@ static int job_updated (flux_plugin_t *p,
         return -1;
     }
 
-    // look up association
-    a = get_association (userid, bank, users, users_def_bank);
+    if (updated_bank != NULL && a->bank_name != std::string (updated_bank)) {
+        // the bank for the user has been updated, so we need to update
+        // the Association object for this job
 
-    if (a == nullptr)
-        flux_jobtap_raise_exception (p,
+        // get attributes of new bank
+        Association *a_new = get_association (userid,
+                                              updated_bank,
+                                              users,
+                                              users_def_bank);
+        if (a_new == nullptr) {
+            flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                         "mf_priority", 0,
+                                         "job.update: cannot find user/bank "
+                                         "or user/default bank entry for "
+                                         "uid: %i", userid);
+
+            return -1;
+        }
+
+        // update the active jobs count of the old bank
+        a->cur_active_jobs--;
+        // assign the new Association object to the original Association object
+        a = a_new;
+        // update the active jobs count of the updated bank
+        a->cur_active_jobs++;
+
+        // re-pack the updated Association object to the job
+        if (flux_jobtap_job_aux_set (p,
                                      FLUX_JOBTAP_CURRENT_JOB,
-                                     "mf_priority",
-                                     0,
-                                     "cannot find user/bank or "
-                                     "user/default bank entry "
-                                     "for uid: %i", userid);
+                                     "mf_priority:bank_info",
+                                     a,
+                                     NULL) < 0)
+            flux_log_error (h, "flux_jobtap_job_aux_set");
+    }
 
     if (updated_queue != NULL)
         // the queue for the job has been updated, so fetch the priority
@@ -831,6 +858,63 @@ static int update_queue_cb (flux_plugin_t *p,
                                   args,
                                   "mf_priority: queue not valid for user: %s",
                                   updated_queue);
+
+    return 0;
+}
+
+
+/*
+ *  Check for an updated bank and validate it for a user/bank; if the
+ *  user/bank does not have access to the bank they are trying to update
+ *  their job for, reject the update and keep the job under its current bank.
+ *
+ *  Also check the active jobs and running jobs limits for the new bank; if the
+ *  new bank is currently at its max active jobs or max running jobs limit,
+ *  reject the update and keep the job under its current bank.
+ */
+static int update_bank_cb (flux_plugin_t *p,
+                           const char *topic,
+                           flux_plugin_arg_t *args,
+                           void *data)
+{
+    int userid;
+    char *bank = NULL;
+    Association *a;
+
+    if (flux_plugin_arg_unpack (args,
+                                FLUX_PLUGIN_ARG_IN,
+                                "{s:i, s:s}",
+                                "userid", &userid,
+                                "value", &bank) < 0) {
+        return flux_jobtap_error (p, args, "unable to unpack bank arg");
+    }
+
+    // look up association
+    a = get_association (userid, bank, users, users_def_bank);
+    if (a == nullptr)
+        return flux_jobtap_reject_job (p,
+                                       args,
+                                       "cannot find user/bank or "
+                                       "user/default bank entry "
+                                       "for uid: %i", userid);
+
+    if (a->max_active_jobs > 0 && a->cur_active_jobs >= a->max_active_jobs)
+        // new bank is already at its max active jobs limit; reject update
+        return flux_jobtap_error (p,
+                                  args,
+                                  "new bank is already at max-active-jobs "
+                                  "limit");
+
+    if (a->max_run_jobs > 0 && a->cur_run_jobs == a->max_run_jobs)
+        // jobs are held in DEPEND state when an association is at their max
+        // running jobs limit and there isn't a way to bring a job back to
+        // DEPEND, so just reject the update
+        return flux_jobtap_error (p,
+                                  args,
+                                  "updating to bank %s while it is already at "
+                                  "max-run-jobs limit is not allowed; try "
+                                  "again later",
+                                  bank);
 
     return 0;
 }
@@ -909,6 +993,7 @@ static const struct flux_plugin_handler tab[] = {
     { "job.state.run", run_cb, NULL},
     { "plugin.query", query_cb, NULL},
     { "job.update.attributes.system.queue", update_queue_cb, NULL },
+    { "job.update.attributes.system.bank", update_bank_cb, NULL },
     { 0 },
 };
 
