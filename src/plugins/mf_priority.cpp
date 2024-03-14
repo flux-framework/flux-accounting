@@ -132,6 +132,35 @@ static int update_jobspec_bank (flux_plugin_t *p, int userid)
 }
 
 
+/*
+ * Create a special Association object for an association's job while the
+ * plugin waits for flux-accounting data to be loaded.
+ */
+static void add_missing_bank_info (flux_plugin_t *p, flux_t *h, int userid)
+{
+    Association *b;
+
+    b = &users[userid]["DNE"];
+    users_def_bank[userid] = "DNE";
+
+    b->bank_name = "DNE";
+    b->fairshare = 0.1;
+    b->max_run_jobs = BANK_INFO_MISSING;
+    b->cur_run_jobs = 0;
+    b->max_active_jobs = 1000;
+    b->cur_active_jobs = 0;
+    b->active = 1;
+    b->held_jobs = std::vector<long int>();
+
+    if (flux_jobtap_job_aux_set (p,
+                                 FLUX_JOBTAP_CURRENT_JOB,
+                                 "mf_priority:bank_info",
+                                 b,
+                                 NULL) < 0)
+        flux_log_error (h, "flux_jobtap_job_aux_set");
+}
+
+
 /******************************************************************************
  *                                                                            *
  *                               Callbacks                                    *
@@ -433,31 +462,6 @@ static int priority_cb (flux_plugin_t *p,
     }
 
     return 0;
-}
-
-
-static void add_missing_bank_info (flux_plugin_t *p, flux_t *h, int userid)
-{
-    Association *b;
-
-    b = &users[userid]["DNE"];
-    users_def_bank[userid] = "DNE";
-
-    b->bank_name = "DNE";
-    b->fairshare = 0.1;
-    b->max_run_jobs = BANK_INFO_MISSING;
-    b->cur_run_jobs = 0;
-    b->max_active_jobs = 1000;
-    b->cur_active_jobs = 0;
-    b->active = 1;
-    b->held_jobs = std::vector<long int>();
-
-    if (flux_jobtap_job_aux_set (p,
-                                 FLUX_JOBTAP_CURRENT_JOB,
-                                 "mf_priority:bank_info",
-                                 b,
-                                 NULL) < 0)
-        flux_log_error (h, "flux_jobtap_job_aux_set");
 }
 
 
