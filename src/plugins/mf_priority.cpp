@@ -219,9 +219,6 @@ static void rec_update_cb (flux_t *h,
         goto error;
     }
 
-    if (flux_respond (h, msg, NULL) < 0)
-        flux_log_error (h, "flux_respond");
-
     if (!data || !json_is_array (data)) {
         flux_log (h, LOG_ERR, "mf_priority: invalid bulk_update payload");
         goto error;
@@ -259,6 +256,8 @@ static void rec_update_cb (flux_t *h,
         users_def_bank[uid] = def_bank;
     }
 
+    if (flux_respond (h, msg, NULL) < 0)
+        flux_log_error (h, "flux_respond");
     return;
 error:
     flux_respond_error (h, msg, errno, flux_msg_last_error (msg));
@@ -283,9 +282,6 @@ static void rec_q_cb (flux_t *h,
         flux_log_error (h, "failed to unpack custom_priority.trigger msg");
         goto error;
     }
-
-    if (flux_respond (h, msg, NULL) < 0)
-        flux_log_error (h, "flux_respond");
 
     if (!data || !json_is_array (data)) {
         flux_log (h, LOG_ERR, "mf_priority: invalid queue info payload");
@@ -317,6 +313,8 @@ static void rec_q_cb (flux_t *h,
         q->priority = priority;
     }
 
+    if (flux_respond (h, msg, NULL) < 0)
+        flux_log_error (h, "flux_respond");
     return;
 error:
     flux_respond_error (h, msg, errno, flux_msg_last_error (msg));
