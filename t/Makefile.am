@@ -102,7 +102,12 @@ EXTRA_DIST= \
 	expected/job_usage/post_update1.expected \
 	expected/job_usage/post_update2.expected \
 	expected/plugin_state/internal_state_1.expected \
-	expected/plugin_state/internal_state_3.expected
+	expected/plugin_state/internal_state_3.expected \
+	expected/plugin_state/internal_state_3.expected \
+	expected/sample_payloads/same_fairshare.json \
+	expected/sample_payloads/small_no_tie.json \
+	expected/sample_payloads/small_tie_all.json \
+	expected/sample_payloads/small_tie.json
 
 clean-local:
 	rm -fr trash-directory.* test-results .prove *.broker.log */*.broker.log *.output
