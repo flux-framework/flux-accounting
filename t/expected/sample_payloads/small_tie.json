@@ -1,0 +1,84 @@
+{
+    "data" : [
+      {
+        "userid": 5011,
+        "bank": "account1",
+        "def_bank": "account1",
+        "fairshare": 0.5,
+        "max_running_jobs": 5,
+        "max_active_jobs": 7,
+        "queues": "",
+        "active": 1
+      },
+      {
+        "userid": 5012,
+        "bank": "account1",
+        "def_bank": "account1",
+        "fairshare": 0.5,
+        "max_running_jobs": 5,
+        "max_active_jobs": 7,
+        "queues": "",
+        "active": 1
+      },
+      {
+        "userid": 5013,
+        "bank": "account1",
+        "def_bank": "account1",
+        "fairshare": 0.75,
+        "max_running_jobs": 5,
+        "max_active_jobs": 7,
+        "queues": "",
+        "active": 1
+      },
+      {
+        "userid": 5021,
+        "bank": "account2",
+        "def_bank": "account2",
+        "fairshare": 0.5,
+        "max_running_jobs": 5,
+        "max_active_jobs": 7,
+        "queues": "",
+        "active": 1
+      },
+      {
+        "userid": 5022,
+        "bank": "account2",
+        "def_bank": "account2",
+        "fairshare": 0.5,
+        "max_running_jobs": 5,
+        "max_active_jobs": 7,
+        "queues": "",
+        "active": 1
+      },
+      {
+        "userid": 5023,
+        "bank": "account2",
+        "def_bank": "account2",
+        "fairshare": 0.75,
+        "max_running_jobs": 5,
+        "max_active_jobs": 7,
+        "queues": "",
+        "active": 1
+      },
+      {
+        "userid": 5031,
+        "bank": "account3",
+        "def_bank": "account3",
+        "fairshare": 1.0,
+        "max_running_jobs": 5,
+        "max_active_jobs": 7,
+        "queues": "",
+        "active": 1
+      },
+      {
+        "userid": 5032,
+        "bank": "account3",
+        "def_bank": "account3",
+        "fairshare": 0.875,
+        "max_running_jobs": 5,
+        "max_active_jobs": 7,
+        "queues": "",
+        "active": 1
+      }
+    ]
+}
