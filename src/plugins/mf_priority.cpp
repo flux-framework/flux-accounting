@@ -588,6 +588,7 @@ static int validate_cb (flux_plugin_t *p,
     int userid;
     char *bank = NULL;
     char *queue = NULL;
+    const char *project = NULL;
     flux_job_state_t state;
     int max_run_jobs, cur_active_jobs, max_active_jobs, queue_factor = 0;
     double fairshare = 0.0;
@@ -599,11 +600,12 @@ static int validate_cb (flux_plugin_t *p,
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s:i, s{s{s{s?s, s?s}}}}",
+                                "{s:i, s:i, s{s{s{s?s, s?s, s?s}}}}",
                                 "userid", &userid,
                                 "state", &state,
                                 "jobspec", "attributes", "system",
-                                "bank", &bank, "queue", &queue) < 0) {
+                                "bank", &bank, "queue", &queue,
+                                "project", &project) < 0) {
         return flux_jobtap_reject_job (p, args, "unable to unpack bank arg");
     }
 
@@ -638,6 +640,15 @@ static int validate_cb (flux_plugin_t *p,
         // reject the job
         return flux_jobtap_reject_job (p, args, "Queue not valid for user: %s",
                                        queue);
+
+    if (project != NULL) {
+        // a project was specified on job submission; validate it
+        if (get_project_info (project, a->projects, projects) < 0)
+            // the association specified a project that they do not belong to
+            // or that flux-accounting does not know about; reject the job
+            return flux_jobtap_reject_job (p, args, "project not valid for "
+                                           "user: %s", project);
+    }
 
     cur_active_jobs = a->cur_active_jobs;
     max_active_jobs = a->max_active_jobs;
