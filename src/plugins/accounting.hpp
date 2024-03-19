@@ -58,6 +58,12 @@ public:
 #define NO_QUEUE_SPECIFIED 0
 #define INVALID_QUEUE -6
 
+// - UNKNOWN_PROJECT: a project that flux-accounting doesn't know about
+// - INVALID_PROJECT: a project that the association doesn't have permission
+// to charge jobs under
+#define UNKNOWN_PROJECT -6
+#define INVALID_PROJECT -7
+
 // min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
 // currently used or enforced in this plugin, so their values have no
 // effect in queue limit enforcement.
@@ -97,5 +103,10 @@ int get_queue_info (char *queue,
 bool check_map_for_dne_only (std::map<int, std::map<std::string, Association>>
                                &users,
                              std::map<int, std::string> &users_def_bank);
+
+// validate a potentially passed-in project by an association
+int get_project_info (const char *project,
+                      std::vector<std::string> &permissible_projects,
+                      std::vector<std::string> projects);
 
 #endif // ACCOUNTING_H
