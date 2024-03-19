@@ -8,7 +8,9 @@
         "max_running_jobs": 5,
         "max_active_jobs": 7,
         "queues": "",
-        "active": 1
+        "active": 1,
+        "projects": "*",
+        "def_project": "*"
       },
       {
         "userid": 5012,
@@ -18,7 +20,9 @@
         "max_running_jobs": 5,
         "max_active_jobs": 7,
         "queues": "",
-        "active": 1
+        "active": 1,
+        "projects": "*",
+        "def_project": "*"
       },
       {
         "userid": 5013,
@@ -28,7 +32,9 @@
         "max_running_jobs": 5,
         "max_active_jobs": 7,
         "queues": "",
-        "active": 1
+        "active": 1,
+        "projects": "*",
+        "def_project": "*"
       },
       {
         "userid": 5021,
@@ -38,7 +44,9 @@
         "max_running_jobs": 5,
         "max_active_jobs": 7,
         "queues": "",
-        "active": 1
+        "active": 1,
+        "projects": "*",
+        "def_project": "*"
       },
       {
         "userid": 5022,
@@ -48,7 +56,9 @@
         "max_running_jobs": 5,
         "max_active_jobs": 7,
         "queues": "",
-        "active": 1
+        "active": 1,
+        "projects": "*",
+        "def_project": "*"
       },
       {
         "userid": 5031,
@@ -58,7 +68,9 @@
         "max_running_jobs": 5,
         "max_active_jobs": 7,
         "queues": "",
-        "active": 1
+        "active": 1,
+        "projects": "*",
+        "def_project": "*"
       },
       {
         "userid": 5032,
@@ -68,7 +80,9 @@
         "max_running_jobs": 5,
         "max_active_jobs": 7,
         "queues": "",
-        "active": 1
+        "active": 1,
+        "projects": "*",
+        "def_project": "*"
       }
     ]
 }
