@@ -141,6 +141,33 @@ static int update_jobspec_bank (flux_plugin_t *p, int userid)
 
 
 /*
+ * Update the jobspec with the default project the association used to
+ * submit their job under.
+ */
+static int update_jobspec_project (flux_plugin_t *p, int userid, char *bank)
+{
+    Association *a = get_association (userid, bank, users, users_def_bank);
+    if (a == nullptr)
+        // association could not be found
+        return -1;
+
+    // get association's default project
+    std::string project = a->def_project;
+
+    if (!project.empty ()) {
+        // post jobspec-update event
+        if (flux_jobtap_jobspec_update_pack (p,
+                                             "{s:s}",
+                                             "attributes.system.project",
+                                             project.c_str ()) < 0)
+            return -1;
+    }
+
+    return 0;
+}
+
+
+/*
  * Create a special Association object for an association's job while the
  * plugin waits for flux-accounting data to be loaded.
  */
