@@ -479,17 +479,19 @@ static int priority_cb (flux_plugin_t *p,
     int urgency, userid;
     char *bank = NULL;
     char *queue = NULL;
+    const char *project = NULL;
     int64_t priority;
     Association *b;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s:i, s{s{s{s?s, s?s}}}}",
+                                "{s:i, s:i, s{s{s{s?s, s?s, s?s}}}}",
                                 "urgency", &urgency,
                                 "userid", &userid,
                                 "jobspec", "attributes", "system",
-                                "bank", &bank, "queue", &queue) < 0) {
+                                "bank", &bank, "queue", &queue,
+                                "project", &project) < 0) {
         flux_log (h,
                   LOG_ERR,
                   "flux_plugin_arg_unpack: %s",
@@ -569,6 +571,18 @@ static int priority_cb (flux_plugin_t *p,
                                              "failed to update jobspec "
                                              "with bank name");
                 return -1;
+            }
+
+            if (project == NULL) {
+                // we also need to update the jobspec with the default project
+                // used to submit this job under
+                if (update_jobspec_project (p, userid, bank) < 0) {
+                    flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                                "mf_priority", 0,
+                                                "failed to update jobspec "
+                                                "with project name");
+                    return -1;
+                }
             }
         }
     }
@@ -711,16 +725,18 @@ static int new_cb (flux_plugin_t *p,
     int userid;
     char *bank = NULL;
     char *queue = NULL;
+    const char *project = NULL;
     int max_run_jobs, cur_active_jobs, max_active_jobs = 0;
     Association *b;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s{s{s{s?s, s?s}}}}",
+                                "{s:i, s{s{s{s?s, s?s, s?s}}}}",
                                 "userid", &userid,
                                 "jobspec", "attributes", "system",
-                                "bank", &bank, "queue", &queue) < 0) {
+                                "bank", &bank, "queue", &queue,
+                                "project", &project) < 0) {
         return flux_jobtap_reject_job (p, args, "unable to unpack bank arg");
     }
 
@@ -776,6 +792,18 @@ static int new_cb (flux_plugin_t *p,
             flux_log_error (h, "flux_jobtap_job_aux_set");
 
         return 0;
+    }
+
+    if (project == NULL) {
+        // this job is meant to run under a default project, so update
+        // the jobspec with the project name
+        if (update_jobspec_project (p, userid, bank) < 0) {
+            flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                         "mf_priority", 0,
+                                         "failed to update jobspec with "
+                                         "project name");
+            return -1;
+        }
     }
 
     if (flux_jobtap_job_aux_set (p,
