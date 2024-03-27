@@ -24,34 +24,15 @@ from fluxacct.accounting import bank_subcommands as b
 
 
 class TestAccountingCLI(unittest.TestCase):
-    # create accounting, job-archive databases
+    # create accounting database
     @classmethod
     def setUpClass(self):
-        global jobs_conn
         global acct_conn
         global cur
 
         # create example job-archive database, output file
         global op
         op = "job_records.csv"
-
-        jobs_conn = sqlite3.connect("file:jobs.db?mode:rwc", uri=True)
-        jobs_conn.execute(
-            """
-                CREATE TABLE IF NOT EXISTS jobs (
-                    id            char(16)  NOT NULL,
-                    userid        int       NOT NULL,
-                    ranks         text      NOT NULL,
-                    t_submit      real      NOT NULL,
-                    t_run         real      NOT NULL,
-                    t_cleanup     real      NOT NULL,
-                    t_inactive    real      NOT NULL,
-                    eventlog      text      NOT NULL,
-                    jobspec       text      NOT NULL,
-                    R             text      NOT NULL,
-                    PRIMARY KEY   (id)
-            );"""
-        )
 
         c.create_db("FluxAccountingUsers.db")
         try:
@@ -85,7 +66,7 @@ class TestAccountingCLI(unittest.TestCase):
         interval = 0  # add to job timestamps to diversify job-archive records
 
         @mock.patch("time.time", mock.MagicMock(return_value=9000000))
-        def populate_job_archive_db(jobs_conn, userid, bank, ranks, nodes, num_entries):
+        def populate_job_archive_db(acct_conn, userid, bank, ranks, nodes, num_entries):
             nonlocal jobid
             nonlocal interval
             t_inactive_delta = 2000
@@ -115,37 +96,33 @@ class TestAccountingCLI(unittest.TestCase):
 
             for i in range(num_entries):
                 try:
-                    jobs_conn.execute(
+                    acct_conn.execute(
                         """
                         INSERT INTO jobs (
                             id,
                             userid,
-                            ranks,
                             t_submit,
                             t_run,
-                            t_cleanup,
                             t_inactive,
-                            eventlog,
-                            jobspec,
-                            R
+                            ranks,
+                            R,
+                            jobspec
                         )
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         (
                             jobid,
                             userid,
-                            ranks,
                             (time.time() + interval) - 2000,
                             (time.time() + interval),
-                            (time.time() + interval) + 1000,
                             (time.time() + interval) + t_inactive_delta,
-                            "eventlog",
-                            '{ "attributes": { "system": { "bank": "' + bank + '"} } }',
+                            ranks,
                             R_input,
+                            '{ "attributes": { "system": { "bank": "' + bank + '"} } }',
                         ),
                     )
                     # commit changes
-                    jobs_conn.commit()
+                    acct_conn.commit()
                 # make sure entry is unique
                 except sqlite3.IntegrityError as integrity_error:
                     print(integrity_error)
@@ -155,35 +132,35 @@ class TestAccountingCLI(unittest.TestCase):
                 t_inactive_delta += 100
 
         # populate the job-archive DB with fake job entries
-        populate_job_archive_db(jobs_conn, 1001, "C", "0", "fluke[0]", 2)
+        populate_job_archive_db(acct_conn, 1001, "C", "0", "fluke[0]", 2)
 
-        populate_job_archive_db(jobs_conn, 1002, "C", "0-1", "fluke[0-1]", 3)
-        populate_job_archive_db(jobs_conn, 1002, "C", "0", "fluke[0]", 2)
+        populate_job_archive_db(acct_conn, 1002, "C", "0-1", "fluke[0-1]", 3)
+        populate_job_archive_db(acct_conn, 1002, "C", "0", "fluke[0]", 2)
 
-        populate_job_archive_db(jobs_conn, 1003, "D", "0-2", "fluke[0-2]", 3)
+        populate_job_archive_db(acct_conn, 1003, "D", "0-2", "fluke[0-2]", 3)
 
-        populate_job_archive_db(jobs_conn, 1004, "D", "0-3", "fluke[0-3]", 4)
-        populate_job_archive_db(jobs_conn, 1004, "D", "0", "fluke[0]", 4)
+        populate_job_archive_db(acct_conn, 1004, "D", "0-3", "fluke[0-3]", 4)
+        populate_job_archive_db(acct_conn, 1004, "D", "0", "fluke[0]", 4)
 
     # passing a valid jobid should return
     # its job information
     def test_01_with_jobid_valid(self):
         my_dict = {"jobid": 102}
-        job_records = jobs.output_job_records(jobs_conn, op, **my_dict)
+        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
         print(job_records)
         self.assertEqual(len(job_records), 2)
 
     # passing a bad jobid should return no records
     def test_02_with_jobid_failure(self):
         my_dict = {"jobid": 000}
-        job_records = jobs.output_job_records(jobs_conn, op, **my_dict)
+        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 1)
 
     # passing a timestamp before the first job to
     # start should return all of the jobs
     def test_03_after_start_time_all(self):
         my_dict = {"after_start_time": 0}
-        job_records = jobs.output_job_records(jobs_conn, op, **my_dict)
+        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 19)
 
     # passing a timestamp after all of the start time
@@ -191,7 +168,7 @@ class TestAccountingCLI(unittest.TestCase):
     @mock.patch("time.time", mock.MagicMock(return_value=11000000))
     def test_04_after_start_time_none(self):
         my_dict = {"after_start_time": time.time()}
-        job_records = jobs.output_job_records(jobs_conn, op, **my_dict)
+        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 1)
 
     # passing a timestamp before the end time of the
@@ -199,21 +176,21 @@ class TestAccountingCLI(unittest.TestCase):
     @mock.patch("time.time", mock.MagicMock(return_value=11000000))
     def test_05_before_end_time_all(self):
         my_dict = {"before_end_time": time.time()}
-        job_records = jobs.output_job_records(jobs_conn, op, **my_dict)
+        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 19)
 
     # passing a timestamp before the end time of
     # the first completed jobs should return no jobs
     def test_06_before_end_time_none(self):
         my_dict = {"before_end_time": 0}
-        job_records = jobs.output_job_records(jobs_conn, op, **my_dict)
+        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 1)
 
     # passing a user not in the jobs table
     # should return no jobs
     def test_07_by_user_failure(self):
         my_dict = {"user": "9999"}
-        job_records = jobs.output_job_records(jobs_conn, op, **my_dict)
+        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 1)
 
     # view_jobs_run_by_username() interacts with a
@@ -221,7 +198,7 @@ class TestAccountingCLI(unittest.TestCase):
     # just pass the userid
     def test_08_by_user_success(self):
         my_dict = {"user": "1001"}
-        job_records = jobs.output_job_records(jobs_conn, op, **my_dict)
+        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 3)
 
     # passing a combination of params should further
@@ -229,14 +206,14 @@ class TestAccountingCLI(unittest.TestCase):
     @mock.patch("time.time", mock.MagicMock(return_value=9000500))
     def test_09_multiple_params(self):
         my_dict = {"user": "1001", "after_start_time": time.time()}
-        job_records = jobs.output_job_records(jobs_conn, op, **my_dict)
+        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 2)
 
     # passing no parameters will result in a generic query
     # returning all results
     def test_10_no_options_passed(self):
         my_dict = {}
-        job_records = jobs.output_job_records(jobs_conn, op, **my_dict)
+        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 19)
 
     # users that have run a lot of jobs should have a larger usage factor
@@ -255,7 +232,6 @@ class TestAccountingCLI(unittest.TestCase):
         acct_conn.commit()
 
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn,
             acct_conn,
             pdhl=1,
             user=user,
@@ -281,7 +257,6 @@ class TestAccountingCLI(unittest.TestCase):
         acct_conn.commit()
 
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn,
             acct_conn,
             pdhl=1,
             user=user,
@@ -299,7 +274,6 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(ts_old, 0.0)
 
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn,
             acct_conn,
             pdhl=1,
             user="1003",
@@ -335,44 +309,39 @@ class TestAccountingCLI(unittest.TestCase):
         bank = "C"
 
         try:
-            jobs_conn.execute(
+            acct_conn.execute(
                 """
                 INSERT INTO jobs (
                     id,
                     userid,
-                    ranks,
                     t_submit,
                     t_run,
-                    t_cleanup,
                     t_inactive,
-                    eventlog,
-                    jobspec,
-                    R
+                    ranks,
+                    R,
+                    jobspec
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     "200",
                     "1001",
-                    "0",
                     time.time() + 100,
                     time.time() + 300,
-                    time.time() + 400,
                     time.time() + 500,
-                    "eventlog",
-                    '{ "attributes": { "system": { "bank": "C"} } }',
+                    "0",
                     '{"version":1,"execution": {"R_lite":[{"rank":"0","children": {"core": "0"}}]}}',
+                    '{ "attributes": { "system": { "bank": "C"} } }',
                 ),
             )
             # commit changes
-            jobs_conn.commit()
+            acct_conn.commit()
         # make sure entry is unique
         except sqlite3.IntegrityError as integrity_error:
             print(integrity_error)
 
         # re-calculate usage factor for user1001
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn,
             acct_conn,
             pdhl=1,
             user=user,
@@ -389,7 +358,6 @@ class TestAccountingCLI(unittest.TestCase):
         bank = "C"
 
         usage_factor = jobs.calc_usage_factor(
-            jobs_conn,
             acct_conn,
             pdhl=1,
             user=user,
@@ -412,7 +380,7 @@ class TestAccountingCLI(unittest.TestCase):
         job_usage = cur.fetchone()[0]
         self.assertEqual(job_usage, 17044.0)
 
-        jobs.update_job_usage(acct_conn, jobs_conn, pdhl=1)
+        jobs.update_job_usage(acct_conn, pdhl=1)
 
         cur.execute(s_stmt)
         job_usage = cur.fetchone()[0]
@@ -467,7 +435,7 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(job_usage, 17044.0)
 
-        jobs.update_job_usage(acct_conn, jobs_conn, pdhl=1)
+        jobs.update_job_usage(acct_conn, pdhl=1)
 
         cur.execute(s_stmt)
         job_usage = cur.fetchone()[0]
@@ -476,8 +444,6 @@ class TestAccountingCLI(unittest.TestCase):
     # remove database and log file
     @classmethod
     def tearDownClass(self):
-        jobs_conn.close()
-        os.remove("jobs.db")
         os.remove("job_records.csv")
         os.remove("FluxAccountingUsers.db")
 

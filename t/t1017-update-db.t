@@ -59,6 +59,7 @@ test_expect_success 'get all the tables of the old DB and check that new table w
 	job_usage_factor_table
 	t_half_life_period_table
 	project_table
+	jobs
 	organization
 	queue_table
 	EOF
