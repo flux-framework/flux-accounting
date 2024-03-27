@@ -32,8 +32,30 @@ test_expect_success 'create fake_payload.py' '
 	# create an array of JSON payloads
 	bulk_update_data = {
 		"data" : [
-			{"userid": userid, "bank": "account3", "def_bank": "account3", "fairshare": 0.45321, "max_running_jobs": 1, "max_active_jobs": 3},
-			{"userid": userid, "bank": "account2", "def_bank": "account3", "fairshare": 0.11345, "max_running_jobs": 1, "max_active_jobs": 3}
+			{
+				"userid": userid,
+				"bank": "account3",
+				"def_bank": "account3",
+				"fairshare": 0.45321,
+				"max_running_jobs": 1,
+				"max_active_jobs": 3,
+				"queues": "",
+				"active": 1,
+				"projects": "*",
+				"def_project": "*"
+			},
+			{
+				"userid": userid,
+				"bank": "account2",
+				"def_bank": "account3",
+				"fairshare": 0.11345,
+				"max_running_jobs": 1,
+				"max_active_jobs": 3,
+				"queues": "",
+				"active": 1,
+				"projects": "*",
+				"def_project": "*"
+			}
 		]
 	}
 	flux.Flux().rpc("job-manager.mf_priority.rec_update", json.dumps(bulk_update_data)).get()

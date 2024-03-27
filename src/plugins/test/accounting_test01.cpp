@@ -28,6 +28,8 @@ std::map<int, std::map<std::string, Association>> users;
 std::map<int, std::string> users_def_bank;
 // define a test queues map
 std::map<std::string, Queue> queues;
+// define a vector of chargeable projects
+std::vector<std::string> projects;
 
 
 /*
@@ -50,7 +52,9 @@ void add_user_to_map (
         a.held_jobs,
         a.queues,
         a.queue_factor,
-        a.active
+        a.active,
+        a.projects,
+        a.def_project
     };
 }
 
@@ -61,8 +65,8 @@ void add_user_to_map (
 void initialize_map (
     std::map<int, std::map<std::string, Association>> &users)
 {
-    Association user1 = {"bank_A", 0.5, 5, 0, 7, 0, {}, {}, 0, 1};
-    Association user2 = {"bank_A", 0.5, 5, 0, 7, 0, {}, {}, 0, 1};
+    Association user1 = {"bank_A", 0.5, 5, 0, 7, 0, {}, {}, 0, 1, {"*"}, "*"};
+    Association user2 = {"bank_A", 0.5, 5, 0, 7, 0, {}, {}, 0, 1, {"*"}, "*"};
 
     add_user_to_map (users, 1001, "bank_A", user1);
     users_def_bank[1001] = "bank_A";
@@ -79,6 +83,17 @@ void initialize_queues () {
     queues["bronze"] = {0, 5, 60, 100};
     queues["silver"] = {0, 5, 60, 200};
     queues["gold"] = {0, 5, 60, 300};
+}
+
+
+/*
+ * helper function to add test projects to the projects vector
+ */
+void initialize_projects () {
+    projects.push_back ("*");
+    projects.push_back ("A");
+    projects.push_back ("B");
+    projects.push_back ("C");
 }
 
 
@@ -189,6 +204,54 @@ static void test_get_queue_info_invalid_queue ()
 }
 
 
+// ensure user has access to a default project
+static void test_get_project_info_success_default ()
+{
+    Association a = users[1001]["bank_A"];
+    const char *p = "*";
+    int result = get_project_info (p, a.projects, projects);
+
+    ok (result == 0, "association has access to default project");
+}
+
+
+// ensure we can access projects that we add to an association
+static void test_get_project_info_success_specified ()
+{
+    Association a = users[1001]["bank_A"];
+    a.projects = {"*", "A"};
+    const char *p = "A";
+
+    int result = get_project_info (p, a.projects, projects);
+
+    ok (result == 0, "association has access to a specified project");
+}
+
+
+// ensure UNKNOWN_PROJECT is returned when an unrecognized project is passed in
+static void test_get_project_info_unknown_project ()
+{
+    Association a = users[1001]["bank_A"];
+    const char *p = "foo";
+    int result = get_project_info (p, a.projects, projects);
+
+    ok (result == UNKNOWN_PROJECT,
+        "UNKNOWN_PROJECT is returned when an unrecognized project is passed in");
+}
+
+
+// ensure INVALID_PROJECT is returned when an invalid project is passed in
+static void test_get_project_info_invalid_project ()
+{
+    Association a = users[1001]["bank_A"];
+    const char *p = "B";
+    int result = get_project_info (p, a.projects, projects);
+
+    ok (result == INVALID_PROJECT,
+        "INVALID_PROJECT is returned when an inaccessible project is passed in");
+}
+
+
 // ensure false is returned because we have valid flux-accounting data in map
 static void test_check_map_dne_false ()
 {
@@ -204,7 +267,7 @@ static void test_check_map_dne_true ()
     users.clear ();
     users_def_bank.clear ();
 
-    Association tmp_user = {"DNE", 0.5, 5, 0, 7, 0, {}, {}, 0, 1};
+    Association tmp_user = {"DNE", 0.5, 5, 0, 7, 0, {}, {}, 0, 1, {"*"}, "*"};
     add_user_to_map (users, 9999, "DNE", tmp_user);
     users_def_bank[9999] = "DNE";
 
@@ -217,12 +280,14 @@ static void test_check_map_dne_true ()
 int main (int argc, char* argv[])
 {
     // declare the number of tests that we plan to run
-    plan (11);
+    plan (15);
 
     // add users to the test map
     initialize_map (users);
     // add queues to the test queues map
     initialize_queues ();
+    // add projects to the test projects vector
+    initialize_projects ();
 
     test_direct_map_access (users);
     test_get_association_success ();
@@ -233,6 +298,10 @@ int main (int argc, char* argv[])
     test_get_queue_info_no_queue_specified ();
     test_get_queue_info_unknown_queue ();
     test_get_queue_info_invalid_queue ();
+    test_get_project_info_success_default ();
+    test_get_project_info_success_specified ();
+    test_get_project_info_unknown_project ();
+    test_get_project_info_invalid_project ();
     test_check_map_dne_false ();
     test_check_map_dne_true ();
 

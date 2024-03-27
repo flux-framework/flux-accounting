@@ -32,16 +32,18 @@ extern "C" {
 class Association {
 public:
     // attributes
-    std::string bank_name;           // name of bank
-    double fairshare;                // fair share value
-    int max_run_jobs;                // max number of running jobs
-    int cur_run_jobs;                // current number of running jobs 
-    int max_active_jobs;             // max number of active jobs
-    int cur_active_jobs;             // current number of active jobs
-    std::vector<long int> held_jobs; // list of currently held job ID's
-    std::vector<std::string> queues; // list of accessible queues
-    int queue_factor;                // priority factor associated with queue
-    int active;                      // active status
+    std::string bank_name;             // name of bank
+    double fairshare;                  // fair share value
+    int max_run_jobs;                  // max number of running jobs
+    int cur_run_jobs;                  // current number of running jobs
+    int max_active_jobs;               // max number of active jobs
+    int cur_active_jobs;               // current number of active jobs
+    std::vector<long int> held_jobs;   // list of currently held job ID's
+    std::vector<std::string> queues;   // list of accessible queues
+    int queue_factor;                  // priority factor associated with queue
+    int active;                        // active status
+    std::vector<std::string> projects; // list of accessible projects
+    std::string def_project;           // default project
 
     // methods
     json_t* to_json () const;    // convert object to JSON string
@@ -55,6 +57,12 @@ public:
 #define UNKNOWN_QUEUE 0
 #define NO_QUEUE_SPECIFIED 0
 #define INVALID_QUEUE -6
+
+// - UNKNOWN_PROJECT: a project that flux-accounting doesn't know about
+// - INVALID_PROJECT: a project that the association doesn't have permission
+// to charge jobs under
+#define UNKNOWN_PROJECT -6
+#define INVALID_PROJECT -7
 
 // min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
 // currently used or enforced in this plugin, so their values have no
@@ -95,5 +103,10 @@ int get_queue_info (char *queue,
 bool check_map_for_dne_only (std::map<int, std::map<std::string, Association>>
                                &users,
                              std::map<int, std::string> &users_def_bank);
+
+// validate a potentially passed-in project by an association
+int get_project_info (const char *project,
+                      std::vector<std::string> &permissible_projects,
+                      std::vector<std::string> projects);
 
 #endif // ACCOUNTING_H

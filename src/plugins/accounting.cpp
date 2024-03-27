@@ -187,3 +187,23 @@ bool check_map_for_dne_only (std::map<int, std::map<std::string, Association>>
 
     return true;
 }
+
+
+int get_project_info (const char *project,
+                      std::vector<std::string> &permissible_projects,
+                      std::vector<std::string> projects)
+{
+    auto it = std::find (projects.begin (), projects.end (), project);
+    if (it == projects.end ())
+        // project is unknown to flux-accounting
+        return UNKNOWN_PROJECT;
+
+    it = std::find (permissible_projects.begin (),
+                    permissible_projects.end (),
+                    project);
+    if (it == permissible_projects.end ())
+        // association doesn't have access to submit jobs under this project
+        return INVALID_PROJECT;
+
+    return 0;
+}
