@@ -1060,9 +1060,9 @@ static const struct flux_plugin_handler tab[] = {
 extern "C" int flux_plugin_init (flux_plugin_t *p)
 {
     if (flux_plugin_register (p, "mf_priority", tab) < 0
-        || flux_jobtap_service_register (p, "rec_update", rec_update_cb, p)
-        || flux_jobtap_service_register (p, "reprioritize", reprior_cb, p)
-        || flux_jobtap_service_register (p, "rec_q_update", rec_q_cb, p)
+        || flux_jobtap_service_register (p, "rec_update", rec_update_cb, p) < 0
+        || flux_jobtap_service_register (p, "reprioritize", reprior_cb, p) < 0
+        || flux_jobtap_service_register (p, "rec_q_update", rec_q_cb, p) < 0
         || flux_jobtap_service_register (p, "rec_proj_update", rec_proj_cb, p)
         < 0)
         return -1;
