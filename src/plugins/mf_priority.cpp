@@ -206,7 +206,7 @@ static void rec_update_cb (flux_t *h,
                            const flux_msg_t *msg,
                            void *arg)
 {
-    char *bank, *def_bank, *assoc_queues, *projects, *def_project = NULL;
+    char *bank, *def_bank, *assoc_queues, *assoc_projects, *def_project = NULL;
     int uid, max_running_jobs, max_active_jobs = 0;
     double fshare = 0.0;
     json_t *data, *jtemp = NULL;
@@ -243,7 +243,7 @@ static void rec_update_cb (flux_t *h,
                             "max_active_jobs", &max_active_jobs,
                             "queues", &assoc_queues,
                             "active", &active,
-                            "projects", &projects,
+                            "projects", &assoc_projects,
                             "def_project", &def_project) < 0)
             flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
 
@@ -262,7 +262,7 @@ static void rec_update_cb (flux_t *h,
         split_string_and_push_back (assoc_queues, b->queues);
         // do the same thing for the association's projects
         b->projects.clear ();
-        split_string_and_push_back (projects, b->projects);
+        split_string_and_push_back (assoc_projects, b->projects);
 
         users_def_bank[uid] = def_bank;
     }
