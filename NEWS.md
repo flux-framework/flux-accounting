@@ -1,3 +1,29 @@
+flux-accounting version 0.31.0 - 2024-04-02
+-------------------------------------------
+
+#### Fixes
+
+* plugin: move flux-accounting-specific helper functions, remove unused ones
+(#427)
+
+* plugin: improve `add_missing_bank_info ()` (#430)
+
+* plugin: change `projects`->`assoc_projects` in `rec_update_cb ()` (#438)
+
+#### Features
+
+* plugin: add support for updating the bank of a pending job (#429)
+
+* plugin: add project information to Association information in plugin (#434)
+
+* `plugin.query`: add projects, def_project to the information returned (#435)
+
+#### Testsuite
+
+* t: add `active` column, move sample payloads (#432)
+
+* t1029: remove brackets from `grep` tests (#433)
+
 flux-accounting version 0.30.0 - 2024-03-04
 -------------------------------------------
 
