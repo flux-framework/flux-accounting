@@ -96,7 +96,8 @@ test_expect_success 'add another user to flux-accounting DB and send it to plugi
 		--userid=1002 \
 		--bank=account3 \
 		--queues="bronze" \
-		--projects="A,B" &&
+		--projects="A,B" \
+		--max-nodes=10 &&
 	flux account-priority-update -p $(pwd)/FluxAccountingTest.db
 '
 

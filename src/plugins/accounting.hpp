@@ -44,6 +44,7 @@ public:
     int active;                        // active status
     std::vector<std::string> projects; // list of accessible projects
     std::string def_project;           // default project
+    int max_nodes;                     // max num nodes across all running jobs
 
     // methods
     json_t* to_json () const;    // convert object to JSON string
