@@ -26,6 +26,8 @@
 #   - FLUX_IDSET_CFLAGS    libflux-idset CFLAGS
 #   - FLUX_OPTPARSE_LIBS   libflux-optparse LIBS
 #   - FLUX_OPTPARSE_CFLAGS libflux-optparse CFLAGS
+#   - FLUX_HOSTLIST_LIBS   libflux-hostlist LIBS
+#   - FLUX_HOSTLIST_CFLAGS libflux-hostlist CFLAGS
 #
 # LICENSE
 #
@@ -83,9 +85,8 @@ AC_DEFUN([AX_FLUX_CORE], [
   ]
 
   #  Check for other flux-core libraries
-  #PKG_CHECK_MODULES([FLUX_IDSET], [flux-idset], [], [])
-  #PKG_CHECK_MODULES([FLUX_SCHEDUTIL], [flux-schedutil], [], [])
-  #PKG_CHECK_MODULES([FLUX_OPTPARSE], [flux-optparse], [], [])
+  PKG_CHECK_MODULES([FLUX_IDSET], [flux-idset], [], [])
+  PKG_CHECK_MODULES([FLUX_HOSTLIST], [flux-hostlist], [], [])
 
   PKG_CONFIG_PATH=$saved_PKG_CONFIG_PATH
   export PKG_CONFIG_PATH
