@@ -17,6 +17,7 @@ extern "C" {
 #endif
 #include <flux/core.h>
 #include <flux/jobtap.h>
+#include <flux/hostlist.h>
 #include <jansson.h>
 }
 
@@ -162,6 +163,42 @@ static void add_special_association (flux_plugin_t *p, flux_t *h, int userid)
                                  a,
                                  NULL) < 0)
         flux_log_error (h, "flux_jobtap_job_aux_set");
+}
+
+
+/*
+ * Helper function to extract the "nodelist" key-value pair.
+ */
+std::string extract_nodelist (json_t *root) {
+    if (!root) return ""; // ensure root is not null
+
+    json_t *execution = json_object_get (root, "execution");
+    if (!execution) return "";
+
+    // get the "nodelist" array
+    json_t *nodelist = json_object_get (execution, "nodelist");
+    if (!nodelist || !json_is_array (nodelist)) return "";
+
+    // assume nodelist contains a single string entry
+    json_t *nodelist_str = json_array_get (nodelist, 0);
+    if (!nodelist_str || !json_is_string (nodelist_str)) return "";
+
+    return std::string (json_string_value (nodelist_str));
+}
+
+
+/*
+ * Helper function to calculate nnodes from a hostlist.
+ */
+int process_nodelist (const std::string& nodelist_str) {
+    struct hostlist *hl = hostlist_decode (nodelist_str.c_str ());
+    if (!hl)
+        return -1;
+
+    int nnodes = hostlist_count (hl);
+    hostlist_destroy (hl);
+
+    return nnodes;
 }
 
 
