@@ -154,6 +154,7 @@ static void add_special_association (flux_plugin_t *p, flux_t *h, int userid)
     a->active = 1;
     a->held_jobs = std::vector<long int>();
     a->max_nodes = INT16_MAX;
+    a->cur_nodes = 0;
 
     if (flux_jobtap_job_aux_set (p,
                                  FLUX_JOBTAP_CURRENT_JOB,

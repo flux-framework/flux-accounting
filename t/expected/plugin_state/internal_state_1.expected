@@ -19,6 +19,7 @@
         ],
         "def_project": "*",
         "max_nodes": 2147483647,
+        "cur_nodes": 0,
         "active": 1
       },
       {
@@ -38,6 +39,7 @@
         ],
         "def_project": "*",
         "max_nodes": 2147483647,
+        "cur_nodes": 0,
         "active": 1
       }
     ]
