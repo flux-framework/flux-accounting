@@ -812,6 +812,13 @@ static int run_cb (flux_plugin_t *p,
 {
     int userid;
     Association *b;
+    json_t *R = NULL;
+
+    if (flux_plugin_arg_unpack (args,
+                                FLUX_PLUGIN_ARG_IN,
+                                "{s?o}",
+                                "R", &R) < 0)
+        return flux_jobtap_error (p, args, "unable to unpack plugin args");
 
     b = static_cast<Association *>
         (flux_jobtap_job_aux_get (p,
@@ -824,6 +831,20 @@ static int run_cb (flux_plugin_t *p,
                                      "missing");
 
         return -1;
+    }
+
+    if (R != NULL) {
+        std::string nodelist = extract_nodelist (R);
+        if (!nodelist.empty ()) {
+            int nnodes = process_nodelist (nodelist);
+            if (nnodes < 0)
+                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                             "mf_priority", 0,
+                                             "job.state.run: error counting "
+                                             "nnodes for job");
+            // increment user's current node count
+            b->cur_nodes += nnodes;
+        }
     }
 
     // increment the user's current running jobs count
