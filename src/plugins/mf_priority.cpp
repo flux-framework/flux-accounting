@@ -1051,12 +1051,14 @@ static int inactive_cb (flux_plugin_t *p,
     Association *b;
     std::map<int, std::map<std::string, Association>>::iterator it;
     std::map<std::string, Association>::iterator bank_it;
+    json_t *R = NULL;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i}",
-                                "userid", &userid) < 0) {
+                                "{s:i, s?o}",
+                                "userid", &userid,
+                                "R", &R) < 0) {
         flux_log (h,
                   LOG_ERR,
                   "flux_plugin_arg_unpack: %s",
@@ -1085,6 +1087,20 @@ static int inactive_cb (flux_plugin_t *p,
     // this job was running, so decrement the current running jobs count
     // and look to see if any held jobs can be released
     b->cur_run_jobs--;
+
+    // also decrement the cur_node count for the association
+    if (R != NULL) {
+        std::string nodelist = extract_nodelist (R);
+        if (!nodelist.empty ()) {
+            int nnodes = process_nodelist (nodelist);
+            if (nnodes < 0)
+                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                             "mf_priority", 0,
+                                             "job.state.inactive: error "
+                                             "counting nnodes for job");
+            b->cur_nodes -= nnodes;
+        }
+    }
 
     // if the user/bank combo has any currently held jobs and the user is now
     // under their max jobs limit, remove the dependency from first held job
