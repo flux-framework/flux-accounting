@@ -202,6 +202,30 @@ int process_nodelist (const std::string& nodelist_str) {
 }
 
 
+/*
+ * Helper function to extract the "type" and "count" key-value pairs
+ * from jobspec.
+ */
+int extract_resources (json_t *root) {
+    if (!root || !json_is_array (root)) return -1;
+
+    json_t *resources = json_array_get (root, 0);
+    if (!resources || !json_is_object (resources)) return -1;
+
+    json_t *type = json_object_get (resources, "type");
+    json_t *count = json_object_get (resources, "count");
+    if (!type || !json_is_string (type)) return -1;
+
+    // if the association did not explicitly request nodes for their job,
+    // just return 1
+    if (strcmp (json_string_value (type), "node") != 0) return 1;
+
+    if (!count || !json_is_integer (count)) return -1;
+    int nnodes = json_integer_value (count);
+    return nnodes;
+}
+
+
 /******************************************************************************
  *                                                                            *
  *                               Callbacks                                    *
