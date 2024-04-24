@@ -10,8 +10,7 @@ Flux Accounting Guide
     flux-accounting is still beta software and many of the interfaces
     documented in this guide may change with regularity.
 
-    This document is in DRAFT form and currently applies to flux-accounting
-    version 0.31.0.
+    This document is in DRAFT form.
 
 ********
 Overview
