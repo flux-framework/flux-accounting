@@ -1,6 +1,6 @@
 #!/bin/bash
 
-test_description='Test submitting jobs to queues after queue access is changed'
+test_description='test handling jobs correctly with no or some flux-accounting data in plugin'
 
 . `dirname $0`/sharness.sh
 
