@@ -33,8 +33,8 @@ bank allocations.
 The database is populated and queried with command line tools prefixed with
 ``flux account``.  Accounting scripts are run regularly by
 :core:man1:`flux-cron` to pull historical job information from the Flux
-``job-archive`` database to the accounting database, and to push bank and limit
-data to the jobtap plugin.
+``job-list`` and ``job-info`` interfaces into the accounting database,
+and to push bank and limit data to the jobtap plugin.
 
 At this time, the database is expected to be installed on a cluster management
 node, co-located with the rank 0 Flux broker, managing accounts for that
@@ -144,6 +144,8 @@ following command:
 A series of actions should run periodically to keep the accounting
 system in sync with Flux:
 
+- A script fetches inactive jobs and inserts them into a ``jobs`` table in the
+  flux-accounting DB.
 - The job-archive module scans inactive jobs and dumps them to a sqlite
   database.
 - A script reads the archive database and updates the job usage data in the
@@ -167,7 +169,7 @@ The scripts should be run by :core:man1:`flux-cron`:
 
  # /etc/flux/system/cron.d/accounting
 
- 30 * * * * bash -c "flux account update-usage --job-archive_db_path=/var/lib/flux/job-archive.sqlite; flux account-update-fshare; flux account-priority-update"
+ 30 * * * * bash -c "flux account-fetch-job-records; flux account update-usage; flux account-update-fshare; flux account-priority-update"
 
 ***********************
 Database Administration
@@ -215,6 +217,9 @@ consists of the following tables:
 +--------------------------+--------------------------------------------------+
 | project_table            | stores projects for associations to charge their |
 |                          | jobs against                                     |
++--------------------------+--------------------------------------------------+
+| jobs                     | stores inactive jobs for job usage and fair      |
+|                          | share calculation                                |
 +--------------------------+--------------------------------------------------+
 
 To view all associations in a flux-accounting database, the ``flux
