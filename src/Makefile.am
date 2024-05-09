@@ -142,4 +142,5 @@ dist_fluxcmd_SCRIPTS = \
 	cmd/flux-account-pop-db.py \
 	cmd/flux-account-export-db.py \
 	cmd/flux-account-update-db.py \
-	cmd/flux-account-service.py
+	cmd/flux-account-service.py \
+	cmd/flux-account-fetch-job-records.py

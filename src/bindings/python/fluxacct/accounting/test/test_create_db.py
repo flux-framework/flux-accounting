@@ -55,6 +55,7 @@ class TestDB(unittest.TestCase):
             "t_half_life_period_table",
             "queue_table",
             "project_table",
+            "jobs",
         ]
         self.assertEqual(list_of_tables, expected)
 
