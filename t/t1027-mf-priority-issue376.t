@@ -1,6 +1,6 @@
 #!/bin/bash
 
-test_description='Test submitting jobs to queues after queue access is changed'
+test_description='test updating attributes of a job with flux-accounting limits imposed'
 
 . `dirname $0`/sharness.sh
 

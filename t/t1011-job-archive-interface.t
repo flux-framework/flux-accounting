@@ -1,6 +1,6 @@
 #!/bin/bash
 
-test_description='Tests for update-usage command'
+test_description='test fetching jobs and updating the fair share values for a group of users'
 
 . $(dirname $0)/sharness.sh
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-test_description='Test flux-account commands'
+test_description='test exporting flux-accounting database data into .csv files'
 . `dirname $0`/sharness.sh
 
 DB_PATHv1=$(pwd)/FluxAccountingTestv1.db
