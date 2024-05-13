@@ -1,3 +1,24 @@
+flux-accounting version 0.32.0 - 2024-05-13
+-------------------------------------------
+
+#### Fixes
+
+* repo: add `pkg.m4`, checks for flux-core libs (#441)
+
+#### Features
+
+* flux-accounting: add a local job-archive (#357)
+
+* plugin: add `max_nodes` as an attribute per-association in plugin (#437)
+
+* repo: create a `doc` folder, add flux-accounting guide (#446)
+
+#### Testsuite
+
+* t: update description of sharness tests (#447)
+
+* testsuite: enable guest access to testexec (#449)
+
 flux-accounting version 0.31.0 - 2024-04-02
 -------------------------------------------
 
