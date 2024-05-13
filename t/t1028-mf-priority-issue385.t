@@ -15,6 +15,12 @@ test_under_flux 1 job -o,--config-path=$(pwd)/conf.d
 
 flux setattr log-stderr-level 1
 
+test_expect_success 'allow guest access to testexec' '
+	flux config load <<-EOF
+	[exec.testexec]
+	allow-guests = true
+	EOF
+'
 test_expect_success 'create flux-accounting DB, start flux-accounting service' '
 	flux account -p $(pwd)/FluxAccountingTest.db create-db &&
 	flux account-service -p ${DB_PATH} -t
