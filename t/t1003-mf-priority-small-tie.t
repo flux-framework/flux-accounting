@@ -14,6 +14,12 @@ test_under_flux 1 job
 
 flux setattr log-stderr-level 1
 
+test_expect_success 'allow guest access to testexec' '
+	flux config load <<-EOF
+	[exec.testexec]
+	allow-guests = true
+	EOF
+'
 test_expect_success 'load multi-factor priority plugin' '
 	flux jobtap load -r .priority-default ${MULTI_FACTOR_PRIORITY}
 '
