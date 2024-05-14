@@ -272,7 +272,6 @@ def update_t_inactive(acct_conn, last_t_inactive, user, bank):
             bank,
         ),
     )
-    acct_conn.commit()
 
 
 def get_last_job_ts(acct_conn, user, bank):
@@ -326,7 +325,6 @@ def update_hist_usg_col(acct_conn, usg_h, user, bank):
             bank,
         ),
     )
-    acct_conn.commit()
 
 
 def update_curr_usg_col(acct_conn, usg_h, user, bank):
@@ -342,7 +340,6 @@ def update_curr_usg_col(acct_conn, usg_h, user, bank):
             bank,
         ),
     )
-    acct_conn.commit()
 
 
 def apply_decay_factor(decay, acct_conn, user=None, bank=None):
@@ -372,7 +369,6 @@ def apply_decay_factor(decay, acct_conn, user=None, bank=None):
                 bank,
             ),
         )
-        acct_conn.commit()
         period += 1
 
     # only return the usage factors up to but not including the oldest one
@@ -495,7 +491,6 @@ def check_end_hl(acct_conn, pdhl):
             WHERE cluster='cluster'
             """
         acct_conn.execute(update_timestamp_stmt, ((float(end_hl) + hl_period),))
-        acct_conn.commit()
 
 
 def calc_bank_usage(acct_conn, cur, bank):
@@ -519,9 +514,6 @@ def calc_bank_usage(acct_conn, cur, bank):
             bank,
         ),
     )
-
-    # commit changes
-    acct_conn.commit()
 
     return total_usage
 
@@ -552,12 +544,14 @@ def calc_parent_bank_usage(acct_conn, cur, bank, total_usage=0.0):
                     bank,
                 ),
             )
-            acct_conn.commit()
 
     return total_usage
 
 
 def update_job_usage(acct_conn, pdhl=1):
+    # begin transaction for all of the updates in the DB
+    acct_conn.execute("BEGIN TRANSACTION")
+
     s_assoc = "SELECT username, bank, default_bank FROM association_table"
     cur = acct_conn.cursor()
     cur.execute(s_assoc)
@@ -577,5 +571,8 @@ def update_job_usage(acct_conn, pdhl=1):
     calc_parent_bank_usage(acct_conn, cur, parent_bank, 0.0)
 
     check_end_hl(acct_conn, pdhl)
+
+    # commit the transaction after the updates are finished
+    acct_conn.commit()
 
     return 0
