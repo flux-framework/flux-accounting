@@ -179,6 +179,16 @@ test_expect_success 'check that job usage and fairshare values get updated' '
 	grep "account2" post_update2.test | grep "4" | grep "0.5"
 '
 
+# if update-usage is called in the same half-life period when no jobs are found
+# for a user, their job usage factor should be affected; this test is taken
+# from the set of job-archive interface Python unit tests
+test_expect_success 'call update-usage in the same half-life period where no jobs are run' '
+	flux account -p ${DB_PATH} update-usage &&
+	flux account-update-fshare -p ${DB_PATH} &&
+	flux account-shares -p $(pwd)/FluxAccountingTest.db > post_update3.test &&
+	grep "account2" post_update3.test | grep "4" | grep "0.5"
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
