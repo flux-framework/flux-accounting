@@ -17,6 +17,7 @@ extern "C" {
 #endif
 #include <flux/core.h>
 #include <flux/jobtap.h>
+#include <flux/hostlist.h>
 #include <jansson.h>
 }
 
@@ -154,6 +155,7 @@ static void add_special_association (flux_plugin_t *p, flux_t *h, int userid)
     a->active = 1;
     a->held_jobs = std::vector<long int>();
     a->max_nodes = INT16_MAX;
+    a->cur_nodes = 0;
 
     if (flux_jobtap_job_aux_set (p,
                                  FLUX_JOBTAP_CURRENT_JOB,
@@ -161,6 +163,66 @@ static void add_special_association (flux_plugin_t *p, flux_t *h, int userid)
                                  a,
                                  NULL) < 0)
         flux_log_error (h, "flux_jobtap_job_aux_set");
+}
+
+
+/*
+ * Helper function to extract the "nodelist" key-value pair.
+ */
+std::string extract_nodelist (json_t *root) {
+    if (!root) return ""; // ensure root is not null
+
+    json_t *execution = json_object_get (root, "execution");
+    if (!execution) return "";
+
+    // get the "nodelist" array
+    json_t *nodelist = json_object_get (execution, "nodelist");
+    if (!nodelist || !json_is_array (nodelist)) return "";
+
+    // assume nodelist contains a single string entry
+    json_t *nodelist_str = json_array_get (nodelist, 0);
+    if (!nodelist_str || !json_is_string (nodelist_str)) return "";
+
+    return std::string (json_string_value (nodelist_str));
+}
+
+
+/*
+ * Helper function to calculate nnodes from a hostlist.
+ */
+int process_nodelist (const std::string& nodelist_str) {
+    struct hostlist *hl = hostlist_decode (nodelist_str.c_str ());
+    if (!hl)
+        return -1;
+
+    int nnodes = hostlist_count (hl);
+    hostlist_destroy (hl);
+
+    return nnodes;
+}
+
+
+/*
+ * Helper function to extract the "type" and "count" key-value pairs
+ * from jobspec.
+ */
+int extract_resources (json_t *root) {
+    if (!root || !json_is_array (root)) return -1;
+
+    json_t *resources = json_array_get (root, 0);
+    if (!resources || !json_is_object (resources)) return -1;
+
+    json_t *type = json_object_get (resources, "type");
+    json_t *count = json_object_get (resources, "count");
+    if (!type || !json_is_string (type)) return -1;
+
+    // if the association did not explicitly request nodes for their job,
+    // just return 1
+    if (strcmp (json_string_value (type), "node") != 0) return 1;
+
+    if (!count || !json_is_integer (count)) return -1;
+    int nnodes = json_integer_value (count);
+    return nnodes;
 }
 
 
@@ -722,12 +784,14 @@ static int depend_cb (flux_plugin_t *p,
     int userid;
     long int id;
     Association *b;
+    json_t *R = NULL;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s:I}",
-                                "userid", &userid, "id", &id) < 0) {
+                                "{s:i, s:I, s:{s?o}}",
+                                "userid", &userid, "id", &id,
+                                "jobspec", "resources", &R) < 0) {
         flux_log (h,
                   LOG_ERR,
                   "flux_plugin_arg_unpack: %s",
@@ -751,9 +815,7 @@ static int depend_cb (flux_plugin_t *p,
     // if user has already hit their max running jobs count, add a job
     // dependency to hold job until an already running job has finished
     if ((b->max_run_jobs > 0) && (b->cur_run_jobs == b->max_run_jobs)) {
-        if (flux_jobtap_dependency_add (p,
-                                        id,
-                                        "max-running-jobs-user-limit") < 0) {
+        if (flux_jobtap_dependency_add (p, id, "accounting") < 0) {
             flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
                                          "mf_priority", 0, "failed to add " \
                                          "job dependency");
@@ -761,6 +823,28 @@ static int depend_cb (flux_plugin_t *p,
             return -1;
         }
         b->held_jobs.push_back (id);
+        return 0;
+    }
+
+    if (R != NULL) {
+        int nnodes = extract_resources (R);
+        if (nnodes < 0) {
+            flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                         "mf_priority", 0, "job.state.depend: "
+                                         "failed to extract node count");
+            return -1;
+        }
+        if (b->cur_nodes + nnodes > b->max_nodes) {
+            // this job would put the association's current node count over
+            // their max; add a dependency to hold the job
+            if (flux_jobtap_dependency_add (p, id, "accounting") < 0) {
+                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                             "mf_priority", 0, "failed to " \
+                                             "add job dependency");
+                return -1;
+            }
+            b->held_jobs.push_back (id);
+        }
     }
 
     return 0;
@@ -774,6 +858,13 @@ static int run_cb (flux_plugin_t *p,
 {
     int userid;
     Association *b;
+    json_t *R = NULL;
+
+    if (flux_plugin_arg_unpack (args,
+                                FLUX_PLUGIN_ARG_IN,
+                                "{s?o}",
+                                "R", &R) < 0)
+        return flux_jobtap_error (p, args, "unable to unpack plugin args");
 
     b = static_cast<Association *>
         (flux_jobtap_job_aux_get (p,
@@ -786,6 +877,20 @@ static int run_cb (flux_plugin_t *p,
                                      "missing");
 
         return -1;
+    }
+
+    if (R != NULL) {
+        std::string nodelist = extract_nodelist (R);
+        if (!nodelist.empty ()) {
+            int nnodes = process_nodelist (nodelist);
+            if (nnodes < 0)
+                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                             "mf_priority", 0,
+                                             "job.state.run: error counting "
+                                             "nnodes for job");
+            // increment user's current node count
+            b->cur_nodes += nnodes;
+        }
     }
 
     // increment the user's current running jobs count
@@ -992,12 +1097,14 @@ static int inactive_cb (flux_plugin_t *p,
     Association *b;
     std::map<int, std::map<std::string, Association>>::iterator it;
     std::map<std::string, Association>::iterator bank_it;
+    json_t *R = NULL;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i}",
-                                "userid", &userid) < 0) {
+                                "{s:i, s?o}",
+                                "userid", &userid,
+                                "R", &R) < 0) {
         flux_log (h,
                   LOG_ERR,
                   "flux_plugin_arg_unpack: %s",
@@ -1027,18 +1134,69 @@ static int inactive_cb (flux_plugin_t *p,
     // and look to see if any held jobs can be released
     b->cur_run_jobs--;
 
-    // if the user/bank combo has any currently held jobs and the user is now
-    // under their max jobs limit, remove the dependency from first held job
-    if ((b->held_jobs.size () > 0) && (b->cur_run_jobs < b->max_run_jobs)) {
-        long int jobid = b->held_jobs.front ();
+    // also decrement the cur_node count for the association
+    if (R != NULL) {
+        std::string nodelist = extract_nodelist (R);
+        if (!nodelist.empty ()) {
+            int nnodes = process_nodelist (nodelist);
+            if (nnodes < 0)
+                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                             "mf_priority", 0,
+                                             "job.state.inactive: error "
+                                             "counting nnodes for job");
+            b->cur_nodes -= nnodes;
+        }
+    }
 
-        if (flux_jobtap_dependency_remove (p,
-                                           jobid,
-                                           "max-running-jobs-user-limit") < 0)
-            flux_jobtap_raise_exception (p, jobid, "mf_priority",
-                                         0, "failed to remove job dependency");
+    if (b->held_jobs.size () > 0) {
+        // the association has at least one held job; let's see if
+        // we can release the job and still be under accounting limits
+        if (b->cur_run_jobs < b->max_run_jobs) {
+            // the association is under their max running jobs limit; grab
+            // the ID of the first held job and get its jobspec
+            long int jobid = b->held_jobs.front ();
+            json_t *held_R = NULL;
 
-        b->held_jobs.erase (b->held_jobs.begin ());
+            flux_plugin_arg_t *held_args = flux_jobtap_job_lookup (p, jobid);
+            if (flux_plugin_arg_unpack (held_args,
+                                        FLUX_PLUGIN_ARG_IN,
+                                        "{s:{s?o}}",
+                                        "jobspec", "resources", &held_R) < 0) {
+                flux_log (h,
+                          LOG_ERR,
+                          "flux_plugin_arg_unpack: %s",
+                          flux_plugin_arg_strerror (args));
+                return -1;
+            }
+
+            if (held_R != NULL) {
+                // extract node count from held job
+                int nnodes = extract_resources (held_R);
+                if (nnodes < 0) {
+                    flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                                 "mf_priority", 0,
+                                                 "job.state.inactive: "
+                                                 "failed to extract node count");
+                    return -1;
+                }
+                if (b->cur_nodes + nnodes <= b->max_nodes) {
+                    // releasing this job would not put the association over
+                    // their max-nodes limit; remove the dependency
+                    if (flux_jobtap_dependency_remove (p,
+                                                       jobid,
+                                                       "accounting") < 0) {
+                        flux_jobtap_raise_exception (p,
+                                                     FLUX_JOBTAP_CURRENT_JOB,
+                                                     "mf_priority", 0,
+                                                     "failed to remove " \
+                                                     "job dependency");
+                    }
+                    b->held_jobs.erase (b->held_jobs.begin ());
+                }
+            }
+            // free args
+            flux_plugin_arg_destroy (held_args);
+        }
     }
 
     return 0;

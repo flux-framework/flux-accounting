@@ -38,6 +38,7 @@ test_expect_success 'create fake_user.json' '
 				"fairshare": 0.45321,
 				"max_running_jobs": 2,
 				"max_active_jobs": 4,
+				"max_nodes": 1000000,
 				"queues": "",
 				"active": 1,
 				"projects": "*",
@@ -50,6 +51,7 @@ test_expect_success 'create fake_user.json' '
 				"fairshare": 0.11345,
 				"max_running_jobs": 1,
 				"max_active_jobs": 2,
+				"max_nodes": 1000000,
 				"queues": "",
 				"active": 1,
 				"projects": "*",
@@ -97,7 +99,9 @@ test_expect_success 'submit job while already having max number of running jobs'
 
 test_expect_success 'a job transitioning to job.state.inactive should release a held job (if any)' '
 	flux job cancel $jobid1 &&
-	test $(flux jobs -no {state} ${jobid3}) = RUN &&
+	flux job wait-event -vt 5 $jobid3 alloc &&
+	flux job info $jobid3 eventlog > eventlog.out &&
+	grep "alloc" eventlog.out &&
 	flux job cancel $jobid2 &&
 	flux job cancel $jobid3
 '
@@ -135,6 +139,7 @@ test_expect_success 'increase the max jobs count of the user' '
 				"fairshare": 0.45321,
 				"max_running_jobs": 3,
 				"max_active_jobs": 4,
+				"max_nodes": 1000000,
 				"queues": "",
 				"active": 1,
 				"projects": "*",
@@ -187,6 +192,7 @@ test_expect_success 'update max_active_jobs limit' '
 				"fairshare": 0.45321,
 				"max_running_jobs": 3,
 				"max_active_jobs": 5,
+				"max_nodes": 1000000,
 				"queues": "",
 				"active": 1,
 				"projects": "*",
@@ -247,6 +253,7 @@ test_expect_success 'create another user with the same limits in multiple banks'
 				"fairshare": 0.45321,
 				"max_running_jobs": 1,
 				"max_active_jobs": 2,
+				"max_nodes": 1000000,
 				"queues": "",
 				"active": 1,
 				"projects": "*",
@@ -259,6 +266,7 @@ test_expect_success 'create another user with the same limits in multiple banks'
 				"fairshare": 0.11345,
 				"max_running_jobs": 1,
 				"max_active_jobs": 2,
+				"max_nodes": 1000000,
 				"queues": "",
 				"active": 1,
 				"projects": "*",
