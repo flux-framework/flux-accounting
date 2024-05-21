@@ -6,9 +6,10 @@ test_description='Test multi-factor priority plugin and loading user information
 MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
 SEND_PAYLOAD=${SHARNESS_TEST_SRCDIR}/scripts/send_payload.py
 
+mkdir -p config
 export TEST_UNDER_FLUX_NO_JOB_EXEC=y
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
-test_under_flux 1 job
+test_under_flux 1 job -o,--config-path=$(pwd)/config
 
 flux setattr log-stderr-level 1
 
@@ -18,6 +19,14 @@ test_expect_success 'load multi-factor priority plugin' '
 
 test_expect_success 'check that mf_priority plugin is loaded' '
 	flux jobtap list | grep mf_priority
+'
+
+test_expect_success 'disable age factor in multi-factor priority plugin' '
+	cat >config/test.toml <<-EOT &&
+	[accounting.factor-weights]
+	age = 0
+	EOT
+	flux config reload
 '
 
 test_expect_success 'create fake_payload.py' '

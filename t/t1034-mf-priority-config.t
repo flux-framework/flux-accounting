@@ -51,7 +51,7 @@ test_expect_success 'send flux-accounting DB information to the plugin' '
 test_expect_success 'no configured priority factors will use default weights' '
 	job1=$(flux python ${SUBMIT_AS} 1001 -n1 hostname) &&
 	flux job wait-event -f json ${job1} priority | jq '.context.priority' > job1.test &&
-	grep "50000" job1.test &&
+	grep -c "50[0-9][0-9][0-9]" job1.test &&
 	flux cancel ${job1}
 '
 
@@ -60,6 +60,7 @@ test_expect_success 'set up new configuration for multi-factor priority plugin' 
 	[accounting.factor-weights]
 	fairshare = 1000
 	queue = 100
+	age = 0
 	EOT
 	flux config reload
 '
@@ -76,6 +77,7 @@ test_expect_success 'change the configuration for the priority factors' '
 	[accounting.factor-weights]
 	fairshare = 500
 	queue = 100
+	age = 0
 	EOT
 	flux config reload
 '
