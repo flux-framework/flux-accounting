@@ -57,6 +57,38 @@ fi
 # checks for packages
 PKG_CHECK_MODULES([JANSSON], [jansson >= 2.10], [], [])
 
+AS_IF([test "x$enable_docs" != "xno"], [
+            AM_CHECK_PYMOD(sphinx,
+                           [Version(sphinx.__version__) >= Version ('1.6.7')],
+                           [sphinx=true],
+                           [sphinx=false; AC_MSG_WARN([could not find sphinx to generate docs, version 1.6.7+ required])]
+                           )
+            AM_CHECK_PYMOD(docutils,
+                           [Version(docutils.__version__) >= Version ('0.11.0')],
+                           [docutils=true],
+                           [docutils=false; AC_MSG_WARN([could not find docutils to generate docs, version 0.11.0+ required])]
+                           )
+])
+#  If --enable-docs=yes, but no doc generator found,
+#   then error immediately:
+#
+AS_IF([test "x$enable_docs" = "xyes" -a "x$sphinx" = "xfalse"],[
+  AC_MSG_ERROR([--enable-docs used but no document generator found!])
+])
+AS_IF([test "x$enable_docs" = "xyes" -a "x$docutils" = "xfalse"],[
+  AC_MSG_ERROR([--enable-docs used but docutils not found!])
+])
+AM_CONDITIONAL([ENABLE_DOCS], [test "x$sphinx" = "xtrue" -a "x$docutils" = "xtrue"])
+AC_CHECK_PROG(ASPELL,[aspell],[aspell])
+
+AS_IF([test "x$enable_docs" != "xno"], [
+  if test "x$sphinx" = "xfalse"; then
+    AC_MSG_WARN([Python Sphinx not found. Manual pages will not be generated.])
+  elif test "x$docutils" = "xfalse"; then
+    AC_MSG_WARN([Python Docutils not found. Manual pages will not be generated.])
+  fi
+])
+
 #
 # Project directories
 #
@@ -119,6 +151,8 @@ AC_CONFIG_FILES([Makefile
   src/plugins/Makefile
   etc/Makefile
   etc/flux-accounting.service
+  doc/Makefile
+  doc/test/Makefile
   t/Makefile
   ])
 AC_OUTPUT
