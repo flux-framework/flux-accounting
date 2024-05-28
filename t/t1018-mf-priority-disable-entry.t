@@ -105,7 +105,7 @@ test_expect_success 'disabling a user while they have an active job should not k
 	jobid5=$(flux submit -n1 sleep 60) &&
 	flux account delete-user $username account2 &&
 	flux account-priority-update -p $(pwd)/FluxAccountingTest.db &&
-	test $(flux jobs -no {state} ${jobid5}) = RUN &&
+	flux job wait-event -vt 60 $jobid5 alloc &&
 	flux job cancel $jobid5
 '
 

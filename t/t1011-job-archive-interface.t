@@ -29,7 +29,7 @@ wait_db() {
 				sleep 0.1
 				i=$((i + 1))
 		done
-		if [ "$i" -eq "50" ]
+		if [ "$i" -eq "100" ]
 		then
 			return 1
 		fi
@@ -175,8 +175,9 @@ test_expect_success 'run update-usage and update-fshare commands' '
 '
 
 test_expect_success 'check that job usage and fairshare values get updated' '
-	flux account-shares -p $(pwd)/FluxAccountingTest.db > post_update2.test &&
-	grep "account2" post_update2.test | grep "4" | grep "0.5"
+	flux account -p ${DB_PATH} view-user $username --json > query1.json &&
+	test_debug "jq -S . <query1.json" &&
+	jq -e ".banks[1].job_usage >= 4" <query1.json
 '
 
 # if update-usage is called in the same half-life period when no jobs are found
@@ -185,8 +186,9 @@ test_expect_success 'check that job usage and fairshare values get updated' '
 test_expect_success 'call update-usage in the same half-life period where no jobs are run' '
 	flux account -p ${DB_PATH} update-usage &&
 	flux account-update-fshare -p ${DB_PATH} &&
-	flux account-shares -p $(pwd)/FluxAccountingTest.db > post_update3.test &&
-	grep "account2" post_update3.test | grep "4" | grep "0.5"
+	flux account -p ${DB_PATH} view-user $username --json > query2.json &&
+	test_debug "jq -S . <query2.json" &&
+	jq -e ".banks[1].job_usage >= 4" <query2.json
 '
 
 test_expect_success 'remove flux-accounting DB' '

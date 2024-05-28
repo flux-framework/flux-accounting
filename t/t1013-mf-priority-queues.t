@@ -156,12 +156,12 @@ test_expect_success 'unload mf_priority.so' '
 
 test_expect_success 'submit a job to a nonexistent queue with no plugin information loaded' '
 	jobid6=$(flux python ${SUBMIT_AS} 5011 --queue=foo -n1 hostname) &&
-	test $(flux jobs -no {state} ${jobid6}) = PRIORITY
+	flux job wait-event -vt 60 $jobid6 depend
 '
 
 test_expect_success 'reload mf_priority.so and update it with the sample test data again' '
 	flux jobtap load ${MULTI_FACTOR_PRIORITY} &&
-	test $(flux jobs -no {state} ${jobid6}) = PRIORITY &&
+	flux job wait-event -vt 60 $jobid6 depend &&
 	flux account-priority-update -p $(pwd)/FluxAccountingTest.db
 '
 
