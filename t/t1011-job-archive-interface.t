@@ -29,7 +29,7 @@ wait_db() {
 				sleep 0.1
 				i=$((i + 1))
 		done
-		if [ "$i" -eq "50" ]
+		if [ "$i" -eq "100" ]
 		then
 			return 1
 		fi
