@@ -98,62 +98,62 @@ test_expect_success 'update plugin with sample test data' '
 
 test_expect_success 'submit a job with default urgency' '
 	jobid=$(flux submit --setattr=system.bank=account3 -n1 hostname) &&
-	flux job wait-event -f json $jobid priority | jq '.context.priority' > job1.test &&
+	flux job wait-event -f json ${jobid} priority | jq '.context.priority' > job1.test &&
 	cat <<-EOF >job1.expected &&
 	45321
 	EOF
 	test_cmp job1.expected job1.test &&
-	flux cancel $jobid
+	flux cancel ${jobid}
 '
 
 test_expect_success 'submit a job with custom urgency' '
 	jobid=$(flux submit --setattr=system.bank=account3 --urgency=15 -n1 hostname) &&
-	flux job wait-event -f json $jobid priority | jq '.context.priority' > job2.test &&
+	flux job wait-event -f json ${jobid} priority | jq '.context.priority' > job2.test &&
 	cat <<-EOF >job2.expected &&
 	45320
 	EOF
 	test_cmp job2.expected job2.test &&
-	flux cancel $jobid
+	flux cancel ${jobid}
 '
 
 test_expect_success 'submit a job with urgency of 0' '
 	jobid=$(flux submit --setattr=system.bank=account3 --urgency=0 -n1 hostname) &&
-	flux job wait-event -f json $jobid priority | jq '.context.priority' > job3.test &&
+	flux job wait-event -f json ${jobid} priority | jq '.context.priority' > job3.test &&
 	cat <<-EOF >job3.expected &&
 	0
 	EOF
 	test_cmp job3.expected job3.test &&
-	flux cancel $jobid
+	flux cancel ${jobid}
 '
 
 test_expect_success 'submit a job with urgency of 31' '
 	jobid=$(flux submit --setattr=system.bank=account3 --urgency=31 -n1 hostname) &&
-	flux job wait-event -f json $jobid priority | jq '.context.priority' > job4.test &&
+	flux job wait-event -f json ${jobid} priority | jq '.context.priority' > job4.test &&
 	cat <<-EOF >job4.expected &&
 	4294967295
 	EOF
 	test_cmp job4.expected job4.test &&
-	flux cancel $jobid
+	flux cancel ${jobid}
 '
 
 test_expect_success 'submit a job with other bank' '
 	jobid=$(flux submit --setattr=system.bank=account2 -n1 hostname) &&
-	flux job wait-event -f json $jobid priority | jq '.context.priority' > job5.test &&
+	flux job wait-event -f json ${jobid} priority | jq '.context.priority' > job5.test &&
 	cat <<-EOF >job5.expected &&
 	11345
 	EOF
 	test_cmp job5.expected job5.test &&
-	flux cancel $jobid
+	flux cancel ${jobid}
 '
 
 test_expect_success 'submit a job using default bank' '
 	jobid=$(flux submit -n1 hostname) &&
-	flux job wait-event -f json $jobid priority | jq '.context.priority' > job6.test &&
+	flux job wait-event -f json ${jobid} priority | jq '.context.priority' > job6.test &&
 	cat <<-EOF >job6.expected &&
 	45321
 	EOF
 	test_cmp job6.expected job6.test &&
-	flux cancel $jobid
+	flux cancel ${jobid}
 '
 
 test_expect_success 'submit a job using a bank the user does not belong to' '
@@ -220,12 +220,12 @@ test_expect_success 'resend user/bank information with valid data and successful
 	EOF
 	flux python ${SEND_PAYLOAD} valid_info.json &&
 	jobid2=$(flux python ${SUBMIT_AS} 5011 sleep 10)
-	flux job wait-event -f json $jobid2 priority | jq '.context.priority' > job2.test &&
+	flux job wait-event -f json ${jobid2} priority | jq '.context.priority' > job2.test &&
 	cat <<-EOF >job2.expected &&
 	45321
 	EOF
 	test_cmp job2.expected job2.test &&
-	flux cancel $jobid2
+	flux cancel ${jobid2}
 '
 
 test_done

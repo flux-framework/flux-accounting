@@ -54,7 +54,7 @@ test_expect_success 'send flux-accounting DB information to the plugin' '
 
 test_expect_success 'submit a sleep 180 job and ensure it is running' '
 	jobid1=$(flux python ${SUBMIT_AS} 1001 sleep 180) &&
-	flux job wait-event -vt 60 $jobid1 alloc
+	flux job wait-event -vt 60 ${jobid1} alloc
 '
 
 test_expect_success 'stop scheduler from allocating resources to jobs' '
@@ -64,8 +64,8 @@ test_expect_success 'stop scheduler from allocating resources to jobs' '
 test_expect_success 'submit 2 more sleep 180 jobs; ensure both are in SCHED state' '
 	jobid2=$(flux python ${SUBMIT_AS} 1001 sleep 180) &&
 	jobid3=$(flux python ${SUBMIT_AS} 1001 sleep 180) &&
-	flux job wait-event -vt 60 $jobid2 priority &&
-	flux job wait-event -vt 60 $jobid3 priority
+	flux job wait-event -vt 60 ${jobid2} priority &&
+	flux job wait-event -vt 60 ${jobid3} priority
 '
 
 test_expect_success 'ensure current running and active jobs are correct: 1 running, 3 active' '
@@ -84,9 +84,9 @@ test_expect_success 'update the plugin and ensure current running and active job
 '
 
 test_expect_success 'change the priority of one of the jobs' '
-	flux job urgency $jobid2 31 &&
+	flux job urgency ${jobid2} 31 &&
 	flux account-priority-update -p $(pwd)/FluxAccountingTest.db &&
-	flux job eventlog $jobid2 | grep ^priority | tail -n 1 | priority=4294967295
+	flux job eventlog ${jobid2} | grep ^priority | tail -n 1 | priority=4294967295
 '
 
 test_expect_success 'ensure job counts are still the same: 1 running, 3 active' '
@@ -97,7 +97,7 @@ test_expect_success 'ensure job counts are still the same: 1 running, 3 active' 
 '
 
 test_expect_success 'cancel one of the scheduled jobs, check job counts are correct: 1 running, 2 active' '
-	flux cancel $jobid2 &&
+	flux cancel ${jobid2} &&
 	flux jobtap query mf_priority.so > query_4.json &&
 	test_debug "jq -S . <query_4.json" &&
 	jq -e ".mf_priority_map[0].banks[0].cur_run_jobs == 1" <query_4.json &&
@@ -105,8 +105,8 @@ test_expect_success 'cancel one of the scheduled jobs, check job counts are corr
 '
 
 test_expect_success 'cancel sleep 180 job(s), check job counts: 0 running, 0 active' '
-	flux cancel $jobid1 &&
-	flux cancel $jobid3 &&
+	flux cancel ${jobid1} &&
+	flux cancel ${jobid3} &&
 	flux jobtap query mf_priority.so > query_5.json &&
 	test_debug "jq -S . <query_5.json" &&
 	jq -e ".mf_priority_map[0].banks[0].cur_run_jobs == 0" <query_5.json &&

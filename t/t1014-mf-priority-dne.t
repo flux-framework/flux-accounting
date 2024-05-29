@@ -25,15 +25,15 @@ test_expect_success 'submit a number of jobs with no user/bank info loaded to pl
 '
 
 test_expect_success 'make sure jobs get held in state PRIORITY' '
-	flux job wait-event -vt 60 $jobid1 depend &&
-	flux job wait-event -vt 60 $jobid2 depend &&
-	flux job wait-event -vt 60 $jobid3 depend
+	flux job wait-event -vt 60 ${jobid1} depend &&
+	flux job wait-event -vt 60 ${jobid2} depend &&
+	flux job wait-event -vt 60 ${jobid3} depend
 '
 
 test_expect_success 'cancel held jobs' '
-	flux cancel $jobid1 &&
-	flux cancel $jobid2 &&
-	flux cancel $jobid3
+	flux cancel ${jobid1} &&
+	flux cancel ${jobid2} &&
+	flux cancel ${jobid3}
 '
 
 test_expect_success 'submit job #1 with no user/bank info loaded to plugin' '
@@ -41,7 +41,7 @@ test_expect_success 'submit job #1 with no user/bank info loaded to plugin' '
 '
 
 test_expect_success 'check that job #1 is in state PRIORITY' '
-	flux job wait-event -vt 60 $jobid1 depend
+	flux job wait-event -vt 60 ${jobid1} depend
 '
 
 test_expect_success 'send the user/bank information to the plugin without reprioritizing all active jobs' '
@@ -89,11 +89,11 @@ test_expect_success 'send the user/bank information to the plugin without reprio
 
 test_expect_success 'submit job #2 which should run before job #1' '
 	jobid2=$(flux submit hostname) &&
-	flux job wait-event -t 15 $jobid2 clean
+	flux job wait-event -t 15 ${jobid2} clean
 '
 
 test_expect_success 'cancel job #1' '
-	flux cancel $jobid1
+	flux cancel ${jobid1}
 '
 
 test_done

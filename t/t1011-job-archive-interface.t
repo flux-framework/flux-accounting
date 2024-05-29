@@ -86,9 +86,9 @@ test_expect_success 'load job-archive module' '
 
 test_expect_success 'submit a job that does not run' '
 	job=$(flux submit --urgency=0 sleep 60) &&
-	flux job wait-event -vt 10 $job priority &&
-	flux cancel $job &&
-	wait_db $job ${ARCHIVEDB}
+	flux job wait-event -vt 10 ${job} priority &&
+	flux cancel ${job} &&
+	wait_db ${job} ${ARCHIVEDB}
 '
 
 test_expect_success 'run scripts to update job usage and fair-share' '
@@ -113,10 +113,10 @@ test_expect_success 'submit some jobs so they populate flux-core job-archive' '
 	jobid2=$(flux submit -N 1 hostname) &&
 	jobid3=$(flux submit -N 2 hostname) &&
 	jobid4=$(flux submit -N 1 hostname) &&
-	wait_db $jobid1 ${ARCHIVEDB} &&
-	wait_db $jobid2 ${ARCHIVEDB} &&
-	wait_db $jobid3 ${ARCHIVEDB} &&
-	wait_db $jobid4 ${ARCHIVEDB}
+	wait_db ${jobid1} ${ARCHIVEDB} &&
+	wait_db ${jobid2} ${ARCHIVEDB} &&
+	wait_db ${jobid3} ${ARCHIVEDB} &&
+	wait_db ${jobid4} ${ARCHIVEDB}
 '
 
 test_expect_success 'call --copy argument to populate jobs table from job-archive DB' '
@@ -129,9 +129,9 @@ test_expect_success 'submit some sleep 1 jobs under one user' '
 	jobid1=$(flux submit -N 1 sleep 1) &&
 	jobid2=$(flux submit -N 1 sleep 1) &&
 	jobid3=$(flux submit -n 2 -N 2 sleep 1) &&
-	wait_db $jobid1 ${ARCHIVEDB} &&
-	wait_db $jobid2 ${ARCHIVEDB} &&
-	wait_db $jobid3 ${ARCHIVEDB}
+	wait_db ${jobid1} ${ARCHIVEDB} &&
+	wait_db ${jobid2} ${ARCHIVEDB} &&
+	wait_db ${jobid3} ${ARCHIVEDB}
 '
 
 test_expect_success 'run fetch-job-records script' '
@@ -160,9 +160,9 @@ test_expect_success 'submit some sleep 1 jobs under the secondary bank of the sa
 	jobid1=$(flux submit --setattr=system.bank=account2 -N 1 sleep 1) &&
 	jobid2=$(flux submit --setattr=system.bank=account2 -N 1 sleep 1) &&
 	jobid3=$(flux submit --setattr=system.bank=account2 -n 2 -N 2 sleep 1) &&
-	wait_db $jobid1 ${ARCHIVEDB} &&
-	wait_db $jobid2 ${ARCHIVEDB} &&
-	wait_db $jobid3 ${ARCHIVEDB}
+	wait_db ${jobid1} ${ARCHIVEDB} &&
+	wait_db ${jobid2} ${ARCHIVEDB} &&
+	wait_db ${jobid3} ${ARCHIVEDB}
 '
 
 test_expect_success 'run custom job-list script' '

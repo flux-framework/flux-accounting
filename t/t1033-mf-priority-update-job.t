@@ -73,47 +73,47 @@ test_expect_success 'configure flux with some queues' '
 
 test_expect_success 'submit job for testing' '
 	jobid=$(flux python ${SUBMIT_AS} 5001 --queue=bronze sleep 30) &&
-	flux job wait-event -f json $jobid priority &&
-	flux job eventlog $jobid > eventlog.out &&
+	flux job wait-event -f json ${jobid} priority &&
+	flux job eventlog ${jobid} > eventlog.out &&
 	grep "1050000" eventlog.out
 '
 
 test_expect_success 'update both queue and bank successfully' '
-	flux update $jobid queue=silver bank=B &&
-	flux job wait-event -f json $jobid priority &&
-	flux job eventlog $jobid > eventlog.out &&
+	flux update ${jobid} queue=silver bank=B &&
+	flux job wait-event -f json ${jobid} priority &&
+	flux job eventlog ${jobid} > eventlog.out &&
 	grep "attributes.system.queue=\"silver\"" eventlog.out &&
 	grep 2050000 eventlog.out &&
 	grep "attributes.system.bank=\"B\"" eventlog.out &&
-	flux cancel $jobid
+	flux cancel ${jobid}
 '
 
 test_expect_success 'submit another job for testing' '
 	jobid=$(flux python ${SUBMIT_AS} 5001 --queue=bronze sleep 30) &&
-	flux job wait-event -f json $jobid priority
+	flux job wait-event -f json ${jobid} priority
 '
 
 test_expect_success 'update job with invalid combination (invalid bank)' '
-	test_must_fail flux update $jobid queue=silver bank=foo > nonexistent_bank.out 2>&1 &&
+	test_must_fail flux update ${jobid} queue=silver bank=foo > nonexistent_bank.out 2>&1 &&
 	test_debug "cat nonexistent_bank.out" &&
 	grep "cannot find user/bank or user/default bank entry for uid:" nonexistent_bank.out
 '
 
 test_expect_success 'check that job is still in original queue' '
-	flux job info $jobid jobspec > jobspec.out &&
+	flux job info ${jobid} jobspec > jobspec.out &&
 	grep "\"queue\": \"bronze\"" jobspec.out
 '
 
 test_expect_success 'update job with invalud combination (invalid queue)' '
-	test_must_fail flux update $jobid bank=B queue=gold > unavail_queue.out 2>&1 &&
+	test_must_fail flux update ${jobid} bank=B queue=gold > unavail_queue.out 2>&1 &&
 	test_debug "cat unavail_queue.out" &&
 	grep "ERROR: mf_priority: queue not valid for user: gold" unavail_queue.out
 '
 
 test_expect_success 'check that job is still under original bank' '
-	flux job eventlog $jobid > eventlog.out &&
+	flux job eventlog ${jobid} > eventlog.out &&
 	grep "attributes.system.bank=\"A\"" eventlog.out &&
-	flux cancel $jobid
+	flux cancel ${jobid}
 '
 
 test_expect_success 'shut down flux-accounting service' '

@@ -59,9 +59,9 @@ test_expect_success 'submit job for testing' '
 '
 
 test_expect_success 'update of duration of pending job works while at active jobs limit' '
-	flux update $jobid1 duration=1m &&
-	flux job wait-event -vt 10 $jobid1 priority &&
-	flux job eventlog $jobid1 \
+	flux update ${jobid1} duration=1m &&
+	flux job wait-event -vt 10 ${jobid1} priority &&
+	flux job eventlog ${jobid1} \
 		| grep jobspec-update \
 		| grep duration=60
 '

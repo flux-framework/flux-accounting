@@ -75,12 +75,12 @@ test_expect_success 'users can run jobs without specifying a queue' '
 	flux account add-queue default --priority=1000 &&
 	flux account-priority-update -p $(pwd)/FluxAccountingTest.db &&
 	jobid0=$(flux python ${SUBMIT_AS} 5011 -n1 hostname) &&
-	flux job wait-event -f json $jobid0 priority | jq '.context.priority' > job0.test &&
+	flux job wait-event -f json ${jobid0} priority | jq '.context.priority' > job0.test &&
 	cat <<-EOF >job0.expected &&
 	50000
 	EOF
 	test_cmp job0.expected job0.test &&
-	flux cancel $jobid0
+	flux cancel ${jobid0}
 '
 
 # Include "foo" queue that accounting doesn't know about for test below
@@ -107,7 +107,7 @@ test_expect_success 'submit a job using a queue the user does not belong to' '
 test_expect_success 'submit a job using standby queue, which should not increase job priority' '
 	jobid1=$(flux python ${SUBMIT_AS} 5011 --job-name=standby \
 		--setattr=system.bank=account1 --queue=standby -n1 hostname) &&
-	flux job wait-event -f json $jobid1 priority | jq '.context.priority' > job1.test &&
+	flux job wait-event -f json ${jobid1} priority | jq '.context.priority' > job1.test &&
 	cat <<-EOF >job1.expected &&
 	50000
 	EOF
@@ -117,7 +117,7 @@ test_expect_success 'submit a job using standby queue, which should not increase
 test_expect_success 'submit a job using expedite queue, which should increase priority' '
 	jobid2=$(flux python ${SUBMIT_AS} 5011 --job-name=expedite \
 		--setattr=system.bank=account1 --queue=expedite -n1 hostname) &&
-	flux job wait-event -f json $jobid2 priority | jq '.context.priority' > job2.test &&
+	flux job wait-event -f json ${jobid2} priority | jq '.context.priority' > job2.test &&
 	cat <<-EOF >job2.expected &&
 	100050000
 	EOF
@@ -143,11 +143,11 @@ test_expect_success 'check order of job queue' '
 '
 
 test_expect_success 'cancel existing jobs' '
-	flux cancel $jobid1 &&
-	flux cancel $jobid2 &&
-	flux cancel $jobid3 &&
-	flux cancel $jobid4 &&
-	flux cancel $jobid5
+	flux cancel ${jobid1} &&
+	flux cancel ${jobid2} &&
+	flux cancel ${jobid3} &&
+	flux cancel ${jobid4} &&
+	flux cancel ${jobid5}
 '
 
 test_expect_success 'unload mf_priority.so' '
@@ -156,17 +156,17 @@ test_expect_success 'unload mf_priority.so' '
 
 test_expect_success 'submit a job to a nonexistent queue with no plugin information loaded' '
 	jobid6=$(flux python ${SUBMIT_AS} 5011 --queue=foo -n1 hostname) &&
-	flux job wait-event -vt 60 $jobid6 depend
+	flux job wait-event -vt 60 ${jobid6} depend
 '
 
 test_expect_success 'reload mf_priority.so and update it with the sample test data again' '
 	flux jobtap load ${MULTI_FACTOR_PRIORITY} &&
-	flux job wait-event -vt 60 $jobid6 depend &&
+	flux job wait-event -vt 60 ${jobid6} depend &&
 	flux account-priority-update -p $(pwd)/FluxAccountingTest.db
 '
 
 test_expect_success 'cancel final job' '
-	flux cancel $jobid6
+	flux cancel ${jobid6}
 '
 
 test_expect_success 'shut down flux-accounting service' '
