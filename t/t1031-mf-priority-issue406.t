@@ -58,9 +58,9 @@ test_expect_success 'submit jobs as three different users' '
 '
 
 test_expect_success 'check that the jobs successfully received their priority' '
-	flux job wait-event -vt 5 $job1 priority &&
-	flux job wait-event -vt 5 $job2 priority &&
-	flux job wait-event -vt 5 $job3 priority
+	flux job wait-event -vt 5 ${job1} priority &&
+	flux job wait-event -vt 5 ${job2} priority &&
+	flux job wait-event -vt 5 ${job3} priority
 '
 
 test_expect_success 'unload plugin' '
@@ -82,30 +82,30 @@ test_expect_success 'reprioritize jobs' '
 '
 
 test_expect_success 'make sure job 1 is still in PRIORITY state' '
-	flux job wait-event -vt 10 $job1 depend &&
-	flux job info $job1 eventlog > eventlog.out &&
+	flux job wait-event -vt 10 ${job1} depend &&
+	flux job info ${job1} eventlog > eventlog.out &&
 	cat eventlog.out &&
 	grep "depend" eventlog.out
 '
 
 test_expect_success 'make sure job 2 is still in PRIORITY state' '
-	flux job wait-event -vt 10 $job2 depend &&
-	flux job info $job2 eventlog > eventlog.out &&
+	flux job wait-event -vt 10 ${job2} depend &&
+	flux job info ${job2} eventlog > eventlog.out &&
 	cat eventlog.out &&
 	grep "depend" eventlog.out
 '
 
 test_expect_success 'make sure job 3 is still in PRIORITY state' '
-	flux job wait-event -vt 10 $job3 depend &&
-	flux job info $job3 eventlog > eventlog.out &&
+	flux job wait-event -vt 10 ${job3} depend &&
+	flux job info ${job3} eventlog > eventlog.out &&
 	cat eventlog.out &&
 	grep "depend" eventlog.out
 '
 
 test_expect_success 'cancel jobs' '
-	flux job cancel $job1 &&
-	flux job cancel $job2 &&
-	flux job cancel $job3
+	flux cancel ${job1} &&
+	flux cancel ${job2} &&
+	flux cancel ${job3}
 '
 
 test_expect_success 'shut down flux-accounting service' '

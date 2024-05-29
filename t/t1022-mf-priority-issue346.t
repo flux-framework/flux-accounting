@@ -55,7 +55,7 @@ test_expect_success 'submit a job with no user/bank info loaded to plugin' '
 '
 
 test_expect_success 'make sure job is held in state PRIORITY' '
-	flux job wait-event -vt 60 $jobid1 depend
+	flux job wait-event -vt 60 ${jobid1} depend
 '
 
 test_expect_success 'send flux-accounting DB information to the plugin' '
@@ -63,11 +63,11 @@ test_expect_success 'send flux-accounting DB information to the plugin' '
 '
 
 test_expect_success 'check that held job transitions to RUN' '
-	flux job wait-event -vt 60 $jobid1 alloc
+	flux job wait-event -vt 60 ${jobid1} alloc
 '
 
 test_expect_success 'cancel job' '
-	flux job cancel $jobid1
+	flux cancel ${jobid1}
 '
 
 test_expect_success 'submit a job to plugin while not having an entry in the plugin' '

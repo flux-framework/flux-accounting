@@ -48,8 +48,8 @@ test_expect_success 'add a user to the DB' '
 
 test_expect_success 'submit a job before plugin has any flux-accounting information' '
 	jobid=$(flux python ${SUBMIT_AS} 1002 hostname) &&
-	flux job wait-event -vt 60 $jobid depend &&
-	flux job info $jobid eventlog > eventlog.out &&
+	flux job wait-event -vt 60 ${jobid} depend &&
+	flux job info ${jobid} eventlog > eventlog.out &&
 	grep "depend" eventlog.out
 '
 
@@ -59,10 +59,10 @@ test_expect_success 'add user to flux-accounting DB and update plugin' '
 '
 
 test_expect_success 'check that bank was added to jobspec' '
-	flux job wait-event -f json $jobid priority &&
-	flux job info $jobid eventlog > eventlog.out &&
+	flux job wait-event -f json ${jobid} priority &&
+	flux job info ${jobid} eventlog > eventlog.out &&
 	grep "\"attributes.system.bank\":\"account1\"" eventlog.out &&
-	flux job cancel $jobid
+	flux cancel ${jobid}
 '
 
 test_expect_success 'send flux-accounting DB information to the plugin' '
@@ -71,18 +71,18 @@ test_expect_success 'send flux-accounting DB information to the plugin' '
 
 test_expect_success 'successfully submit a job under a specified bank' '
 	jobid=$(flux python ${SUBMIT_AS} 1001 --setattr=system.bank=account2 hostname) &&
-	flux job wait-event -f json $jobid priority &&
-	flux job info $jobid jobspec > jobspec.out &&
+	flux job wait-event -f json ${jobid} priority &&
+	flux job info ${jobid} jobspec > jobspec.out &&
 	grep "account2" jobspec.out &&
-	flux job cancel $jobid
+	flux cancel ${jobid}
 '
 
 test_expect_success 'successfully submit a job under a default bank' '
 	jobid=$(flux python ${SUBMIT_AS} 1001 hostname) &&
-	flux job wait-event -f json $jobid priority &&
-	flux job info $jobid eventlog > eventlog.out &&
+	flux job wait-event -f json ${jobid} priority &&
+	flux job info ${jobid} eventlog > eventlog.out &&
 	grep "\"attributes.system.bank\":\"account1\"" eventlog.out &&
-	flux job cancel $jobid
+	flux cancel ${jobid}
 '
 
 test_expect_success 'update the default bank for the user' '
@@ -92,10 +92,10 @@ test_expect_success 'update the default bank for the user' '
 
 test_expect_success 'successfully submit a job under the new default bank' '
 	jobid=$(flux python ${SUBMIT_AS} 1001 hostname) &&
-	flux job wait-event -f json $jobid priority &&
-	flux job info $jobid eventlog > eventlog.out &&
+	flux job wait-event -f json ${jobid} priority &&
+	flux job info ${jobid} eventlog > eventlog.out &&
 	grep "\"attributes.system.bank\":\"account2\"" eventlog.out &&
-	flux job cancel $jobid
+	flux cancel ${jobid}
 '
 
 test_expect_success 'shut down flux-accounting service' '

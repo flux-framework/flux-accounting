@@ -65,54 +65,54 @@ test_expect_success 'submit one job under default bank, two under non-default ba
 '
 
 test_expect_success 'update of bank of pending job works' '
-	flux update $job1 bank=B &&
-	flux job wait-event -t 30 $job1 priority &&
-	flux job eventlog $job1 > eventlog.out &&
+	flux update ${job1} bank=B &&
+	flux job wait-event -t 30 ${job1} priority &&
+	flux job eventlog ${job1} > eventlog.out &&
 	grep "attributes.system.bank=\"B\"" eventlog.out
 '
 
 test_expect_success 'trying to update to a bank user does not have access to fails in job.validate' '
-	test_must_fail flux update $job1 bank=C > invalid_bank.out 2>&1 &&
+	test_must_fail flux update ${job1} bank=C > invalid_bank.out 2>&1 &&
 	test_debug "cat invalid_bank.out" &&
 	grep "cannot find user/bank or user/default bank entry for uid:" invalid_bank.out
 '
 
 test_expect_success 'trying to update to a bank that does not exist fails in job.validate' '
-	test_must_fail flux update $job1 bank=foo > nonexistent_bank.out 2>&1 &&
+	test_must_fail flux update ${job1} bank=foo > nonexistent_bank.out 2>&1 &&
 	test_debug "cat nonexistent_bank.out" &&
 	grep "cannot find user/bank or user/default bank entry for uid:" nonexistent_bank.out
 '
 
 test_expect_success 'update a job to another bank that is at max-active-jobs limit' '
 	job4=$(flux python ${SUBMIT_AS} 5001 --urgency=0 sleep 30) &&
-	test_must_fail flux update $job4 bank=B > max_active_jobs.out 2>&1 &&
+	test_must_fail flux update ${job4} bank=B > max_active_jobs.out 2>&1 &&
 	test_debug "cat max_active_jobs.out" &&
 	grep "new bank is already at max-active-jobs limit" max_active_jobs.out &&
-	flux cancel $job4
+	flux cancel ${job4}
 '
 
 test_expect_success 'cancel one of the jobs so bank is not at max-active-jobs limit' '
-	flux cancel $job3
+	flux cancel ${job3}
 '
 
 test_expect_success 'update urgency of held jobs so they transition to RUN' '
-	flux job urgency $job1 default &&
-	flux job urgency $job2 default &&
-	flux job wait-event -t 10 $job1 alloc &&
-	flux job wait-event -t 10 $job2 alloc
+	flux job urgency ${job1} default &&
+	flux job urgency ${job2} default &&
+	flux job wait-event -t 10 ${job1} alloc &&
+	flux job wait-event -t 10 ${job2} alloc
 '
 
 test_expect_success 'update a job to another bank that is at max-run-jobs limit' '
 	job5=$(flux python ${SUBMIT_AS} 5001 --urgency=0 sleep 30) &&
-	test_must_fail flux update $job5 bank=B > max_run_jobs.out 2>&1 &&
+	test_must_fail flux update ${job5} bank=B > max_run_jobs.out 2>&1 &&
 	test_debug "cat max_run_jobs.out" &&
 	grep "already at max-run-jobs limit is not allowed" max_run_jobs.out &&
-	flux cancel $job5
+	flux cancel ${job5}
 '
 
 test_expect_success 'cancel jobs' '
-	flux cancel $job1 &&
-	flux cancel $job2
+	flux cancel ${job1} &&
+	flux cancel ${job2}
 '
 
 test_expect_success 'submit job under non-default bank' '
@@ -120,9 +120,9 @@ test_expect_success 'submit job under non-default bank' '
 '
 
 test_expect_success 'updating job to default bank works' '
-	flux update $job6 bank=A &&
-	flux job wait-event -t 30 $job6 priority &&
-	flux job eventlog $job6 > eventlog.out &&
+	flux update ${job6} bank=A &&
+	flux job wait-event -t 30 ${job6} priority &&
+	flux job eventlog ${job6} > eventlog.out &&
 	grep "attributes.system.bank=\"A\"" eventlog.out
 '
 

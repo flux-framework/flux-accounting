@@ -94,14 +94,14 @@ test_expect_success 'a submitted job while at max-running-jobs limit will have a
 	jobid3=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
 	flux job wait-event -vt 60 \
 		--match-context=description="max-running-jobs-user-limit" \
-		$jobid3 dependency-add
+		${jobid3} dependency-add
 '
 
 test_expect_success 'a job transitioning to job.state.inactive should release a held job (if any)' '
-	flux job cancel $jobid1 &&
-	flux job wait-event -vt 60 $jobid3 alloc &&
-	flux job cancel $jobid2 &&
-	flux job cancel $jobid3
+	flux cancel ${jobid1} &&
+	flux job wait-event -vt 60 ${jobid3} alloc &&
+	flux cancel ${jobid2} &&
+	flux cancel ${jobid3}
 '
 
 test_expect_success 'submit max number of jobs with other bank' '
@@ -112,9 +112,9 @@ test_expect_success 'a submitted job while at max-running-jobs limit will have a
 	jobid2=$(flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account2 sleep 60) &&
 	flux job wait-event -vt 60 \
 		--match-context=description="max-running-jobs-user-limit" \
-		$jobid2 dependency-add &&
-	flux job cancel $jobid1 &&
-	flux job cancel $jobid2
+		${jobid2} dependency-add &&
+	flux cancel ${jobid1} &&
+	flux cancel ${jobid2}
 '
 
 test_expect_success 'submit max number of jobs with a mix of default bank and explicity set bank' '
@@ -126,8 +126,8 @@ test_expect_success 'a submitted job while at max-running-jobs limit will have a
 	jobid3=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
 	flux job wait-event -vt 60 \
 		--match-context=description="max-running-jobs-user-limit" \
-		$jobid3 dependency-add &&
-	flux job cancel $jobid3
+		${jobid3} dependency-add &&
+	flux cancel ${jobid3}
 '
 
 test_expect_success 'increase the max jobs count of the user' '
@@ -156,13 +156,13 @@ test_expect_success 'update plugin with same new sample test data' '
 '
 
 test_expect_success 'make sure jobs are still running' '
-	flux job wait-event -vt 10 $jobid1 alloc &&
-	flux job wait-event -vt 10 $jobid2 alloc
+	flux job wait-event -vt 10 ${jobid1} alloc &&
+	flux job wait-event -vt 10 ${jobid2} alloc
 '
 
 test_expect_success 'cancel all remaining jobs' '
-	flux job cancel ${jobid1} &&
-	flux job cancel ${jobid2}
+	flux cancel ${jobid1} &&
+	flux cancel ${jobid2}
 '
 
 test_expect_success 'submit max number of jobs' '
@@ -176,10 +176,10 @@ test_expect_success '5th submitted job should be rejected because user has reach
 	test_must_fail flux python ${SUBMIT_AS} 5011 sleep 60 > max_active_jobs.out 2>&1 &&
 	test_debug "cat max_active_jobs.out" &&
 	grep "user has max active jobs" max_active_jobs.out &&
-	flux job cancel $jobid1 &&
-	flux job cancel $jobid2 &&
-	flux job cancel $jobid3 &&
-	flux job cancel $jobid4
+	flux cancel ${jobid1} &&
+	flux cancel ${jobid2} &&
+	flux cancel ${jobid3} &&
+	flux cancel ${jobid4}
 '
 
 test_expect_success 'update max_active_jobs limit' '
@@ -222,12 +222,12 @@ test_expect_success '6th submitted job should be rejected because user has reach
 '
 
 test_expect_success 'cancel one of the active jobs' '
-	flux job cancel $jobid5
+	flux cancel ${jobid5}
 '
 
 test_expect_success 'newly submitted job should now be accepted since user is under their max_active_jobs limit' '
 	jobid7=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
-	flux job wait-event -f json $jobid7 priority | jq '.context.priority' > job7.test &&
+	flux job wait-event -f json ${jobid7} priority | jq '.context.priority' > job7.test &&
 	cat <<-EOF >job7.expected &&
 	45321
 	EOF
@@ -235,11 +235,11 @@ test_expect_success 'newly submitted job should now be accepted since user is un
 '
 
 test_expect_success 'cancel all remaining active jobs' '
-	flux job cancel $jobid1 &&
-	flux job cancel $jobid2 &&
-	flux job cancel $jobid3 &&
-	flux job cancel $jobid4 &&
-	flux job cancel $jobid7
+	flux cancel ${jobid1} &&
+	flux cancel ${jobid2} &&
+	flux cancel ${jobid3} &&
+	flux cancel ${jobid4} &&
+	flux cancel ${jobid7}
 '
 
 test_expect_success 'create another user with the same limits in multiple banks' '
@@ -296,10 +296,10 @@ test_expect_success 'submitting a 3rd job under either bank should result in a j
 '
 
 test_expect_success 'cancel all remaining jobs' '
-	flux job cancel $jobid1 &&
-	flux job cancel $jobid2 &&
-	flux job cancel $jobid3 &&
-	flux job cancel $jobid4
+	flux cancel ${jobid1} &&
+	flux cancel ${jobid2} &&
+	flux cancel ${jobid3} &&
+	flux cancel ${jobid4}
 '
 
 test_done
