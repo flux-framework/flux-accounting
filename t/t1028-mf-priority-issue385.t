@@ -64,8 +64,8 @@ test_expect_success 'submitting a job under invalid user while plugin has data f
 '
 
 test_expect_success 'cancel running jobs' '
-	flux job cancel $jobid1 &&
-	flux job cancel $jobid2
+	flux cancel $jobid1 &&
+	flux cancel $jobid2
 '
 
 test_expect_success 'add the previously invalid user to flux-accounting DB, plugin' '
@@ -76,7 +76,7 @@ test_expect_success 'add the previously invalid user to flux-accounting DB, plug
 test_expect_success 'previously invalid user can now submit jobs' '
 	jobid3=$(flux python ${SUBMIT_AS} 9999 hostname) &&
 	flux job wait-event -vt 60 $jobid3 alloc &&
-	flux job cancel $jobid3
+	flux cancel $jobid3
 '
 
 test_expect_success 'shut down flux-accounting service' '

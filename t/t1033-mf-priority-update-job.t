@@ -85,7 +85,7 @@ test_expect_success 'update both queue and bank successfully' '
 	grep "attributes.system.queue=\"silver\"" eventlog.out &&
 	grep 2050000 eventlog.out &&
 	grep "attributes.system.bank=\"B\"" eventlog.out &&
-	flux job cancel $jobid
+	flux cancel $jobid
 '
 
 test_expect_success 'submit another job for testing' '
@@ -113,7 +113,7 @@ test_expect_success 'update job with invalud combination (invalid queue)' '
 test_expect_success 'check that job is still under original bank' '
 	flux job eventlog $jobid > eventlog.out &&
 	grep "attributes.system.bank=\"A\"" eventlog.out &&
-	flux job cancel $jobid
+	flux cancel $jobid
 '
 
 test_expect_success 'shut down flux-accounting service' '

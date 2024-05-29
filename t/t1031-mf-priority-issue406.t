@@ -103,9 +103,9 @@ test_expect_success 'make sure job 3 is still in PRIORITY state' '
 '
 
 test_expect_success 'cancel jobs' '
-	flux job cancel $job1 &&
-	flux job cancel $job2 &&
-	flux job cancel $job3
+	flux cancel $job1 &&
+	flux cancel $job2 &&
+	flux cancel $job3
 '
 
 test_expect_success 'shut down flux-accounting service' '

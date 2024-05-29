@@ -93,7 +93,7 @@ test_expect_success 'updating a job using a queue the user does not belong to fa
 '
 
 test_expect_success 'cancel job' '
-	flux job cancel $jobid1
+	flux cancel $jobid1
 '
 
 test_expect_success 'submit job for testing under non-default bank' '
@@ -118,7 +118,7 @@ test_expect_success 'updating a job under non-default bank using a queue the use
 '
 
 test_expect_success 'cancel job' '
-	flux job cancel $jobid2
+	flux cancel $jobid2
 '
 
 test_expect_success 'shut down flux-accounting service' '

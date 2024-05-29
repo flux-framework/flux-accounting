@@ -106,7 +106,7 @@ test_expect_success 'disabling a user while they have an active job should not k
 	flux account delete-user $username account2 &&
 	flux account-priority-update -p $(pwd)/FluxAccountingTest.db &&
 	flux job wait-event -vt 60 $jobid5 alloc &&
-	flux job cancel $jobid5
+	flux cancel $jobid5
 '
 
 test_expect_success 'trying to submit a job now should result in a job rejection' '

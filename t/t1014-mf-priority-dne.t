@@ -31,9 +31,9 @@ test_expect_success 'make sure jobs get held in state PRIORITY' '
 '
 
 test_expect_success 'cancel held jobs' '
-	flux job cancel $jobid1 &&
-	flux job cancel $jobid2 &&
-	flux job cancel $jobid3
+	flux cancel $jobid1 &&
+	flux cancel $jobid2 &&
+	flux cancel $jobid3
 '
 
 test_expect_success 'submit job #1 with no user/bank info loaded to plugin' '
@@ -93,7 +93,7 @@ test_expect_success 'submit job #2 which should run before job #1' '
 '
 
 test_expect_success 'cancel job #1' '
-	flux job cancel $jobid1
+	flux cancel $jobid1
 '
 
 test_done

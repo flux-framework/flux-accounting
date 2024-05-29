@@ -67,7 +67,7 @@ test_expect_success 'check that held job transitions to RUN' '
 '
 
 test_expect_success 'cancel job' '
-	flux job cancel $jobid1
+	flux cancel $jobid1
 '
 
 test_expect_success 'submit a job to plugin while not having an entry in the plugin' '

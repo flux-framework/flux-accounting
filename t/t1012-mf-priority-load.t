@@ -120,11 +120,11 @@ test_expect_success 'check flux jobs - should have 1 running job, 2 pending jobs
 '
 
 test_expect_success 'cancel running jobs one at a time and check that each pending job transitions to RUN' '
-	flux job cancel $jobid1 &&
+	flux cancel $jobid1 &&
 	flux job wait-event -vt 60 $jobid2 alloc &&
-	flux job cancel $jobid2 &&
+	flux cancel $jobid2 &&
 	flux job wait-event -vt 60 $jobid3 alloc &&
-	flux job cancel $jobid3
+	flux cancel $jobid3
 '
 
 test_expect_success 'unload mf_priority.so' '
@@ -147,7 +147,7 @@ test_expect_success 'update plugin with sample test data again' '
 
 test_expect_success 'check that originally pending job transitions to RUN' '
 	flux job wait-event -vt 60 $jobid4 alloc &&
-	flux job cancel $jobid4
+	flux cancel $jobid4
 '
 
 test_done

@@ -80,7 +80,7 @@ test_expect_success 'users can run jobs without specifying a queue' '
 	50000
 	EOF
 	test_cmp job0.expected job0.test &&
-	flux job cancel $jobid0
+	flux cancel $jobid0
 '
 
 # Include "foo" queue that accounting doesn't know about for test below
@@ -143,11 +143,11 @@ test_expect_success 'check order of job queue' '
 '
 
 test_expect_success 'cancel existing jobs' '
-	flux job cancel $jobid1 &&
-	flux job cancel $jobid2 &&
-	flux job cancel $jobid3 &&
-	flux job cancel $jobid4 &&
-	flux job cancel $jobid5
+	flux cancel $jobid1 &&
+	flux cancel $jobid2 &&
+	flux cancel $jobid3 &&
+	flux cancel $jobid4 &&
+	flux cancel $jobid5
 '
 
 test_expect_success 'unload mf_priority.so' '
@@ -166,7 +166,7 @@ test_expect_success 'reload mf_priority.so and update it with the sample test da
 '
 
 test_expect_success 'cancel final job' '
-	flux job cancel $jobid6
+	flux cancel $jobid6
 '
 
 test_expect_success 'shut down flux-accounting service' '

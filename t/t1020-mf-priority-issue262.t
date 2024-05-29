@@ -97,7 +97,7 @@ test_expect_success 'ensure job counts are still the same: 1 running, 3 active' 
 '
 
 test_expect_success 'cancel one of the scheduled jobs, check job counts are correct: 1 running, 2 active' '
-	flux job cancel $jobid2 &&
+	flux cancel $jobid2 &&
 	flux jobtap query mf_priority.so > query_4.json &&
 	test_debug "jq -S . <query_4.json" &&
 	jq -e ".mf_priority_map[0].banks[0].cur_run_jobs == 1" <query_4.json &&
@@ -105,8 +105,8 @@ test_expect_success 'cancel one of the scheduled jobs, check job counts are corr
 '
 
 test_expect_success 'cancel sleep 180 job(s), check job counts: 0 running, 0 active' '
-	flux job cancel $jobid1 &&
-	flux job cancel $jobid3 &&
+	flux cancel $jobid1 &&
+	flux cancel $jobid3 &&
 	flux jobtap query mf_priority.so > query_5.json &&
 	test_debug "jq -S . <query_5.json" &&
 	jq -e ".mf_priority_map[0].banks[0].cur_run_jobs == 0" <query_5.json &&

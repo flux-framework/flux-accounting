@@ -62,7 +62,7 @@ test_expect_success 'check that bank was added to jobspec' '
 	flux job wait-event -f json $jobid priority &&
 	flux job info $jobid eventlog > eventlog.out &&
 	grep "\"attributes.system.bank\":\"account1\"" eventlog.out &&
-	flux job cancel $jobid
+	flux cancel $jobid
 '
 
 test_expect_success 'send flux-accounting DB information to the plugin' '
@@ -74,7 +74,7 @@ test_expect_success 'successfully submit a job under a specified bank' '
 	flux job wait-event -f json $jobid priority &&
 	flux job info $jobid jobspec > jobspec.out &&
 	grep "account2" jobspec.out &&
-	flux job cancel $jobid
+	flux cancel $jobid
 '
 
 test_expect_success 'successfully submit a job under a default bank' '
@@ -82,7 +82,7 @@ test_expect_success 'successfully submit a job under a default bank' '
 	flux job wait-event -f json $jobid priority &&
 	flux job info $jobid eventlog > eventlog.out &&
 	grep "\"attributes.system.bank\":\"account1\"" eventlog.out &&
-	flux job cancel $jobid
+	flux cancel $jobid
 '
 
 test_expect_success 'update the default bank for the user' '
@@ -95,7 +95,7 @@ test_expect_success 'successfully submit a job under the new default bank' '
 	flux job wait-event -f json $jobid priority &&
 	flux job info $jobid eventlog > eventlog.out &&
 	grep "\"attributes.system.bank\":\"account2\"" eventlog.out &&
-	flux job cancel $jobid
+	flux cancel $jobid
 '
 
 test_expect_success 'shut down flux-accounting service' '
