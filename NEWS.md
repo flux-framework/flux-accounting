@@ -1,3 +1,22 @@
+flux-accounting version 0.33.0 - 2024-06-04
+-------------------------------------------
+
+#### Fixes
+
+* job-archive interface: wrap job usage updates into a single SQL transaction (#452)
+
+* database: update schema version (#453)
+
+#### Features
+
+* plugin: add configurable priority factors via TOML `conf.update` (#295)
+
+#### Testsuite
+
+* testsuite: change check for specific job states (#393)
+
+* testsuite: replace `flux job cancel` --> `flux cancel` (#454)
+
 flux-accounting version 0.32.0 - 2024-05-13
 -------------------------------------------
 
