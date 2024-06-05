@@ -1028,8 +1028,6 @@ static int inactive_cb (flux_plugin_t *p,
 {
     int userid;
     Association *b;
-    std::map<int, std::map<std::string, Association>>::iterator it;
-    std::map<std::string, Association>::iterator bank_it;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
