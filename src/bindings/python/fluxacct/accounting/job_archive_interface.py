@@ -576,3 +576,18 @@ def update_job_usage(acct_conn, pdhl=1):
     acct_conn.commit()
 
     return 0
+
+
+# Scrub jobs from the flux-accounting "jobs" table by removing any
+# record that is older than num_weeks old. If no number of weeks is
+# specified, remove any record that is older than 6 months old.
+def scrub_old_jobs(conn, num_weeks=26):
+    cur = conn.cursor()
+    # calculate total amount of time to go back (in terms of seconds)
+    # (there are 604,800 seconds in a week)
+    cutoff_time = time.time() - (num_weeks * 604800)
+
+    # fetch all jobs that finished before this time
+    select_stmt = "DELETE FROM jobs WHERE t_inactive < ?"
+    cur.execute(select_stmt, (cutoff_time,))
+    conn.commit()

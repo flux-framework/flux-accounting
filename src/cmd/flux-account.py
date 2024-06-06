@@ -484,6 +484,24 @@ def add_delete_project_arg(subparsers):
     )
 
 
+def add_scrub_job_records_arg(subparsers):
+    subparser = subparsers.add_parser(
+        "scrub-old-jobs",
+        help="clean job-archive of old job records",
+        formatter_class=flux.util.help_formatter(),
+    )
+
+    subparser.set_defaults(func="scrub_old_jobs")
+    subparser.add_argument(
+        "num_weeks",
+        help="delete jobs that have finished more than NUM_WEEKS ago",
+        type=int,
+        nargs="?",
+        metavar="NUM_WEEKS",
+        default=26,
+    )
+
+
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_output_file_arg(parser)
@@ -505,6 +523,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_add_project_arg(subparsers)
     add_view_project_arg(subparsers)
     add_delete_project_arg(subparsers)
+    add_scrub_job_records_arg(subparsers)
 
 
 def set_db_location(args):
@@ -670,6 +689,12 @@ def select_accounting_function(args, output_file, parser):
             "project": args.project,
         }
         return_val = flux.Flux().rpc("accounting.delete_project", data).get()
+    elif args.func == "scrub_old_jobs":
+        data = {
+            "path": args.path,
+            "num_weeks": args.num_weeks,
+        }
+        return_val = flux.Flux().rpc("accounting.scrub_old_jobs", data).get()
     else:
         print(parser.print_usage())
         return
