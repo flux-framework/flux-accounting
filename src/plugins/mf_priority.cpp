@@ -38,6 +38,11 @@ extern "C" {
 // flux-accounting
 #define BANK_INFO_MISSING 999
 
+// default weights for each factor in the priority calculation for a job
+#define DEFAULT_FSHARE_WEIGHT 100000
+#define DEFAULT_QUEUE_WEIGHT 10000
+#define DEFAULT_AGE_WEIGHT 1000
+
 std::map<int, std::map<std::string, Association>> users;
 std::map<std::string, Queue> queues;
 std::map<int, std::string> users_def_bank;
@@ -74,11 +79,6 @@ int64_t priority_calculation (flux_plugin_t *p,
 
     fshare_weight = priority_weights["fairshare"];
     queue_weight = priority_weights["queue"];
-
-    // check values of priority factor weights; if not configured,
-    // these will be set to -1, so just use default weights
-    if (fshare_weight == -1) fshare_weight = 100000;
-    if (queue_weight == -1) queue_weight = 10000;
 
     if (urgency == FLUX_JOB_URGENCY_HOLD)
         return FLUX_JOB_PRIORITY_MIN;
@@ -201,8 +201,10 @@ static int conf_update_cb (flux_plugin_t *p,
     }
 
     // assign unpacked weights into priority_weights map
-    priority_weights["fairshare"] = fshare_weight;
-    priority_weights["queue"] = queue_weight;
+    if (fshare_weight != -1)
+        priority_weights["fairshare"] = fshare_weight;
+    if (queue_weight != -1)
+        priority_weights["queue"] = queue_weight;
 
     return 0;
 }
@@ -1107,6 +1109,11 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
         || flux_jobtap_service_register (p, "rec_proj_update", rec_proj_cb, p)
         < 0)
         return -1;
+
+    // initialize the weights of the priority factors with default values
+    priority_weights["fairshare"] = DEFAULT_FSHARE_WEIGHT;
+    priority_weights["queue"] = DEFAULT_QUEUE_WEIGHT;
+    priority_weights["age"] = DEFAULT_AGE_WEIGHT;
 
     return 0;
 }
