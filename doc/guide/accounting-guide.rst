@@ -316,6 +316,12 @@ the multi-factor priority plugin are:
   consumed. See the :ref:`Glossary definition <glossary-section>` for a more
   detailed explanation of how fair-share is utilized within flux-accounting.
 
+* **queue**: an integer weight associated with submitting a job to a certain
+  queue.
+
+* **age**: how long a job has been able to be scheduled but could not due to an
+  external constraint (e.g a resource constraint).
+
 * **urgency**: a user-controlled factor to prioritize their own jobs.
 
 In addition to generating an integer priority for submitted jobs in a Flux

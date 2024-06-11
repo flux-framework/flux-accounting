@@ -67,6 +67,8 @@ test_expect_success 'configure flux with some queues' '
 	[queues.bronze]
 	[queues.silver]
 	[queues.gold]
+	[accounting.factor-weights]
+	age = 0
 	EOT
 	flux config reload
 '

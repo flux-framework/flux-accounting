@@ -19,6 +19,8 @@ the priority plugin have the following weights:
 +-------------+--------+
 | queue       | 10000  |
 +-------------+--------+
+| age         | 1000   |
++-------------+--------+
 
 The ``accounting.factor-weights`` sub-table may contain the following keys:
 
@@ -34,6 +36,11 @@ queue
    Integer value that represents the weight associated with submitting a job
    to a certain queue.
 
+age
+   Integer value that represents the weight associated with how long a job has
+   been able to be scheduled but could not due to an external constraint (e.g
+   a resource constraint).
+
 
 EXAMPLE
 =======
@@ -43,3 +50,4 @@ EXAMPLE
    [accounting.factor-weights]
    fairshare = 10000
    queue = 1000
+   age = 100

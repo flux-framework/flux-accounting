@@ -35,6 +35,7 @@ TESTSCRIPTS = \
 	t1032-mf-priority-update-bank.t \
 	t1033-mf-priority-update-job.t \
 	t1034-mf-priority-config.t \
+	t1035-mf-priority-age.t \
 	t5000-valgrind.t \
 	python/t1000-example.py
 

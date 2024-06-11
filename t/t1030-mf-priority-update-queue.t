@@ -63,10 +63,12 @@ test_expect_success 'send flux-accounting DB information to the plugin' '
 '
 
 test_expect_success 'configure flux with some queues' '
-	cat >conf.d/queues.toml <<-EOT &&
+	cat >conf.d/test.toml <<-EOT &&
 	[queues.bronze]
 	[queues.silver]
 	[queues.gold]
+	[accounting.factor-weights]
+	age = 0
 	EOT
 	flux config reload
 '
