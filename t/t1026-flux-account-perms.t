@@ -128,6 +128,15 @@ test_expect_success 'delete-project should not be accessible by all users' '
 	)
 '
 
+test_expect_success 'scrub-old-jobs should not be accessible by all users' '
+	newid=$(($(id -u)+1)) &&
+	( export FLUX_HANDLE_ROLEMASK=0x2 &&
+	  export FLUX_HANDLE_USERID=$newid &&
+		test_must_fail flux account scrub-old-jobs > no_access_scrub_old_jobs.out 2>&1 &&
+		grep "Request requires owner credentials" no_access_scrub_old_jobs.out
+	)
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
