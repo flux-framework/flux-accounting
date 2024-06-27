@@ -123,7 +123,13 @@ def add_job_records(rows):
     job_records = []
 
     for row in rows:
-        rset = ResourceSet(row[6])  # fetch R
+        try:
+            # attempt to create a ResourceSet from R
+            rset = ResourceSet(row[6])
+            nnodes = rset.nnodes
+        except (ValueError, TypeError):
+            # can't convert R to a ResourceSet object; skip it
+            continue
 
         job_record = JobRecord(
             row[0],  # userid
@@ -132,7 +138,7 @@ def add_job_records(rows):
             row[2],  # t_submit
             row[3],  # t_run
             row[4],  # t_inactive
-            rset.nnodes,  # nnodes
+            nnodes,  # nnodes
             row[6],  # resources
         )
         job_records.append(job_record)
