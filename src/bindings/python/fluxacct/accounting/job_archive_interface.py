@@ -180,61 +180,46 @@ def def_bank_jobs(job_records, default_bank):
 
 
 def get_job_records(conn, bank, default_bank, **kwargs):
-    job_records = []
-
     # find out which args were passed and place them in a dict
-    valid_params = ("user", "after_start_time", "before_end_time", "jobid")
-    params = {}
-    params_list = []
-
+    valid_params = {"user", "after_start_time", "before_end_time", "jobid"}
     params = {
         key: val
-        for (key, val) in kwargs.items()
+        for key, val in kwargs.items()
         if val is not None and key in valid_params
     }
 
-    select_stmt = (
-        "SELECT userid,id,t_submit,t_run,t_inactive,ranks,R,jobspec FROM jobs "
-    )
-    where_stmt = ""
+    select_stmt = "SELECT userid,id,t_submit,t_run,t_inactive,ranks,R,jobspec FROM jobs"
+    where_clauses = []
+    params_list = []
 
-    def append_to_where(where_stmt, conditional):
-        if where_stmt != "":
-            return "{} AND {} ".format(where_stmt, conditional)
-
-        return "WHERE {}".format(conditional)
-
-    # generate the SELECT statement based on the parameters passed in
     if "user" in params:
         params["user"] = get_uid(params["user"])
+        where_clauses.append("userid = ?")
         params_list.append(params["user"])
-        where_stmt = append_to_where(where_stmt, "userid=? ")
     if "after_start_time" in params:
+        where_clauses.append("t_run > ?")
         params_list.append(params["after_start_time"])
-        where_stmt = append_to_where(where_stmt, "t_run > ? ")
     if "before_end_time" in params:
+        where_clauses.append("t_inactive < ?")
         params_list.append(params["before_end_time"])
-        where_stmt = append_to_where(where_stmt, "t_inactive < ? ")
     if "jobid" in params:
+        where_clauses.append("id = ?")
         params_list.append(params["jobid"])
-        where_stmt = append_to_where(where_stmt, "id=? ")
 
-    select_stmt += where_stmt
+    if where_clauses:
+        select_stmt += " WHERE " + " AND ".join(where_clauses)
 
     cur = conn.cursor()
-    cur.execute(select_stmt, (*tuple(params_list),))
+    cur.execute(select_stmt, tuple(params_list))
     result = cur.fetchall()
-    # if the length of dataframe is 0, that means no job records were found
-    # in the jobs table, so just return an empty list
-    if len(result) == 0:
-        return job_records
+
+    if not result:
+        return []
 
     if bank is None and default_bank is None:
         # special case for unit tests in test_job_archive_interface.py
-        job_records = add_job_records(result)
-
-        return job_records
-
+        return add_job_records(result)
+    
     if bank != default_bank:
         jobs = sec_bank_jobs(result, bank)
     else:
@@ -242,7 +227,7 @@ def get_job_records(conn, bank, default_bank, **kwargs):
 
     job_records = add_job_records(jobs)
 
-    return job_records
+    return add_job_records(result)
 
 
 def output_job_records(conn, output_file, **kwargs):
