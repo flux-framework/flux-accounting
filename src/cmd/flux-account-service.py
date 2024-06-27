@@ -104,6 +104,7 @@ class AccountingService:
             "edit_queue",
             "add_project",
             "delete_project",
+            "scrub_old_jobs",
             "shutdown_service",
         ]
 
@@ -474,6 +475,20 @@ class AccountingService:
             val = p.delete_project(self.conn, msg.payload["project"])
 
             payload = {"delete_project": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+        except Exception as exc:
+            handle.respond_error(
+                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
+            )
+
+    def scrub_old_jobs(self, handle, watcher, msg, arg):
+        try:
+            val = jobs.scrub_old_jobs(self.conn, msg.payload["num_weeks"])
+
+            payload = {"scrub_old_jobs": val}
 
             handle.respond(msg, payload)
         except KeyError as exc:

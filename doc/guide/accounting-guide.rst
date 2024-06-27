@@ -171,6 +171,36 @@ The scripts should be run by :core:man1:`flux-cron`:
 
  30 * * * * bash -c "flux account-fetch-job-records; flux account update-usage; flux account-update-fshare; flux account-priority-update"
 
+Periodically fetching and storing job records in the flux-accounting database
+can cause the DB to grow large in size. Since there comes a point where job
+records become no longer useful to flux-accounting in terms of job usage and
+fair-share calculation, you can run ``flux account scrub-old-jobs`` to
+remove old job records. If no argument is passed to this command, it will
+delete any job record that has completed more than 6 months ago. This can be
+tuned by specifying the number of weeks to go back when determining which
+records to remove. The example below will remove any job record more than 4
+weeks old:
+
+.. code-block:: console
+
+ $ flux account scrub-old-jobs 4
+
+By default, the memory occupied by a SQLite database does not decrease when
+records are ``DELETE``'d from the database. After scrubbing old job records
+from the flux-accounting database, if space is still an issue, the ``VACUUM``
+command will clean up the space previously occupied by those deleted records.
+You can run this command by connecting to the flux-accounting database in a
+SQLite shell:
+
+.. code-block:: console
+
+ $ sqlite3 FluxAccounting.db
+ sqlite> VACUUM;
+
+Note that running ``VACUUM`` can take minutes to run and also requires an
+exclusive lock on the database; it will fail if the database has a pending SQL
+statement or open transaction.
+
 ***********************
 Database Administration
 ***********************
