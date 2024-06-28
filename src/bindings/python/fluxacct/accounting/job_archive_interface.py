@@ -156,30 +156,17 @@ def check_jobspec(jobspec, bank):
     )
 
 
-# we are looking for jobs that were submitted under a secondary bank, so we'll
-# only add jobs that have the same bank name attribute in the jobspec
-def sec_bank_jobs(job_records, bank):
+# Filter job records based on the specified bank. For a default bank,
+# it includes jobs that either specify the default bank or do not
+# specify any bank at all.
+def filter_jobs_by_bank(job_records, bank, is_default_bank=False):
     jobs = []
     for job in job_records:
         jobspec = json.loads(job[7])
 
         if check_jobspec(jobspec, bank):
             jobs.append(job)
-
-    return jobs
-
-
-# we are looking for jobs that were submitted under a default bank, which has
-# two cases: 1) the user submitted a job while specifying their default bank,
-# or 2) the user submitted a job without specifying any bank at all
-def def_bank_jobs(job_records, default_bank):
-    jobs = []
-    for job in job_records:
-        jobspec = json.loads(job[7])
-
-        if check_jobspec(jobspec, default_bank):
-            jobs.append(job)
-        elif "bank" not in jobspec["attributes"]["system"]:
+        elif is_default_bank and "bank" not in jobspec["attributes"]["system"]:
             jobs.append(job)
 
     return jobs
@@ -225,15 +212,14 @@ def get_job_records(conn, bank, default_bank, **kwargs):
     if bank is None and default_bank is None:
         # special case for unit tests in test_job_archive_interface.py
         return add_job_records(result)
-    
-    if bank != default_bank:
-        jobs = sec_bank_jobs(result, bank)
-    else:
-        jobs = def_bank_jobs(result, default_bank)
 
-    job_records = add_job_records(jobs)
+    # find out if we are fetching jobs from a user's default bank or under
+    # one of their secondary banks; this will determine how we filter the
+    # job records we've found
+    is_default_bank = bank == default_bank
+    jobs = filter_jobs_by_bank(result, bank, is_default_bank)
 
-    return add_job_records(result)
+    return add_job_records(jobs)
 
 
 def output_job_records(conn, output_file, **kwargs):
