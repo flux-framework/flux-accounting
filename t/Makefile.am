@@ -37,7 +37,13 @@ TESTSCRIPTS = \
 	t1034-mf-priority-config.t \
 	t1035-flux-account-scrub-old-jobs.t \
 	t5000-valgrind.t \
-	python/t1000-example.py
+	python/t1000-example.py \
+	python/t1001_db.py \
+	python/t1002_user_cmds.py \
+	python/t1003_bank_cmds.py \
+	python/t1004_queue_cmds.py \
+	python/t1005_project_cmds.py \
+	python/t1006_job_archive.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
