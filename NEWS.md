@@ -1,3 +1,18 @@
+flux-accounting version 0.34.0 - 2024-07-02
+-------------------------------------------
+
+#### Fixes
+
+* `inactive_cb ()`: remove unused iterator variables (#457)
+
+* plugin: initialize factor weights on plugin load (#458)
+
+* job archive interface: clean up a couple helper functions (#460)
+
+#### Features
+
+* database: add the ability to remove old records from `jobs` table (#459)
+
 flux-accounting version 0.33.0 - 2024-06-04
 -------------------------------------------
 
