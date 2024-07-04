@@ -18,6 +18,7 @@ import sys
 from unittest import mock
 
 from fluxacct.accounting import job_archive_interface as jobs
+from fluxacct.accounting import jobs_table_subcommands as j
 from fluxacct.accounting import create_db as c
 from fluxacct.accounting import user_subcommands as u
 from fluxacct.accounting import bank_subcommands as b
@@ -146,21 +147,21 @@ class TestAccountingCLI(unittest.TestCase):
     # its job information
     def test_01_with_jobid_valid(self):
         my_dict = {"jobid": 102}
-        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
+        job_records = j.output_job_records(acct_conn, op, **my_dict)
         print(job_records)
         self.assertEqual(len(job_records), 2)
 
     # passing a bad jobid should return no records
     def test_02_with_jobid_failure(self):
         my_dict = {"jobid": 000}
-        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
+        job_records = j.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 1)
 
     # passing a timestamp before the first job to
     # start should return all of the jobs
     def test_03_after_start_time_all(self):
         my_dict = {"after_start_time": 0}
-        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
+        job_records = j.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 19)
 
     # passing a timestamp after all of the start time
@@ -168,7 +169,7 @@ class TestAccountingCLI(unittest.TestCase):
     @mock.patch("time.time", mock.MagicMock(return_value=11000000))
     def test_04_after_start_time_none(self):
         my_dict = {"after_start_time": time.time()}
-        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
+        job_records = j.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 1)
 
     # passing a timestamp before the end time of the
@@ -176,21 +177,21 @@ class TestAccountingCLI(unittest.TestCase):
     @mock.patch("time.time", mock.MagicMock(return_value=11000000))
     def test_05_before_end_time_all(self):
         my_dict = {"before_end_time": time.time()}
-        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
+        job_records = j.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 19)
 
     # passing a timestamp before the end time of
     # the first completed jobs should return no jobs
     def test_06_before_end_time_none(self):
         my_dict = {"before_end_time": 0}
-        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
+        job_records = j.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 1)
 
     # passing a user not in the jobs table
     # should return no jobs
     def test_07_by_user_failure(self):
         my_dict = {"user": "9999"}
-        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
+        job_records = j.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 1)
 
     # view_jobs_run_by_username() interacts with a
@@ -198,7 +199,7 @@ class TestAccountingCLI(unittest.TestCase):
     # just pass the userid
     def test_08_by_user_success(self):
         my_dict = {"user": "1001"}
-        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
+        job_records = j.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 3)
 
     # passing a combination of params should further
@@ -206,14 +207,14 @@ class TestAccountingCLI(unittest.TestCase):
     @mock.patch("time.time", mock.MagicMock(return_value=9000500))
     def test_09_multiple_params(self):
         my_dict = {"user": "1001", "after_start_time": time.time()}
-        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
+        job_records = j.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 2)
 
     # passing no parameters will result in a generic query
     # returning all results
     def test_10_no_options_passed(self):
         my_dict = {}
-        job_records = jobs.output_job_records(acct_conn, op, **my_dict)
+        job_records = j.output_job_records(acct_conn, op, **my_dict)
         self.assertEqual(len(job_records), 19)
 
     # users that have run a lot of jobs should have a larger usage factor
