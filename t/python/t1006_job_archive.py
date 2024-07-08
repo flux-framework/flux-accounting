@@ -148,7 +148,6 @@ class TestAccountingCLI(unittest.TestCase):
     def test_01_with_jobid_valid(self):
         my_dict = {"jobid": 102}
         job_records = j.view_jobs(acct_conn, op, **my_dict)
-        print(job_records)
         self.assertEqual(len(job_records), 2)
 
     # passing a bad jobid should return no records
