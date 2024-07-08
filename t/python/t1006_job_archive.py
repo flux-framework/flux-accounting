@@ -17,7 +17,7 @@ import sys
 
 from unittest import mock
 
-from fluxacct.accounting import job_archive_interface as jobs
+from fluxacct.accounting import job_usage_calculation as jobs
 from fluxacct.accounting import jobs_table_subcommands as j
 from fluxacct.accounting import create_db as c
 from fluxacct.accounting import user_subcommands as u

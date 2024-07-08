@@ -4,7 +4,7 @@ acctpy_PYTHON = \
 	bank_subcommands.py \
 	queue_subcommands.py \
 	project_subcommands.py \
-	job_archive_interface.py \
+	job_usage_calculation.py \
 	jobs_table_subcommands.py \
 	create_db.py
 
