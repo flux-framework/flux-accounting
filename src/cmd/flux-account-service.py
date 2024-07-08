@@ -323,7 +323,7 @@ class AccountingService:
     # pylint: disable=no-self-use
     def view_job_records(self, handle, watcher, msg, arg):
         try:
-            val = j.output_job_records(
+            val = j.view_jobs(
                 self.conn,
                 msg.payload["output_file"],
                 jobid=msg.payload["jobid"],

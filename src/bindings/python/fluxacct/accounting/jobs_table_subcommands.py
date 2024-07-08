@@ -88,7 +88,11 @@ def write_records_to_file(job_records, output_file):
             )
 
 
-def fetch_job_records(job_records):
+def convert_to_str(job_records):
+    """
+    Convert the results of a query to the jobs table to a readable string
+    that can either be output to stdout or written to a file.
+    """
     job_record_str = []
     job_record_str.append(
         "{:<10} {:<10} {:<20} {:<20} {:<20} {:<20} {:<10}".format(
@@ -117,7 +121,11 @@ def fetch_job_records(job_records):
     return job_record_str
 
 
-def add_job_records(rows):
+def convert_to_obj(rows):
+    """
+    Convert the results of a query to the jobs table to a list of JobRecord
+    objects.
+    """
     job_records = []
 
     for row in rows:
@@ -170,7 +178,38 @@ def filter_jobs_by_bank(job_records, bank, is_default_bank=False):
     return jobs
 
 
-def get_job_records(conn, bank, default_bank, **kwargs):
+def filter_jobs_by_association(conn, bank, default_bank, **kwargs):
+    """
+    Filter job records based on the specified association.
+    """
+    # fetch jobs under a specific userid
+    result = get_jobs(conn, **kwargs)
+
+    if not result:
+        return []
+
+    # find out if we are fetching jobs from an association's default bank or
+    # under one of their secondary banks; this will determine how we further
+    # filter the job records we've found based on the bank
+    is_default_bank = bank == default_bank
+    jobs = filter_jobs_by_bank(result, bank, is_default_bank)
+
+    return convert_to_obj(jobs)
+
+
+def get_jobs(conn, **kwargs):
+    """
+    A function to return jobs from the jobs table in the flux-accounting
+    database. The query can be tuned to filter jobs by:
+
+    - userid
+    - jobs that started after a certain time
+    - jobs that completed before a certain time
+    - jobid
+
+    The function will execute a SQL query and return a list of jobs. If no
+    jobs are fuond, an empty list is returned.
+    """
     # find out which args were passed and place them in a dict
     valid_params = {"user", "after_start_time", "before_end_time", "jobid"}
     params = {
@@ -202,33 +241,20 @@ def get_job_records(conn, bank, default_bank, **kwargs):
 
     cur = conn.cursor()
     cur.execute(select_stmt, tuple(params_list))
-    result = cur.fetchall()
+    job_records = cur.fetchall()
 
-    if not result:
-        return []
-
-    if bank is None and default_bank is None:
-        # special case for unit tests in test_job_archive_interface.py
-        return add_job_records(result)
-
-    # find out if we are fetching jobs from a user's default bank or under
-    # one of their secondary banks; this will determine how we filter the
-    # job records we've found
-    is_default_bank = bank == default_bank
-    jobs = filter_jobs_by_bank(result, bank, is_default_bank)
-
-    return add_job_records(jobs)
+    return job_records
 
 
-def output_job_records(conn, output_file, **kwargs):
-    job_record_str = ""
-    job_records = get_job_records(conn, None, None, **kwargs)
-
-    job_record_str = fetch_job_records(job_records)
+def view_jobs(conn, output_file, **kwargs):
+    # look up jobs in jobs table
+    job_records = convert_to_obj(get_jobs(conn, **kwargs))
+    # convert query result to a readable string
+    job_records_str = convert_to_str(job_records)
 
     if output_file is None:
-        return job_record_str
+        return job_records_str
 
     write_records_to_file(job_records, output_file)
 
-    return job_record_str
+    return job_records_str

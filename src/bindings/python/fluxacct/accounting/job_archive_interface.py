@@ -167,7 +167,7 @@ def calc_usage_factor(conn, pdhl, user, bank, default_bank):
 
     # get jobs that have completed since the last seen completed job
     last_j_ts = get_last_job_ts(conn, user, bank)
-    user_jobs = j.get_job_records(
+    user_jobs = j.filter_jobs_by_association(
         conn,
         bank,
         default_bank,
