@@ -21,9 +21,10 @@ import fluxacct.accounting
 from flux.constants import FLUX_MSGTYPE_REQUEST
 from fluxacct.accounting import user_subcommands as u
 from fluxacct.accounting import bank_subcommands as b
-from fluxacct.accounting import job_archive_interface as jobs
+from fluxacct.accounting import job_usage_calculation as jobs
 from fluxacct.accounting import queue_subcommands as qu
 from fluxacct.accounting import project_subcommands as p
+from fluxacct.accounting import jobs_table_subcommands as j
 
 
 def establish_sqlite_connection(path):
@@ -322,7 +323,7 @@ class AccountingService:
     # pylint: disable=no-self-use
     def view_job_records(self, handle, watcher, msg, arg):
         try:
-            val = jobs.output_job_records(
+            val = j.view_jobs(
                 self.conn,
                 msg.payload["output_file"],
                 jobid=msg.payload["jobid"],
