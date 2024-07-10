@@ -1,3 +1,18 @@
+flux-accounting version 0.35.0 - 2024-07-10
+-------------------------------------------
+
+#### Fixes
+
+* t: move python unit tests to `t/python/` directory (#462)
+
+* python: clean job-archive interface code (#463)
+
+* `conf.update`: add missing bracket in format string (#465)
+
+#### Testsuite
+
+* testsuite: fix on systems with flux-accounting already installed (#467)
+
 flux-accounting version 0.34.0 - 2024-07-02
 -------------------------------------------
 
