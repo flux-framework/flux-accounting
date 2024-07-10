@@ -198,6 +198,7 @@ static int conf_update_cb (flux_plugin_t *p,
         flux_log_error (flux_jobtap_get_flux (p),
                         "mf_priority: conf.update: flux_plugin_arg_unpack: %s",
                         flux_plugin_arg_strerror (args));
+        return -1;
     }
 
     // assign unpacked weights into priority_weights map
