@@ -191,13 +191,14 @@ static int conf_update_cb (flux_plugin_t *p,
     // unpack the various factors to be used in job priority calculation
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s?{s?{s?{s?i, s?i}}}",
+                                "{s?{s?{s?{s?i, s?i}}}}",
                                 "conf", "accounting", "factor-weights",
                                 "fairshare", &fshare_weight,
                                 "queue", &queue_weight) < 0) {
         flux_log_error (flux_jobtap_get_flux (p),
                         "mf_priority: conf.update: flux_plugin_arg_unpack: %s",
                         flux_plugin_arg_strerror (args));
+        return -1;
     }
 
     // assign unpacked weights into priority_weights map
