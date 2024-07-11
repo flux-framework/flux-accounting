@@ -19,8 +19,9 @@ from fluxacct.accounting import user_subcommands as u
 #                                                             #
 ###############################################################
 
-# helper function to print user information in a table format
+
 def print_user_rows(cur, rows, bank):
+    """Print user information in a table format."""
     user_str = "\nUsers Under Bank {bank_name}:\n\n".format(bank_name=bank)
     user_headers = [description[0] for description in cur.description]
     # print column names of association_table
@@ -35,8 +36,8 @@ def print_user_rows(cur, rows, bank):
     return user_str
 
 
-# helper function to print bank information in a table format
 def get_bank_rows(cur, rows, bank):
+    """Print bank information in a table format."""
     bank_str = ""
     bank_headers = [description[0] for description in cur.description]
     # bank has sub banks, so list them
@@ -51,8 +52,8 @@ def get_bank_rows(cur, rows, bank):
     return bank_str
 
 
-# helper function to traverse the bank table and delete all sub banks and users
 def print_sub_banks(conn, bank, bank_str, indent=""):
+    """Traverse the bank table and print all sub banks ansd users."""
     select_stmt = "SELECT bank FROM bank_table WHERE parent_bank=?"
     cur = conn.cursor()
     cur.execute(select_stmt, (bank,))
@@ -86,9 +87,8 @@ def validate_parent_bank(cur, parent_bank):
         raise sqlite3.OperationalError(f"an sqlite3.OperationalError occurred: {exc}")
 
 
-# check if bank already exists and is active in bank_table;
-# if so, return True
 def bank_is_active(cur, bank, parent_bank):
+    """Check if the bank already exists and is active."""
     cur.execute(
         "SELECT active FROM bank_table WHERE bank=? AND parent_bank=?",
         (
@@ -103,9 +103,11 @@ def bank_is_active(cur, bank, parent_bank):
     return False
 
 
-# check if bank already exists but was disabled first; if so,
-# just update the 'active' column in already existing row
 def check_if_bank_disabled(cur, bank, parent_bank):
+    """
+    Check if the bank already exists but was disabled first. If so, just
+    update the 'active' column in the alread existing row.
+    """
     cur.execute(
         "SELECT * FROM bank_table WHERE bank=? AND parent_bank=?",
         (bank, parent_bank),
@@ -117,8 +119,8 @@ def check_if_bank_disabled(cur, bank, parent_bank):
     return False
 
 
-# re-enable bank in bank_table by setting "active" to 1
 def reactivate_bank(conn, cur, bank, parent_bank):
+    """Re-enable the bank by setting 'active' to 1."""
     cur.execute(
         "UPDATE bank_table SET active=1 WHERE bank=? AND parent_bank=?",
         (
