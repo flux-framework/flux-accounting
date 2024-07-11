@@ -12,8 +12,8 @@ prepend_colon_separated() {
 SRC_DIR=${SHARNESS_TEST_SRCDIR}/..
 
 prepend_colon_separated FLUX_EXEC_PATH_PREPEND ${SRC_DIR}/src/cmd
-prepend_colon_separated PYTHONPATH ${SRC_DIR}/src/bindings/python
+prepend_colon_separated FLUX_PYTHONPATH_PREPEND ${SRC_DIR}/src/bindings/python
 
-export FLUX_EXEC_PATH_PREPEND PYTHONPATH
+export FLUX_EXEC_PATH_PREPEND FLUX_PYTHONPATH_PREPEND
 
 # vi: ts=4 sw=4 expandtab
