@@ -334,10 +334,12 @@ def update_job_usage(acct_conn, pdhl=1):
     return 0
 
 
-# Scrub jobs from the flux-accounting "jobs" table by removing any
-# record that is older than num_weeks old. If no number of weeks is
-# specified, remove any record that is older than 6 months old.
 def scrub_old_jobs(conn, num_weeks=26):
+    """
+    Scrub jobs from the jobs table by removing any record that is older than
+    num_weeks old. If no number of weeks is specified, remove any record that
+    is older than 6 months old.
+    """
     cur = conn.cursor()
     # calculate total amount of time to go back (in terms of seconds)
     # (there are 604,800 seconds in a week)

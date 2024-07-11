@@ -19,9 +19,10 @@ import sqlite3
 ###############################################################
 
 
-# check if project already exists and is active in project_table;
-# if so, return True
 def project_is_active(cur, project):
+    """
+    Check if the project already exists and is active in the projects table.
+    """
     cur.execute(
         "SELECT * FROM project_table WHERE project=?",
         (project,),

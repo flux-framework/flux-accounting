@@ -160,9 +160,11 @@ def get_user_rows(conn, user, headers, rows, parseable, json_fmt):
     return user_str
 
 
-# check for a default bank of the user being added; if the user is new, set
-# the first bank they were added to as their default bank
 def set_default_bank(cur, username, bank):
+    """
+    Check the default bank of the user being added; if the user is new, set
+    the first bank they were added to as their default bank.
+    """
     select_stmt = "SELECT default_bank FROM association_table WHERE username=?"
     cur.execute(select_stmt, (username,))
     result = cur.fetchone()
@@ -173,9 +175,8 @@ def set_default_bank(cur, username, bank):
     return result[0]
 
 
-# check if association already exists and is active in association_table;
-# if so, raise sqlite3.IntegrityError
 def association_is_active(cur, username, bank):
+    """Check if association already exists and is active."""
     cur.execute(
         "SELECT active FROM association_table WHERE username=? AND bank=?",
         (
@@ -190,9 +191,11 @@ def association_is_active(cur, username, bank):
     return False
 
 
-# check if user/bank entry already exists but was disabled first; if so,
-# just update the 'active' column in already existing row
 def check_if_user_disabled(conn, cur, username, bank):
+    """
+    Check if the association already exists but was disabled; if so, just
+    update the 'active' column in the already-existing row.
+    """
     cur.execute(
         "SELECT * FROM association_table WHERE username=? AND bank=?",
         (
@@ -223,10 +226,12 @@ def get_default_bank(cur, username):
     return result[0][0]
 
 
-# helper function that is called when a user's default_bank row gets disabled from
-# the association_table. It will look for other banks that the user belongs to; if
-# so, the default bank needs to be updated for these rows
 def update_default_bank(conn, cur, username):
+    """
+    Look for other banks that a user belongs to in the event when a user's
+    default bank is disabled. It will look for other banks that the user
+    belongs to; if so, the default bank needs to be updated for these rows.
+    """
     # get first bank from other potential existing rows from user
     select_stmt = """SELECT bank FROM association_table WHERE active=1 AND username=?
                      ORDER BY creation_time"""
