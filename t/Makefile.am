@@ -36,6 +36,7 @@ TESTSCRIPTS = \
 	t1033-mf-priority-update-job.t \
 	t1034-mf-priority-config.t \
 	t1035-flux-account-scrub-old-jobs.t \
+	t1036-mf-priority-resource-counting.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
