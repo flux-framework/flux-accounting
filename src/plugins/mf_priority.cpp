@@ -17,6 +17,7 @@ extern "C" {
 #endif
 #include <flux/core.h>
 #include <flux/jobtap.h>
+#include <flux/idset.h>
 #include <jansson.h>
 }
 
@@ -42,6 +43,9 @@ extern "C" {
 #define DEFAULT_FSHARE_WEIGHT 100000
 #define DEFAULT_QUEUE_WEIGHT 10000
 #define DEFAULT_AGE_WEIGHT 1000
+
+// set up cores-per-node count for the system
+size_t ncores_per_node = 0;
 
 std::map<int, std::map<std::string, Association>> users;
 std::map<std::string, Queue> queues;
@@ -227,9 +231,11 @@ static int query_cb (flux_plugin_t *p,
 
     if (flux_plugin_arg_pack (args,
                               FLUX_PLUGIN_ARG_OUT,
-                              "{s:O}",
+                              "{s:O s:i}",
                               "mf_priority_map",
-                              accounting_data) < 0)
+                              accounting_data,
+                              "ncores_per_node",
+                              ncores_per_node) < 0)
         flux_log_error (flux_jobtap_get_flux (p),
                         "mf_priority: query_cb: flux_plugin_arg_pack: %s",
                         flux_plugin_arg_strerror (args));
@@ -1115,6 +1121,49 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
     priority_weights["fairshare"] = DEFAULT_FSHARE_WEIGHT;
     priority_weights["queue"] = DEFAULT_QUEUE_WEIGHT;
     priority_weights["age"] = DEFAULT_AGE_WEIGHT;
+
+    // initialize the plugin with total node and core counts
+    flux_t *h;
+    flux_future_t *f;
+    const char *core;
+
+    h = flux_jobtap_get_flux (p);
+    // This synchronous call to fetch R from the KVS is needed in order to
+    // validate and enforce resource limits on jobs. The job manager will
+    // block here while waiting for R when the plugin is loaded but it *should*
+    // occur over a very short time.
+    if (!(f = flux_kvs_lookup (h,
+                               NULL,
+                               FLUX_KVS_WAITCREATE,
+                               "resource.R"))) {
+        flux_log_error (h, "flux_kvs_lookup");
+        return -1;
+    }
+    // Equal number of cores on all nodes in R is assumed here; thus, only
+    // the first entry is looked at
+    if (flux_kvs_lookup_get_unpack (f,
+                                    "{s{s[{s{s:s}}]}}",
+                                    "execution",
+                                      "R_lite",
+                                        "children",
+                                          "core", &core) < 0) {
+        flux_log_error (h, "flux_kvs_lookup_unpack");
+        return -1;
+    }
+
+    if (core == NULL) {
+        flux_log_error (h,
+                        "mf_priority: could not get system "
+                        "cores-per-node information");
+        return -1;
+    }
+
+    // calculate number of cores-per-node on system
+    idset* cores_decoded = idset_decode (core);
+    ncores_per_node = idset_count (cores_decoded);
+
+    flux_future_destroy (f);
+    idset_destroy (cores_decoded);
 
     return 0;
 }
