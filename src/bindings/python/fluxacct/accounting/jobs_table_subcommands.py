@@ -152,20 +152,24 @@ def convert_to_obj(rows):
     return job_records
 
 
-# check if 1) a "bank" attribute exists in jobspec, which means the user
-# submitted a job under a secondary bank, and 2) the "bank" attribute
-# in jobspec matches the bank we are currently counting jobs for
 def check_jobspec(jobspec, bank):
+    """
+    Check if 1) a "bank" attribute exists in jobspec, which means the user
+    submitted a job under a secondary bank, and 2) the "bank" attribute in
+    jobspec matches the bank we are currently counting jobs for.
+    """
     return bool(
         ("bank" in jobspec["attributes"]["system"])
         and (jobspec["attributes"]["system"]["bank"] == bank)
     )
 
 
-# Filter job records based on the specified bank. For a default bank,
-# it includes jobs that either specify the default bank or do not
-# specify any bank at all.
 def filter_jobs_by_bank(job_records, bank, is_default_bank=False):
+    """
+    Filter job records based on the specified bank. For a default bank, it
+    includes jobs that either specify the default bank or do not specify any
+    bank at all.
+    """
     jobs = []
     for job in job_records:
         jobspec = json.loads(job[7])

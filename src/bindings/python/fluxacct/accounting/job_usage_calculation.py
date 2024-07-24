@@ -16,7 +16,9 @@ from fluxacct.accounting import jobs_table_subcommands as j
 
 
 def update_t_inactive(acct_conn, last_t_inactive, user, bank):
-    # write last seen t_inactive to last_job_timestamp for user
+    """
+    Save the timestamp of the most recent inactive job for the assocation.
+    """
     u_ts = """
         UPDATE job_usage_factor_table SET last_job_timestamp=? WHERE username=? AND bank=?
         """
@@ -31,7 +33,11 @@ def update_t_inactive(acct_conn, last_t_inactive, user, bank):
 
 
 def get_last_job_ts(acct_conn, user, bank):
-    # fetch timestamp of last seen job (gets jobs that have run after this time)
+    """
+    Fetch the timestamp of the most recent inactive job for the association.
+    This timestamp will be used in future queries to filter jobs that have run
+    after this time.
+    """
     s_ts = """
         SELECT last_job_timestamp FROM job_usage_factor_table WHERE username=? AND bank=?
         """
@@ -69,7 +75,7 @@ def fetch_usg_bins(acct_conn, user=None, bank=None):
 
 
 def update_hist_usg_col(acct_conn, usg_h, user, bank):
-    # update job_usage column in association_table
+    """Update the job_usage column for the association."""
     u_usg = """
         UPDATE association_table SET job_usage=? WHERE username=? AND bank=?
         """
@@ -84,7 +90,10 @@ def update_hist_usg_col(acct_conn, usg_h, user, bank):
 
 
 def update_curr_usg_col(acct_conn, usg_h, user, bank):
-    # write usage to first column in job_usage_factor_table
+    """
+    Write the current job usage factor for the association to the
+    job_usage_factor_table.
+    """
     u_usg_factor = """
         UPDATE job_usage_factor_table SET usage_factor_period_0=? WHERE username=? AND bank=?
         """
@@ -133,7 +142,7 @@ def apply_decay_factor(decay, acct_conn, user=None, bank=None):
 
 
 def get_curr_usg_bin(acct_conn, user, bank):
-    # append current usage to the first usage factor bin
+    """Fetch the current job usage factor value for a given association."""
     s_usg = """
         SELECT usage_factor_period_0 FROM job_usage_factor_table
         WHERE username=? AND bank=?
