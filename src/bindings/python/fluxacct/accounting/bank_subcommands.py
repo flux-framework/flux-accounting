@@ -176,6 +176,38 @@ def print_hierarchy(cur, bank, hierarchy_str, indent=""):
     return hierarchy_str
 
 
+def print_parsable_hierarchy(cur, bank, hierarchy_str, indent=""):
+    # look for all sub banks under this parent bank
+    select_stmt = "SELECT bank,shares,job_usage FROM bank_table WHERE parent_bank=?"
+    cur.execute(select_stmt, (bank,))
+    sub_banks = cur.fetchall()
+
+    if len(sub_banks) == 0:
+        # we've reached a bank with no sub banks, so print out every user
+        # under this bank
+        cur.execute(
+            "SELECT username,shares,job_usage,fairshare FROM association_table WHERE bank=?",
+            (bank,),
+        )
+        users = cur.fetchall()
+        if users:
+            for user in users:
+                hierarchy_str += (
+                    f"{indent} {bank}|{user[0]}|{user[1]}|{user[2]}|{user[3]}\n"
+                )
+    else:
+        # continue traversing the hierarchy
+        for sub_bank in sub_banks:
+            hierarchy_str += (
+                f"{indent} {str(sub_bank[0])}||{str(sub_bank[1])}|{str(sub_bank[2])}\n"
+            )
+            hierarchy_str = print_parsable_hierarchy(
+                cur, sub_bank[0], hierarchy_str, indent + " "
+            )
+
+    return hierarchy_str
+
+
 ###############################################################
 #                                                             #
 #                   Subcommand Functions                      #
@@ -229,7 +261,7 @@ def add_bank(conn, bank, shares, parent_bank=""):
         raise sqlite3.IntegrityError(f"bank {bank} already exists in bank_table")
 
 
-def view_bank(conn, bank, tree=False, users=False):
+def view_bank(conn, bank, tree=False, users=False, parsable=False):
     cur = conn.cursor()
     bank_str = ""
     try:
@@ -241,18 +273,18 @@ def view_bank(conn, bank, tree=False, users=False):
         else:
             raise ValueError(f"bank {bank} not found in bank_table")
 
-        # print out the hierarchy view with the specified bank as the root of the tree
-        if tree is True:
-            # get specific information about bank passed in
-            cur.execute(
-                "SELECT bank,shares,job_usage FROM bank_table WHERE bank=?", (bank,)
-            )
-            parent_bank = cur.fetchall()
-            name = parent_bank[0][0]
-            shares = parent_bank[0][1]
-            usage = parent_bank[0][2]
+        name = result[0][1]
+        shares = result[0][4]
+        usage = result[0][5]
 
-            # create headers for the hierarchy string
+        if parsable is True:
+            # print out the database hierarchy starting with the bank passed in
+            hierarchy_str = "Bank|Username|RawShares|RawUsage|Fairshare\n"
+            hierarchy_str += f"{name}||{str(shares)}|{str(round(usage, 2))}\n"
+            hierarchy_str = print_parsable_hierarchy(cur, bank, hierarchy_str, "")
+            return hierarchy_str
+        if tree is True:
+            # print out the hierarchy view with the specified bank as the root of the tree
             hierarchy_str = (
                 "Bank".ljust(20)
                 + "Username".rjust(20)
