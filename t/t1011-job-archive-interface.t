@@ -152,7 +152,7 @@ test_expect_success 'run update-usage and update-fshare commands' '
 '
 
 test_expect_success 'check that job usage and fairshare values get updated' '
-	flux account-shares -p $(pwd)/FluxAccountingTest.db > post_update1.test &&
+	flux account view-bank account1 -t > post_update1.test &&
 	grep "account1" post_update1.test | grep "4" | grep "0.25"
 '
 
