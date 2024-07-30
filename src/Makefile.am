@@ -105,8 +105,7 @@ accounting_test01_t_LDADD = \
 	$(JANSSON_LIBS)
 
 noinst_PROGRAMS = \
-	cmd/flux-account-update-fshare \
-	cmd/flux-account-shares
+	cmd/flux-account-update-fshare
 
 cmd_flux_account_update_fshare_SOURCES = cmd/flux_account_update_fshare.cpp
 
@@ -138,7 +137,6 @@ dist_fluxcmd_SCRIPTS = \
 	cmd/flux-account.py \
 	cmd/flux-account-update-fshare \
 	cmd/flux-account-priority-update.py \
-	cmd/flux-account-shares \
 	cmd/flux-account-pop-db.py \
 	cmd/flux-account-export-db.py \
 	cmd/flux-account-update-db.py \

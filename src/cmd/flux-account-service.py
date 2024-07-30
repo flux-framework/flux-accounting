@@ -242,6 +242,7 @@ class AccountingService:
                 msg.payload["bank"],
                 msg.payload["tree"],
                 msg.payload["users"],
+                msg.payload["parsable"],
             )
 
             payload = {"view_bank": val}

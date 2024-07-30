@@ -297,6 +297,14 @@ def add_view_bank_arg(subparsers):
         help="list all potential users under bank",
         metavar="USERS",
     )
+    subparser_view_bank.add_argument(
+        "-P",
+        "--parsable",
+        action="store_const",
+        const=True,
+        help="list all sub banks in a parsable format with specified bank as root of tree",
+        metavar="PARSABLE",
+    )
 
 
 def add_delete_bank_arg(subparsers):
@@ -617,6 +625,7 @@ def select_accounting_function(args, output_file, parser):
             "bank": args.bank,
             "tree": args.tree,
             "users": args.users,
+            "parsable": args.parsable,
         }
         return_val = flux.Flux().rpc("accounting.view_bank", data).get()
     elif args.func == "delete_bank":

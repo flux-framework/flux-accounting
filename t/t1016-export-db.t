@@ -65,8 +65,20 @@ test_expect_success 'compare users.csv' '
 	test_cmp -b users_expected.csv users.csv
 '
 
+test_expect_success 'create hierarchy output of the flux-accounting DB and store it in a file' '
+	flux account view-bank root -t > db1.test
+'
+
+test_expect_success 'shut down flux-accounting service' '
+	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
+'
+
 test_expect_success 'create a new flux-accounting DB' '
 	flux account -p $(pwd)/FluxAccountingTestv2.db create-db
+'
+
+test_expect_success 'restart service against new DB' '
+	flux account-service -p ${DB_PATHv2} -t
 '
 
 test_expect_success 'import information into new DB' '
@@ -74,9 +86,11 @@ test_expect_success 'import information into new DB' '
 	flux account-pop-db -p ${DB_PATHv2} -u users.csv
 '
 
+test_expect_success 'create hierarchy output of the new DB and store it in a file' '
+	flux account view-bank root -t > db2.test
+'
+
 test_expect_success 'compare DB hierarchies to make sure they are the same' '
-	flux account-shares -p ${DB_PATHv1} > db1.test &&
-	flux account-shares -p ${DB_PATHv2} > db2.test &&
 	test_cmp db1.test db2.test
 '
 

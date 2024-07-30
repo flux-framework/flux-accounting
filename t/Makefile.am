@@ -1,7 +1,6 @@
 # This list is included in both TESTS and dist_check_SCRIPTS.
 TESTSCRIPTS = \
 	t0000-sharness.t \
-	t1000-print-hierarchy.t \
 	t1001-mf-priority-basic.t \
 	t1002-mf-priority-small-no-tie.t \
 	t1003-mf-priority-small-tie.t \
@@ -36,6 +35,9 @@ TESTSCRIPTS = \
 	t1033-mf-priority-update-job.t \
 	t1034-mf-priority-config.t \
 	t1035-flux-account-scrub-old-jobs.t \
+	t1036-hierarchy-small-no-tie-db.t \
+	t1037-hierarchy-small-tie-db.t \
+	t1038-hierarchy-small-tie-all-db.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \

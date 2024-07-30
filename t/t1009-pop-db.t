@@ -49,7 +49,7 @@ test_expect_success 'populate flux-accounting DB with users.csv' '
 '
 
 test_expect_success 'check database hierarchy to make sure all banks & users were added' '
-	flux account-shares -p ${DB_PATH} > db_hierarchy_base.test &&
+	flux account view-bank root -t > db_hierarchy_base.test &&
 	test_cmp ${EXPECTED_FILES}/db_hierarchy_base.expected db_hierarchy_base.test
 '
 
@@ -68,7 +68,7 @@ test_expect_success 'populate flux-accounting DB with users_optional_vals.csv' '
 '
 
 test_expect_success 'check database hierarchy to make sure new users were added' '
-	flux account-shares -p ${DB_PATH} > db_hierarchy_new_users.test &&
+	flux account view-bank root -t > db_hierarchy_new_users.test &&
 	test_cmp ${EXPECTED_FILES}/db_hierarchy_new_users.expected db_hierarchy_new_users.test
 '
 

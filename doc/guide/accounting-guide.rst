@@ -252,27 +252,27 @@ consists of the following tables:
 |                          | share calculation                                |
 +--------------------------+--------------------------------------------------+
 
-To view all associations in a flux-accounting database, the ``flux
-account-shares`` command will print this DB information in a hierarchical
-format. An example is shown below:
+To view all associations in a flux-accounting database, the ``view-bank`` 
+command will print this DB information in a hierarchical format. An example is
+shown below showing all associations under the root bank:
 
 .. code-block:: console
 
- $ flux account-shares
+ $ flux account view-bank root -t
 
  Account                         Username           RawShares            RawUsage           Fairshare
- root                                                       1                   0
-  bank_A                                                    1                   0
-   bank_A                          user_1                   1                   0                 0.5
-  bank_B                                                    1                   0
-   bank_B                          user_2                   1                   0                 0.5
-   bank_B                          user_3                   1                   0                 0.5
-  bank_C                                                    1                   0
-   bank_C_a                                                 1                   0
-    bank_C_a                       user_4                   1                   0                 0.5
-   bank_C_b                                                 1                   0
-    bank_C_b                       user_5                   1                   0                 0.5
-    bank_C_b                       user_6                   1                   0                 0.5
+ root                                                       1                 0.0
+  bank_A                                                    1                 0.0
+   bank_A                          user_1                   1                 0.0                 0.5
+  bank_B                                                    1                 0.0
+   bank_B                          user_2                   1                 0.0                 0.5
+   bank_B                          user_3                   1                 0.0                 0.5
+  bank_C                                                    1                 0.0
+   bank_C_a                                                 1                 0.0
+    bank_C_a                       user_4                   1                 0.0                 0.5
+   bank_C_b                                                 1                 0.0
+    bank_C_b                       user_5                   1                 0.0                 0.5
+    bank_C_b                       user_6                   1                 0.0                 0.5
 
 
 ****************************
