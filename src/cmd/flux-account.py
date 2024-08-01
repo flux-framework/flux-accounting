@@ -343,6 +343,28 @@ def add_edit_bank_arg(subparsers):
     )
 
 
+def add_list_banks_arg(subparsers):
+    subparser_list_banks = subparsers.add_parser(
+        "list-banks",
+        help="list all banks in the flux-accounting DB",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparser_list_banks.set_defaults(func="list_banks")
+    subparser_list_banks.add_argument(
+        "--inactive",
+        action="store_const",
+        const=True,
+        help="include inactive banks in output",
+    )
+    subparser_list_banks.add_argument(
+        "--fields",
+        type=str,
+        help="list of fields to include in JSON output",
+        default="bank_id,bank,parent_bank,shares,job_usage",
+        metavar="BANK_ID,BANK,ACTIVE,PARENT_BANK,SHARES,JOB_USAGE",
+    )
+
+
 def add_update_usage_arg(subparsers):
     subparser_update_usage = subparsers.add_parser(
         "update-usage",
@@ -523,6 +545,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_view_bank_arg(subparsers)
     add_delete_bank_arg(subparsers)
     add_edit_bank_arg(subparsers)
+    add_list_banks_arg(subparsers)
     add_update_usage_arg(subparsers)
     add_add_queue_arg(subparsers)
     add_view_queue_arg(subparsers)
@@ -642,6 +665,13 @@ def select_accounting_function(args, output_file, parser):
             "parent_bank": args.parent_bank,
         }
         return_val = flux.Flux().rpc("accounting.edit_bank", data).get()
+    elif args.func == "list_banks":
+        data = {
+            "path": args.path,
+            "inactive": args.inactive,
+            "fields": args.fields.split(","),
+        }
+        return_val = flux.Flux().rpc("accounting.list_banks", data).get()
     elif args.func == "update_usage":
         data = {
             "path": args.path,

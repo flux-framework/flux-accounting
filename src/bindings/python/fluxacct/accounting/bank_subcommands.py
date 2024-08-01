@@ -10,6 +10,7 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import sqlite3
+import json
 
 from fluxacct.accounting import user_subcommands as u
 
@@ -410,3 +411,50 @@ def edit_bank(
     conn.commit()
 
     return 0
+
+
+def list_banks(
+    conn,
+    inactive=False,
+    fields=None,
+):
+    """
+    List all banks in the bank_table in JSON format.
+
+    Args:
+        inactive: whether to include inactive banks. By default, only banks that are
+        active will be included in the output.
+
+        fields: a list of fields to include in the output. By default, all fields are
+        included.
+    """
+    default_fields = {"bank_id", "bank", "active", "parent_bank", "shares", "job_usage"}
+    # if fields is None, just use the default fields
+    fields = fields or default_fields
+
+    try:
+        cur = conn.cursor()
+
+        # validate the fields passed in
+        invalid_fields = [field for field in fields if field not in default_fields]
+        if invalid_fields:
+            raise ValueError(f"invalid fields: {', '.join(invalid_fields)}")
+
+        # construct SELECT statement
+        select_fields = ", ".join(fields)
+        select_stmt = f"SELECT {select_fields} FROM bank_table"
+        if not inactive:
+            select_stmt += " WHERE active=1"
+
+        cur.execute(select_stmt)
+        result = cur.fetchall()
+
+        # create individual object for each row in the query result
+        banks = [
+            {field: row[idx] for idx, field in enumerate(fields)} for row in result
+        ]
+
+        json_string = json.dumps(banks, indent=2)
+        return json_string
+    except sqlite3.Error as err:
+        raise sqlite3.Error(f"an sqlite3.Error occurred: {err}")
