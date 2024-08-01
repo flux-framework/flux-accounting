@@ -124,6 +124,27 @@ test_expect_success 'trying to add a user to a nonexistent bank should raise a V
 	grep "Bank foo does not exist in bank_table" nonexistent_bank.out
 '
 
+test_expect_success 'call list-banks --help' '
+	flux account list-banks --help
+'
+
+test_expect_success 'call list-banks' '
+	flux account list-banks
+'
+
+test_expect_success 'call list-banks and include inactive banks' '
+	flux account list-banks --inactive
+'
+
+test_expect_success 'call list-banks and customize output' '
+	flux account list-banks --fields=bank_id,bank
+'
+
+test_expect_success 'call list-banks with a bad field' '
+	test_must_fail flux account list-banks --fields=bank_id,foo > error.out 2>&1 &&
+	grep "invalid fields: foo" error.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
