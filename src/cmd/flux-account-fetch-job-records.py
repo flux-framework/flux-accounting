@@ -90,6 +90,24 @@ def fetch_new_jobs(last_timestamp=0.0):
         if data["jobspec"] is not None:
             single_record["jobspec"] = data["jobspec"]
 
+        required_keys = [
+            "userid",
+            "t_submit",
+            "t_run",
+            "t_inactive",
+            "ranks",
+            "id",
+            "R",
+            "jobspec",
+        ]
+        if not all(
+            key in single_record and single_record.get(key) is not None
+            for key in required_keys
+        ):
+            # job does not have all required fields to be added to jobs table
+            # in DB; skip this entry
+            continue
+
         # append job to job_records list
         job_records.append(single_record)
 
@@ -101,22 +119,26 @@ def insert_jobs_in_db(conn, job_records):
     cur = conn.cursor()
 
     for single_job in job_records:
-        cur.execute(
-            """
-            INSERT OR IGNORE INTO jobs
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                single_job["id"],
-                single_job["userid"],
-                single_job["t_submit"],
-                single_job["t_run"],
-                single_job["t_inactive"],
-                single_job["ranks"],
-                single_job["R"],
-                single_job["jobspec"],
-            ),
-        )
+        try:
+            cur.execute(
+                """
+                INSERT OR IGNORE INTO jobs
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    single_job["id"],
+                    single_job["userid"],
+                    single_job["t_submit"],
+                    single_job["t_run"],
+                    single_job["t_inactive"],
+                    single_job["ranks"],
+                    single_job["R"],
+                    single_job["jobspec"],
+                ),
+            )
+        except KeyError:
+            # one of the key-value pairs is missing or invalid; skip the entry
+            continue
 
     conn.commit()
 
