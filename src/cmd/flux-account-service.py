@@ -66,7 +66,7 @@ def check_db_version(conn):
         sys.exit(1)
 
 
-# pylint: disable=broad-except
+# pylint: disable=broad-except, too-many-public-methods
 class AccountingService:
     def __init__(self, flux_handle, conn):
 
@@ -87,6 +87,7 @@ class AccountingService:
         general_endpoints = [
             "view_user",
             "view_bank",
+            "list_banks",
             "view_job_records",
             "view_queue",
             "view_project",
@@ -316,6 +317,28 @@ class AccountingService:
             handle.respond_error(msg, 0, f"missing key in payload: {exc}")
         except ValueError as val_err:
             handle.respond_error(msg, 0, f"error in edit_bank: {val_err}")
+        except Exception as exc:
+            handle.respond_error(
+                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
+            )
+
+    def list_banks(self, handle, watcher, msg, arg):
+        try:
+            val = b.list_banks(
+                self.conn,
+                msg.payload["inactive"],
+                msg.payload["fields"],
+            )
+
+            payload = {"list_banks": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+        except ValueError as exc:
+            handle.respond_error(msg, 0, f"{exc}")
+        except sqlite3.Error as exc:
+            handle.respond_error(msg, 0, f"a SQLite error occured: {exc}")
         except Exception as exc:
             handle.respond_error(
                 msg, 0, f"a non-OSError exception was caught: {str(exc)}"
