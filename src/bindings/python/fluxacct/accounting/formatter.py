@@ -306,3 +306,18 @@ class AssociationFormatter(AccountingFormatter):
         super().__init__(
             cursor, error_msg=f"user {self.username} not found in association_table"
         )
+
+    def list_banks(self):
+        """
+        Return all of the banks that the user belongs to with each bank
+        on its own line.
+        """
+        self.cursor.execute(
+            "SELECT bank FROM association_table WHERE username=?", (self.username,)
+        )
+        result = self.cursor.fetchall()
+        banks = ""
+        for bank in result:
+            banks += f"{str(bank[0])}\n"
+
+        return banks
