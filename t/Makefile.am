@@ -108,9 +108,6 @@ EXTRA_DIST= \
 	expected/pop_db/db_hierarchy_base.expected \
 	expected/pop_db/db_hierarchy_new_users.expected \
 	expected/job_usage/no_jobs.expected \
-	expected/plugin_state/internal_state_1.expected \
-	expected/plugin_state/internal_state_3.expected \
-	expected/plugin_state/internal_state_3.expected \
 	expected/sample_payloads/same_fairshare.json \
 	expected/sample_payloads/small_no_tie.json \
 	expected/sample_payloads/small_tie_all.json \

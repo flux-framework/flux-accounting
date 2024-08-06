@@ -63,8 +63,8 @@ test_expect_success 'configure flux with those queues' '
 '
 
 test_expect_success 'add a user to the DB' '
-	flux account add-user --username=user1001 --userid=1001 --bank=A --queues="bronze,silver,gold" &&
-	flux account view-user user1001
+	flux account add-user --username=user5001 --userid=5001 --bank=A --queues="bronze,silver,gold" &&
+	flux account view-user user5001
 '
 
 test_expect_success 'send flux-accounting DB information to the plugin' '
@@ -72,11 +72,11 @@ test_expect_success 'send flux-accounting DB information to the plugin' '
 '
 
 test_expect_success 'submit a job while specifying a queue' '
-	flux python ${SUBMIT_AS} 1001 -n1 --queue=bronze hostname
+	flux python ${SUBMIT_AS} 5001 -n1 --queue=bronze hostname
 '
 
 test_expect_success 'edit a user to no longer have access to any of the added queues' '
-	flux account edit-user user1001 --bank=A --queues=
+	flux account edit-user user5001 --bank=A --queues=
 '
 
 test_expect_success 're-send flux-accounting DB information to the plugin' '
@@ -84,12 +84,12 @@ test_expect_success 're-send flux-accounting DB information to the plugin' '
 '
 
 test_expect_success 'submitting a job while specifying a queue they no longer have access to should be rejected' '
-	test_must_fail flux python ${SUBMIT_AS} 1001 -n1 --queue=bronze hostname > no_queue_access.out 2>&1 &&
+	test_must_fail flux python ${SUBMIT_AS} 5001 -n1 --queue=bronze hostname > no_queue_access.out 2>&1 &&
 	grep "Queue not valid for user: bronze" no_queue_access.out
 '
 
 test_expect_success 're-add the available queues to the user' '
-	flux account edit-user user1001 --bank=A --queues="bronze,silver,gold"
+	flux account edit-user user5001 --bank=A --queues="bronze,silver,gold"
 '
 
 test_expect_success 're-send flux-accounting DB information to the plugin' '
@@ -97,14 +97,14 @@ test_expect_success 're-send flux-accounting DB information to the plugin' '
 '
 
 test_expect_success 'submit a job while specifying a queue' '
-	flux python ${SUBMIT_AS} 1001 -n1 --queue=bronze hostname
+	flux python ${SUBMIT_AS} 5001 -n1 --queue=bronze hostname
 '
 
 test_expect_success 'delete the queues from the flux-accounting database and from the user' '
 	flux account delete-queue bronze &&
 	flux account delete-queue silver &&
 	flux account delete-queue gold &&
-	flux account edit-user user1001 --bank=A --queues=
+	flux account edit-user user5001 --bank=A --queues=
 '
 
 test_expect_success 're-send flux-accounting DB information to the plugin' '
@@ -112,7 +112,7 @@ test_expect_success 're-send flux-accounting DB information to the plugin' '
 '
 
 test_expect_success 'submitting a job should now skip the check for queue validation' '
-	flux python ${SUBMIT_AS} 1001 -n1 --queue=bronze hostname
+	flux python ${SUBMIT_AS} 5001 -n1 --queue=bronze hostname
 '
 
 test_expect_success 're-add those queues to the DB' '
@@ -126,12 +126,12 @@ test_expect_success 're-send flux-accounting DB information to the plugin' '
 '
 
 test_expect_success 'submitting a job specifying a queue should now trigger queue validation' '
-	test_must_fail flux python ${SUBMIT_AS} 1001 -n1 --queue=bronze hostname > no_queue_access2.out 2>&1 &&
+	test_must_fail flux python ${SUBMIT_AS} 5001 -n1 --queue=bronze hostname > no_queue_access2.out 2>&1 &&
 	grep "Queue not valid for user: bronze" no_queue_access2.out
 '
 
 test_expect_success 'submitting a job to a nonexistent queue should be rejected' '
-	test_must_fail flux python ${SUBMIT_AS} 1001 -n1 --queue=foo hostname > no_such_queue.out 2>&1 &&
+	test_must_fail flux python ${SUBMIT_AS} 5001 -n1 --queue=foo hostname > no_such_queue.out 2>&1 &&
 	grep "flux-job: Invalid queue '\''foo'\'' specified" no_such_queue.out
 '
 

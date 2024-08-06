@@ -43,8 +43,8 @@ test_expect_success 'add some banks to the DB' '
 '
 
 test_expect_success 'add a user to the DB' '
-	flux account add-user --username=user1001 \
-		--userid=1001 \
+	flux account add-user --username=user5001 \
+		--userid=5001 \
 		--bank=A \
 		--max-active-jobs=2
 '
@@ -54,8 +54,8 @@ test_expect_success 'send flux-accounting DB information to the plugin' '
 '
 
 test_expect_success 'submit job for testing' '
-	jobid1=$(flux python ${SUBMIT_AS} 1001 --urgency=0 sleep 30) &&
-	jobid2=$(flux python ${SUBMIT_AS} 1001 --urgency=0 sleep 30)
+	jobid1=$(flux python ${SUBMIT_AS} 5001 --urgency=0 sleep 30) &&
+	jobid2=$(flux python ${SUBMIT_AS} 5001 --urgency=0 sleep 30)
 '
 
 test_expect_success 'update of duration of pending job works while at active jobs limit' '
@@ -69,12 +69,12 @@ test_expect_success 'update of duration of pending job works while at active job
 test_expect_success 'active jobs limit of user/bank remains the same after job-update' '
 	flux jobtap query mf_priority.so > job_limits.json &&
 	test_debug "jq -S . <job_limits.json" &&
-	jq -e ".mf_priority_map[0].banks[0].cur_active_jobs == 2" <job_limits.json &&
-	jq -e ".mf_priority_map[0].banks[0].max_active_jobs == 2" <job_limits.json
+	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].cur_active_jobs == 2" <job_limits.json &&
+	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].max_active_jobs == 2" <job_limits.json
 '
 
 test_expect_success 'third submitted job will be rejected because of active jobs limit' '
-	test_must_fail flux python ${SUBMIT_AS} 1001 sleep 60 > max_active_jobs.out 2>&1 &&
+	test_must_fail flux python ${SUBMIT_AS} 5001 sleep 60 > max_active_jobs.out 2>&1 &&
 	test_debug "cat max_active_jobs.out" &&
 	grep "user has max active jobs" max_active_jobs.out
 '

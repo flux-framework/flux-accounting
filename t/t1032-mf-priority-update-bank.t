@@ -128,10 +128,10 @@ test_expect_success 'updating job to default bank works' '
 
 test_expect_success 'check that plugin also sees the job update' '
 	flux jobtap query mf_priority.so > query.json &&
-	jq -e ".mf_priority_map[0].banks[0].bank_name == \"A\"" <query.json &&
-	jq -e ".mf_priority_map[0].banks[0].cur_active_jobs == 1" <query.json &&
-	jq -e ".mf_priority_map[0].banks[1].bank_name == \"B\"" <query.json &&
-	jq -e ".mf_priority_map[0].banks[1].cur_active_jobs == 0" <query.json
+	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].bank_name == \"A\"" <query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].cur_active_jobs == 1" <query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[1].bank_name == \"B\"" <query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[1].cur_active_jobs == 0" <query.json
 '
 
 test_expect_success 'shut down flux-accounting service' '
