@@ -53,6 +53,13 @@ def add_view_user_arg(subparsers):
         help="print all information of an association in JSON format",
         metavar="JSON",
     )
+    subparser_view_user.add_argument(
+        "--list-banks",
+        action="store_const",
+        const=True,
+        help="list all of the banks a user belongs to",
+        metavar="LIST_BANKS",
+    )
 
 
 def add_add_user_arg(subparsers):
@@ -578,6 +585,7 @@ def select_accounting_function(args, output_file, parser):
             "username": args.username,
             "parseable": args.parseable,
             "json": args.json,
+            "list_banks": args.list_banks,
         }
         return_val = flux.Flux().rpc("accounting.view_user", data).get()
     elif args.func == "add_user":

@@ -146,6 +146,7 @@ class AccountingService:
                 msg.payload["username"],
                 msg.payload["parseable"],
                 msg.payload["json"],
+                msg.payload["list_banks"],
             )
 
             payload = {"view_user": val}
