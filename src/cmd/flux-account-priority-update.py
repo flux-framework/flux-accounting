@@ -15,6 +15,7 @@ import os
 import sqlite3
 import json
 import subprocess
+import pwd
 
 import flux
 
@@ -133,6 +134,39 @@ def bulk_update(path):
     cur.close()
 
 
+def send_instance_owner_info():
+    handle = flux.Flux()
+    # get uid, username of instance owner
+    owner_uid = handle.attr_get("security.owner")
+    try:
+        # look up corresponding username of instance owner
+        owner_info = pwd.getpwuid(int(owner_uid))
+        owner_username = owner_info.pw_name
+    except KeyError:
+        # can't find instance owner info; set username to the uid
+        owner_username = owner_uid
+
+    # construct instance owner dictionary
+    instance_owner_data = {
+        "userid": int(owner_uid),
+        "bank": owner_username,
+        "def_bank": owner_username,
+        "fairshare": 0.5,
+        "max_running_jobs": 1000000,
+        "max_active_jobs": 1000000,
+        "queues": "",
+        "active": 1,
+        "projects": "*",
+        "def_project": "*",
+        "max_nodes": 1000000,
+    }
+
+    flux.Flux().rpc(
+        "job-manager.mf_priority.rec_update",
+        json.dumps({"data": [instance_owner_data]}),
+    ).get()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="""
@@ -149,6 +183,7 @@ def main():
     path = set_db_loc(args)
 
     bulk_update(path)
+    send_instance_owner_info()
 
 
 if __name__ == "__main__":
