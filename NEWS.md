@@ -1,3 +1,21 @@
+flux-accounting version 0.36.0 - 2024-08-06
+-------------------------------------------
+
+#### Fixes
+
+* python: change function descriptions to follow docstring convention (#468)
+
+* python: convert more function descriptions to docstring format (#470)
+
+* src: remove `flux_account_shares.cpp` in favor of just using `-t` option with
+`view-bank` (#471)
+
+* `fetch-job-records`: add integrity check for records (#475)
+
+#### Features
+
+* `bank_table`: add a new `list-banks` command (#473)
+
 flux-accounting version 0.35.0 - 2024-07-10
 -------------------------------------------
 
