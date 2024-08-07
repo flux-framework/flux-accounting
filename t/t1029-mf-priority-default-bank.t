@@ -42,19 +42,19 @@ test_expect_success 'add some banks to the DB' '
 '
 
 test_expect_success 'add a user to the DB' '
-	flux account -p ${DB_PATH} add-user --username=user1001 --userid=1001 --bank=account1 &&
-	flux account -p ${DB_PATH} add-user --username=user1001 --userid=1001 --bank=account2
+	flux account -p ${DB_PATH} add-user --username=user5001 --userid=5001 --bank=account1 &&
+	flux account -p ${DB_PATH} add-user --username=user5001 --userid=5001 --bank=account2
 '
 
 test_expect_success 'submit a job before plugin has any flux-accounting information' '
-	jobid=$(flux python ${SUBMIT_AS} 1002 hostname) &&
+	jobid=$(flux python ${SUBMIT_AS} 5002 hostname) &&
 	flux job wait-event -vt 60 ${jobid} depend &&
 	flux job info ${jobid} eventlog > eventlog.out &&
 	grep "depend" eventlog.out
 '
 
 test_expect_success 'add user to flux-accounting DB and update plugin' '
-	flux account -p ${DB_PATH} add-user --username=user1002 --userid=1002 --bank=account1 &&
+	flux account -p ${DB_PATH} add-user --username=user1002 --userid=5002 --bank=account1 &&
 	flux account-priority-update -p $(pwd)/FluxAccountingTest.db
 '
 
@@ -70,7 +70,7 @@ test_expect_success 'send flux-accounting DB information to the plugin' '
 '
 
 test_expect_success 'successfully submit a job under a specified bank' '
-	jobid=$(flux python ${SUBMIT_AS} 1001 --setattr=system.bank=account2 hostname) &&
+	jobid=$(flux python ${SUBMIT_AS} 5001 --setattr=system.bank=account2 hostname) &&
 	flux job wait-event -f json ${jobid} priority &&
 	flux job info ${jobid} jobspec > jobspec.out &&
 	grep "account2" jobspec.out &&
@@ -78,7 +78,7 @@ test_expect_success 'successfully submit a job under a specified bank' '
 '
 
 test_expect_success 'successfully submit a job under a default bank' '
-	jobid=$(flux python ${SUBMIT_AS} 1001 hostname) &&
+	jobid=$(flux python ${SUBMIT_AS} 5001 hostname) &&
 	flux job wait-event -f json ${jobid} priority &&
 	flux job info ${jobid} eventlog > eventlog.out &&
 	grep "\"attributes.system.bank\":\"account1\"" eventlog.out &&
@@ -86,12 +86,12 @@ test_expect_success 'successfully submit a job under a default bank' '
 '
 
 test_expect_success 'update the default bank for the user' '
-	flux account -p ${DB_PATH} edit-user user1001 --default-bank=account2 &&
+	flux account -p ${DB_PATH} edit-user user5001 --default-bank=account2 &&
 	flux account-priority-update -p ${DB_PATH}
 '
 
 test_expect_success 'successfully submit a job under the new default bank' '
-	jobid=$(flux python ${SUBMIT_AS} 1001 hostname) &&
+	jobid=$(flux python ${SUBMIT_AS} 5001 hostname) &&
 	flux job wait-event -f json ${jobid} priority &&
 	flux job info ${jobid} eventlog > eventlog.out &&
 	grep "\"attributes.system.bank\":\"account2\"" eventlog.out &&

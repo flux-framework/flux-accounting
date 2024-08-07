@@ -38,6 +38,7 @@ TESTSCRIPTS = \
 	t1036-hierarchy-small-no-tie-db.t \
 	t1037-hierarchy-small-tie-db.t \
 	t1038-hierarchy-small-tie-all-db.t \
+	t1039-issue476.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
@@ -108,9 +109,6 @@ EXTRA_DIST= \
 	expected/pop_db/db_hierarchy_base.expected \
 	expected/pop_db/db_hierarchy_new_users.expected \
 	expected/job_usage/no_jobs.expected \
-	expected/plugin_state/internal_state_1.expected \
-	expected/plugin_state/internal_state_3.expected \
-	expected/plugin_state/internal_state_3.expected \
 	expected/sample_payloads/same_fairshare.json \
 	expected/sample_payloads/small_no_tie.json \
 	expected/sample_payloads/small_tie_all.json \
