@@ -142,6 +142,7 @@ def get_user_rows(conn, user, headers, rows, parseable, json_fmt):
         for row in rows:
             for col in list(row):
                 user_str += str(col).ljust(col_width)
+            user_str += "\n"
 
         return user_str
 
