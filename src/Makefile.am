@@ -120,19 +120,6 @@ cmd_flux_account_update_fshare_CXXFLAGS = \
 
 cmd_flux_account_update_fshare_LDFLAGS = $(SQLITE_LIBS)
 
-cmd_flux_account_shares_SOURCES = cmd/flux_account_shares.cpp
-
-cmd_flux_account_shares_LDADD = \
-	fairness/libweighted_tree.la
-
-cmd_flux_account_shares_CXXFLAGS = \
-	$(WARNING_CXXFLAGS) \
-	$(CODE_COVERAGE_CFLAGS) \
-	$(AM_CXXFLAGS) \
-	$(SQLITE_CFLAGS)
-
-cmd_flux_account_shares_LDFLAGS = $(SQLITE_LIBS)
-
 dist_fluxcmd_SCRIPTS = \
 	cmd/flux-account.py \
 	cmd/flux-account-update-fshare \
