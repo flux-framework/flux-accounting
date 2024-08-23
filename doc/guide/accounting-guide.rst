@@ -77,7 +77,9 @@ the following prerequisites must be met:
 
 1. A flux-accounting database has been created with ``flux account create-db``.
 The service establishes a connection with the database in order to read from
-and write to it.
+and write to it. If the service has been started before the creation of the
+database, you may encounter unexpected behavior from running ``flux account``
+commands, such as ``sqlite3.OperationalError: attempt to write a readonly database``.
 
 2. An active Flux system instance is running. The flux-accounting service will
 only run after the system instance is started.
