@@ -25,6 +25,7 @@ from fluxacct.accounting import job_usage_calculation as jobs
 from fluxacct.accounting import queue_subcommands as qu
 from fluxacct.accounting import project_subcommands as p
 from fluxacct.accounting import jobs_table_subcommands as j
+from fluxacct.accounting import db_info_subcommands as d
 
 
 def establish_sqlite_connection(path):
@@ -107,6 +108,7 @@ class AccountingService:
             "add_project",
             "delete_project",
             "scrub_old_jobs",
+            "export_db",
             "shutdown_service",
         ]
 
@@ -514,6 +516,24 @@ class AccountingService:
             val = jobs.scrub_old_jobs(self.conn, msg.payload["num_weeks"])
 
             payload = {"scrub_old_jobs": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+        except Exception as exc:
+            handle.respond_error(
+                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
+            )
+
+    def export_db(self, handle, watcher, msg, arg):
+        try:
+            val = d.export_db_info(
+                self.conn,
+                msg.payload["users"],
+                msg.payload["banks"],
+            )
+
+            payload = {"export_db": val}
 
             handle.respond(msg, payload)
         except KeyError as exc:

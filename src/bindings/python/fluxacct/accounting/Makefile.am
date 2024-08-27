@@ -6,6 +6,7 @@ acctpy_PYTHON = \
 	project_subcommands.py \
 	job_usage_calculation.py \
 	jobs_table_subcommands.py \
+	db_info_subcommands.py \
 	create_db.py
 
 clean-local:

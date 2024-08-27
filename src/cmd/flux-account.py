@@ -532,6 +532,43 @@ def add_scrub_job_records_arg(subparsers):
     )
 
 
+def add_export_db_arg(subparsers):
+    subparser = subparsers.add_parser(
+        "export-db",
+        help="""
+        Extract flux-accounting database information into two .csv files.
+
+        Order of columns extracted from association_table:
+
+        Username,UserID,Bank,Shares,MaxRunningJobs,MaxActiveJobs,MaxNodes,Queues
+
+        If no custom path is specified, this will create a file in the
+        current working directory called users.csv.
+
+        ----------------
+
+        Order of columns extracted from bank_table:
+
+        Bank,ParentBank,Shares
+
+        If no custom path is specified, this will create a file in the
+        current working directory called banks.csv.
+
+        Use these two files to populate a new flux-accounting DB with:
+
+        flux account-pop-db -p path/to/db -b banks.csv -u users.csv
+        """,
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparser.set_defaults(func="export_db")
+    subparser.add_argument(
+        "-u", "--users", help="path to a .csv file containing user information"
+    )
+    subparser.add_argument(
+        "-b", "--banks", help="path to a .csv file containing bank information"
+    )
+
+
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_output_file_arg(parser)
@@ -555,6 +592,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_view_project_arg(subparsers)
     add_delete_project_arg(subparsers)
     add_scrub_job_records_arg(subparsers)
+    add_export_db_arg(subparsers)
 
 
 def set_db_location(args):
@@ -734,6 +772,13 @@ def select_accounting_function(args, output_file, parser):
             "num_weeks": args.num_weeks,
         }
         return_val = flux.Flux().rpc("accounting.scrub_old_jobs", data).get()
+    elif args.func == "export_db":
+        data = {
+            "path": args.path,
+            "users": args.users,
+            "banks": args.banks,
+        }
+        return_val = flux.Flux().rpc("accounting.export_db", data).get()
     else:
         print(parser.print_usage())
         return
