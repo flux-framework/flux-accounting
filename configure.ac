@@ -34,6 +34,7 @@ AM_PROG_CC_C_O
 AX_VALGRIND_H
 AX_CODE_COVERAGE
 PKG_CHECK_MODULES([SQLITE], [sqlite3], [], [])
+PKG_CHECK_MODULES([JANSSON], [jansson >= 2.10], [], [])
 
 if test "$GCC" = yes; then
   WARNING_CFLAGS="-Wall -Werror -Werror=missing-field-initializers -Wno-error=deprecated-declarations"
