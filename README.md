@@ -206,7 +206,7 @@ and the `flux account-pop-db` command. Run `flux account-pop-db --help` for
 `.csv` formatting instructions.
 
 User and bank information can also be exported from the database using the
-`flux account-export-db` command, which will extract information from both the
+`flux account export-db` command, which will extract information from both the
 user and bank tables and place them into `.csv` files.
 
 #### Release

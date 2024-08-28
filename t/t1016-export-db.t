@@ -39,7 +39,7 @@ test_expect_success 'add some users to the DB' '
 '
 
 test_expect_success 'export DB information into .csv files' '
-	flux account-export-db -p ${DB_PATHv1}
+	flux account export-db
 '
 
 test_expect_success 'compare banks.csv' '
@@ -95,7 +95,7 @@ test_expect_success 'compare DB hierarchies to make sure they are the same' '
 '
 
 test_expect_success 'specify a different filename for exported users and banks .csv files' '
-	flux account-export-db -p ${DB_PATHv2} --users foo.csv --banks bar.csv &&
+	flux account export-db --users foo.csv --banks bar.csv &&
 	test_cmp -b users_expected.csv foo.csv &&
 	test_cmp -b banks_expected.csv bar.csv
 '
