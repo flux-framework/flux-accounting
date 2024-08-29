@@ -137,6 +137,26 @@ test_expect_success 'scrub-old-jobs should not be accessible by all users' '
 	)
 '
 
+test_expect_success 'export-db should not be accessible by all users' '
+	newid=$(($(id -u)+1)) &&
+	( export FLUX_HANDLE_ROLEMASK=0x2 &&
+	  export FLUX_HANDLE_USERID=$newid &&
+		test_must_fail flux account export-db > no_access_export_db.out 2>&1 &&
+		grep "Request requires owner credentials" no_access_export_db.out
+	)
+'
+
+test_expect_success 'pop-db should not be accessible by all users' '
+	newid=$(($(id -u)+1)) &&
+	( export FLUX_HANDLE_ROLEMASK=0x2 &&
+	  export FLUX_HANDLE_USERID=$newid &&
+		touch users.csv &&
+		touch banks.csv &&
+		test_must_fail flux account pop-db -u users.csv -b banks.csv > no_access_pop_db.out 2>&1 &&
+		grep "Request requires owner credentials" no_access_pop_db.out
+	)
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '

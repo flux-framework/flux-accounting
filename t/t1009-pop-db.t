@@ -31,7 +31,7 @@ test_expect_success 'create a banks.csv file containing bank information' '
 '
 
 test_expect_success 'populate flux-accounting DB with banks.csv' '
-	flux account-pop-db -p ${DB_PATH} -b banks.csv
+	flux account pop-db -b banks.csv
 '
 
 test_expect_success 'create a users.csv file containing user information' '
@@ -45,7 +45,7 @@ test_expect_success 'create a users.csv file containing user information' '
 '
 
 test_expect_success 'populate flux-accounting DB with users.csv' '
-	flux account-pop-db -p ${DB_PATH} -u users.csv
+	flux account pop-db -u users.csv
 '
 
 test_expect_success 'check database hierarchy to make sure all banks & users were added' '
@@ -64,7 +64,7 @@ test_expect_success 'create a users.csv file with some missing optional user inf
 '
 
 test_expect_success 'populate flux-accounting DB with users_optional_vals.csv' '
-	flux account-pop-db -p ${DB_PATH} -u users_optional_vals.csv
+	flux account pop-db -u users_optional_vals.csv
 '
 
 test_expect_success 'check database hierarchy to make sure new users were added' '

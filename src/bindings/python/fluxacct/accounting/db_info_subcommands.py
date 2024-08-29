@@ -11,6 +11,9 @@
 ###############################################################
 import csv
 
+from fluxacct.accounting import bank_subcommands as b
+from fluxacct.accounting import user_subcommands as u
+
 
 def export_db_info(conn, users=None, banks=None):
     try:
@@ -46,3 +49,51 @@ def export_db_info(conn, users=None, banks=None):
                 writer.writerow(row)
     except IOError as err:
         print(err)
+
+
+def populate_db(conn, users=None, banks=None):
+    if banks is not None:
+        try:
+            with open(banks) as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=",")
+
+                for row in csv_reader:
+                    b.add_bank(
+                        conn,
+                        bank=row[0],
+                        parent_bank=row[1],
+                        shares=row[2],
+                    )
+        except IOError as err:
+            print(err)
+
+    if users is not None:
+        try:
+            with open(users) as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=",")
+
+                # assign default values to fields if
+                # their slot is empty in the csv file
+                for row in csv_reader:
+                    username = row[0]
+                    uid = row[1]
+                    bank = row[2]
+                    shares = row[3] if row[3] != "" else 1
+                    max_running_jobs = row[4] if row[4] != "" else 5
+                    max_active_jobs = row[5] if row[5] != "" else 7
+                    max_nodes = row[6] if row[6] != "" else 2147483647
+                    queues = row[7]
+
+                    u.add_user(
+                        conn,
+                        username,
+                        bank,
+                        uid,
+                        shares,
+                        max_running_jobs,
+                        max_active_jobs,
+                        max_nodes,
+                        queues,
+                    )
+        except IOError as err:
+            print(err)
