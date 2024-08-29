@@ -202,7 +202,7 @@ creation_time    mod_time  deleted  username  bank   shares  max_jobs  max_wall_
 ```
 
 Multiple rows of data can be loaded to the database at once using `.csv` files
-and the `flux account-pop-db` command. Run `flux account-pop-db --help` for
+and the `flux account pop-db` command. Run `flux account pop-db --help` for
 `.csv` formatting instructions.
 
 User and bank information can also be exported from the database using the

@@ -556,11 +556,43 @@ def add_export_db_arg(subparsers):
 
         Use these two files to populate a new flux-accounting DB with:
 
-        flux account-pop-db -p path/to/db -b banks.csv -u users.csv
+        flux account pop-db -b banks.csv -u users.csv
         """,
         formatter_class=flux.util.help_formatter(),
     )
     subparser.set_defaults(func="export_db")
+    subparser.add_argument(
+        "-u", "--users", help="path to a .csv file containing user information"
+    )
+    subparser.add_argument(
+        "-b", "--banks", help="path to a .csv file containing bank information"
+    )
+
+
+def add_pop_db_arg(subparsers):
+    subparser = subparsers.add_parser(
+        "pop-db",
+        help="""
+        Description: Populate a flux-accounting database with a .csv file.
+
+        Order of elements required for populating association_table:
+
+        Username,UserID,Bank,Shares,MaxRunningJobs,MaxActiveJobs,MaxNodes,Queues
+
+        [Shares], [MaxRunningJobs], [MaxActiveJobs], and [MaxNodes] can be left
+        blank ('') in the .csv file for a given row.
+
+        ----------------
+
+        Order of elements required for populating bank_table:
+
+        Bank,ParentBank,Shares
+
+        [ParentBank] can be left blank ('') in .csv file for a given row.
+        """,
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparser.set_defaults(func="pop_db")
     subparser.add_argument(
         "-u", "--users", help="path to a .csv file containing user information"
     )
@@ -593,6 +625,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_delete_project_arg(subparsers)
     add_scrub_job_records_arg(subparsers)
     add_export_db_arg(subparsers)
+    add_pop_db_arg(subparsers)
 
 
 def set_db_location(args):
@@ -779,6 +812,13 @@ def select_accounting_function(args, output_file, parser):
             "banks": args.banks,
         }
         return_val = flux.Flux().rpc("accounting.export_db", data).get()
+    elif args.func == "pop_db":
+        data = {
+            "path": args.path,
+            "users": args.users,
+            "banks": args.banks,
+        }
+        return_val = flux.Flux().rpc("accounting.pop_db", data).get()
     else:
         print(parser.print_usage())
         return

@@ -124,7 +124,6 @@ dist_fluxcmd_SCRIPTS = \
 	cmd/flux-account.py \
 	cmd/flux-account-update-fshare \
 	cmd/flux-account-priority-update.py \
-	cmd/flux-account-pop-db.py \
 	cmd/flux-account-update-db.py \
 	cmd/flux-account-service.py \
 	cmd/flux-account-fetch-job-records.py

@@ -82,8 +82,8 @@ test_expect_success 'restart service against new DB' '
 '
 
 test_expect_success 'import information into new DB' '
-	flux account-pop-db -p ${DB_PATHv2} -b banks.csv &&
-	flux account-pop-db -p ${DB_PATHv2} -u users.csv
+	flux account pop-db -b banks.csv &&
+	flux account pop-db -u users.csv
 '
 
 test_expect_success 'create hierarchy output of the new DB and store it in a file' '

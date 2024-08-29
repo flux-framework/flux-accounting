@@ -109,6 +109,7 @@ class AccountingService:
             "delete_project",
             "scrub_old_jobs",
             "export_db",
+            "pop_db",
             "shutdown_service",
         ]
 
@@ -534,6 +535,24 @@ class AccountingService:
             )
 
             payload = {"export_db": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+        except Exception as exc:
+            handle.respond_error(
+                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
+            )
+
+    def pop_db(self, handle, watcher, msg, arg):
+        try:
+            val = d.populate_db(
+                self.conn,
+                msg.payload["users"],
+                msg.payload["banks"],
+            )
+
+            payload = {"pop_db": val}
 
             handle.respond(msg, payload)
         except KeyError as exc:
