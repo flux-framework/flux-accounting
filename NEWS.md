@@ -1,3 +1,26 @@
+flux-accounting version 0.37.0 - 2024-09-03
+-------------------------------------------
+
+#### Fixes
+
+* plugin: move `flux_respond ()` to end of functions (#431)
+
+* Makefile: remove left over compile instructions for `flux_account_shares`
+(#482)
+
+* configure: add `jansson` as a dependency check (#484)
+
+* doc: add example error message when creating DB after starting systemd
+service (#485)
+
+#### Features
+
+* plugin: add instance owner info to plugin (#477)
+
+* cmd: add `export-db` as a `flux account` command (#486)
+
+* cmd: add `pop-db` as a `flux account` command (#487)
+
 flux-accounting version 0.36.0 - 2024-08-06
 -------------------------------------------
 
