@@ -141,6 +141,33 @@ static int update_jobspec_bank (flux_plugin_t *p, int userid)
 
 
 /*
+ * Update the jobspec with the default project the association used to
+ * submit their job under.
+ */
+static int update_jobspec_project (flux_plugin_t *p, int userid, char *bank)
+{
+    Association *a = get_association (userid, bank, users, users_def_bank);
+    if (a == nullptr)
+        // association could not be found
+        return -1;
+
+    // get association's default project
+    std::string project = a->def_project;
+
+    if (!project.empty ()) {
+        // post jobspec-update event
+        if (flux_jobtap_jobspec_update_pack (p,
+                                             "{s:s}",
+                                             "attributes.system.project",
+                                             project.c_str ()) < 0)
+            return -1;
+    }
+
+    return 0;
+}
+
+
+/*
  * Create a special Association object for an association's job while the
  * plugin waits for flux-accounting data to be loaded.
  */
@@ -451,17 +478,19 @@ static int priority_cb (flux_plugin_t *p,
     int urgency, userid;
     char *bank = NULL;
     char *queue = NULL;
+    const char *project = NULL;
     int64_t priority;
     Association *b;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s:i, s{s{s{s?s, s?s}}}}",
+                                "{s:i, s:i, s{s{s{s?s, s?s, s?s}}}}",
                                 "urgency", &urgency,
                                 "userid", &userid,
                                 "jobspec", "attributes", "system",
-                                "bank", &bank, "queue", &queue) < 0) {
+                                "bank", &bank, "queue", &queue,
+                                "project", &project) < 0) {
         flux_log (h,
                   LOG_ERR,
                   "flux_plugin_arg_unpack: %s",
@@ -542,6 +571,18 @@ static int priority_cb (flux_plugin_t *p,
                                              "with bank name");
                 return -1;
             }
+
+            if (project == NULL) {
+                // we also need to update the jobspec with the default project
+                // used to submit this job under
+                if (update_jobspec_project (p, userid, bank) < 0) {
+                    flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                                "mf_priority", 0,
+                                                "failed to update jobspec "
+                                                "with project name");
+                    return -1;
+                }
+            }
         }
     }
 
@@ -588,6 +629,7 @@ static int validate_cb (flux_plugin_t *p,
     int userid;
     char *bank = NULL;
     char *queue = NULL;
+    const char *project = NULL;
     flux_job_state_t state;
     int max_run_jobs, cur_active_jobs, max_active_jobs, queue_factor = 0;
     double fairshare = 0.0;
@@ -599,11 +641,12 @@ static int validate_cb (flux_plugin_t *p,
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s:i, s{s{s{s?s, s?s}}}}",
+                                "{s:i, s:i, s{s{s{s?s, s?s, s?s}}}}",
                                 "userid", &userid,
                                 "state", &state,
                                 "jobspec", "attributes", "system",
-                                "bank", &bank, "queue", &queue) < 0) {
+                                "bank", &bank, "queue", &queue,
+                                "project", &project) < 0) {
         return flux_jobtap_reject_job (p, args, "unable to unpack bank arg");
     }
 
@@ -639,6 +682,15 @@ static int validate_cb (flux_plugin_t *p,
         return flux_jobtap_reject_job (p, args, "Queue not valid for user: %s",
                                        queue);
 
+    if (project != NULL) {
+        // a project was specified on job submission; validate it
+        if (get_project_info (project, a->projects, projects) < 0)
+            // the association specified a project that they do not belong to
+            // or that flux-accounting does not know about; reject the job
+            return flux_jobtap_reject_job (p, args, "project not valid for "
+                                           "user: %s", project);
+    }
+
     cur_active_jobs = a->cur_active_jobs;
     max_active_jobs = a->max_active_jobs;
 
@@ -672,16 +724,18 @@ static int new_cb (flux_plugin_t *p,
     int userid;
     char *bank = NULL;
     char *queue = NULL;
+    const char *project = NULL;
     int max_run_jobs, cur_active_jobs, max_active_jobs = 0;
     Association *b;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s{s{s{s?s, s?s}}}}",
+                                "{s:i, s{s{s{s?s, s?s, s?s}}}}",
                                 "userid", &userid,
                                 "jobspec", "attributes", "system",
-                                "bank", &bank, "queue", &queue) < 0) {
+                                "bank", &bank, "queue", &queue,
+                                "project", &project) < 0) {
         return flux_jobtap_reject_job (p, args, "unable to unpack bank arg");
     }
 
@@ -737,6 +791,18 @@ static int new_cb (flux_plugin_t *p,
             flux_log_error (h, "flux_jobtap_job_aux_set");
 
         return 0;
+    }
+
+    if (project == NULL) {
+        // this job is meant to run under a default project, so update
+        // the jobspec with the project name
+        if (update_jobspec_project (p, userid, bank) < 0) {
+            flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                         "mf_priority", 0,
+                                         "failed to update jobspec with "
+                                         "project name");
+            return -1;
+        }
     }
 
     if (flux_jobtap_job_aux_set (p,
