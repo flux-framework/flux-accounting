@@ -35,9 +35,7 @@ class JobRecord:
     A record of an individual job.
     """
 
-    def __init__(
-        self, userid, _username, jobid, t_submit, t_run, t_inactive, nnodes, resources
-    ):
+    def __init__(self, userid, jobid, t_submit, t_run, t_inactive, nnodes, resources):
         self.userid = userid
         self.username = get_username(userid)
         self.jobid = jobid
@@ -132,20 +130,19 @@ def convert_to_obj(rows):
         try:
             # attempt to create a ResourceSet from R
             rset = ResourceSet(row[6])
-            nnodes = rset.nnodes
+            job_nnodes = rset.nnodes
         except (ValueError, TypeError):
             # can't convert R to a ResourceSet object; skip it
             continue
 
         job_record = JobRecord(
-            row[0],  # userid
-            get_username(row[0]),  # username
-            row[1],  # jobid
-            row[2],  # t_submit
-            row[3],  # t_run
-            row[4],  # t_inactive
-            nnodes,  # nnodes
-            row[6],  # resources
+            userid=row[0],
+            jobid=row[1],
+            t_submit=row[2],
+            t_run=row[3],
+            t_inactive=row[4],
+            nnodes=job_nnodes,
+            resources=row[6],
         )
         job_records.append(job_record)
 
@@ -212,7 +209,7 @@ def get_jobs(conn, **kwargs):
     - jobid
 
     The function will execute a SQL query and return a list of jobs. If no
-    jobs are fuond, an empty list is returned.
+    jobs are found, an empty list is returned.
     """
     # find out which args were passed and place them in a dict
     valid_params = {"user", "after_start_time", "before_end_time", "jobid"}
