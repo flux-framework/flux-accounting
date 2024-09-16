@@ -209,7 +209,7 @@ def get_jobs(conn, **kwargs):
     - jobid
 
     The function will execute a SQL query and return a list of jobs. If no
-    jobs are fuond, an empty list is returned.
+    jobs are found, an empty list is returned.
     """
     # find out which args were passed and place them in a dict
     valid_params = {"user", "after_start_time", "before_end_time", "jobid"}
