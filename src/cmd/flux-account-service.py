@@ -357,6 +357,7 @@ class AccountingService:
                 user=msg.payload["user"],
                 before_end_time=msg.payload["before_end_time"],
                 after_start_time=msg.payload["after_start_time"],
+                project=msg.payload["project"],
             )
 
             payload = {"view_job_records": val}

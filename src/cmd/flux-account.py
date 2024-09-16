@@ -230,6 +230,11 @@ def add_view_job_records_arg(subparsers):
         help="end time",
         metavar="END TIME",
     )
+    subparser_view_job_records.add_argument(
+        "--project",
+        help="project",
+        metavar="PROJECT",
+    )
 
 
 def add_create_db_arg(subparsers):
@@ -696,6 +701,7 @@ def select_accounting_function(args, output_file, parser):
             "user": args.user,
             "before_end_time": args.before_end_time,
             "after_start_time": args.after_start_time,
+            "project": args.project,
         }
         return_val = flux.Flux().rpc("accounting.view_job_records", data).get()
         # the return value of view-job-records without
