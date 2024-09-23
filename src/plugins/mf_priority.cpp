@@ -922,12 +922,15 @@ static int run_cb (flux_plugin_t *p,
     int userid;
     Association *b;
     json_t *jobspec = NULL;
+    char *queue = NULL;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:o}",
-                                "jobspec", &jobspec) < 0) {
+                                "{s:o, s{s{s{s?s}}}}",
+                                "jobspec", &jobspec,
+                                "jobspec", "attributes", "system",
+                                "queue", &queue) < 0) {
         flux_log (h,
                   LOG_ERR,
                   "flux_plugin_arg_unpack: %s",
@@ -948,7 +951,12 @@ static int run_cb (flux_plugin_t *p,
         return -1;
     }
 
-    // increment the user's current running jobs and resources counts
+    if (queue != NULL)
+        // a queue was passed-in; increment counter of the number of
+        // queue-specific running jobs for this association
+        b->queue_usage[std::string (queue)]++;
+
+    // increment the user's current running jobs count
     b->cur_run_jobs++;
     if (jobspec == NULL) {
         flux_jobtap_raise_exception (p,
@@ -1184,13 +1192,16 @@ static int inactive_cb (flux_plugin_t *p,
     int userid;
     Association *b;
     json_t *jobspec = NULL;
+    char *queue = NULL;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s:o}",
+                                "{s:i, s:o, s{s{s{s?s}}}}",
                                 "userid", &userid,
-                                "jobspec", &jobspec) < 0) {
+                                "jobspec", &jobspec,
+                                "jobspec", "attributes", "system",
+                                "queue", &queue) < 0) {
         flux_log (h,
                   LOG_ERR,
                   "flux_plugin_arg_unpack: %s",
@@ -1237,6 +1248,11 @@ static int inactive_cb (flux_plugin_t *p,
                                          "decrement resource count");
             return -1;
         }
+    }
+
+    if (queue != NULL) {
+        if (b->queue_usage[std::string (queue)] > 0)
+            b->queue_usage[std::string (queue)]--;
     }
 
     // if the user/bank combo has any currently held jobs and the user is now

@@ -27,6 +27,7 @@ extern "C" {
 #include <iterator>
 #include <sstream>
 #include <algorithm>
+#include <unordered_map>
 
 // all attributes are per-user/bank
 class Association {
@@ -48,6 +49,8 @@ public:
     int max_cores;                     // max num cores across all running jobs
     int cur_nodes;                     // current number of used nodes
     int cur_cores;                     // current number of used cores
+    std::unordered_map<std::string, int>
+      queue_usage;                     // track num of running jobs per queue
 
     // methods
     json_t* to_json () const;    // convert object to JSON string
