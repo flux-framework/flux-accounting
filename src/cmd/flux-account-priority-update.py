@@ -110,6 +110,7 @@ def bulk_update(path):
             "max_nodes_per_job": int(row[2]),
             "max_time_per_job": int(row[3]),
             "priority": int(row[4]),
+            "max_running_jobs": int(row[5]),
         }
         bulk_q_data.append(single_q_data)
 

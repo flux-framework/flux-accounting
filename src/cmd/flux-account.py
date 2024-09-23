@@ -417,6 +417,12 @@ def add_add_queue_arg(subparsers):
         default=0,
         metavar="PRIORITY",
     )
+    subparser_add_queue.add_argument(
+        "--max-running-jobs",
+        help="max number of running jobs an association can have in the queue",
+        default=100,
+        metavar="MAX_RUNNING_JOBS",
+    )
 
 
 def add_view_queue_arg(subparsers):
@@ -466,6 +472,13 @@ def add_edit_queue_arg(subparsers):
         help="associated priority for the queue",
         default=None,
         metavar="PRIORITY",
+    )
+    subparser_edit_queue.add_argument(
+        "--max-running-jobs",
+        type=int,
+        help="max number of running jobs an association can have in the queue",
+        default=None,
+        metavar="MAX_RUNNING_JOBS",
     )
 
 
@@ -763,6 +776,7 @@ def select_accounting_function(args, output_file, parser):
             "max_nodes_per_job": args.max_nodes_per_job,
             "max_time_per_job": args.max_time_per_job,
             "priority": args.priority,
+            "max_running_jobs": args.max_running_jobs,
         }
         return_val = flux.Flux().rpc("accounting.add_queue", data).get()
     elif args.func == "view_queue":
@@ -785,6 +799,7 @@ def select_accounting_function(args, output_file, parser):
             "max_nodes_per_job": args.max_nodes_per_job,
             "max_time_per_job": args.max_time_per_job,
             "priority": args.priority,
+            "max_running_jobs": args.max_running_jobs,
         }
         return_val = flux.Flux().rpc("accounting.edit_queue", data).get()
     elif args.func == "add_project":
