@@ -882,6 +882,20 @@ static int run_cb (flux_plugin_t *p,
 {
     int userid;
     Association *b;
+    char *queue = NULL;
+
+    flux_t *h = flux_jobtap_get_flux (p);
+    if (flux_plugin_arg_unpack (args,
+                                FLUX_PLUGIN_ARG_IN,
+                                "{s{s{s{s?s}}}}",
+                                "jobspec", "attributes", "system",
+                                "queue", &queue) < 0) {
+        flux_log (h,
+                  LOG_ERR,
+                  "flux_plugin_arg_unpack: %s",
+                  flux_plugin_arg_strerror (args));
+        return -1;
+    }
 
     b = static_cast<Association *>
         (flux_jobtap_job_aux_get (p,
@@ -895,6 +909,11 @@ static int run_cb (flux_plugin_t *p,
 
         return -1;
     }
+
+    if (queue != NULL)
+        // a queue was passed-in; increment counter of the number of
+        // queue-specific running jobs for this association
+        b->queue_usage[std::string (queue)]++;
 
     // increment the user's current running jobs count
     b->cur_run_jobs++;
@@ -1098,12 +1117,15 @@ static int inactive_cb (flux_plugin_t *p,
 {
     int userid;
     Association *b;
+    char *queue = NULL;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i}",
-                                "userid", &userid) < 0) {
+                                "{s:i, s{s{s{s?s}}}}",
+                                "userid", &userid,
+                                "jobspec", "attributes", "system",
+                                "queue", &queue) < 0) {
         flux_log (h,
                   LOG_ERR,
                   "flux_plugin_arg_unpack: %s",
@@ -1132,6 +1154,13 @@ static int inactive_cb (flux_plugin_t *p,
     // this job was running, so decrement the current running jobs count
     // and look to see if any held jobs can be released
     b->cur_run_jobs--;
+
+    if (queue != NULL) {
+        // a queue was passed-in; decrement counter of the number of
+        // queue-specific running jobs for this association
+        if (b->queue_usage[std::string (queue)] > 0)
+            b->queue_usage[std::string (queue)]--;
+    }
 
     // if the user/bank combo has any currently held jobs and the user is now
     // under their max jobs limit, remove the dependency from first held job

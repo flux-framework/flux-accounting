@@ -27,6 +27,7 @@ extern "C" {
 #include <iterator>
 #include <sstream>
 #include <algorithm>
+#include <unordered_map>
 
 // all attributes are per-user/bank
 class Association {
@@ -45,6 +46,8 @@ public:
     std::vector<std::string> projects; // list of accessible projects
     std::string def_project;           // default project
     int max_nodes;                     // max num nodes across all running jobs
+    std::unordered_map<std::string, int>
+      queue_usage;                     // track num of running jobs per queue
 
     // methods
     json_t* to_json () const;    // convert object to JSON string
