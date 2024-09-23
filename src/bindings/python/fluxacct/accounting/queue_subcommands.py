@@ -31,7 +31,9 @@ def view_queue(conn, queue, parsable=False):
         raise sqlite3.OperationalError(f"an sqlite3.OperationalError occurred: {exc}")
 
 
-def add_queue(conn, queue, min_nodes=1, max_nodes=1, max_time=60, priority=0):
+def add_queue(
+    conn, queue, min_nodes=1, max_nodes=1, max_time=60, priority=0, max_running_jobs=100
+):
     try:
         insert_stmt = """
                       INSERT INTO queue_table (
@@ -39,8 +41,9 @@ def add_queue(conn, queue, min_nodes=1, max_nodes=1, max_time=60, priority=0):
                         min_nodes_per_job,
                         max_nodes_per_job,
                         max_time_per_job,
-                        priority
-                      ) VALUES (?, ?, ?, ?, ?)
+                        priority,
+                        max_running_jobs
+                      ) VALUES (?, ?, ?, ?, ?, ?)
                       """
         conn.execute(
             insert_stmt,
@@ -50,6 +53,7 @@ def add_queue(conn, queue, min_nodes=1, max_nodes=1, max_time=60, priority=0):
                 max_nodes,
                 max_time,
                 priority,
+                max_running_jobs,
             ),
         )
 
@@ -78,6 +82,7 @@ def edit_queue(
     max_nodes_per_job=None,
     max_time_per_job=None,
     priority=None,
+    max_running_jobs=None,
 ):
     params = locals()
     editable_fields = [
@@ -85,6 +90,7 @@ def edit_queue(
         "max_nodes_per_job",
         "max_time_per_job",
         "priority",
+        "max_running_jobs",
     ]
 
     for field in editable_fields:

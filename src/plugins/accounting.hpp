@@ -77,6 +77,7 @@ public:
     int max_nodes_per_job;
     int max_time_per_job;
     int priority;
+    int max_running_jobs;
 };
 
 // get an Association object that points to user/bank in the users map;

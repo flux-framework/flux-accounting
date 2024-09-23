@@ -182,6 +182,7 @@ def create_db(
                 max_nodes_per_job   int(11)    DEFAULT 1   NOT NULL    ON CONFLICT REPLACE DEFAULT 1,
                 max_time_per_job    int(11)    DEFAULT 60  NOT NULL    ON CONFLICT REPLACE DEFAULT 60,
                 priority            int(11)    DEFAULT 0   NOT NULL    ON CONFLICT REPLACE DEFAULT 0,
+                max_running_jobs    int(11)    DEFAULT 100 NOT NULL    ON CONFLICT REPLACE DEFAULT 100,
                 PRIMARY KEY (queue)
             );"""
     )
