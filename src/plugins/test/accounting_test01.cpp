@@ -56,7 +56,8 @@ void add_user_to_map (
         a.projects,
         a.def_project,
         a.max_nodes,
-        a.queue_usage
+        a.queue_usage,
+        a.queue_held_jobs
     };
 }
 
@@ -68,9 +69,9 @@ void initialize_map (
     std::map<int, std::map<std::string, Association>> &users)
 {
     Association user1 = {"bank_A", 0.5, 5, 0, 7, 0, {},
-                         {}, 0, 1, {"*"}, "*", 2147483647, {}};
+                         {}, 0, 1, {"*"}, "*", 2147483647, {}, {}};
     Association user2 = {"bank_A", 0.5, 5, 0, 7, 0, {},
-                         {}, 0, 1, {"*"}, "*", 2147483647, {}};
+                         {}, 0, 1, {"*"}, "*", 2147483647, {}, {}};
 
     add_user_to_map (users, 1001, "bank_A", user1);
     users_def_bank[1001] = "bank_A";
@@ -272,7 +273,7 @@ static void test_check_map_dne_true ()
     users_def_bank.clear ();
 
     Association tmp_user = {"DNE", 0.5, 5, 0, 7, 0, {},
-                            {}, 0, 1, {"*"}, "*", 2147483647, {}};
+                            {}, 0, 1, {"*"}, "*", 2147483647, {}, {}};
     add_user_to_map (users, 9999, "DNE", tmp_user);
     users_def_bank[9999] = "DNE";
 
