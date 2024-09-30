@@ -1,3 +1,18 @@
+flux-accounting version 0.38.0 - 2024-10-01
+-------------------------------------------
+
+#### Fixes
+
+* JobRecord: remove `username` from `__init__()` of JobRecord object (#489)
+
+* `job.state.inactive`: add `return -1` to exception (#492)
+
+#### Features
+
+* plugin: add project validation/annotation (#443)
+
+* `view-job-records`: add `--project` filter option (#490)
+
 flux-accounting version 0.37.0 - 2024-09-03
 -------------------------------------------
 
