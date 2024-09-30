@@ -14,6 +14,7 @@ import os
 import sys
 import argparse
 import sqlite3
+import json
 
 import flux
 import flux.job
@@ -89,6 +90,17 @@ def fetch_new_jobs(last_timestamp=0.0):
             single_record["R"] = data["R"]
         if data["jobspec"] is not None:
             single_record["jobspec"] = data["jobspec"]
+            try:
+                jobspec = json.loads(single_record["jobspec"])
+                # using .get() here ensures no KeyError is raised if
+                # "attributes" or "project" are missing; will set
+                # single_record["project"] to None if it can't be found
+                accounting_attributes = jobspec.get("attributes", {}).get("system", {})
+                single_record["project"] = accounting_attributes.get("project")
+            except json.JSONDecodeError as exc:
+                # the job does not have a project in jobspec, so don't add it
+                # to the job dictionary
+                continue
 
         required_keys = [
             "userid",
@@ -123,7 +135,8 @@ def insert_jobs_in_db(conn, job_records):
             cur.execute(
                 """
                 INSERT OR IGNORE INTO jobs
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (id, userid, t_submit, t_run, t_inactive, ranks, R, jobspec, project)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     single_job["id"],
@@ -134,6 +147,9 @@ def insert_jobs_in_db(conn, job_records):
                     single_job["ranks"],
                     single_job["R"],
                     single_job["jobspec"],
+                    single_job["project"]
+                    if single_job.get("project") is not None
+                    else "",
                 ),
             )
         except KeyError:

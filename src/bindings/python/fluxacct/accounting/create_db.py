@@ -212,7 +212,8 @@ def create_db(
                 t_inactive          real                   NOT NULL,
                 ranks               text                   NOT NULL,
                 R                   text                   NOT NULL,
-                jobspec             text                   NOT NULL
+                jobspec             text                   NOT NULL,
+                project             text
             );"""
     )
     logging.info("Created jobs table successfully")

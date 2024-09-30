@@ -40,6 +40,7 @@ TESTSCRIPTS = \
 	t1038-hierarchy-small-tie-all-db.t \
 	t1039-issue476.t \
 	t1040-mf-priority-projects.t \
+	t1041-view-jobs-by-project.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \

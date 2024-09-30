@@ -34,7 +34,11 @@ def main():
     t_inactive_two_weeks = time.time() - (604861 * 2)  # more than 2 weeks old
     t_inactive_old = time.time() - (604861 * 27)  # more than six months old
     ranks = r = jobspec = ""
-    insert_stmt = "INSERT INTO jobs VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    insert_stmt = """
+        INSERT INTO jobs
+        (id, userid, t_submit, t_run, t_inactive, ranks, R, jobspec)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """
 
     cur.execute(
         insert_stmt,

@@ -35,7 +35,9 @@ class JobRecord:
     A record of an individual job.
     """
 
-    def __init__(self, userid, jobid, t_submit, t_run, t_inactive, nnodes, resources):
+    def __init__(
+        self, userid, jobid, t_submit, t_run, t_inactive, nnodes, resources, project
+    ):
         self.userid = userid
         self.username = get_username(userid)
         self.jobid = jobid
@@ -44,6 +46,7 @@ class JobRecord:
         self.t_inactive = t_inactive
         self.nnodes = nnodes
         self.resources = resources
+        self.project = project
 
     @property
     def elapsed(self):
@@ -69,6 +72,7 @@ def write_records_to_file(job_records, output_file):
                 "T_Inactive",
                 "Nodes",
                 "R",
+                "Project",
             )
         )
         for record in job_records:
@@ -82,6 +86,7 @@ def write_records_to_file(job_records, output_file):
                     str(record.t_inactive),
                     str(record.nnodes),
                     str(record.resources),
+                    str(record.project),
                 )
             )
 
@@ -93,7 +98,7 @@ def convert_to_str(job_records):
     """
     job_record_str = []
     job_record_str.append(
-        "{:<10} {:<10} {:<20} {:<20} {:<20} {:<20} {:<10}".format(
+        "{:<10} {:<10} {:<20} {:<20} {:<20} {:<20} {:<10} {:<20}".format(
             "UserID",
             "Username",
             "JobID",
@@ -101,11 +106,12 @@ def convert_to_str(job_records):
             "T_Run",
             "T_Inactive",
             "Nodes",
+            "Project",
         )
     )
     for record in job_records:
         job_record_str.append(
-            "{:<10} {:<10} {:<20} {:<20} {:<20} {:<20} {:<10}".format(
+            "{:<10} {:<10} {:<20} {:<20} {:<20} {:<20} {:<10} {:<20}".format(
                 record.userid,
                 record.username,
                 record.jobid,
@@ -113,6 +119,7 @@ def convert_to_str(job_records):
                 record.t_run,
                 record.t_inactive,
                 record.nnodes,
+                record.project,
             )
         )
 
@@ -143,6 +150,7 @@ def convert_to_obj(rows):
             t_inactive=row[4],
             nnodes=job_nnodes,
             resources=row[6],
+            project=row[8] if row[8] is not None else "",
         )
         job_records.append(job_record)
 
@@ -212,14 +220,16 @@ def get_jobs(conn, **kwargs):
     jobs are found, an empty list is returned.
     """
     # find out which args were passed and place them in a dict
-    valid_params = {"user", "after_start_time", "before_end_time", "jobid"}
+    valid_params = {"user", "after_start_time", "before_end_time", "jobid", "project"}
     params = {
         key: val
         for key, val in kwargs.items()
         if val is not None and key in valid_params
     }
 
-    select_stmt = "SELECT userid,id,t_submit,t_run,t_inactive,ranks,R,jobspec FROM jobs"
+    select_stmt = (
+        "SELECT userid,id,t_submit,t_run,t_inactive,ranks,R,jobspec,project FROM jobs"
+    )
     where_clauses = []
     params_list = []
 
@@ -236,6 +246,9 @@ def get_jobs(conn, **kwargs):
     if "jobid" in params:
         where_clauses.append("id = ?")
         params_list.append(params["jobid"])
+    if "project" in params:
+        where_clauses.append("project = ?")
+        params_list.append(params["project"])
 
     if where_clauses:
         select_stmt += " WHERE " + " AND ".join(where_clauses)
