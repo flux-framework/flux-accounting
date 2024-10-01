@@ -1138,8 +1138,11 @@ static int inactive_cb (flux_plugin_t *p,
         if (flux_jobtap_dependency_remove (p,
                                            jobid,
                                            "max-running-jobs-user-limit") < 0)
+        {
             flux_jobtap_raise_exception (p, jobid, "mf_priority",
                                          0, "failed to remove job dependency");
+            return -1;
+        }
 
         b->held_jobs.erase (b->held_jobs.begin ());
     }
