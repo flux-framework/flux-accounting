@@ -60,9 +60,9 @@ test_expect_success 'view some user information' '
 	grep -w "username: user5011\|userid: 5011\|bank: A" user_info.out
 '
 
-test_expect_success 'view some user information with --parseable' '
-	flux account view-user --parseable user5011 > user_info_parseable.out &&
-	grep -w "user5011\|5011\|A" user_info_parseable.out
+test_expect_success 'view some user information with --parsable' '
+	flux account view-user --parsable user5011 > user_info_parsable.out &&
+	grep -w "user5011\|5011\|A" user_info_parsable.out
 '
 
 test_expect_success 'view some user information with --json' '

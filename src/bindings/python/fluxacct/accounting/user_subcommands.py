@@ -129,10 +129,10 @@ def create_json_object(conn, user):
     return user_info_json
 
 
-def get_user_rows(conn, user, headers, rows, parseable, json_fmt):
+def get_user_rows(conn, user, headers, rows, parsable, json_fmt):
     user_str = ""
 
-    if parseable is True:
+    if parsable is True:
         # find length of longest column name
         col_width = len(sorted(headers, key=len)[-1])
 
@@ -285,7 +285,7 @@ def clear_queues(conn, username, bank=None):
 #                   Subcommand Functions                      #
 #                                                             #
 ###############################################################
-def view_user(conn, user, parseable=False, json_fmt=False):
+def view_user(conn, user, parsable=False, json_fmt=False):
     cur = conn.cursor()
     try:
         # get the information pertaining to a user in the DB
@@ -295,7 +295,7 @@ def view_user(conn, user, parseable=False, json_fmt=False):
         if not result:
             raise ValueError(f"User {user} not found in association_table")
 
-        user_str = get_user_rows(conn, user, headers, result, parseable, json_fmt)
+        user_str = get_user_rows(conn, user, headers, result, parsable, json_fmt)
 
         return user_str
     # this kind of exception is raised for errors related to the DB's operation,
