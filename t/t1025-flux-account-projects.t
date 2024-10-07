@@ -43,6 +43,16 @@ test_expect_success 'add some queues to the DB' '
 	flux account add-queue special --priority=99999
 '
 
+test_expect_success 'list contents of project_table before adding projects' '
+	flux account list-projects > project_table.test &&
+	cat <<-EOF >project_table.expected
+	project_id | project | usage
+	-----------+---------+------
+	1          | *       | 0.0
+	EOF
+	grep -f project_table.expected project_table.test
+'
+
 test_expect_success 'add some projects to the project_table' '
 	flux account add-project project_1 &&
 	flux account add-project project_2 &&
@@ -129,6 +139,18 @@ test_expect_success 'reset the projects list for an association' '
 	flux account edit-user user5018 --projects=-1 &&
 	flux account view-user user5018 --json > user5018.json &&
 	grep "\"projects\": \"*\"" user5018.json
+'
+
+test_expect_success 'list all of the projects currently registered in project_table' '
+	flux account list-projects > project_table.test &&
+	cat <<-EOF >project_table.expected
+	project_id | project   | usage
+	-----------+-----------+------
+	1          | *         | 0.0
+	3          | project_2 | 0.0
+	4          | project_3 | 0.0
+	EOF
+	grep -f project_table.expected project_table.test
 '
 
 test_expect_success 'remove flux-accounting DB' '
