@@ -40,11 +40,11 @@ def add_view_user_arg(subparsers):
     subparser_view_user.set_defaults(func="view_user")
     subparser_view_user.add_argument("username", help="username", metavar=("USERNAME"))
     subparser_view_user.add_argument(
-        "--parseable",
+        "--parsable",
         action="store_const",
         const=True,
         help="print all information of an association on one line",
-        metavar="PARSEABLE",
+        metavar="PARSABLE",
     )
     subparser_view_user.add_argument(
         "--json",
@@ -652,7 +652,7 @@ def select_accounting_function(args, output_file, parser):
         data = {
             "path": args.path,
             "username": args.username,
-            "parseable": args.parseable,
+            "parsable": args.parsable,
             "json": args.json,
         }
         return_val = flux.Flux().rpc("accounting.view_user", data).get()
