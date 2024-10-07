@@ -280,6 +280,26 @@ def clear_queues(conn, username, bank=None):
     return 0
 
 
+def clear_projects(conn, username, bank=None):
+    update_stmt = "UPDATE association_table SET projects='*' WHERE username=?"
+    if bank is None:
+        conn.execute(update_stmt, (username,))
+    else:
+        update_stmt += " AND bank=?"
+        conn.execute(
+            update_stmt,
+            (
+                username,
+                bank,
+            ),
+        )
+
+    update_mod_time(conn, username, bank)
+    conn.commit()
+
+    return 0
+
+
 ###############################################################
 #                                                             #
 #                   Subcommand Functions                      #
@@ -480,6 +500,10 @@ def edit_user(
                 except ValueError as bad_queue:
                     raise ValueError(f"queue {bad_queue} does not exist in queue_table")
             if field == "projects":
+                if str(params[field]) == "-1":
+                    # reset the association's projects list to just "*"
+                    clear_projects(conn, username, bank)
+                    return 0
                 try:
                     params[field] = validate_project(conn, params[field])
                 except ValueError as bad_project:

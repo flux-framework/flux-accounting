@@ -125,6 +125,12 @@ test_expect_success 'edit the default project of a user' '
 	grep -f projects_list.expected edited_default_project.test
 '
 
+test_expect_success 'reset the projects list for an association' '
+	flux account edit-user user5018 --projects=-1 &&
+	flux account view-user user5018 --json > user5018.json &&
+	grep "\"projects\": \"*\"" user5018.json
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '

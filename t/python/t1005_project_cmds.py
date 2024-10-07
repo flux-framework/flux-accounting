@@ -113,6 +113,16 @@ class TestAccountingCLI(unittest.TestCase):
         with self.assertRaises(ValueError):
             p.view_project(acct_conn, "foo")
 
+    # reset the lists of projects for an association
+    def test_09_reset_projects_for_association(self):
+        u.edit_user(acct_conn, username="user5002", projects=-1)
+        cur.execute(
+            "SELECT projects, default_project FROM association_table WHERE username='user5002' AND bank='A'"
+        )
+        rows = cur.fetchall()
+
+        print(rows)
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):
