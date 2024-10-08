@@ -115,3 +115,32 @@ def delete_project(conn, project):
         return warning_stmt
 
     return 0
+
+
+def list_projects(conn):
+    """
+    List all of the available projects registered in the project_table.
+    """
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM project_table")
+    rows = cur.fetchall()
+
+    # fetch column names and determine width of each column
+    col_names = [description[0] for description in cur.description]
+    col_widths = [
+        max(len(str(value)) for value in [col] + [row[i] for row in rows])
+        for i, col in enumerate(col_names)
+    ]
+
+    def format_row(row):
+        return " | ".join(
+            [f"{str(value).ljust(col_widths[i])}" for i, value in enumerate(row)]
+        )
+
+    header = format_row(col_names)
+    separator = "-+-".join(["-" * width for width in col_widths])
+    data_rows = "\n".join([format_row(row) for row in rows])
+    table = f"{header}\n{separator}\n{data_rows}"
+
+    return table

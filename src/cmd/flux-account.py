@@ -519,6 +519,16 @@ def add_delete_project_arg(subparsers):
     )
 
 
+def add_list_projects_arg(subparsers):
+    subparser_list_projects = subparsers.add_parser(
+        "list-projects",
+        help="list all registered projects",
+        formatter_class=flux.util.help_formatter(),
+    )
+
+    subparser_list_projects.set_defaults(func="list_projects")
+
+
 def add_scrub_job_records_arg(subparsers):
     subparser = subparsers.add_parser(
         "scrub-old-jobs",
@@ -628,6 +638,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_add_project_arg(subparsers)
     add_view_project_arg(subparsers)
     add_delete_project_arg(subparsers)
+    add_list_projects_arg(subparsers)
     add_scrub_job_records_arg(subparsers)
     add_export_db_arg(subparsers)
     add_pop_db_arg(subparsers)
@@ -805,6 +816,11 @@ def select_accounting_function(args, output_file, parser):
             "project": args.project,
         }
         return_val = flux.Flux().rpc("accounting.delete_project", data).get()
+    elif args.func == "list_projects":
+        data = {
+            "path": args.path,
+        }
+        return_val = flux.Flux().rpc("accounting.list_projects", data).get()
     elif args.func == "scrub_old_jobs":
         data = {
             "path": args.path,

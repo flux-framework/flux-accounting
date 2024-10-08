@@ -92,6 +92,7 @@ class AccountingService:
             "view_job_records",
             "view_queue",
             "view_project",
+            "list_projects",
         ]
 
         privileged_endpoints = [
@@ -504,6 +505,20 @@ class AccountingService:
             val = p.delete_project(self.conn, msg.payload["project"])
 
             payload = {"delete_project": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+        except Exception as exc:
+            handle.respond_error(
+                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
+            )
+
+    def list_projects(self, handle, watcher, msg, arg):
+        try:
+            val = p.list_projects(self.conn)
+
+            payload = {"list_projects": val}
 
             handle.respond(msg, payload)
         except KeyError as exc:
