@@ -9,108 +9,134 @@
 #
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
+import unittest
+import os
 import sqlite3
 
-
-###############################################################
-#                                                             #
-#                      Helper Functions                       #
-#                                                             #
-###############################################################
+from fluxacct.accounting import create_db as c
+from fluxacct.accounting import user_subcommands as u
+from fluxacct.accounting import bank_subcommands as b
+from fluxacct.accounting import project_subcommands as p
 
 
-# check if project already exists and is active in project_table;
-# if so, return True
-def project_is_active(cur, project):
-    cur.execute(
-        "SELECT * FROM project_table WHERE project=?",
-        (project,),
-    )
-    project_exists = cur.fetchall()
-    if len(project_exists) > 0:
-        return True
+class TestAccountingCLI(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        # create test accounting database
+        c.create_db("TestProjectSubcommands.db")
+        global acct_conn
+        global cur
 
-    return False
+        acct_conn = sqlite3.connect("TestProjectSubcommands.db")
+        cur = acct_conn.cursor()
 
+    # add a valid project to project_table
+    def test_01_add_valid_projects(self):
+        p.add_project(acct_conn, project="project_1")
+        cur.execute("SELECT * FROM project_table WHERE project='project_1'")
+        rows = cur.fetchall()
 
-###############################################################
-#                                                             #
-#                   Subcommand Functions                      #
-#                                                             #
-###############################################################
+        self.assertEqual(len(rows), 1)
 
+    # let's make sure if we try to add it a second time,
+    # it fails gracefully
+    def test_02_add_dup_project(self):
+        with self.assertRaises(sqlite3.IntegrityError):
+            p.add_project(acct_conn, project="project_1")
 
-def view_project(conn, project):
-    cur = conn.cursor()
-    try:
-        # get the information pertaining to a project in the DB
-        cur.execute("SELECT * FROM project_table where project=?", (project,))
-        result = cur.fetchall()
-        headers = [description[0] for description in cur.description]
-        project_str = ""
-        if not result:
-            raise ValueError(f"project {project} not found in project_table")
+    # remove a project currently in the project_table
+    def test_03_delete_project(self):
+        p.delete_project(acct_conn, project="project_1")
+        cur.execute("SELECT * FROM project_table WHERE project='project_1'")
+        rows = cur.fetchall()
 
-        for header in headers:
-            project_str += header.ljust(18)
-        project_str += "\n"
-        for row in result:
-            for col in list(row):
-                project_str += str(col).ljust(18)
-            project_str += "\n"
+        self.assertEqual(len(rows), 0)
 
-        return project_str
-    except sqlite3.OperationalError as exc:
-        raise sqlite3.OperationalError(f"an sqlite3.OperationalError occurred: {exc}")
-
-
-def add_project(conn, project):
-    cur = conn.cursor()
-
-    if project_is_active(cur, project):
-        raise sqlite3.IntegrityError(
-            f"project {project} already exists in project_table"
+    # add a user to the accounting DB without specifying a default project
+    def test_04_default_project_unspecified(self):
+        b.add_bank(acct_conn, bank="A", shares=1)
+        u.add_user(acct_conn, username="user5001", uid=5001, bank="A")
+        cur.execute(
+            "SELECT default_project FROM association_table WHERE username='user5001' AND bank='A'"
         )
+        rows = cur.fetchall()
 
-    try:
-        insert_stmt = "INSERT INTO project_table (project) VALUES (?)"
-        conn.execute(
-            insert_stmt,
-            (project,),
+        self.assertEqual(rows[0][0], "*")
+
+    # add a user to the accounting DB by specifying a default project
+    def test_05_default_project_specified(self):
+        p.add_project(acct_conn, project="project_1")
+        u.add_user(
+            acct_conn, username="user5002", uid=5002, bank="A", projects="project_1"
         )
-
-        conn.commit()
-
-        return 0
-    # make sure entry is unique
-    except sqlite3.IntegrityError:
-        raise sqlite3.IntegrityError(
-            f"project {project} already exists in project_table"
+        cur.execute(
+            "SELECT default_project FROM association_table WHERE username='user5002' AND bank='A'"
         )
+        rows = cur.fetchall()
+
+        self.assertEqual(rows[0][0], "project_1")
+
+        # make sure "*" is also added to the user's project list
+        cur.execute(
+            "SELECT projects FROM association_table WHERE username='user5002' AND bank='A'"
+        )
+        rows = cur.fetchall()
+
+        self.assertEqual(rows[0][0], "project_1,*")
+
+    # edit a user's default project
+    def test_06_edit_default_project(self):
+        u.edit_user(acct_conn, username="user5002", bank="A", default_project="*")
+        cur.execute(
+            "SELECT default_project FROM association_table WHERE username='user5002' AND bank='A'"
+        )
+        rows = cur.fetchall()
+
+        self.assertEqual(rows[0][0], "*")
+
+        # make sure projects list gets edited correctly
+        u.edit_user(acct_conn, username="user5002", bank="A", projects="project_1")
+        cur.execute(
+            "SELECT projects FROM association_table WHERE username='user5002' AND bank='A'"
+        )
+        rows = cur.fetchall()
+
+        self.assertEqual(rows[0][0], "project_1,*")
+
+    # editing a user's project list with a bad project name should raise a ValueError
+    def test_07_edit_projects_list_bad_name(self):
+        with self.assertRaises(ValueError):
+            u.edit_user(acct_conn, username="user5002", bank="A", projects="foo")
+
+    # trying to view a project that does not exist should raise a ValueError
+    def test_08_view_project_nonexistent(self):
+        with self.assertRaises(ValueError):
+            p.view_project(acct_conn, "foo")
+
+    # reset the lists of projects for an association
+    def test_09_reset_projects_for_association(self):
+        u.edit_user(acct_conn, username="user5002", projects=-1)
+        cur.execute(
+            "SELECT projects, default_project FROM association_table WHERE username='user5002' AND bank='A'"
+        )
+        rows = cur.fetchall()
+
+        print(rows)
+
+    # remove database and log file
+    @classmethod
+    def tearDownClass(self):
+        acct_conn.close()
+        os.remove("TestProjectSubcommands.db")
 
 
-def delete_project(conn, project):
-    cursor = conn.cursor()
+def suite():
+    suite = unittest.TestSuite()
 
-    # look for any rows in the association_table that reference this project
-    select_stmt = "SELECT * FROM association_table WHERE projects LIKE ?"
-    cursor.execute(select_stmt, ("%" + project + "%",))
-    result = cursor.fetchall()
-    warning_stmt = (
-        "WARNING: user(s) in the assocation_table still "
-        "reference this project. Make sure to edit user rows to "
-        "account for this deleted project."
-    )
+    return suite
 
-    delete_stmt = "DELETE FROM project_table WHERE project=?"
-    cursor.execute(delete_stmt, (project,))
 
-    conn.commit()
+if __name__ == "__main__":
+    from pycotap import TAPTestRunner
 
-    # if len(rows) > 0, this means that at least one association in the
-    # association_table references this project. If this is the case,
-    # return the warning message after deleting the project.
-    if len(result) > 0:
-        return warning_stmt
-
-    return 0
+    unittest.main(testRunner=TAPTestRunner())
