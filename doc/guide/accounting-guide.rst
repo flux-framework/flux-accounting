@@ -130,6 +130,14 @@ configure the ``job-manager`` to load this plugin.
 
 See also: :core:man5:`flux-config-job-manager`.
 
+The plugin can also be manually loaded with ``flux jobtap load``. Be sure to
+send all flux-accounting data to the plugin after it is loaded:
+
+.. code-block:: console
+
+ $ flux jobtap load mf_priority.so
+ $ flux account-priority-update
+
 Automatic Accounting Database Updates
 =====================================
 
