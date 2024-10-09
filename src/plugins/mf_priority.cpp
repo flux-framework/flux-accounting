@@ -567,8 +567,8 @@ static int priority_cb (flux_plugin_t *p,
             if (update_jobspec_bank (p, userid) < 0) {
                 flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
                                              "mf_priority", 0,
-                                             "failed to update jobspec "
-                                             "with bank name");
+                                             "job.state.priority: failed to "
+                                             "update jobspec with bank name");
                 return -1;
             }
 
@@ -578,8 +578,9 @@ static int priority_cb (flux_plugin_t *p,
                 if (update_jobspec_project (p, userid, bank) < 0) {
                     flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
                                                 "mf_priority", 0,
-                                                "failed to update jobspec "
-                                                "with project name");
+                                                "job.state.priority: failed "
+                                                "to update jobspec with "
+                                                "project name");
                     return -1;
                 }
             }
@@ -761,8 +762,8 @@ static int new_cb (flux_plugin_t *p,
             if (update_jobspec_bank (p, userid) < 0) {
                 flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
                                              "mf_priority", 0,
-                                             "failed to update jobspec "
-                                             "with bank name");
+                                             "job.new: failed to update "
+                                             "jobspec with bank name");
                 return -1;
             }
         }
@@ -799,8 +800,8 @@ static int new_cb (flux_plugin_t *p,
         if (update_jobspec_project (p, userid, bank) < 0) {
             flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
                                          "mf_priority", 0,
-                                         "failed to update jobspec with "
-                                         "project name");
+                                         "job.new: failed to update jobspec "
+                                         "with project name");
             return -1;
         }
     }
