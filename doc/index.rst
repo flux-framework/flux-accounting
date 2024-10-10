@@ -1,9 +1,13 @@
 Documentation for flux-accounting
 =================================
 
+This site contains documentation for flux-accounting configuration and
+management.
+
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+
+   guide/accounting-guide
 
 
 .. _man-pages:
