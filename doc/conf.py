@@ -54,6 +54,10 @@ source_suffix = ".rst"
 extensions = ["sphinx.ext.intersphinx", "sphinx.ext.napoleon", "domainrefs"]
 
 domainrefs = {
+    "core:man1": {
+        "text": "%s(1)",
+        "url": "https://flux-framework.readthedocs.io/projects/flux-core/en/latest/man1/%s.html",
+    },
     "core:man5": {
         "text": "%s(5)",
         "url": "https://flux-framework.readthedocs.io/projects/flux-core/en/latest/man5/%s.html",
@@ -118,7 +122,7 @@ def man_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
 # launch setup
 def setup(app):
     app.connect("builder-inited", run_apidoc)
-    for section in [5]:
+    for section in [1, 5]:
         app.add_role(f"man{section}", man_role)
 
 
