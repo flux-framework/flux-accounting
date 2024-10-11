@@ -98,7 +98,7 @@ def delete_project(conn, project):
     cursor.execute(select_stmt, ("%" + project + "%",))
     result = cursor.fetchall()
     warning_stmt = (
-        "WARNING: user(s) in the assocation_table still "
+        "WARNING: user(s) in the association_table still "
         "reference this project. Make sure to edit user rows to "
         "account for this deleted project."
     )

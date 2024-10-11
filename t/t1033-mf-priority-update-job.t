@@ -104,7 +104,7 @@ test_expect_success 'check that job is still in original queue' '
 	grep "\"queue\": \"bronze\"" jobspec.out
 '
 
-test_expect_success 'update job with invalud combination (invalid queue)' '
+test_expect_success 'update job with invalid combination (invalid queue)' '
 	test_must_fail flux update ${jobid} bank=B queue=gold > unavail_queue.out 2>&1 &&
 	test_debug "cat unavail_queue.out" &&
 	grep "ERROR: mf_priority: queue not valid for user: gold" unavail_queue.out

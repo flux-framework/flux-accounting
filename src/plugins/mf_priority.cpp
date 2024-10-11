@@ -655,7 +655,7 @@ static int validate_cb (flux_plugin_t *p,
     a = get_association (userid, bank, users, users_def_bank);
 
     if (a == nullptr) {
-        // the assocation could not be found in the plugin's internal map,
+        // the association could not be found in the plugin's internal map,
         // so perform a check to see if the map has any loaded
         // flux-accounting data before rejecting the job
         bool only_dne_data = check_map_for_dne_only (users, users_def_bank);

@@ -17,7 +17,7 @@ from fluxacct.accounting import jobs_table_subcommands as j
 
 def update_t_inactive(acct_conn, last_t_inactive, user, bank):
     """
-    Save the timestamp of the most recent inactive job for the assocation.
+    Save the timestamp of the most recent inactive job for the association.
     """
     u_ts = """
         UPDATE job_usage_factor_table SET last_job_timestamp=? WHERE username=? AND bank=?

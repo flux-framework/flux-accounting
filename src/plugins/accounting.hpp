@@ -50,7 +50,7 @@ public:
     json_t* to_json () const;    // convert object to JSON string
 };
 
-// - UKNOWN_QUEUE: a queue is specified for a submitted job that flux-accounting
+// - UNKNOWN_QUEUE: a queue is specified for a submitted job that flux-accounting
 // does not know about
 // - NO_QUEUE_SPECIFIED: no queue was specified for this job
 // - INVALID_QUEUE: the association does not have permission to run jobs under

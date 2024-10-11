@@ -109,7 +109,7 @@ static void test_direct_map_access (
 }
 
 
-// ensure an Assocation* is returned on success
+// ensure an Association* is returned on success
 static void test_get_association_success ()
 {
     // retrieve user_bank_info object
@@ -180,7 +180,7 @@ static void test_get_queue_info_no_queue_specified ()
 }
 
 
-// ensure UNKOWN_QUEUE is returned when an unrecognized queue is passed in
+// ensure UNKNOWN_QUEUE is returned when an unrecognized queue is passed in
 static void test_get_queue_info_unknown_queue ()
 {
     Association a = users[1001]["bank_A"];

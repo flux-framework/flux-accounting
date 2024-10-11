@@ -117,7 +117,7 @@ test_expect_success 'a submitted job while at max-running-jobs limit will have a
 	flux cancel ${jobid2}
 '
 
-test_expect_success 'submit max number of jobs with a mix of default bank and explicity set bank' '
+test_expect_success 'submit max number of jobs with a mix of default bank and explicitly set bank' '
 	jobid1=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
 	jobid2=$(flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account3 -n 1 sleep 60)
 '

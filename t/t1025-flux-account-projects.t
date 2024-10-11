@@ -90,7 +90,7 @@ test_expect_success 'editing a user project list with a non-existing project sho
 test_expect_success 'remove a project from the project_table that is still referenced by at least one user' '
 	flux account delete-project project_1 > warning_message.out &&
 	test_must_fail flux account view-project project_1 > deleted_project.out 2>&1 &&
-	grep "WARNING: user(s) in the assocation_table still reference this project." warning_message.out &&
+	grep "WARNING: user(s) in the association_table still reference this project." warning_message.out &&
 	grep "project project_1 not found in project_table" deleted_project.out
 '
 
