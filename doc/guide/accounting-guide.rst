@@ -358,6 +358,19 @@ the multi-factor priority plugin are:
 
 * **urgency**: a user-controlled factor to prioritize their own jobs.
 
+Each of these factors can be configured with a custom weight to increase their
+relevance to the final calculation of a job's integer priority. By default,
+fair-share has a weight of 100000 and the queue the job is submitted in has a
+weight of 10000. These can be modified to change how a job's priority is
+calculated. For example, if you wanted the queue to be more of a factor than
+fair-share, you can adjust each factor's weight accordingly:
+
+.. code-block:: toml
+
+ [accounting.factor-weights]
+ fairshare = 1000
+ queue = 100000
+
 In addition to generating an integer priority for submitted jobs in a Flux
 system instance, the multi-factor priority plugin also enforces per-association
 job limits to regulate use of the system. The two per-association limits
