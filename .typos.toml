@@ -1,0 +1,29 @@
+# do not check code copied into the project
+# do not check sha code, lots of hashing false positives
+# do not check testing data
+[files]
+extend-exclude = [
+  "config/*",
+  "src/common/libtap/*",
+  "t/sharness.sh",
+  "doc/test/spell.en.pws",
+  "t/sharness",
+  "t/t0000-sharness.t",
+]
+
+[default.extend-words]
+# in hwloc output
+hsi = "hsi"
+# commonly used names/variables that aren't typos
+fo = "fo"
+ba = "ba"
+inout = "inout"
+trun = "trun"
+fullset = "fullset"
+mone = "mone"
+requestor = "requestor"
+requestors = "requestors"
+clen = "clen"
+WRONLY = "WRONLY"
+dne = "dne"
+DNE = "DNE"
