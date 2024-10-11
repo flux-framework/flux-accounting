@@ -27,6 +27,7 @@ extern "C" {
 #include <iterator>
 #include <sstream>
 #include <algorithm>
+#include <unordered_map>
 
 // all attributes are per-user/bank
 class Association {
@@ -45,6 +46,11 @@ public:
     std::vector<std::string> projects; // list of accessible projects
     std::string def_project;           // default project
     int max_nodes;                     // max num nodes across all running jobs
+    std::unordered_map<std::string, int>
+      queue_usage;                     // track num of running jobs per queue
+    std::unordered_map<std::string,
+                       std::vector<long int>>
+      queue_held_jobs;                // keep track of held job ID's per queue
 
     // methods
     json_t* to_json () const;    // convert object to JSON string
@@ -74,6 +80,7 @@ public:
     int max_nodes_per_job;
     int max_time_per_job;
     int priority;
+    int max_running_jobs;
 };
 
 // get an Association object that points to user/bank in the users map;
@@ -109,5 +116,9 @@ bool check_map_for_dne_only (std::map<int, std::map<std::string, Association>>
 int get_project_info (const char *project,
                       std::vector<std::string> &permissible_projects,
                       std::vector<std::string> projects);
+
+// fetch the max number of running jobs a queue can have per-association
+int max_run_jobs_per_queue (const std::map<std::string, Queue> &queues,
+                            const std::string &queue);
 
 #endif // ACCOUNTING_H

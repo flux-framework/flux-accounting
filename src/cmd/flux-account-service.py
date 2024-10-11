@@ -399,6 +399,7 @@ class AccountingService:
                 msg.payload["max_nodes_per_job"],
                 msg.payload["max_time_per_job"],
                 msg.payload["priority"],
+                msg.payload["max_running_jobs"],
             )
 
             payload = {"add_queue": val}
@@ -454,6 +455,7 @@ class AccountingService:
                 msg.payload["max_nodes_per_job"],
                 msg.payload["max_time_per_job"],
                 msg.payload["priority"],
+                msg.payload["max_running_jobs"],
             )
 
             payload = {"edit_queue": val}
