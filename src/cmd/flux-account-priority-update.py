@@ -52,7 +52,7 @@ def est_sqlite_conn(path):
     if db_version < fluxacct.accounting.db_schema_version:
         print(
             """flux-accounting database out of date; updating DB with """
-            """'flux account-update-db' before sending infomation to plugin"""
+            """'flux account-update-db' before sending information to plugin"""
         )
         # if flux account-update-db fails, we should not attempt to send data from
         # the DB to the priority plugin, and instead we should abort

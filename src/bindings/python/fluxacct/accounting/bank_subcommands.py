@@ -107,7 +107,7 @@ def bank_is_active(cur, bank, parent_bank):
 def check_if_bank_disabled(cur, bank, parent_bank):
     """
     Check if the bank already exists but was disabled first. If so, just
-    update the 'active' column in the alread existing row.
+    update the 'active' column in the already existing row.
     """
     cur.execute(
         "SELECT * FROM bank_table WHERE bank=? AND parent_bank=?",
@@ -359,7 +359,7 @@ def delete_bank(conn, bank):
                     get_sub_banks(row[0])
 
         get_sub_banks(bank)
-    # if an exception occcurs while recursively deleting
+    # if an exception occurs while recursively deleting
     # the parent banks, then throw the exception and roll
     # back the changes made to the DB
     except sqlite3.OperationalError as exc:

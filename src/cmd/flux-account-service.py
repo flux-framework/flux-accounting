@@ -342,7 +342,7 @@ class AccountingService:
         except ValueError as exc:
             handle.respond_error(msg, 0, f"{exc}")
         except sqlite3.Error as exc:
-            handle.respond_error(msg, 0, f"a SQLite error occured: {exc}")
+            handle.respond_error(msg, 0, f"a SQLite error occurred: {exc}")
         except Exception as exc:
             handle.respond_error(
                 msg, 0, f"a non-OSError exception was caught: {str(exc)}"
