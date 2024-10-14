@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/flux-framework/flux-accounting.svg?branch=master)](https://travis-ci.org/flux-framework/flux-accounting)
+[![ci](https://github.com/flux-framework/flux-accounting/workflows/ci/badge.svg)](https://github.com/flux-framework/flux-accounting/actions?query=workflow%3A.github%2Fworkflows%2Fmain.yml)
 [![codecov](https://codecov.io/gh/flux-framework/flux-accounting/branch/master/graph/badge.svg)](https://codecov.io/gh/flux-framework/flux-accounting)
 
 _NOTE: The interfaces of flux-accounting are being actively developed and are
