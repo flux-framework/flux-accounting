@@ -1,5 +1,6 @@
 [![ci](https://github.com/flux-framework/flux-accounting/workflows/ci/badge.svg)](https://github.com/flux-framework/flux-accounting/actions?query=workflow%3A.github%2Fworkflows%2Fmain.yml)
 [![codecov](https://codecov.io/gh/flux-framework/flux-accounting/branch/master/graph/badge.svg)](https://codecov.io/gh/flux-framework/flux-accounting)
+![docs](https://readthedocs.org/projects/flux-accounting/badge/?version=latest)
 
 _NOTE: The interfaces of flux-accounting are being actively developed and are
 not yet stable. The Github issue tracker is the primary way to communicate with
@@ -53,6 +54,12 @@ Building image el8 for user <username> <userid> group=20
 mounting /Users/moussa1/src/flux-framework/flux-accounting as /usr/src
 [moussa1@docker-desktop src]$
 ```
+
+### Documentation
+
+To see detailed documentation about installing, administering, and configuring
+flux-accounting, please see our official
+[documentation pages](https://flux-accounting.readthedocs.io/en/latest/index.html).
 
 #### Release
 
