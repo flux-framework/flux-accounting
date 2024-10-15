@@ -71,3 +71,11 @@ config.h.in
 config.h.in~
 config.h
 config.status
+
+# misc
+*.trs
+*.log
+
+# docs intermediate files
+/doc/man*/*.xml
+/doc/_build
