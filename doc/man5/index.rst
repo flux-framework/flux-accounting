@@ -1,8 +1,8 @@
-man5
-====
+Section 5 - Flux Configuration File
+===================================
 
 .. toctree::
-  :caption: File formats and conventions
   :maxdepth: 1
+  :glob:
 
-  flux-config-accounting
+  *

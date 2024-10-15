@@ -4,18 +4,12 @@ Documentation for flux-accounting
 This site contains documentation for flux-accounting configuration and
 management.
 
+Table of Contents
+=================
+
 .. toctree::
    :maxdepth: 2
 
    guide/accounting-guide
-
-
-.. _man-pages:
-
-flux-accounting Manual Pages
-============================
-
-.. toctree::
-   :maxdepth: 2
-
-   man5/index
+   components/database-administration
+   index_man
