@@ -219,6 +219,12 @@ def print_parsable_hierarchy(cur, bank, hierarchy_str, indent=""):
 def add_bank(conn, bank, shares, parent_bank=""):
     cur = conn.cursor()
 
+    if parent_bank == "":
+        # a root bank is trying to be added; check that one does not already exist
+        cur.execute("SELECT * FROM bank_table WHERE parent_bank=''")
+        if len(cur.fetchall()) > 0:
+            raise ValueError(f"bank_table already has a root bank")
+
     # if the parent bank is not "", that means the bank trying
     # to be added wants to be placed under an existing parent bank
     try:

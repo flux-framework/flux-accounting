@@ -39,10 +39,10 @@ class TestAccountingCLI(unittest.TestCase):
         rows = cur.fetchall()
         self.assertEqual(len(rows), 1)
 
-    # check for an IntegrityError when trying to add a duplicate bank
+    # a root bank already exists, so a ValueError will be raised
     def test_02_add_dup_bank(self):
-        with self.assertRaises(sqlite3.IntegrityError):
-            b.add_bank(acct_conn, bank="root", shares=100)
+        with self.assertRaises(ValueError):
+            b.add_bank(acct_conn, bank="second_root", shares=100)
 
     # trying to add a sub account with an invalid parent bank
     # name should result in a ValueError
@@ -76,19 +76,15 @@ class TestAccountingCLI(unittest.TestCase):
 
     # disabling a parent bank should disable all of its sub banks
     def test_06_disable_parent_bank(self):
-        b.delete_bank(acct_conn, bank="root")
-        b.delete_bank(acct_conn, bank="sub_account_2")
-
-        b.add_bank(acct_conn, bank="A", shares=1)
-        b.add_bank(acct_conn, bank="B", parent_bank="A", shares=1)
+        b.add_bank(acct_conn, bank="B", parent_bank="root", shares=1)
         b.add_bank(acct_conn, bank="D", parent_bank="B", shares=1)
         b.add_bank(acct_conn, bank="E", parent_bank="B", shares=1)
-        b.add_bank(acct_conn, bank="C", parent_bank="A", shares=1)
+        b.add_bank(acct_conn, bank="C", parent_bank="root", shares=1)
         b.add_bank(acct_conn, bank="F", parent_bank="C", shares=1)
         b.add_bank(acct_conn, bank="G", parent_bank="C", shares=1)
 
-        b.delete_bank(acct_conn, bank="A")
-        cur.execute("SELECT active FROM bank_table WHERE bank='A'")
+        b.delete_bank(acct_conn, bank="root")
+        cur.execute("SELECT active FROM bank_table WHERE bank='root'")
         rows = cur.fetchall()
         self.assertEqual(rows[0][0], 0)
 
@@ -102,7 +98,6 @@ class TestAccountingCLI(unittest.TestCase):
 
     # edit a bank value
     def test_07_edit_bank_value(self):
-        b.add_bank(acct_conn, bank="root", shares=100)
         b.edit_bank(acct_conn, bank="root", shares=50)
         cursor = acct_conn.cursor()
         cursor.execute("SELECT shares FROM bank_table where bank='root'")

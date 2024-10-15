@@ -78,7 +78,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # add a user with the same username but a different bank
     def test_03_add_duplicate_user(self):
-        b.add_bank(acct_conn, bank="other_acct", shares=10)
+        b.add_bank(acct_conn, bank="other_acct", parent_bank="acct", shares=10)
         u.add_user(
             acct_conn,
             username="dup_user",
@@ -151,7 +151,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # check for a new user's default bank
     def test_07_check_default_bank_new_user(self):
-        b.add_bank(acct_conn, bank="test_bank", shares=10)
+        b.add_bank(acct_conn, bank="test_bank", parent_bank="acct", shares=10)
         u.add_user(
             acct_conn,
             username="test_user1",
@@ -167,7 +167,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # check for an existing user's default bank
     def test_08_check_default_bank_existing_user(self):
-        b.add_bank(acct_conn, bank="other_test_bank", shares=10)
+        b.add_bank(acct_conn, bank="other_test_bank", parent_bank="acct", shares=10)
         u.add_user(
             acct_conn,
             username="test_user1",
@@ -202,8 +202,8 @@ class TestAccountingCLI(unittest.TestCase):
     # disable a user who belongs to multiple banks; make sure that the default_bank
     # is updated to the next earliest associated bank
     def test_11_disable_user_default_bank_row(self):
-        b.add_bank(acct_conn, bank="A", shares=1)
-        b.add_bank(acct_conn, bank="B", shares=1)
+        b.add_bank(acct_conn, bank="A", parent_bank="acct", shares=1)
+        b.add_bank(acct_conn, bank="B", parent_bank="acct", shares=1)
         u.add_user(acct_conn, username="test_user2", bank="A")
         u.add_user(acct_conn, username="test_user2", bank="B")
         cur = acct_conn.cursor()
