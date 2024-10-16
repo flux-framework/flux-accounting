@@ -130,21 +130,26 @@ def create_json_object(conn, user):
 
 
 def get_user_rows(conn, user, headers, rows, parsable, json_fmt):
-    user_str = ""
-
     if parsable is True:
-        # find length of longest column name
-        col_width = len(sorted(headers, key=len)[-1])
+        # fetch column names and determine width of each column
+        col_widths = [
+            max(len(str(value)) for value in [col] + [row[i] for row in rows])
+            for i, col in enumerate(headers)
+        ]
 
-        for header in headers:
-            user_str += header.ljust(col_width)
-        user_str += "\n"
-        for row in rows:
-            for col in list(row):
-                user_str += str(col).ljust(col_width)
+        def format_row(row):
+            return " | ".join(
+                [f"{str(value).ljust(col_widths[i])}" for i, value in enumerate(row)]
+            )
 
-        return user_str
+        header = format_row(headers)
+        separator = "-+-".join(["-" * width for width in col_widths])
+        data_rows = "\n".join([format_row(row) for row in rows])
+        table = f"{header}\n{separator}\n{data_rows}"
 
+        return table
+
+    user_str = ""
     if json_fmt is True:
         user_str += create_json_object(conn, user)
 
