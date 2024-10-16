@@ -348,15 +348,24 @@ Multi-Factor Priority Plugin
 The multi-factor priority plugin is a jobtap_ plugin that generates
 an integer job priority for incoming jobs in a Flux system instance. It uses
 a number of factors to calculate a priority and, in the future, can add more
-factors. Each factor has an associated integer weight that determines its
-importance in the overall priority calculation. The current factors present in
-the multi-factor priority plugin are:
+factors. Each factor :math:`F` has an associated integer weight :math:`W`
+that determines its importance in the overall priority calculation. The
+current factors present in the multi-factor priority plugin are:
 
-* **fair-share**: the ratio between the amount of resources allocated vs. resources
+fair-share
+  The ratio between the amount of resources allocated vs. resources
   consumed. See the :ref:`Glossary definition <glossary-section>` for a more
   detailed explanation of how fair-share is utilized within flux-accounting.
 
-* **urgency**: a user-controlled factor to prioritize their own jobs.
+queue
+  A configurable factor assigned to a queue.
+
+urgency
+  A user-controlled factor to prioritize their own jobs.
+
+Thus the priority :math:`P` is calculated as follows:
+
+:math:`P = (F_{fairshare} \times W_{fairshare}) + (F_{queue} \times W_{queue}) + (F_{urgency} - 16)`
 
 Each of these factors can be configured with a custom weight to increase their
 relevance to the final calculation of a job's integer priority. By default,
