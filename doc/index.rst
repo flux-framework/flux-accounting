@@ -10,6 +10,7 @@ Table of Contents
 .. toctree::
    :maxdepth: 2
 
+   guide/support
    guide/accounting-guide
    components/database-administration
    index_man
