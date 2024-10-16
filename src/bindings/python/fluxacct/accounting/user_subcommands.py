@@ -142,6 +142,7 @@ def get_user_rows(conn, user, headers, rows, parsable, json_fmt):
         for row in rows:
             for col in list(row):
                 user_str += str(col).ljust(col_width)
+            user_str += "\n"
 
         return user_str
 
@@ -305,9 +306,19 @@ def clear_projects(conn, username, bank=None):
 #                   Subcommand Functions                      #
 #                                                             #
 ###############################################################
-def view_user(conn, user, parsable=False, json_fmt=False):
+def view_user(conn, user, parsable=False, json_fmt=False, list_banks=False):
     cur = conn.cursor()
     try:
+        if list_banks:
+            # just return the list of banks a user belongs to
+            cur.execute("SELECT bank FROM association_table WHERE username=?", (user,))
+            result = cur.fetchall()
+            banks = ""
+            for bank in result:
+                banks += f"{str(bank[0])}\n"
+
+            return banks
+
         # get the information pertaining to a user in the DB
         cur.execute("SELECT * FROM association_table where username=?", (user,))
         result = cur.fetchall()
