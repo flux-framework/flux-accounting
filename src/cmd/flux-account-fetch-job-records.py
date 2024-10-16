@@ -65,7 +65,10 @@ def fetch_new_jobs(last_timestamp=0.0):
 
     # construct and send RPC
     rpc_handle = flux.job.job_list_inactive(
-        handle, attrs=custom_attrs, since=last_timestamp
+        handle,
+        attrs=custom_attrs,
+        since=last_timestamp,
+        max_entries=0,
     )
     jobs = get_jobs(rpc_handle)
 
