@@ -331,7 +331,7 @@ class AccountingService:
             val = b.list_banks(
                 self.conn,
                 msg.payload["inactive"],
-                msg.payload["fields"],
+                msg.payload["fields"].split(","),
             )
 
             payload = {"list_banks": val}
