@@ -10,9 +10,11 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import sqlite3
-import json
 
+import fluxacct.accounting
 from fluxacct.accounting import user_subcommands as u
+from fluxacct.accounting import formatter as fmt
+from fluxacct.accounting import sql_util as sql
 
 ###############################################################
 #                                                             #
@@ -422,45 +424,39 @@ def edit_bank(
 def list_banks(
     conn,
     inactive=False,
-    fields=None,
+    cols=None,
+    table=False,
 ):
     """
-    List all banks in the bank_table in JSON format.
+    List all banks in bank_table.
 
     Args:
         inactive: whether to include inactive banks. By default, only banks that are
-        active will be included in the output.
-
-        fields: a list of fields to include in the output. By default, all fields are
-        included.
+            active will be included in the output.
+        cols: a list of columns from the table to include in the output. By default, all
+            columns are included.
+        table: output data in bank_table in table format. By default, the format of any
+            returned data is in JSON.
     """
-    default_fields = {"bank_id", "bank", "active", "parent_bank", "shares", "job_usage"}
-    # if fields is None, just use the default fields
-    fields = fields or default_fields
+    # use all column names if none are passed in
+    cols = cols or fluxacct.accounting.BANK_TABLE
 
     try:
         cur = conn.cursor()
 
-        # validate the fields passed in
-        invalid_fields = [field for field in fields if field not in default_fields]
-        if invalid_fields:
-            raise ValueError(f"invalid fields: {', '.join(invalid_fields)}")
-
+        sql.validate_columns(cols, fluxacct.accounting.BANK_TABLE)
         # construct SELECT statement
-        select_fields = ", ".join(fields)
-        select_stmt = f"SELECT {select_fields} FROM bank_table"
+        select_stmt = f"SELECT {', '.join(cols)} FROM bank_table"
         if not inactive:
             select_stmt += " WHERE active=1"
-
         cur.execute(select_stmt)
-        result = cur.fetchall()
 
-        # create individual object for each row in the query result
-        banks = [
-            {field: row[idx] for idx, field in enumerate(fields)} for row in result
-        ]
-
-        json_string = json.dumps(banks, indent=2)
-        return json_string
+        # initialize AccountingFormatter object
+        formatter = fmt.AccountingFormatter(cur)
+        if table:
+            return formatter.as_table()
+        return formatter.as_json()
     except sqlite3.Error as err:
-        raise sqlite3.Error(f"an sqlite3.Error occurred: {err}")
+        raise sqlite3.Error(f"list-banks: an sqlite3.Error occurred: {err}")
+    except ValueError as exc:
+        raise ValueError(f"list-banks: {exc}")
