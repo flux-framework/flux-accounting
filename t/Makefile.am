@@ -42,6 +42,7 @@ TESTSCRIPTS = \
 	t1040-mf-priority-projects.t \
 	t1041-view-jobs-by-project.t \
 	t1042-issue508.t \
+	t1043-common-formatter.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
@@ -49,7 +50,8 @@ TESTSCRIPTS = \
 	python/t1003_bank_cmds.py \
 	python/t1004_queue_cmds.py \
 	python/t1005_project_cmds.py \
-	python/t1006_job_archive.py
+	python/t1006_job_archive.py \
+	python/t1007_formatter.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
