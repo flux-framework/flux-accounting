@@ -2,4 +2,7 @@ db_dir = "@X_LOCALSTATEDIR@/lib/flux/"
 db_path = "@X_LOCALSTATEDIR@/lib/flux/FluxAccounting.db"
 db_schema_version = 23
 
-__all__ = ["db_dir", "db_path", "db_schema_version"]
+# flux-accounting DB table column names
+bank_table = ["bank_id", "bank", "active", "parent_bank", "shares", "job_usage"]
+
+__all__ = ["db_dir", "db_path", "db_schema_version", "bank_table_fields"]
