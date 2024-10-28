@@ -645,7 +645,7 @@ def add_arguments_to_parser(parser, subparsers):
 
 
 def set_db_location(args):
-    path = args.path if args.path else fluxacct.accounting.db_path
+    path = args.path if args.path else fluxacct.accounting.DB_PATH
 
     return path
 

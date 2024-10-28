@@ -23,7 +23,7 @@ from fluxacct.accounting import create_db as c
 
 
 def set_db_loc(args):
-    path = args.old_db if args.old_db else fluxacct.accounting.db_path
+    path = args.old_db if args.old_db else fluxacct.accounting.DB_PATH
 
     return path
 
@@ -238,7 +238,7 @@ def update_db(path, new_db):
 
             # update user_version for DB
             old_cur.execute(
-                "PRAGMA user_version = %d" % (fluxacct.accounting.db_schema_version)
+                "PRAGMA user_version = %d" % (fluxacct.accounting.DB_SCHEMA_VERSION)
             )
 
             # commit changes

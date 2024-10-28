@@ -23,7 +23,7 @@ import fluxacct.accounting
 
 
 def set_db_loc(args):
-    path = args.path if args.path else fluxacct.accounting.db_path
+    path = args.path if args.path else fluxacct.accounting.DB_PATH
 
     return path
 
@@ -49,7 +49,7 @@ def est_sqlite_conn(path):
     cur = conn.cursor()
     cur.execute("PRAGMA user_version")
     db_version = cur.fetchone()[0]
-    if db_version < fluxacct.accounting.db_schema_version:
+    if db_version < fluxacct.accounting.DB_SCHEMA_VERSION:
         print(
             """flux-accounting database out of date; updating DB with """
             """'flux account-update-db' before sending information to plugin"""

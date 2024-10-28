@@ -85,7 +85,7 @@ def create_db(
         sys.exit(1)
 
     # set version number of database
-    conn.execute("PRAGMA user_version = %d" % (fluxacct.accounting.db_schema_version))
+    conn.execute("PRAGMA user_version = %d" % (fluxacct.accounting.DB_SCHEMA_VERSION))
 
     # Association Table
     logging.info("Creating association_table in DB...")
