@@ -686,17 +686,6 @@ def select_accounting_function(args, output_file, parser):
         "pop_db": "accounting.pop_db",
     }
 
-    if args.func == "view_job_records":
-        data["output_file"] = output_file
-        return_val = flux.Flux().rpc(func_map[args.func], data).get()
-        # the return value of view-job-records without an output file is
-        # just a list of strings, so just iterate through that list and
-        # then return
-        job_record_list = list(return_val.values())
-        for job_record in job_record_list[0]:
-            print(job_record)
-        return
-
     if args.func in func_map:
         return_val = flux.Flux().rpc(func_map[args.func], data).get()
     else:
