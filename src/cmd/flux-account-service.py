@@ -599,7 +599,7 @@ def main():
 
     # try to connect to flux-accounting database; if connection fails, exit
     # flux-accounting service
-    db_path = args.path if args.path else fluxacct.accounting.db_path
+    db_path = args.path if args.path else fluxacct.accounting.DB_PATH
     conn = establish_sqlite_connection(db_path)
 
     # check version of database; if not up to date, output message

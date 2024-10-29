@@ -22,7 +22,7 @@ import fluxacct.accounting
 
 
 def set_db_loc(args):
-    path = args.path if args.path else fluxacct.accounting.db_path
+    path = args.path if args.path else fluxacct.accounting.DB_PATH
 
     return path
 
