@@ -161,7 +161,7 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(len(job_records), 18)
 
     # passing a timestamp after all of the start time
-    # of all the completed jobs should return a failure message
+    # of all the completed jobs should return no jobs
     @mock.patch("time.time", mock.MagicMock(return_value=11000000))
     def test_04_after_start_time_none(self):
         my_dict = {"after_start_time": time.time()}
