@@ -123,7 +123,7 @@ def convert_to_str(job_records):
             )
         )
 
-    return job_record_str
+    return "\n".join(job_record_str)
 
 
 def convert_to_obj(rows):

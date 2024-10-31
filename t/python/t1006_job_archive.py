@@ -32,9 +32,6 @@ class TestAccountingCLI(unittest.TestCase):
         global cur
 
         # create example job-archive database, output file
-        global op
-        op = "job_records.csv"
-
         c.create_db("FluxAccountingUsers.db")
         try:
             acct_conn = sqlite3.connect("file:FluxAccountingUsers.db?mode=rw", uri=True)
@@ -147,74 +144,74 @@ class TestAccountingCLI(unittest.TestCase):
     # its job information
     def test_01_with_jobid_valid(self):
         my_dict = {"jobid": 102}
-        job_records = j.view_jobs(acct_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 2)
+        job_records = j.get_jobs(acct_conn, **my_dict)
+        self.assertEqual(len(job_records), 1)
 
     # passing a bad jobid should return no records
     def test_02_with_jobid_failure(self):
         my_dict = {"jobid": 000}
-        job_records = j.view_jobs(acct_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 1)
+        job_records = j.get_jobs(acct_conn, **my_dict)
+        self.assertEqual(len(job_records), 0)
 
     # passing a timestamp before the first job to
     # start should return all of the jobs
     def test_03_after_start_time_all(self):
         my_dict = {"after_start_time": 0}
-        job_records = j.view_jobs(acct_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 19)
+        job_records = j.get_jobs(acct_conn, **my_dict)
+        self.assertEqual(len(job_records), 18)
 
     # passing a timestamp after all of the start time
-    # of all the completed jobs should return a failure message
+    # of all the completed jobs should return no jobs
     @mock.patch("time.time", mock.MagicMock(return_value=11000000))
     def test_04_after_start_time_none(self):
         my_dict = {"after_start_time": time.time()}
-        job_records = j.view_jobs(acct_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 1)
+        job_records = j.get_jobs(acct_conn, **my_dict)
+        self.assertEqual(len(job_records), 0)
 
     # passing a timestamp before the end time of the
     # last job should return all of the jobs
     @mock.patch("time.time", mock.MagicMock(return_value=11000000))
     def test_05_before_end_time_all(self):
         my_dict = {"before_end_time": time.time()}
-        job_records = j.view_jobs(acct_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 19)
+        job_records = j.get_jobs(acct_conn, **my_dict)
+        self.assertEqual(len(job_records), 18)
 
     # passing a timestamp before the end time of
     # the first completed jobs should return no jobs
     def test_06_before_end_time_none(self):
         my_dict = {"before_end_time": 0}
-        job_records = j.view_jobs(acct_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 1)
+        job_records = j.get_jobs(acct_conn, **my_dict)
+        self.assertEqual(len(job_records), 0)
 
     # passing a user not in the jobs table
     # should return no jobs
     def test_07_by_user_failure(self):
         my_dict = {"user": "9999"}
-        job_records = j.view_jobs(acct_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 1)
+        job_records = j.get_jobs(acct_conn, **my_dict)
+        self.assertEqual(len(job_records), 0)
 
     # view_jobs_run_by_username() interacts with a
     # passwd file; for the purpose of these tests,
     # just pass the userid
     def test_08_by_user_success(self):
         my_dict = {"user": "1001"}
-        job_records = j.view_jobs(acct_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 3)
+        job_records = j.get_jobs(acct_conn, **my_dict)
+        self.assertEqual(len(job_records), 2)
 
     # passing a combination of params should further
     # refine the query
     @mock.patch("time.time", mock.MagicMock(return_value=9000500))
     def test_09_multiple_params(self):
         my_dict = {"user": "1001", "after_start_time": time.time()}
-        job_records = j.view_jobs(acct_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 2)
+        job_records = j.get_jobs(acct_conn, **my_dict)
+        self.assertEqual(len(job_records), 1)
 
     # passing no parameters will result in a generic query
     # returning all results
     def test_10_no_options_passed(self):
         my_dict = {}
-        job_records = j.view_jobs(acct_conn, op, **my_dict)
-        self.assertEqual(len(job_records), 19)
+        job_records = j.get_jobs(acct_conn, **my_dict)
+        self.assertEqual(len(job_records), 18)
 
     # users that have run a lot of jobs should have a larger usage factor
     @mock.patch("time.time", mock.MagicMock(return_value=9900000))
@@ -425,7 +422,6 @@ class TestAccountingCLI(unittest.TestCase):
     # remove database and log file
     @classmethod
     def tearDownClass(self):
-        os.remove("job_records.csv")
         os.remove("FluxAccountingUsers.db")
 
 
