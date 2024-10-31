@@ -146,6 +146,11 @@ test_expect_success 'call list-banks with a bad field' '
 	grep "invalid fields: foo" error.out
 '
 
+test_expect_success 'combining --tree with --fields does not work' '
+    test_must_fail flux account view-bank root --tree --fields=bank_id > error.out 2>&1 &&
+    grep "tree option does not support custom formatting" error.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
