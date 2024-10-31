@@ -55,7 +55,7 @@ test_expect_success 'view database hierarchy' '
 '
 
 test_expect_success 'view database hierarchy in a parsable format' '
-	flux account view-bank -P root > small_tie_parsable.test &&
+	flux account view-bank --tree -P root > small_tie_parsable.test &&
 	test_cmp ${EXPECTED_FILES}/small_tie_parsable.txt small_tie_parsable.test
 '
 
