@@ -1,3 +1,10 @@
-bank_id        bank           active         parent_bank    shares         job_usage      
-1              root           1                             1              0.0            
-
+[
+  {
+    "bank_id": 1,
+    "bank": "root",
+    "active": 1,
+    "parent_bank": "",
+    "shares": 1,
+    "job_usage": 0.0
+  }
+]
