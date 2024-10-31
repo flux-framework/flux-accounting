@@ -155,8 +155,8 @@ def view_bank(conn, bank, tree=False, users=False, parsable=False, cols=None):
         select_stmt = f"SELECT {', '.join(cols)} FROM bank_table WHERE bank=?"
         cur.execute(select_stmt, (bank,))
 
-        # initialize AccountingFormatter object
-        formatter = fmt.BankFormatter(cur)
+        # initialize BankFormatter object
+        formatter = fmt.BankFormatter(cur, bank)
 
         if tree:
             if parsable:

@@ -13,7 +13,7 @@ import json
 
 
 class AccountingFormatter:
-    def __init__(self, cursor):
+    def __init__(self, cursor, error_msg="no results found in query"):
         """
         Initialize an AccountingFormatter object with a SQLite cursor.
 
@@ -26,7 +26,7 @@ class AccountingFormatter:
 
         if not self.rows:
             # the SQL query didn't fetch any results; raise an Exception
-            raise ValueError("no results found in query")
+            raise ValueError(error_msg)
 
     def get_column_names(self):
         """
@@ -101,6 +101,18 @@ class BankFormatter(AccountingFormatter):
     Subclass of AccountingFormatter that includes additional methods for printing
     out banks/sub-banks in a hierarchical format and lists of users under banks.
     """
+
+    def __init__(self, cursor, bank_name):
+        """
+        Initialize a BankFormatter object with a SQLite cursor.
+        Args:
+            cursor: a SQLite Cursor object that has the results of a SQL query.
+            bank_name: the name of the bank.
+        """
+        self.bank_name = bank_name
+        super().__init__(
+            cursor, error_msg=f"bank {self.bank_name} not found in bank_table"
+        )
 
     def as_tree(self):
         """
