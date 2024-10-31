@@ -1,9 +1,8 @@
-bank_id        bank           active         parent_bank    shares         job_usage      
-2              A              1              root           1              0.0            
+bank_id | bank | active | parent_bank | shares | job_usage
+--------+------+--------+-------------+--------+----------
+2       | A    | 1      | root        | 1      | 0.0      
 
-Users Under Bank A:
-
-username          userid            default_bank      shares            job_usage         fairshare         max_running_jobs  queues            
-user5011          5011              A                 1                 0.0               0.5               5                                   
-user5012          5012              A                 1                 0.0               0.5               5                                   
-
+username | default_bank | shares | job_usage | fairshare
+---------+--------------+--------+-----------+----------
+user5011 | A            | 1      | 0.0       | 0.5      
+user5012 | A            | 1      | 0.0       | 0.5      
