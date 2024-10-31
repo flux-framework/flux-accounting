@@ -45,7 +45,7 @@ test_expect_success 'add some queues' '
 
 test_expect_success 'trying to view a bank that does not exist in the DB should raise a ValueError' '
 	test_must_fail flux account view-bank foo > bank_nonexistent.out 2>&1 &&
-	grep "bank foo not found in bank_table" bank_nonexistent.out
+	grep "error in view-bank: view-bank: no results found in query" bank_nonexistent.out
 '
 
 test_expect_success 'viewing the root bank with no optional args should show basic bank info' '
