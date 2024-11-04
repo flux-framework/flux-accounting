@@ -149,7 +149,7 @@ class AccountingService:
                 self.conn,
                 msg.payload["username"],
                 msg.payload["parsable"],
-                msg.payload["json"],
+                msg.payload["fields"].split(",") if msg.payload.get("fields") else None,
             )
 
             payload = {"view_user": val}
