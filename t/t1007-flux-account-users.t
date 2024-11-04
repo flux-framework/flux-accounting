@@ -77,11 +77,6 @@ test_expect_success 'view some user information with --parsable' '
 	grep -w "user5011\|5011\|A" user_info_parsable.out
 '
 
-test_expect_success 'view some user information with --json' '
-	flux account view-user --json user5014 > user_info_json.out &&
-	grep -w "\"username\": \"user5014\"\|\"userid\": 5014\|\"bank\": \"C\"" user_info_json.out
-'
-
 test_expect_success 'edit a userid for a user' '
 	flux account edit-user user5011 --userid=12345 &&
 	flux account view-user user5011 > edit_userid.out &&

@@ -139,7 +139,7 @@ test_expect_success 'edit the default project of a user' '
 
 test_expect_success 'reset the projects list for an association' '
 	flux account edit-user user5018 --projects=-1 &&
-	flux account view-user user5018 --json > user5018.json &&
+	flux account view-user user5018 > user5018.json &&
 	grep "\"projects\": \"*\"" user5018.json
 '
 
