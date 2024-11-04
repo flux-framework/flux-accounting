@@ -68,7 +68,8 @@ test_expect_success 'view project information from the project_table' '
 test_expect_success 'add a user with some specified projects to the association_table' '
 	flux account add-user --username=user5015 --bank=A --projects="project_1,project_3" &&
 	flux account view-user user5015 > user5015_info.out &&
-	grep -w "username: user5015\|projects: project_1,project_3,*" user5015_info.out
+	grep "\"username\": \"user5015\"" user5015_info.out &&
+	grep ""project_1,project_3,*"" user5015_info.out
 '
 
 test_expect_success 'adding a user with a non-existing project should fail' '
@@ -79,7 +80,8 @@ test_expect_success 'adding a user with a non-existing project should fail' '
 test_expect_success 'successfully edit a projects list for a user' '
 	flux account edit-user user5015 --bank=A --projects="project_1,project_2,project_3" &&
 	flux account view-user user5015 > user5015_edited_info.out &&
-	grep -w "username: user5015\|projects: project_1,project_2,project_3,*" user5015_edited_info.out
+	grep "\"username\": \"user5015\"" user5015_edited_info.out &&
+	grep "project_1,project_2,project_3,*" user5015_edited_info.out
 '
 
 test_expect_success 'editing a user project list with a non-existing project should fail' '
