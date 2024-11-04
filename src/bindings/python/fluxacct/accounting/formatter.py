@@ -286,3 +286,23 @@ class BankFormatter(AccountingFormatter):
             return info
         except ValueError:
             return info + f"\n\nno users under {bank}"
+
+
+class AssociationFormatter(AccountingFormatter):
+    """
+    Subclass of AccountingFormatter, specific to associations in the flux-accounting
+    database.
+    """
+
+    def __init__(self, cursor, username):
+        """
+        Initialize an AssociationFormatter object with a SQLite cursor.
+
+        Args:
+            cursor: a SQLite Cursor object that has the results of a SQL query.
+            username: the username of the association.
+        """
+        self.username = username
+        super().__init__(
+            cursor, error_msg=f"user {self.username} not found in association_table"
+        )

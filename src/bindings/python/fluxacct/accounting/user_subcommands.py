@@ -12,7 +12,10 @@
 import sqlite3
 import time
 import pwd
-import json
+
+import fluxacct.accounting
+from fluxacct.accounting import formatter as fmt
+from fluxacct.accounting import sql_util as sql
 
 ###############################################################
 #                                                             #
@@ -83,86 +86,6 @@ def set_default_project(projects):
         return project_list[0]
 
     return "*"
-
-
-def create_json_object(conn, user):
-    cur = conn.cursor()
-    main_headers = ["username", "userid", "default_bank"]
-    secondary_headers = [
-        "bank",
-        "active",
-        "shares",
-        "job_usage",
-        "fairshare",
-        "max_running_jobs",
-        "max_active_jobs",
-        "max_nodes",
-        "queues",
-        "projects",
-        "default_project",
-    ]
-
-    cur.execute(
-        """SELECT username, userid, default_bank
-        FROM association_table WHERE username=?""",
-        (user,),
-    )
-    result = cur.fetchall()
-    user_info_dict = dict(zip(main_headers, list(result)[0]))
-
-    cur.execute(
-        """SELECT bank, active, shares, job_usage, fairshare,
-        max_running_jobs, max_active_jobs, max_nodes,
-        queues, projects, default_project FROM association_table
-        WHERE username=?""",
-        (user,),
-    )
-    result = cur.fetchall()
-
-    # store all information pertaining to each bank as a separate
-    # entry in a list
-    user_info_dict["banks"] = []
-    for _ in result:
-        user_info_dict["banks"].append(dict(zip(secondary_headers, list(_))))
-
-    user_info_json = json.dumps(user_info_dict, indent=4)
-    return user_info_json
-
-
-def get_user_rows(conn, user, headers, rows, parsable, json_fmt):
-    if parsable is True:
-        # fetch column names and determine width of each column
-        col_widths = [
-            max(len(str(value)) for value in [col] + [row[i] for row in rows])
-            for i, col in enumerate(headers)
-        ]
-
-        def format_row(row):
-            return " | ".join(
-                [f"{str(value).ljust(col_widths[i])}" for i, value in enumerate(row)]
-            )
-
-        header = format_row(headers)
-        separator = "-+-".join(["-" * width for width in col_widths])
-        data_rows = "\n".join([format_row(row) for row in rows])
-        table = f"{header}\n{separator}\n{data_rows}"
-
-        return table
-
-    user_str = ""
-    if json_fmt is True:
-        user_str += create_json_object(conn, user)
-
-        return user_str
-
-    for row in rows:
-        # iterate through column names of association_table and
-        # print out its associated value
-        for key, value in zip(headers, list(row)):
-            user_str += key + ": " + str(value) + "\n"
-        user_str += "\n"
-
-    return user_str
 
 
 def set_default_bank(cur, username, bank):
@@ -310,25 +233,36 @@ def clear_projects(conn, username, bank=None):
 #                   Subcommand Functions                      #
 #                                                             #
 ###############################################################
-def view_user(conn, user, parsable=False, json_fmt=False):
-    cur = conn.cursor()
+def view_user(conn, user, parsable=False, cols=None):
+    # use all column names if none are passed in
+    cols = cols or fluxacct.accounting.ASSOCIATION_TABLE
+
     try:
-        # get the information pertaining to a user in the DB
-        cur.execute("SELECT * FROM association_table where username=?", (user,))
-        result = cur.fetchall()
-        headers = [description[0] for description in cur.description]  # column names
-        if not result:
-            raise ValueError(f"User {user} not found in association_table")
+        cur = conn.cursor()
 
-        user_str = get_user_rows(conn, user, headers, result, parsable, json_fmt)
+        sql.validate_columns(cols, fluxacct.accounting.ASSOCIATION_TABLE)
+        # construct SELECT statement
+        select_stmt = (
+            f"SELECT {', '.join(cols)} FROM association_table WHERE username=?"
+        )
+        cur.execute(select_stmt, (user,))
 
-        return user_str
+        # initialize AssociationFormatter object
+        formatter = fmt.AssociationFormatter(cur, user)
+
+        if parsable:
+            return formatter.as_table()
+        return formatter.as_json()
     # this kind of exception is raised for errors related to the DB's operation,
     # not necessarily under the control of the programmer, e.g DB path cannot be
     # found or transaction could not be processed
     # (https://docs.python.org/3/library/sqlite3.html#sqlite3.OperationalError)
     except sqlite3.OperationalError as exc:
-        raise sqlite3.OperationalError(f"an sqlite3.OperationalError occurred: {exc}")
+        raise sqlite3.OperationalError(
+            f"view-user: an sqlite3.OperationalError occurred: {exc}"
+        )
+    except ValueError as exc:
+        raise ValueError(f"view-user: {exc}")
 
 
 def add_user(
