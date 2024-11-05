@@ -1,3 +1,57 @@
+flux-accounting version 0.39.0 - 2024-11-05
+-------------------------------------------
+
+#### Fixes
+
+* `view-user`: make "parsable" spelling consistent (#494)
+
+* projects: fix unit tests for project subcommands, `--projects` reset
+capability (#495)
+
+* plugin: add callback prefixes to exception messages (#499)
+
+* `add-bank`: add a check when adding a root bank (#509)
+
+* fetch-job-records: set `max_entries=0` (#516)
+
+* `view-user --parsable`: improve output formatting (#514)
+
+* `flux-account.py`: get rid of dictionary initialization (#512)
+
+* `__init__.py`: fix formatting of constants (#521)
+
+* `view_jobs()`: adjust helper function to actually return a string (#522)
+
+#### Features
+
+* command suite: add new `list-projects` command (#496)
+
+* ci: add spellchecker to flux-accounting (#504)
+
+* python: add `AccountingFormatter` class, SQLite utility file (#520)
+
+#### Testsuite
+
+* `.gitignore`: add built docs, sharness test results (#511)
+
+* t: skip t1011 if job-archive module not detected, add new tests for 
+`fetch-job-records` (#518)
+
+#### Documentation
+
+* doc: add note about manually loading plugin (#500)
+
+* doc: add ReadTheDocs support for flux-accounting (#501)
+
+* guide: add note about configuring factor weights (#505)
+
+* doc: add "Database Administration" section, update README to point to docs
+site (#506)
+
+* doc: reorganize top-level site, add License and Support page (#510)
+
+* doc: add priority equation to accounting guide (#513)
+
 flux-accounting version 0.38.0 - 2024-10-01
 -------------------------------------------
 
