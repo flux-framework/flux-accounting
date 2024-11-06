@@ -53,6 +53,13 @@ def add_view_user_arg(subparsers):
         help="print all information of an association in JSON format",
         metavar="JSON",
     )
+    subparser_view_user.add_argument(
+        "--list-banks",
+        action="store_const",
+        const=True,
+        help="list all of the banks a user belongs to",
+        metavar="LIST_BANKS",
+    )
 
 
 def add_add_user_arg(subparsers):
