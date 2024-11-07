@@ -76,6 +76,7 @@ def populate_db(conn, users=None, banks=None):
         try:
             with open(banks) as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=",")
+                headers = next(csv_reader)
 
                 for row in csv_reader:
                     b.add_bank(
@@ -91,6 +92,7 @@ def populate_db(conn, users=None, banks=None):
         try:
             with open(users) as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=",")
+                headers = next(csv_reader)
 
                 # assign default values to fields if
                 # their slot is empty in the csv file
