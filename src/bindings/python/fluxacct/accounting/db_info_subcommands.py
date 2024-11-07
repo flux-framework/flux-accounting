@@ -10,45 +10,65 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import csv
+import sqlite3
 
+import fluxacct.accounting
 from fluxacct.accounting import bank_subcommands as b
 from fluxacct.accounting import user_subcommands as u
+from fluxacct.accounting import sql_util as sql
 
 
-def export_db_info(conn, users=None, banks=None):
+def export_db_info(conn, users=None, banks=None, bank_cols=None, user_cols=None):
+    """
+    Export information from association_table and bank_table and place them into .csv
+    files. If the "users" or "banks" optional arguments are not specified, "users.csv"
+    and "banks.csv" will be created and placed in the current working directory.
+
+    Args:
+        users: an optional specified path to a .csv file to hold all user information.
+
+        banks: an optional specified path to a .csv file to hold all bank information.
+    """
+    # use all column names if none are passed in
+    bank_cols = bank_cols or fluxacct.accounting.BANK_TABLE
+    user_cols = user_cols or fluxacct.accounting.ASSOCIATION_TABLE
     try:
+        # validate custom columns if any were passed in; execute queries to get DB info
         cur = conn.cursor()
-        select_users_stmt = """
-            SELECT username, userid, bank, shares, max_running_jobs, max_active_jobs,
-            max_nodes, queues FROM association_table
-        """
-        cur.execute(select_users_stmt)
-        table = cur.fetchall()
+        sql.validate_columns(user_cols, fluxacct.accounting.ASSOCIATION_TABLE)
+        select_stmt = f"SELECT {', '.join(user_cols)} FROM association_table"
+        cur.execute(select_stmt)
+        association_table = cur.fetchall()
+        association_table_headers = [description[0] for description in cur.description]
 
-        # open a .csv file for writing
-        users_filepath = users if users else "users.csv"
-        users_file = open(users_filepath, "w")
+        sql.validate_columns(bank_cols, fluxacct.accounting.BANK_TABLE)
+        select_stmt = f"SELECT {', '.join(bank_cols)} FROM bank_table"
+        cur.execute(select_stmt)
+        bank_table = cur.fetchall()
+        bank_table_headers = [description[0] for description in cur.description]
+
+        # open .csv files for writing
+        users_file = open(users if users else "users.csv", "w")
         with users_file:
             writer = csv.writer(users_file)
-
-            for row in table:
+            writer.writerow(association_table_headers)
+            for row in association_table:
                 writer.writerow(row)
 
-        select_banks_stmt = """
-            SELECT bank, parent_bank, shares FROM bank_table
-        """
-        cur.execute(select_banks_stmt)
-        table = cur.fetchall()
-
-        banks_filepath = banks if banks else "banks.csv"
-        banks_file = open(banks_filepath, "w")
+        banks_file = open(banks if banks else "banks.csv", "w")
         with banks_file:
             writer = csv.writer(banks_file)
-
-            for row in table:
+            writer.writerow(bank_table_headers)
+            for row in bank_table:
                 writer.writerow(row)
+    except ValueError as err:
+        raise ValueError(f"export-db: {err}")
     except IOError as err:
-        print(err)
+        raise IOError(f"export-db: {err}")
+    except sqlite3.OperationalError as exc:
+        raise sqlite3.OperationalError(
+            f"export-db: an sqlite3.OperationalError occurred: {exc}"
+        )
 
 
 def populate_db(conn, users=None, banks=None):

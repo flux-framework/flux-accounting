@@ -582,6 +582,20 @@ def add_export_db_arg(subparsers):
     subparser.add_argument(
         "-b", "--banks", help="path to a .csv file containing bank information"
     )
+    subparser.add_argument(
+        "--bank-fields",
+        help="list of fields from bank_table to include",
+        metavar="BANK_ID,BANK,ACTIVE,PARENT_BANK,SHARES,JOB_USAGE",
+    )
+    subparser.add_argument(
+        "--user-fields",
+        help="list of fields from association_table to include",
+        metavar=(
+            "CREATION_TIME,MOD_TIME,ACTIVE,USERNAME,USERID,BANK,DEFAULT_BANK,"
+            "SHARES,JOB_USAGE,FAIRSHARE,MAX_RUNNING_JOBS,MAX_ACTIVE_JOBS,MAX_NODES,"
+            "QUEUES,PROJECTS,DEFAULT_PROJECT"
+        ),
+    )
 
 
 def add_pop_db_arg(subparsers):

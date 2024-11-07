@@ -548,6 +548,12 @@ class AccountingService:
                 self.conn,
                 msg.payload["users"],
                 msg.payload["banks"],
+                msg.payload["bank_fields"].split(",")
+                if msg.payload.get("bank_fields")
+                else None,
+                msg.payload["user_fields"].split(",")
+                if msg.payload.get("user_fields")
+                else None,
             )
 
             payload = {"export_db": val}
@@ -555,6 +561,12 @@ class AccountingService:
             handle.respond(msg, payload)
         except KeyError as exc:
             handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+        except IOError as exc:
+            handle.respond_error(msg, 0, f"an IOError occurred: {exc}")
+        except ValueError as exc:
+            handle.respond_error(msg, 0, f"{exc}")
+        except sqlite3.OperationalError as exc:
+            handle.respond_error(msg, 0, f"{exc}")
         except Exception as exc:
             handle.respond_error(
                 msg, 0, f"a non-OSError exception was caught: {str(exc)}"
