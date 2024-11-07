@@ -22,6 +22,7 @@ test_expect_success 'start flux-accounting service' '
 
 test_expect_success 'create a banks.csv file containing bank information' '
 	cat <<-EOF >banks.csv
+	bank,parent_bank,shares
 	root,,1
 	A,root,1
 	B,root,1
@@ -36,6 +37,7 @@ test_expect_success 'populate flux-accounting DB with banks.csv' '
 
 test_expect_success 'create a users.csv file containing user information' '
 	cat <<-EOF >users.csv
+	username,uid,bank,shares,max_running_jobs,max_active_jobs,max_nodes,queues
 	user1000,1000,A,1,10,15,5,""
 	user1001,1001,A,1,10,15,5,""
 	user1002,1002,A,1,10,15,5,""
@@ -55,6 +57,7 @@ test_expect_success 'check database hierarchy to make sure all banks & users wer
 
 test_expect_success 'create a users.csv file with some missing optional user information' '
 	cat <<-EOF >users_optional_vals.csv
+	username,uid,bank,shares,max_running_jobs,max_active_jobs,max_nodes,queues
 	user1005,1005,B,1,5,,5,""
 	user1006,1006,B,,,,5,""
 	user1007,1007,B,1,7,,,""

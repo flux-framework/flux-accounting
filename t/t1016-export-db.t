@@ -38,12 +38,19 @@ test_expect_success 'add some users to the DB' '
 	flux account add-user --username=user5014 --userid=5014 --bank=C
 '
 
-test_expect_success 'export DB information into .csv files' '
-	flux account export-db
+# we only use custom formatting here because the creation_time and mod_time
+# fields will be different from every run (since they are timestamps)
+test_expect_success 'export bank DB information into .csv files' '
+	flux account export-db \
+		--banks=banks_test.csv \
+		--users=users_test.csv \
+		--bank-fields=bank,parent_bank,shares \
+		--user-fields=username,userid,bank,shares,max_running_jobs,max_active_jobs,max_nodes,queues
 '
 
 test_expect_success 'compare banks.csv' '
 	cat <<-EOF >banks_expected.csv
+	bank,parent_bank,shares
 	root,,1
 	A,root,1
 	B,root,1
@@ -52,17 +59,33 @@ test_expect_success 'compare banks.csv' '
 	E,D,1
 	F,D,1
 	EOF
-	test_cmp -b banks_expected.csv banks.csv
+	test_cmp -b banks_expected.csv banks_test.csv
 '
 
 test_expect_success 'compare users.csv' '
 	cat <<-EOF >users_expected.csv
+	username,userid,bank,shares,max_running_jobs,max_active_jobs,max_nodes,queues
 	user5011,5011,A,1,5,7,2147483647,
 	user5012,5012,A,1,5,7,2147483647,
 	user5013,5013,B,1,5,7,2147483647,
 	user5014,5014,C,1,5,7,2147483647,
 	EOF
-	test_cmp -b users_expected.csv users.csv
+	test_cmp -b users_expected.csv users_test.csv
+'
+
+test_expect_success 'export custom bank DB information' '
+	flux account export-db --banks=banks_test_custom.csv --bank-fields=bank_id,bank &&
+	cat <<-EOF >banks_expected_custom.csv
+	bank_id,bank
+	1,root
+	2,A
+	3,B
+	4,C
+	5,D
+	6,E
+	7,F
+	EOF
+	test_cmp -b banks_expected_custom.csv banks_test_custom.csv
 '
 
 test_expect_success 'create hierarchy output of the flux-accounting DB and store it in a file' '
@@ -82,8 +105,8 @@ test_expect_success 'restart service against new DB' '
 '
 
 test_expect_success 'import information into new DB' '
-	flux account pop-db -b banks.csv &&
-	flux account pop-db -u users.csv
+	flux account pop-db -b banks_test.csv &&
+	flux account pop-db -u users_test.csv
 '
 
 test_expect_success 'create hierarchy output of the new DB and store it in a file' '
@@ -95,7 +118,11 @@ test_expect_success 'compare DB hierarchies to make sure they are the same' '
 '
 
 test_expect_success 'specify a different filename for exported users and banks .csv files' '
-	flux account export-db --users foo.csv --banks bar.csv &&
+	flux account export-db \
+		--banks=bar.csv \
+		--users=foo.csv \
+		--bank-fields=bank,parent_bank,shares \
+		--user-fields=username,userid,bank,shares,max_running_jobs,max_active_jobs,max_nodes,queues &&
 	test_cmp -b users_expected.csv foo.csv &&
 	test_cmp -b banks_expected.csv bar.csv
 '
