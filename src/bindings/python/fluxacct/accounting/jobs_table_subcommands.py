@@ -36,7 +36,16 @@ class JobRecord:
     """
 
     def __init__(
-        self, userid, jobid, t_submit, t_run, t_inactive, nnodes, resources, project
+        self,
+        userid,
+        jobid,
+        t_submit,
+        t_run,
+        t_inactive,
+        nnodes,
+        resources,
+        project,
+        bank,
     ):
         self.userid = userid
         self.username = get_username(userid)
@@ -47,6 +56,7 @@ class JobRecord:
         self.nnodes = nnodes
         self.resources = resources
         self.project = project
+        self.bank = bank
 
     @property
     def elapsed(self):
@@ -73,6 +83,7 @@ def write_records_to_file(job_records, output_file):
                 "Nodes",
                 "R",
                 "Project",
+                "Bank",
             )
         )
         for record in job_records:
@@ -87,6 +98,7 @@ def write_records_to_file(job_records, output_file):
                     str(record.nnodes),
                     str(record.resources),
                     str(record.project),
+                    str(record.bank),
                 )
             )
 
@@ -98,7 +110,7 @@ def convert_to_str(job_records):
     """
     job_record_str = []
     job_record_str.append(
-        "{:<10} {:<10} {:<20} {:<20} {:<20} {:<20} {:<10} {:<20}".format(
+        "{:<10} {:<10} {:<20} {:<20} {:<20} {:<20} {:<10} {:<20} {:<20}".format(
             "UserID",
             "Username",
             "JobID",
@@ -107,11 +119,12 @@ def convert_to_str(job_records):
             "T_Inactive",
             "Nodes",
             "Project",
+            "Bank",
         )
     )
     for record in job_records:
         job_record_str.append(
-            "{:<10} {:<10} {:<20} {:<20} {:<20} {:<20} {:<10} {:<20}".format(
+            "{:<10} {:<10} {:<20} {:<20} {:<20} {:<20} {:<10} {:<20} {:<20}".format(
                 record.userid,
                 record.username,
                 record.jobid,
@@ -120,6 +133,7 @@ def convert_to_str(job_records):
                 record.t_inactive,
                 record.nnodes,
                 record.project,
+                record.bank,
             )
         )
 
@@ -151,6 +165,7 @@ def convert_to_obj(rows):
             nnodes=job_nnodes,
             resources=row[6],
             project=row[8] if row[8] is not None else "",
+            bank=row[9] if row[9] is not None else "",
         )
         job_records.append(job_record)
 
@@ -215,21 +230,28 @@ def get_jobs(conn, **kwargs):
     - jobs that started after a certain time
     - jobs that completed before a certain time
     - jobid
+    - project
+    - bank
 
     The function will execute a SQL query and return a list of jobs. If no
     jobs are found, an empty list is returned.
     """
     # find out which args were passed and place them in a dict
-    valid_params = {"user", "after_start_time", "before_end_time", "jobid", "project"}
+    valid_params = {
+        "user",
+        "after_start_time",
+        "before_end_time",
+        "jobid",
+        "project",
+        "bank",
+    }
     params = {
         key: val
         for key, val in kwargs.items()
         if val is not None and key in valid_params
     }
 
-    select_stmt = (
-        "SELECT userid,id,t_submit,t_run,t_inactive,ranks,R,jobspec,project FROM jobs"
-    )
+    select_stmt = "SELECT userid,id,t_submit,t_run,t_inactive,ranks,R,jobspec,project,bank FROM jobs"
     where_clauses = []
     params_list = []
 
@@ -249,6 +271,9 @@ def get_jobs(conn, **kwargs):
     if "project" in params:
         where_clauses.append("project = ?")
         params_list.append(params["project"])
+    if "bank" in params:
+        where_clauses.append("bank = ?")
+        params_list.append(params["bank"])
 
     if where_clauses:
         select_stmt += " WHERE " + " AND ".join(where_clauses)

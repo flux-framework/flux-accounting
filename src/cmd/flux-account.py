@@ -235,6 +235,11 @@ def add_view_job_records_arg(subparsers):
         help="project",
         metavar="PROJECT",
     )
+    subparser_view_job_records.add_argument(
+        "--bank",
+        help="bank",
+        metavar="BANK",
+    )
 
 
 def add_create_db_arg(subparsers):

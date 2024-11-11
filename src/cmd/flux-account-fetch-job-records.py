@@ -100,8 +100,9 @@ def fetch_new_jobs(last_timestamp=0.0):
                 # single_record["project"] to None if it can't be found
                 accounting_attributes = jobspec.get("attributes", {}).get("system", {})
                 single_record["project"] = accounting_attributes.get("project")
+                single_record["bank"] = accounting_attributes.get("bank")
             except json.JSONDecodeError as exc:
-                # the job does not have a project in jobspec, so don't add it
+                # the job's jobspec can't be decoded; don't add any of its elements
                 # to the job dictionary
                 continue
 
@@ -138,8 +139,8 @@ def insert_jobs_in_db(conn, job_records):
             cur.execute(
                 """
                 INSERT OR IGNORE INTO jobs
-                (id, userid, t_submit, t_run, t_inactive, ranks, R, jobspec, project)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, userid, t_submit, t_run, t_inactive, ranks, R, jobspec, project, bank)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     single_job["id"],
@@ -153,6 +154,7 @@ def insert_jobs_in_db(conn, job_records):
                     single_job["project"]
                     if single_job.get("project") is not None
                     else "",
+                    single_job["bank"] if single_job.get("bank") is not None else "",
                 ),
             )
         except KeyError:
