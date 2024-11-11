@@ -66,6 +66,7 @@ def add_add_user_arg(subparsers):
         "--username",
         help="username",
         metavar="USERNAME",
+        required=True,
     )
     subparser_add_user.add_argument(
         "--userid",
@@ -77,6 +78,7 @@ def add_add_user_arg(subparsers):
         "--bank",
         help="bank to charge jobs against",
         metavar="BANK",
+        required=True,
     )
     subparser_add_user.add_argument(
         "--shares",

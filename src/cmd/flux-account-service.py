@@ -171,16 +171,16 @@ class AccountingService:
     def add_user(self, handle, watcher, msg, arg):
         try:
             val = u.add_user(
-                self.conn,
-                msg.payload["username"],
-                msg.payload["bank"],
-                msg.payload["userid"],
-                msg.payload["shares"],
-                msg.payload["max_running_jobs"],
-                msg.payload["max_active_jobs"],
-                msg.payload["max_nodes"],
-                msg.payload["queues"],
-                msg.payload["projects"],
+                conn=self.conn,
+                username=msg.payload["username"],
+                bank=msg.payload["bank"],
+                uid=msg.payload["userid"],
+                shares=msg.payload["shares"],
+                max_running_jobs=msg.payload["max_running_jobs"],
+                max_active_jobs=msg.payload["max_active_jobs"],
+                max_nodes=msg.payload["max_nodes"],
+                queues=msg.payload["queues"],
+                projects=msg.payload["projects"],
             )
 
             payload = {"add_user": val}
