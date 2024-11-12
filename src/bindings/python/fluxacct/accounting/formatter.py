@@ -10,6 +10,9 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import json
+import string
+
+import flux.util
 
 
 class AccountingFormatter:
@@ -321,3 +324,74 @@ class AssociationFormatter(AccountingFormatter):
             banks += f"{str(bank[0])}\n"
 
         return banks
+
+
+class JobsFormatter(flux.util.OutputFormat):
+    """
+    Store a parsed version of an output format string for JobRecord objects,
+    allowing the fields to iterated without modifiers, building
+    a new format suitable for headers display, etc...
+    """
+
+    # mapping of legal format fields and their header names
+    headings = {
+        "userid": "userid",
+        "username": "username",
+        "jobid": "jobid",
+        "t_submit": "t_submit",
+        "t_run": "t_run",
+        "t_inactive": "t_inactive",
+        "nnodes": "nnodes",
+        "resources": "resources",
+        "project": "project",
+        "bank": "bank",
+    }
+
+    def __init__(self, fmt, headings=None):
+        """
+        Parse the input format fmt with string.Formatter.
+        Save off the fields and list of format tokens for later use,
+        (converting None to "" in the process)
+
+        Throws an exception if any format fields do not match the allowed
+        list of headings above.
+
+        Special case for annotations, which may be arbitrary
+        creations of scheduler or user.
+        """
+        format_list = string.Formatter().parse(fmt)
+        for _, field, _, _ in format_list:
+            if field and field in self.headings:
+                self.headings[field] = field
+        super().__init__(fmt)
+
+    def build_table(self, items):
+        """
+        Handle constructing a table of job records with the current format.
+
+        Sort items via any sort keys as set by set_sort_keys() or
+        via a ``sort:`` prefix in the supplied format.
+
+        Args:
+            items (iterable): list of items to format
+        """
+        # preprocess original format by processing with filter():
+        newfmt = self.filter(items)
+        # create new instance of the current class from filtered format:
+        formatter = type(self)(newfmt, headings=self.headings)
+
+        items = self.sort_items(items)
+
+        output_str = f"{formatter.header()}\n"
+        for item in items:
+            line = formatter.format(item)
+            if not line or line.isspace():
+                continue
+            try:
+                output_str += f"{line}\n"
+            except UnicodeEncodeError:
+                output_str += (
+                    f"{line.encode('utf-8', errors='surrogateescape').decode()}"
+                )
+
+        return output_str
