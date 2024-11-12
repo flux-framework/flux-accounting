@@ -67,7 +67,10 @@ test_expect_success 'check that usage does not get affected by canceled jobs' '
 
 test_expect_success 'check that no jobs show up under user' '
 	flux account -p ${DB_PATH} view-job-records --user $username > no_jobs.test &&
-	test_cmp ${NO_JOBS} no_jobs.test
+	cat <<-EOF >no_jobs.expected &&
+	jobid           | username | userid   | t_submit        | t_run           | t_inactive      | nnodes   | project  | bank
+	EOF
+	grep -f no_jobs.expected no_jobs.test
 '
 
 test_expect_success 'submit some jobs and wait for them to finish running' '
@@ -147,6 +150,15 @@ test_expect_success 'call update-usage in the same half-life period where no job
 	flux account -p ${DB_PATH} view-user $username > query2.json &&
 	test_debug "jq -S . <query2.json" &&
 	jq -e ".[1].job_usage >= 4" <query2.json
+'
+
+test_expect_success 'call view-job-records with custom format string' '
+	flux account view-job-records -o "{userid:<8} || {t_inactive:<12.3f}"
+'
+
+test_expect_success 'call view-job-records -o with an invalid field' '
+	test_must_fail flux account view-job-records -o "{foo}" > invalid_field.out 2>&1 &&
+	grep "Unknown format field: foo" invalid_field.out
 '
 
 test_expect_success 'remove flux-accounting DB' '

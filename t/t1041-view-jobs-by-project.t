@@ -75,7 +75,8 @@ test_expect_success 'run fetch-job-records script' '
 
 test_expect_success 'look at all jobs (will show 4 records)' '
 	flux account view-job-records > all_jobs.out &&
-	test $(grep -c "project" all_jobs.out) -eq 4
+	test $(grep -c "projectA" all_jobs.out) -eq 2 &&
+	test $(grep -c "projectB" all_jobs.out) -eq 2
 '
 
 test_expect_success 'filter jobs by projectA (will show 2 records)' '
