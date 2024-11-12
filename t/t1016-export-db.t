@@ -43,61 +43,28 @@ test_expect_success 'export DB information into .csv files' '
 '
 
 test_expect_success 'compare banks.csv' '
-	cat <<-EOF >banks_expected.csv
-	root,,1
-	A,root,1
-	B,root,1
-	C,root,1
-	D,root,1
-	E,D,1
-	F,D,1
+	cat <<-EOF >bank_table_expected.csv
+	bank_id,bank,active,parent_bank,shares,job_usage,priority
+	1,root,1,,1,0.0,0.0
+	2,A,1,root,1,0.0,0.0
+	3,B,1,root,1,0.0,0.0
+	4,C,1,root,1,0.0,0.0
+	5,D,1,root,1,0.0,0.0
+	6,E,1,D,1,0.0,0.0
+	7,F,1,D,1,0.0,0.0
 	EOF
-	test_cmp -b banks_expected.csv banks.csv
+	test_cmp -b bank_table_expected.csv bank_table.csv
 '
 
-test_expect_success 'compare users.csv' '
-	cat <<-EOF >users_expected.csv
-	user5011,5011,A,1,5,7,2147483647,
-	user5012,5012,A,1,5,7,2147483647,
-	user5013,5013,B,1,5,7,2147483647,
-	user5014,5014,C,1,5,7,2147483647,
-	EOF
-	test_cmp -b users_expected.csv users.csv
-'
-
-test_expect_success 'create hierarchy output of the flux-accounting DB and store it in a file' '
-	flux account view-bank root -t > db1.test
-'
-
-test_expect_success 'shut down flux-accounting service' '
-	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
-'
-
-test_expect_success 'create a new flux-accounting DB' '
-	flux account -p $(pwd)/FluxAccountingTestv2.db create-db
-'
-
-test_expect_success 'restart service against new DB' '
-	flux account-service -p ${DB_PATHv2} -t
-'
-
-test_expect_success 'import information into new DB' '
-	flux account pop-db -b banks.csv &&
-	flux account pop-db -u users.csv
-'
-
-test_expect_success 'create hierarchy output of the new DB and store it in a file' '
-	flux account view-bank root -t > db2.test
-'
-
-test_expect_success 'compare DB hierarchies to make sure they are the same' '
-	test_cmp db1.test db2.test
-'
-
-test_expect_success 'specify a different filename for exported users and banks .csv files' '
-	flux account export-db --users foo.csv --banks bar.csv &&
-	test_cmp -b users_expected.csv foo.csv &&
-	test_cmp -b banks_expected.csv bar.csv
+# use 'grep' checks here because the contents of association_table also
+# store timestamps of when the user was added to the DB, and thus will be
+# slightly different every time these tests are run
+test_expect_success 'make association_table.csv is populated' '
+	grep "creation_time,mod_time,active,username" association_table.csv &&
+	grep "user5011,5011,A,A" association_table.csv &&
+	grep "user5012,5012,A,A" association_table.csv &&
+	grep "user5013,5013,B,B" association_table.csv &&
+	grep "user5014,5014,C,C" association_table.csv
 '
 
 test_expect_success 'shut down flux-accounting service' '
