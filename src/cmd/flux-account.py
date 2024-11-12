@@ -293,6 +293,17 @@ def add_view_job_records_arg(subparsers):
         help="bank",
         metavar="BANK",
     )
+    subparser_view_job_records.add_argument(
+        "-o",
+        "--format",
+        type=str,
+        help=(
+            "Specify output format using Python's string format syntax. "
+            "Available fields: jobid,username,userid,t_submit,t_run,t_inactive,nnodes,"
+            "project,bank"
+        ),
+        metavar="FORMAT",
+    )
 
 
 def add_create_db_arg(subparsers):
