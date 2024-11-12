@@ -42,6 +42,7 @@ TESTSCRIPTS = \
 	t1040-mf-priority-projects.t \
 	t1041-view-jobs-by-project.t \
 	t1042-issue508.t \
+	t1043-view-jobs-by-bank.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
