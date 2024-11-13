@@ -76,7 +76,7 @@ test_expect_success 'submit a job while specifying a queue' '
 '
 
 test_expect_success 'edit a user to no longer have access to any of the added queues' '
-	flux account edit-user user5001 --bank=A --queues=
+	flux account edit-user user5001 --bank=A --queues=-1
 '
 
 test_expect_success 're-send flux-accounting DB information to the plugin' '
@@ -104,7 +104,7 @@ test_expect_success 'delete the queues from the flux-accounting database and fro
 	flux account delete-queue bronze &&
 	flux account delete-queue silver &&
 	flux account delete-queue gold &&
-	flux account edit-user user5001 --bank=A --queues=
+	flux account edit-user user5001 --bank=A --queues=-1
 '
 
 test_expect_success 're-send flux-accounting DB information to the plugin' '
