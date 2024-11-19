@@ -546,17 +546,17 @@ class AccountingService:
 
     def export_db(self, handle, watcher, msg, arg):
         try:
-            val = d.export_db_info(
-                self.conn,
-                msg.payload["users"],
-                msg.payload["banks"],
-            )
+            val = d.export_db_info(self.conn)
 
             payload = {"export_db": val}
 
             handle.respond(msg, payload)
         except KeyError as exc:
             handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+        except sqlite3.OperationalError as exc:
+            handle.respond_error(msg, 0, f"a SQLite error occurred: {exc}")
+        except IOError as exc:
+            handle.respond_error(msg, 0, f"an IO error occurred: {exc}")
         except Exception as exc:
             handle.respond_error(
                 msg, 0, f"a non-OSError exception was caught: {str(exc)}"
@@ -566,8 +566,8 @@ class AccountingService:
         try:
             val = d.populate_db(
                 self.conn,
-                msg.payload["users"],
-                msg.payload["banks"],
+                msg.payload["csv_file"],
+                msg.payload["fields"],
             )
 
             payload = {"pop_db": val}
@@ -575,6 +575,12 @@ class AccountingService:
             handle.respond(msg, payload)
         except KeyError as exc:
             handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+        except sqlite3.OperationalError as exc:
+            handle.respond_error(msg, 0, f"a SQLite error occurred: {exc}")
+        except IOError as exc:
+            handle.respond_error(msg, 0, f"an IO error occurred: {exc}")
+        except ValueError as exc:
+            handle.respond_error(msg, 0, f"{exc}")
         except Exception as exc:
             handle.respond_error(
                 msg, 0, f"a non-OSError exception was caught: {str(exc)}"
