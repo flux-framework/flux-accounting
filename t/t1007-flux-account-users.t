@@ -50,6 +50,16 @@ test_expect_success 'add some queues to the DB' '
 	flux account add-queue special --priority=99999
 '
 
+test_expect_success 'call add-user without specifying a username' '
+	test_must_fail flux account add-user --bank=A > error.out 2>&1 &&
+	grep "add-user: error: the following arguments are required: --username" error.out
+'
+
+test_expect_success 'call add-user without specifying a bank' '
+	test_must_fail flux account add-user --username=user5011 > error.out 2>&1 &&
+	grep "add-user: error: the following arguments are required: --bank" error.out
+'
+
 test_expect_success 'trying to add an association that already exists should raise an IntegrityError' '
 	test_must_fail flux account add-user --username=user5011 --userid=5011 --bank=A > already_exists.out 2>&1 &&
 	grep "association user5011,A already active in association_table" already_exists.out
