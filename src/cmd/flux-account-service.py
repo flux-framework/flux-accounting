@@ -331,7 +331,8 @@ class AccountingService:
             val = b.list_banks(
                 self.conn,
                 msg.payload["inactive"],
-                msg.payload["fields"].split(","),
+                msg.payload["fields"].split(",") if msg.payload.get("fields") else None,
+                msg.payload["table"],
             )
 
             payload = {"list_banks": val}

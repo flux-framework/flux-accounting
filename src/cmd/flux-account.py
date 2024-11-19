@@ -370,8 +370,14 @@ def add_list_banks_arg(subparsers):
         "--fields",
         type=str,
         help="list of fields to include in JSON output",
-        default="bank_id,bank,parent_bank,shares,job_usage",
+        default=None,
         metavar="BANK_ID,BANK,ACTIVE,PARENT_BANK,SHARES,JOB_USAGE",
+    )
+    subparser_list_banks.add_argument(
+        "--table",
+        action="store_const",
+        const=True,
+        help="list all banks in table format",
     )
 
 
