@@ -1,6 +1,16 @@
 queue_rules:
   - name: default
-    conditions:
+    queue_conditions:
+      - base=master
+      - label="merge-when-passing"
+      - label!="work-in-progress"
+      - or:
+          - "approved-reviews-by=@flux-framework/core"
+          - "approved-reviews-by=@flux-framework/accounting"
+      - "#approved-reviews-by>0"
+      - "#changes-requested-reviews-by=0"
+      - -title~=^\[*[Ww][Ii][Pp]
+    merge_conditions:
       - base=master
       - status-success="validate commits"
       - status-success="python format"
@@ -17,21 +27,11 @@ queue_rules:
       - "#approved-reviews-by>0"
       - "#changes-requested-reviews-by=0"
       - -title~=^\[*[Ww][Ii][Pp]
+    merge_method: merge
+    update_method: rebase
 
 pull_request_rules:
-  - name: default
-    conditions:
-      - base=master
-      - label="merge-when-passing"
-      - label!="work-in-progress"
-      - or:
-          - "approved-reviews-by=@flux-framework/core"
-          - "approved-reviews-by=@flux-framework/accounting"
-      - "#approved-reviews-by>0"
-      - "#changes-requested-reviews-by=0"
-      - -title~=^\[*[Ww][Ii][Pp]
+  - name: refactored queue action rule
+    conditions: []
     actions:
       queue:
-        name: default
-        method: merge
-        update_method: rebase
