@@ -214,18 +214,18 @@ class AccountingService:
     def edit_user(self, handle, watcher, msg, arg):
         try:
             val = u.edit_user(
-                self.conn,
-                msg.payload["username"],
-                msg.payload["bank"],
-                msg.payload["userid"],
-                msg.payload["default_bank"],
-                msg.payload["shares"],
-                msg.payload["max_running_jobs"],
-                msg.payload["max_active_jobs"],
-                msg.payload["max_nodes"],
-                msg.payload["queues"],
-                msg.payload["projects"],
-                msg.payload["default_project"],
+                conn=self.conn,
+                username=msg.payload["username"],
+                bank=msg.payload["bank"],
+                userid=msg.payload["userid"],
+                default_bank=msg.payload["default_bank"],
+                shares=msg.payload["shares"],
+                max_running_jobs=msg.payload["max_running_jobs"],
+                max_active_jobs=msg.payload["max_active_jobs"],
+                max_nodes=msg.payload["max_nodes"],
+                queues=msg.payload["queues"],
+                projects=msg.payload["projects"],
+                default_project=msg.payload["default_project"],
             )
 
             payload = {"edit_user": val}

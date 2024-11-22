@@ -464,24 +464,39 @@ def delete_user(conn, username, bank):
     return 0
 
 
-def edit_user(
-    conn,
-    username,
-    bank=None,
-    userid=None,
-    default_bank=None,
-    shares=None,
-    max_running_jobs=None,
-    max_active_jobs=None,
-    max_nodes=None,
-    queues=None,
-    projects=None,
-    default_project=None,
-):
-    params = locals()
-    editable_fields = [
-        "username",
-        "bank",
+def edit_user(conn, username, bank=None, **kwargs):
+    """
+    Edit a field for an association in the association_table. If "bank" is not passed,
+    edit the column across every row for the user in the association_table. If -1 is
+    passed for any of the fields, reset the field to its default value in the
+    association_table.
+
+    Args:
+        username: The username of the association.
+        userid: The user ID for the user.
+        default_bank: The user's default bank.
+        shares: The amount of available resources their organization considers the user
+            should be entitled to use relative to other competing users.
+        max_running_jobs: The max number of running jobs the association can have at any
+            given time.
+        max_active_jobs: The max number of both pending and running jobs the association
+            can have at any given time.
+        max_nodes: The man number of nodes an association can have across all of their
+            running jobs.
+        queues: A comma-separated list of all of the queues an association can run jobs
+            under.
+        projects: A comma-separated list of all of the projects an association can run jobs
+            under.
+        default_project: The association's default project.
+
+    Raises:
+        ValueError: if:
+            * no fields are provided for the association's update.
+            * the default bank for an association is attempted to be reset with -1
+            * a queue being passed-in cannot be found in queue_table.
+            * a project being passed-in cannot be found in project_table.
+    """
+    editable_fields = {
         "userid",
         "default_bank",
         "shares",
@@ -491,46 +506,61 @@ def edit_user(
         "queues",
         "projects",
         "default_project",
-    ]
-    for field in editable_fields:
-        if params[field] is not None:
+    }
+    updates = {
+        field: value for field, value in kwargs.items() if field in editable_fields
+    }
+
+    if not updates:
+        # no editable fields were provided; raise an exception
+        raise ValueError("no fields provided for update")
+
+    for field, value in updates.items():
+        if value is not None:
+            if str(value) == "-1":
+                if field == "default_bank":
+                    raise ValueError(
+                        f"default bank cannot be reset with -1; please specify a value"
+                    )
+                # clear either the queues or the projects
+                if field == "queues":
+                    clear_queues(conn, username, bank)
+                elif field == "projects":
+                    clear_projects(conn, username, bank)
+                else:
+                    # for the other fields, setting to NULL will reset it to its default value
+                    update_stmt = (
+                        f"UPDATE association_table SET {field}=NULL WHERE username=?"
+                    )
+                    tup = (username,)
+
+                    if bank is not None:
+                        update_stmt += " AND bank=?"
+                        tup = tup + (bank,)
+
+                    conn.execute(update_stmt, tup)
+
+                # skip the rest of the loop if reset logic was handled
+                continue
+
             if field == "queues":
-                # if --queues is empty, clear the available
-                # queues to the user
-                if params[field] == "":
-                    clear_queues(conn, username, bank=None)
-                    return 0
                 try:
-                    validate_queue(conn, params[field])
+                    validate_queue(conn, value)
                 except ValueError as bad_queue:
                     raise ValueError(f"queue {bad_queue} does not exist in queue_table")
-            if field == "projects":
-                if str(params[field]) == "-1":
-                    # reset the association's projects list to just "*"
-                    clear_projects(conn, username, bank)
-                    return 0
+            elif field == "projects":
                 try:
-                    params[field] = validate_project(conn, params[field])
+                    updates[field] = validate_project(conn, value)
                 except ValueError as bad_project:
                     raise ValueError(
                         f"project {bad_project} does not exist in project_table"
                     )
 
-            update_stmt = "UPDATE association_table SET " + field
-
-            # passing -1 will reset the column to its default value
-            if params[field] == "-1":
-                update_stmt += "=NULL WHERE username=?"
-                tup = (username,)
-            else:
-                update_stmt += "=? WHERE username=?"
-                tup = (
-                    params[field],
-                    username,
-                )
+            update_stmt = f"UPDATE association_table SET {field}=? WHERE username=?"
+            tup = (updates[field], username)
 
             if bank is not None:
-                update_stmt += " AND BANK=?"
+                update_stmt += " AND bank=?"
                 tup = tup + (bank,)
 
             conn.execute(update_stmt, tup)

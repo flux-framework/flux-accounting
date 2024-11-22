@@ -145,7 +145,10 @@ def add_edit_user_arg(subparsers):
     )
     subparser_edit_user.add_argument(
         "--bank",
-        help="bank to charge jobs against",
+        help=(
+            "specify under which bank to make this change; if not specified,"
+            " the edit will be applied across all of the user's accounts"
+        ),
         default=None,
         metavar="BANK",
     )
