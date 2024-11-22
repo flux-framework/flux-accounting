@@ -11,7 +11,11 @@ MAN1_FILES_PRIMARY = \
 	man1/flux-account.1 \
 	man1/flux-account-create-db.1 \
 	man1/flux-account-pop-db.1 \
-	man1/flux-account-export-db.1
+	man1/flux-account-export-db.1 \
+	man1/flux-account-view-user.1 \
+	man1/flux-account-add-user.1 \
+	man1/flux-account-delete-user.1 \
+	man1/flux-account-edit-user.1
 
 MAN5_FILES_PRIMARY = \
 	man5/flux-config-accounting.5
