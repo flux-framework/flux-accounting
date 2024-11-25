@@ -398,6 +398,54 @@ Both "types" of jobs, *running* and *active*, are based on Flux's definitions
 of job states_. *Active* jobs can be in any state but INACTIVE. *Running* jobs
 are jobs in either RUN or CLEANUP states.
 
+Queue Priority Calculation Configuration
+========================================
+
+Mentioned above, the queue that a job is submitted under can influence its
+calculated priority. Priorities specific to queues can be configured in the
+flux-accounting database when they are first added:
+
+.. code-block:: console
+
+  $ flux account add-queue bronze --priority=100
+
+Or changed later on:
+
+.. code-block:: console
+
+  $ flux account edit-queue bronze --priority=500
+
+If a priority is not specified when a queue is added, it will have a priority
+of 0, meaning it will not positively or negatively affect a job's integer
+priority.
+
+example
+-------
+
+Given an association with a fair-share value of 0.5, the priority plugin loaded
+and configured to just use its default factor weights, let's walk through how a
+job's priority could be affected by running under certain queues. Assume the
+following configuration for queues and their associated priorities:
+
++-------------+----------+
+| queue       | priority |
++=============+==========+
+| bronze      | 100      |
++-------------+----------+
+| silver      | 300      |
++-------------+----------+
+| gold        | 500      |
++-------------+----------+
+
+If the association submitted their job with default urgency in the ``bronze``
+queue, their priority would be:
+
+:math:`P = (0.5 \times 100000) + (100 \times 10000) + (16 - 16) = (50000) + (1000000) = 1050000`
+
+versus this same job submitted in the ``gold`` queue:
+
+:math:`P = (0.5 \times 100000) + (500 \times 10000) + (16 - 16) = (50000) + (5000000) = 5050000`
+
 .. _glossary-section:
 
 ********
