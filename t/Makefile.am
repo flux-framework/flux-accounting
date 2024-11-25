@@ -57,6 +57,7 @@ TESTSCRIPTS = \
 	t1052-mf-priority-queue-limits.t \
 	t1053-issue631.t \
 	t1054-mf-priority-bank-priorities.t \
+	t1055-mf-priority-queue-config.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
