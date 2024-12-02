@@ -1,3 +1,28 @@
+flux-accounting version 0.40.0 - 2024-12-03
+-------------------------------------------
+
+#### Fixes
+
+* `list-banks`: use `AccountingFormatter` class (#524)
+
+* `add-user`: make `--username` and `--bank` required arguments (#532)
+
+* `edit-user`: unify reset behavior, `**kwargs` for editable fields (#535)
+
+#### Features
+
+* `view-job-records`: add `--bank` filter option (#533)
+
+* doc: add example on configuring priorities for queues (#542)
+
+#### Testsuite
+
+* t: change which user is deleted from `association_table` (#528)
+
+#### CI
+
+* ci(mergify): upgrade configuration to current format (#537)
+
 flux-accounting version 0.39.0 - 2024-11-05
 -------------------------------------------
 
