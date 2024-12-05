@@ -320,6 +320,13 @@ def add_view_bank_arg(subparsers):
         help="list all sub banks in a parsable format with specified bank as root of tree",
         metavar="PARSABLE",
     )
+    subparser_view_bank.add_argument(
+        "--fields",
+        type=str,
+        help="list of fields to include in JSON output",
+        default=None,
+        metavar="BANK_ID,BANK,ACTIVE,PARENT_BANK,SHARES,JOB_USAGE",
+    )
 
 
 def add_delete_bank_arg(subparsers):
