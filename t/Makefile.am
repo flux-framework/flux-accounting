@@ -51,7 +51,8 @@ TESTSCRIPTS = \
 	python/t1004_queue_cmds.py \
 	python/t1005_project_cmds.py \
 	python/t1006_job_archive.py \
-	python/t1007_formatter.py
+	python/t1007_formatter.py \
+	python/t1008_users_output.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \

@@ -13,7 +13,7 @@ import json
 
 
 class AccountingFormatter:
-    def __init__(self, cursor):
+    def __init__(self, cursor, error_msg="no results found in query"):
         """
         Initialize an AccountingFormatter object with a SQLite cursor.
 
@@ -26,7 +26,7 @@ class AccountingFormatter:
 
         if not self.rows:
             # the SQL query didn't fetch any results; raise an Exception
-            raise ValueError("no results found in query")
+            raise ValueError(error_msg)
 
     def get_column_names(self):
         """
@@ -94,3 +94,23 @@ class AccountingFormatter:
         json_string = json.dumps(table_data, indent=2)
 
         return json_string
+
+
+class AssociationFormatter(AccountingFormatter):
+    """
+    Subclass of AccountingFormatter, specific to associations in the flux-accounting
+    database.
+    """
+
+    def __init__(self, cursor, username):
+        """
+        Initialize an AssociationFormatter object with a SQLite cursor.
+
+        Args:
+            cursor: a SQLite Cursor object that has the results of a SQL query.
+            username: the username of the association.
+        """
+        self.username = username
+        super().__init__(
+            cursor, error_msg=f"user {self.username} not found in association_table"
+        )
