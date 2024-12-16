@@ -19,6 +19,7 @@ test_expect_success 'allow guest access to testexec' '
 	allow-guests = true
 	EOF
 '
+
 test_expect_success 'load multi-factor priority plugin' '
 	flux jobtap load -r .priority-default ${MULTI_FACTOR_PRIORITY}
 '
