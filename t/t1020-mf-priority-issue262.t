@@ -20,6 +20,7 @@ test_expect_success 'allow guest access to testexec' '
 	allow-guests = true
 	EOF
 '
+
 test_expect_success 'create flux-accounting DB' '
 	flux account -p $(pwd)/FluxAccountingTest.db create-db
 '
