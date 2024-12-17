@@ -398,6 +398,52 @@ Both "types" of jobs, *running* and *active*, are based on Flux's definitions
 of job states_. *Active* jobs can be in any state but INACTIVE. *Running* jobs
 are jobs in either RUN or CLEANUP states.
 
+Queue Permissions Configuration
+===============================
+
+The priority plugin can enforce restrictions on which associations can submit
+jobs under certain queues. This is done by configuring an association's list of
+permissible queues in their ``queues`` attribute. If configured, these
+permissions will be shared with the priority plugin and enforced when an
+association submits a job. If an association tries to submit a job to a queue
+where they do not have access, their job will be rejected during the job's
+validation.
+
+To enforce these kinds of permissions, ensure that both flux-accounting's
+``queue_table`` is configured with the queues you want to restrict access to as
+well as the associations' ``queues`` attributes.
+
+.. note::
+
+  If an association submits a job under a queue which flux-accounting does not
+  know about (i.e it is not in flux-accounting's ``queue_table``), it will
+  **still allow** the job to run.
+
+example
+-------
+
+As an example, let's configure flux-accounting with the following three queues:
+
+.. code-block:: console
+
+  $ flux account add-queue bronze
+  $ flux account add-queue silver
+  $ flux account add-queue gold
+
+And an association's ``queues`` attribute:
+
+.. code-block:: console
+
+  $ flux account add-user --username=user1 --bank=bankA --queues="bronze"
+
+If the association attempts to submit a job to the ``silver`` queue, their job
+will be rejected on submission:
+
+.. code-block:: console
+
+  $ flux job submit --queue=silver my_job
+  Queue not valid for user: silver
+
 Queue Priority Calculation Configuration
 ========================================
 
