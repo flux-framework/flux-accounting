@@ -13,4 +13,5 @@ Table of Contents
    guide/support
    guide/accounting-guide
    components/database-administration
+   components/projects
    index_man
