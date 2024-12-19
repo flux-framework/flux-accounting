@@ -542,6 +542,15 @@ def add_edit_bank_arg(subparsers):
         help="parent bank",
         metavar="PARENT BANK",
     )
+    subparser_edit_bank.add_argument(
+        "--max-preempt-after",
+        help=(
+            "max number of time until a job running under this bank can become "
+            "preemptible; duration must be in Flux Standard Duration"
+        ),
+        type=str,
+        metavar="MAX_PREEMPT_AFTER",
+    )
 
 
 def add_list_banks_arg(subparsers):

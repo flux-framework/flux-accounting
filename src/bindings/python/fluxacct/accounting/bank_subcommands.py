@@ -247,12 +247,14 @@ def edit_bank(
     bank=None,
     shares=None,
     parent_bank=None,
+    max_preempt_after=None,
 ):
     cur = conn.cursor()
     params = locals()
     editable_fields = [
         "shares",
         "parent_bank",
+        "max_preempt_after",
     ]
     for field in editable_fields:
         if params[field] is not None:
@@ -268,6 +270,13 @@ def edit_bank(
             if field == "shares":
                 if int(shares) <= 0:
                     raise ValueError("new shares amount must be >= 0")
+            if field == "max_preempt_after":
+                if max_preempt_after == str(-1):
+                    duration = None
+                else:
+                    # convert FSD to seconds
+                    duration = parse_fsd(max_preempt_after)
+                params[field] = duration
 
             update_stmt = "UPDATE bank_table SET " + field
 
