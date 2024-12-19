@@ -16,6 +16,8 @@ from fluxacct.accounting import user_subcommands as u
 from fluxacct.accounting import formatter as fmt
 from fluxacct.accounting import sql_util as sql
 
+from flux.util import parse_fsd
+
 ###############################################################
 #                                                             #
 #                      Helper Functions                       #
@@ -84,7 +86,7 @@ def reactivate_bank(conn, cur, bank, parent_bank):
 ###############################################################
 
 
-def add_bank(conn, bank, shares, parent_bank=""):
+def add_bank(conn, bank, shares, parent_bank="", max_preempt_after=None):
     cur = conn.cursor()
 
     if parent_bank == "":
@@ -114,19 +116,24 @@ def add_bank(conn, bank, shares, parent_bank=""):
         reactivate_bank(conn, cur, bank, parent_bank)
         return 0
 
+    if max_preempt_after:
+        # parse Flux Standard Duration (see RFC 23) and add it to the INSERT statement
+        duration = parse_fsd(max_preempt_after)
+        insert_stmt = (
+            "INSERT INTO bank_table "
+            "(bank, parent_bank, shares, max_preempt_after) "
+            "VALUES (?, ?, ?, ?)"
+        )
+        stmt_parameters = (bank, parent_bank, shares, duration)
+    else:
+        insert_stmt = (
+            "INSERT INTO bank_table (bank, parent_bank, shares) VALUES (?, ?, ?)"
+        )
+        stmt_parameters = (bank, parent_bank, shares)
+
     # insert the bank values into the database
     try:
-        conn.execute(
-            """
-            INSERT INTO bank_table (
-                bank,
-                parent_bank,
-                shares
-            )
-            VALUES (?, ?, ?)
-            """,
-            (bank, parent_bank, shares),
-        )
+        conn.execute(insert_stmt, stmt_parameters)
         # commit changes
         conn.commit()
 

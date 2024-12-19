@@ -433,6 +433,15 @@ def add_add_bank_arg(subparsers):
     subparser_add_bank.add_argument(
         "shares", help="number of shares to allocate to bank", metavar="SHARES"
     )
+    subparser_add_bank.add_argument(
+        "--max-preempt-after",
+        help=(
+            "max number of time until a job running under this bank can become "
+            "preemptible; duration must be in Flux Standard Duration"
+        ),
+        type=str,
+        metavar="MAX_PREEMPT_AFTER",
+    )
 
 
 def add_view_bank_arg(subparsers):
