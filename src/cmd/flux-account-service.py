@@ -325,6 +325,7 @@ class AccountingService:
                 msg.payload["bank"],
                 msg.payload["shares"],
                 msg.payload["parent_bank"],
+                msg.payload["max_preempt_after"],
             )
 
             payload = {"edit_bank": val}
