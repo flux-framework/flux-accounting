@@ -1,5 +1,5 @@
-bank_id        bank           active         parent_bank    shares         job_usage      
-6              E              1              D              1              0.0            
+bank_id        bank           active         parent_bank    shares         job_usage      max_preempt_after
+6              E              1              D              1              0.0            None           
 
 Bank                            Username           RawShares            RawUsage           Fairshare
 E                                                          1                 0.0
