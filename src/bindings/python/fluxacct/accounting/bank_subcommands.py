@@ -16,6 +16,8 @@ from fluxacct.accounting import user_subcommands as u
 from fluxacct.accounting import formatter as fmt
 from fluxacct.accounting import sql_util as sql
 
+from flux.util import parse_fsd
+
 ###############################################################
 #                                                             #
 #                      Helper Functions                       #
@@ -218,7 +220,7 @@ def print_parsable_hierarchy(cur, bank, hierarchy_str, indent=""):
 ###############################################################
 
 
-def add_bank(conn, bank, shares, parent_bank=""):
+def add_bank(conn, bank, shares, parent_bank="", max_preempt_after=None):
     cur = conn.cursor()
 
     if parent_bank == "":
@@ -248,19 +250,24 @@ def add_bank(conn, bank, shares, parent_bank=""):
         reactivate_bank(conn, cur, bank, parent_bank)
         return 0
 
+    if max_preempt_after:
+        # parse Flux Standard Duration (see RFC 23) and add it to the INSERT statement
+        duration = parse_fsd(max_preempt_after)
+        insert_stmt = (
+            "INSERT INTO bank_table "
+            "(bank, parent_bank, shares, max_preempt_after) "
+            "VALUES (?, ?, ?, ?)"
+        )
+        stmt_parameters = (bank, parent_bank, shares, duration)
+    else:
+        insert_stmt = (
+            "INSERT INTO bank_table (bank, parent_bank, shares) VALUES (?, ?, ?)"
+        )
+        stmt_parameters = (bank, parent_bank, shares)
+
     # insert the bank values into the database
     try:
-        conn.execute(
-            """
-            INSERT INTO bank_table (
-                bank,
-                parent_bank,
-                shares
-            )
-            VALUES (?, ?, ?)
-            """,
-            (bank, parent_bank, shares),
-        )
+        conn.execute(insert_stmt, stmt_parameters)
         # commit changes
         conn.commit()
 
@@ -384,12 +391,14 @@ def edit_bank(
     bank=None,
     shares=None,
     parent_bank=None,
+    max_preempt_after=None,
 ):
     cur = conn.cursor()
     params = locals()
     editable_fields = [
         "shares",
         "parent_bank",
+        "max_preempt_after",
     ]
     for field in editable_fields:
         if params[field] is not None:
@@ -405,6 +414,14 @@ def edit_bank(
             if field == "shares":
                 if int(shares) <= 0:
                     raise ValueError("new shares amount must be >= 0")
+            if field == "max_preempt_after":
+                if max_preempt_after == str(-1):
+                    duration = None
+                else:
+                    # convert FSD to seconds
+                    duration = parse_fsd(max_preempt_after)
+                params[field] = duration
+                print(f"params[field]: {params[field]}")
 
             update_stmt = "UPDATE bank_table SET " + field
 
