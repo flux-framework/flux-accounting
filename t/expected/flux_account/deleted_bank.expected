@@ -1,3 +1,3 @@
-bank_id        bank           active         parent_bank    shares         
-4              C              0              root           50             
+bank_id        bank           active         parent_bank    shares         job_usage      max_preempt_after
+4              C              0              root           50             0.0            None           
 
