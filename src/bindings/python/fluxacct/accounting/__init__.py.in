@@ -22,7 +22,7 @@ ASSOCIATION_TABLE = [
     "projects",
     "default_project",
 ]
-BANK_TABLE = ["bank_id", "bank", "active", "parent_bank", "shares", "job_usage"]
+BANK_TABLE = ["bank_id", "bank", "active", "parent_bank", "shares", "job_usage", "max_preempt_after"]
 QUEUE_TABLE = [
     "queue",
     "min_nodes_per_job",
