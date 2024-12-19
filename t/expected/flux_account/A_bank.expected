@@ -1,6 +1,6 @@
-bank_id | bank | active | parent_bank | shares | job_usage
---------+------+--------+-------------+--------+----------
-2       | A    | 1      | root        | 1      | 0.0      
+bank_id | bank | active | parent_bank | shares | job_usage | max_preempt_after
+--------+------+--------+-------------+--------+-----------+------------------
+2       | A    | 1      | root        | 1      | 0.0       | None             
 
 username | default_bank | shares | job_usage | fairshare
 ---------+--------------+--------+-----------+----------
