@@ -139,7 +139,7 @@ test_expect_success 'check that job usage and fairshare values get updated' '
 '
 
 # if update-usage is called in the same half-life period when no jobs are found
-# for a user, their job usage factor should be affected; this test is taken
+# for a user, their job usage factor should not be affected; this test is taken
 # from the set of job-archive interface Python unit tests
 test_expect_success 'call update-usage in the same half-life period where no jobs are run' '
 	flux account -p ${DB_PATH} update-usage &&

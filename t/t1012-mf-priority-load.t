@@ -75,6 +75,14 @@ test_expect_success 'create fake_payload.py' '
 	EOF
 '
 
+# The following test simulates the following scenario: a user submits a job to
+# a bank they do not have access to with the priority plugin loaded BEFORE it
+# is updated with flux-accounting information (i.e the plugin knows nothing
+# about which users belong to which bank). The plugin is then updated with the
+# flux-accounting information, and while looping through the job.state.priority
+# callback for each job, discovers that this submitted job comes from a user
+# who does not have access to the bank they submitted this job under.
+# Therefore, an exception is raised on the job.
 test_expect_success 'submitting a job specifying an incorrect bank with no user data results in a job exception' '
 	jobid0=$(flux submit --setattr=system.bank=account4 -n1 sleep 60) &&
 	flux python fake_payload.py &&
@@ -88,6 +96,11 @@ test_expect_success 'unload and reload mf_priority.so' '
 	flux jobtap list | grep mf_priority
 '
 
+# The following set of tests simulates an association submitting a job while
+# the priority plugin is loaded BEFORE it is updated with flux-accounting
+# information. The plugin holds the job while it waits to receive accounting
+# information, and once it is updated, will annotate the job with the bank name
+# and allow it to proceed to run.
 test_expect_success 'submit sleep 60 jobs with no data update' '
 	jobid1=$(flux submit -n1 sleep 60)
 '
@@ -131,6 +144,9 @@ test_expect_success 'unload mf_priority.so' '
 	flux jobtap remove mf_priority.so
 '
 
+# The following set of tests makes sure that if a job is held before the plugin
+# is successfully loaded and is updated with flux-accounting information, the
+# job can still successfully transition to RUN state.
 test_expect_success 'submit a job with no plugin loaded' '
 	jobid4=$(flux submit -n 1 sleep 60) &&
 	flux job wait-event -vt 60 ${jobid4} depend

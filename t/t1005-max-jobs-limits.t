@@ -19,6 +19,7 @@ test_expect_success 'allow guest access to testexec' '
 	allow-guests = true
 	EOF
 '
+
 test_expect_success 'load multi-factor priority plugin' '
 	flux jobtap load -r .priority-default ${MULTI_FACTOR_PRIORITY}
 '
@@ -85,6 +86,13 @@ test_expect_success 'add a default queue and send it to the plugin' '
 	flux python fake_payload.py
 '
 
+# The following set of tests will check that the priority plugin enforces
+# accounting limits defined per-association in the flux-accounting database,
+# specifically an association's max running jobs and max active jobs limit.
+# When the association hits their max running jobs limit, subsequently
+# submitted jobs will be held by having an accounting-specific dependency added
+# to it. Once they hit their max active jobs limit, subsequently submitted jobs
+# will be rejected with an accounting-specific rejection message.
 test_expect_success 'submit max number of jobs' '
 	jobid1=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
 	jobid2=$(flux python ${SUBMIT_AS} 5011 sleep 60)
@@ -117,7 +125,7 @@ test_expect_success 'a submitted job while at max-running-jobs limit will have a
 	flux cancel ${jobid2}
 '
 
-test_expect_success 'submit max number of jobs with a mix of default bank and explicitly set bank' '
+test_expect_success 'submit max number of jobs to the same bank (explicitly and by default)' '
 	jobid1=$(flux python ${SUBMIT_AS} 5011 sleep 60) &&
 	jobid2=$(flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account3 -n 1 sleep 60)
 '

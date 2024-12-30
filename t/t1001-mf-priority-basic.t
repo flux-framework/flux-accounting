@@ -19,6 +19,7 @@ test_expect_success 'allow guest access to testexec' '
 	allow-guests = true
 	EOF
 '
+
 test_expect_success 'load multi-factor priority plugin' '
 	flux jobtap load -r .priority-default ${MULTI_FACTOR_PRIORITY}
 '
@@ -96,6 +97,10 @@ test_expect_success 'update plugin with sample test data' '
 	flux python fake_payload.py
 '
 
+# The following set of tests will check the integer priority calculated by the
+# priority plugin for two associations. The fair-share of the first association
+# is 0.45321 and the fair-share of the second is 0.11345. In addition, job
+# priorities get affected if the user sets a custom urgency on their job.
 test_expect_success 'submit a job with default urgency' '
 	jobid=$(flux submit --setattr=system.bank=account3 -n1 hostname) &&
 	flux job wait-event -f json ${jobid} priority | jq '.context.priority' > job1.test &&
@@ -156,6 +161,9 @@ test_expect_success 'submit a job using default bank' '
 	flux cancel ${jobid}
 '
 
+# The following two tests ensure job submissions are rejected when a user
+# tries to submit a job under a bank they do not belong to or when the format
+# of the bank is not valid.
 test_expect_success 'submit a job using a bank the user does not belong to' '
 	test_must_fail flux submit --setattr=system.bank=account1 -n1 hostname > bad_bank.out 2>&1 &&
 	test_debug "cat bad_bank.out" &&
@@ -168,6 +176,10 @@ test_expect_success 'reject job when invalid bank format is passed in' '
 	grep "unable to unpack bank arg" invalid_fmt.out
 '
 
+# This set of tests simulates a special case where a portion of the Association
+# object that is kept with every job is missing, and therefore, an exception on
+# the job is raised with a message explaining that it cannot load the
+# information for the job.
 test_expect_success 'pass special key to user/bank struct to nullify information' '
 	cat <<-EOF >null_struct.json
 	{
