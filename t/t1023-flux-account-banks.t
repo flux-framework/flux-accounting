@@ -115,9 +115,9 @@ test_expect_success 'delete user default bank row' '
 
 test_expect_success 'check that user default bank gets updated to other bank' '
 	flux account view-user user5015 > new_default_bank.out &&
-	grep "username: user5015" new_default_bank.out &&
-	grep "bank: F" new_default_bank.out &&
-	grep "default_bank: F" new_default_bank.out
+	grep "\"username\": \"user5015\"" new_default_bank.out
+	grep "\"bank\": \"F\"" new_default_bank.out &&
+	grep "\"default_bank\": \"F\"" new_default_bank.out
 '
 
 test_expect_success 'trying to add a user to a nonexistent bank should raise a ValueError' '

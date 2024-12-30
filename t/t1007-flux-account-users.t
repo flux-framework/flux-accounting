@@ -67,17 +67,14 @@ test_expect_success 'trying to add an association that already exists should rai
 
 test_expect_success 'view some user information' '
 	flux account view-user user5011 > user_info.out &&
-	grep -w "username: user5011\|userid: 5011\|bank: A" user_info.out
+	grep "\"username\": \"user5011\"" user_info.out &&
+	grep "\"userid\": 5011" user_info.out &&
+	grep "\"bank\": \"A\"" user_info.out
 '
 
 test_expect_success 'view some user information with --parsable' '
 	flux account view-user --parsable user5011 > user_info_parsable.out &&
 	grep -w "user5011\|5011\|A" user_info_parsable.out
-'
-
-test_expect_success 'view some user information with --json' '
-	flux account view-user --json user5014 > user_info_json.out &&
-	grep -w "\"username\": \"user5014\"\|\"userid\": 5014\|\"bank\": \"C\"" user_info_json.out
 '
 
 test_expect_success 'edit a userid for a user' '
@@ -95,7 +92,7 @@ test_expect_success 'edit the max_active_jobs of an existing user' '
 
 test_expect_success 'trying to view a user who does not exist in the DB should raise a ValueError' '
 	test_must_fail flux account view-user user9999 > user_nonexistent.out 2>&1 &&
-	grep "User user9999 not found in association_table" user_nonexistent.out
+	grep "view-user: user user9999 not found in association_table" user_nonexistent.out
 '
 
 test_expect_success 'trying to view a user that does exist in the DB should return some information' '
