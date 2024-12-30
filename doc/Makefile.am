@@ -2,21 +2,33 @@
 
 SUBDIRS = . test
 
-MAN_FILES = $(MAN5_FILES)
+MAN_FILES = $(MAN1_FILES) $(MAN5_FILES)
 
+MAN1_FILES = $(MAN1_FILES_PRIMARY)
 MAN5_FILES = $(MAN5_FILES_PRIMARY)
+
+MAN1_FILES_PRIMARY = \
+	man1/flux-account.1 \
+	man1/flux-account-create-db.1 \
+	man1/flux-account-pop-db.1 \
+	man1/flux-account-export-db.1 \
+	man1/flux-account-view-user.1 \
+	man1/flux-account-add-user.1 \
+	man1/flux-account-delete-user.1 \
+	man1/flux-account-edit-user.1
 
 MAN5_FILES_PRIMARY = \
 	man5/flux-config-accounting.5
 
 RST_FILES  = \
+	$(MAN1_FILES_PRIMARY:.1=.rst) \
 	$(MAN5_FILES_PRIMARY:.5=.rst)
 
 if ENABLE_DOCS
-man_MANS = $(MAN5_FILES)
+man_MANS = $(MAN1_FILES) $(MAN5_FILES)
 endif
 
-SUFFIXES = .rst .5
+SUFFIXES = .rst .1 .5
 
 sphinx_man = $(sphinx_man_$(V))
 sphinx_man_ = $(sphinx_man_$(AM_DEFAULT_VERBOSITY))
@@ -42,7 +54,7 @@ $(MAN_FILES): manpages.py conf.py $(RST_FILES)
 		-m sphinx $(sphinx_verbose_flags) -b man $(srcdir) ./man \
 		$(STDERR_DEVNULL)
 	@echo "  MV        manpages"; \
-	for sec in 5; do \
+	for sec in 1 5; do \
 	  $(MKDIR_P) man$$sec && \
 	  mv -f $(abs_builddir)/man/*.$$sec man$$sec/; \
 	done
@@ -62,6 +74,7 @@ EXTRA_DIST = \
 	requirements.txt \
 	guide/accounting-guide.rst \
 	$(RST_FILES) \
+	man1/index.rst \
 	man5/index.rst
 
 CLEANFILES = \
