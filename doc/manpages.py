@@ -18,6 +18,34 @@ author = "This page is maintained by the Flux community."
 # - Manual section
 man_pages = [
     (
+        "man1/flux-account",
+        "flux-account",
+        "flux-accounting commands",
+        [author],
+        1,
+    ),
+    (
+        "man1/flux-account-create-db",
+        "flux-account-create-db",
+        "create the flux-accounting SQLite database",
+        [author],
+        1,
+    ),
+    (
+        "man1/flux-account-pop-db",
+        "flux-account-pop-db",
+        "populate a flux-accounting database with .csv files",
+        [author],
+        1,
+    ),
+    (
+        "man1/flux-account-export-db",
+        "flux-account-export-db",
+        "export flux-accounting database information into .csv files",
+        [author],
+        1,
+    ),
+    (
         "man5/flux-config-accounting",
         "flux-config-accounting",
         "flux-accounting priority plugin configuration file",
