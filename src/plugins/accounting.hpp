@@ -46,6 +46,8 @@ public:
     std::string def_project;           // default project
     int max_nodes;                     // max num nodes across all running jobs
     int max_cores;                     // max num cores across all running jobs
+    int cur_nodes;                     // current number of used nodes
+    int cur_cores;                     // current number of used cores
 
     // methods
     json_t* to_json () const;    // convert object to JSON string
