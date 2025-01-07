@@ -274,6 +274,7 @@ def add_user(
     max_running_jobs=5,
     max_active_jobs=7,
     max_nodes=2147483647,
+    max_cores=2147483647,
     queues="",
     projects="*",
 ):
@@ -330,8 +331,9 @@ def add_user(
             INSERT INTO association_table (creation_time, mod_time, username,
                                            userid, bank, default_bank, shares,
                                            max_running_jobs, max_active_jobs,
-                                           max_nodes, queues, projects, default_project)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                           max_nodes, max_cores, queues, projects,
+                                           default_project)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 int(time.time()),
@@ -344,6 +346,7 @@ def add_user(
                 max_running_jobs,
                 max_active_jobs,
                 max_nodes,
+                max_cores,
                 queues,
                 projects,
                 default_project,
@@ -417,6 +420,8 @@ def edit_user(conn, username, bank=None, **kwargs):
             can have at any given time.
         max_nodes: The man number of nodes an association can have across all of their
             running jobs.
+        max_cores: The max number of cores an association can have across all of their
+            running jobs.
         queues: A comma-separated list of all of the queues an association can run jobs
             under.
         projects: A comma-separated list of all of the projects an association can run jobs
@@ -437,6 +442,7 @@ def edit_user(conn, username, bank=None, **kwargs):
         "max_running_jobs",
         "max_active_jobs",
         "max_nodes",
+        "max_cores",
         "queues",
         "projects",
         "default_project",

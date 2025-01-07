@@ -54,7 +54,7 @@ def add_view_user_arg(subparsers):
         metavar=(
             "CREATION_TIME,MOD_TIME,ACTIVE,USERNAME,USERID,BANK,DEFAULT_BANK,"
             "SHARES,JOB_USAGE,FAIRSHARE,MAX_RUNNING_JOBS,MAX_ACTIVE_JOBS,MAX_NODES,"
-            "QUEUES,PROJECTS,DEFAULT_PROJECT"
+            "MAX_CORES,QUEUES,PROJECTS,DEFAULT_PROJECT"
         ),
     )
 
@@ -107,6 +107,12 @@ def add_add_user_arg(subparsers):
         help="max number of nodes a user can have across all of their running jobs",
         default=2147483647,
         metavar="MAX_NODES",
+    )
+    subparser_add_user.add_argument(
+        "--max-cores",
+        help="max number of cores a user can have across all of their running jobs",
+        default=2147483647,
+        metavar="MAX_CORES",
     )
     subparser_add_user.add_argument(
         "--queues",
@@ -190,6 +196,12 @@ def add_edit_user_arg(subparsers):
         help="max number of nodes a user can have across all of their running jobs",
         default=None,
         metavar="MAX_NODES",
+    )
+    subparser_edit_user.add_argument(
+        "--max-cores",
+        help="max number of cores a user can have across all of their running jobs",
+        default=None,
+        metavar="MAX_CORES",
     )
     subparser_edit_user.add_argument(
         "--queues",
