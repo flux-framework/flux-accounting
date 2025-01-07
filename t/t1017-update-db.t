@@ -83,6 +83,7 @@ test_expect_success 'get all the columns of the updated table in the DB and chec
 	max_running_jobs
 	max_active_jobs
 	max_nodes
+	max_cores
 	queues
 	projects
 	default_project
