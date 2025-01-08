@@ -179,6 +179,7 @@ class AccountingService:
                 max_running_jobs=msg.payload["max_running_jobs"],
                 max_active_jobs=msg.payload["max_active_jobs"],
                 max_nodes=msg.payload["max_nodes"],
+                max_cores=msg.payload["max_cores"],
                 queues=msg.payload["queues"],
                 projects=msg.payload["projects"],
             )
@@ -223,6 +224,7 @@ class AccountingService:
                 max_running_jobs=msg.payload["max_running_jobs"],
                 max_active_jobs=msg.payload["max_active_jobs"],
                 max_nodes=msg.payload["max_nodes"],
+                max_cores=msg.payload["max_cores"],
                 queues=msg.payload["queues"],
                 projects=msg.payload["projects"],
                 default_project=msg.payload["default_project"],

@@ -105,6 +105,7 @@ def create_db(
                 max_running_jobs int(11)     DEFAULT 5              NOT NULL    ON CONFLICT REPLACE DEFAULT 5,
                 max_active_jobs  int(11)     DEFAULT 7              NOT NULL    ON CONFLICT REPLACE DEFAULT 7,
                 max_nodes        int(11)     DEFAULT 2147483647     NOT NULL    ON CONFLICT REPLACE DEFAULT 2147483647,
+                max_cores        int(11)     DEFAULT 2147483647     NOT NULL    ON CONFLICT REPLACE DEFAULT 2147483647,
                 queues           tinytext    DEFAULT ''             NOT NULL    ON CONFLICT REPLACE DEFAULT '',
                 projects         tinytext    DEFAULT '*'            NOT NULL    ON CONFLICT REPLACE DEFAULT '*',
                 default_project  tinytext    DEFAULT '*'            NOT NULL    ON CONFLICT REPLACE DEFAULT '*',
