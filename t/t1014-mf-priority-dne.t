@@ -63,6 +63,8 @@ test_expect_success 'send the user/bank information to the plugin without reprio
 				"fairshare": 0.45321,
 				"max_running_jobs": 10,
 				"max_active_jobs": 12,
+				"max_nodes": 2147483647,
+				"max_cores": 2147483647,
 				"queues": "standby,special",
 				"active": 1,
 				"projects": "*",

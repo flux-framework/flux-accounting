@@ -42,7 +42,9 @@ test_expect_success 'create fake_payload.py' '
 				"queues": "",
 				"active": 1,
 				"projects": "*",
-				"def_project": "*"
+				"def_project": "*",
+				"max_nodes": 2147483647,
+				"max_cores": 2147483647
 			},
 			{
 				"userid": userid,
@@ -54,7 +56,9 @@ test_expect_success 'create fake_payload.py' '
 				"queues": "",
 				"active": 1,
 				"projects": "*",
-				"def_project": "*"
+				"def_project": "*",
+				"max_nodes": 2147483647,
+				"max_cores": 2147483647
 			}
 		]
 	}
