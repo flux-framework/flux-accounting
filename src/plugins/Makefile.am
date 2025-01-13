@@ -8,6 +8,6 @@ jobtapdir = \
   $(fluxlibdir)/job-manager/plugins/
 
 jobtap_LTLIBRARIES = mf_priority.la
-mf_priority_la_SOURCES = mf_priority.cpp accounting.cpp
+mf_priority_la_SOURCES = mf_priority.cpp accounting.cpp jj.cpp
 mf_priority_la_CPPFLAGS = -I$(top_srcdir)/src/plugins
 mf_priority_la_LDFLAGS = $(fluxplugin_ldflags) -module

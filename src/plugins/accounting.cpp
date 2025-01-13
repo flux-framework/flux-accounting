@@ -86,7 +86,8 @@ json_t* Association::to_json () const
 
     // 'o' steals the reference for both held_job_ids and user_queues
     json_t *u = json_pack ("{s:s, s:f, s:i, s:i, s:i, s:i, s:o,"
-                           " s:o, s:i, s:o, s:s, s:i, s:i, s:i}",
+                           " s:o, s:i, s:o, s:s, s:i, s:i, s:i,"
+                           " s:i, s:i}",
                            "bank_name", bank_name.c_str (),
                            "fairshare", fairshare,
                            "max_run_jobs", max_run_jobs,
@@ -100,6 +101,8 @@ json_t* Association::to_json () const
                            "def_project", def_project.c_str (),
                            "max_nodes", max_nodes,
                            "max_cores", max_cores,
+                           "cur_nodes", cur_nodes,
+                           "cur_cores", cur_cores,
                            "active", active);
 
     if (!u)
