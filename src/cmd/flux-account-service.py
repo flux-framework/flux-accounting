@@ -150,6 +150,7 @@ class AccountingService:
                 msg.payload["username"],
                 msg.payload["parsable"],
                 msg.payload["fields"].split(",") if msg.payload.get("fields") else None,
+                msg.payload["list_banks"],
             )
 
             payload = {"view_user": val}
