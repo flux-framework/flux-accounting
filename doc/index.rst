@@ -13,4 +13,5 @@ Table of Contents
    guide/support
    guide/accounting-guide
    components/database-administration
+   components/fair-share
    index_man
