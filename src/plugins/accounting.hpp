@@ -29,6 +29,8 @@ extern "C" {
 #include <algorithm>
 #include <unordered_map>
 
+#include "job.hpp"
+
 // all attributes are per-user/bank
 class Association {
 public:

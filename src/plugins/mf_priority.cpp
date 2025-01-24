@@ -34,6 +34,8 @@ extern "C" {
 #include "accounting.hpp"
 // custom job resource counting file
 #include "jj.hpp"
+// custom Job class file
+#include "job.hpp"
 
 // the plugin does not know about the association who submitted a job and will
 // assign default values to the association until it receives information from

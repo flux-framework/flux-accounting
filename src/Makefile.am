@@ -19,6 +19,7 @@ noinst_HEADERS = \
 	fairness/writer/data_writer_db.hpp \
 	fairness/writer/data_writer_stdout.hpp \
 	plugins/accounting.hpp \
+	plugins/job.hpp \
 	plugins/jj.hpp
 
 fairness_libweighted_tree_la_SOURCES = \
