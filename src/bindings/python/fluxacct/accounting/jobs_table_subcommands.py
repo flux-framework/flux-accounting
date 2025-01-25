@@ -15,6 +15,7 @@ import json
 
 from flux.resource import ResourceSet
 from flux.util import parse_datetime
+from flux.job.JobID import JobID
 
 
 def get_username(userid):
@@ -285,6 +286,8 @@ def get_jobs(conn, **kwargs):
         where_clauses.append("t_inactive < ?")
         params_list.append(parse_timestamp(params["before_end_time"]))
     if "jobid" in params:
+        # convert jobID passed-in to decimal format
+        params["jobid"] = JobID(params["jobid"]).dec
         where_clauses.append("id = ?")
         params_list.append(params["jobid"])
     if "project" in params:
