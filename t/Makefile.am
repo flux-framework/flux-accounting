@@ -46,6 +46,7 @@ TESTSCRIPTS = \
 	t1044-mf-priority-resource-limits.t \
 	t1045-issue478.t \
 	t1046-issue565.t \
+	t1047-issue564.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
