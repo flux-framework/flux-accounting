@@ -14,6 +14,7 @@ import csv
 import json
 
 from flux.resource import ResourceSet
+from flux.util import parse_datetime
 
 
 def get_username(userid):
@@ -28,6 +29,24 @@ def get_uid(username):
         return pwd.getpwnam(username).pw_uid
     except KeyError:
         return str(username)
+
+
+def parse_timestamp(timestamp):
+    """
+    Parse an input timestamp for after-start-time or before-end-time, which
+    could be in multiple formats. Try to first parse it as a human-readable
+    format (e.g, "2025-01-27 12:00:00"), or just return as a
+    seconds-since-epoch timestamp if the parsing fails.
+
+    Returns:
+        a seconds-since-epoch timestamp
+    """
+    try:
+        # try to parse as a human-readable timestamp
+        return parse_datetime(str(timestamp)).timestamp()
+    except ValueError:
+        # just return as a seconds-since-epoch timestamp
+        return timestamp
 
 
 class JobRecord:
@@ -261,10 +280,10 @@ def get_jobs(conn, **kwargs):
         params_list.append(params["user"])
     if "after_start_time" in params:
         where_clauses.append("t_run > ?")
-        params_list.append(params["after_start_time"])
+        params_list.append(parse_timestamp(params["after_start_time"]))
     if "before_end_time" in params:
         where_clauses.append("t_inactive < ?")
-        params_list.append(params["before_end_time"])
+        params_list.append(parse_timestamp(params["before_end_time"]))
     if "jobid" in params:
         where_clauses.append("id = ?")
         params_list.append(params["jobid"])
