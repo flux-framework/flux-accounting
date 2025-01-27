@@ -249,13 +249,21 @@ def add_view_job_records_arg(subparsers):
     subparser_view_job_records.add_argument(
         "-a",
         "--after-start-time",
-        help="start time",
+        help=(
+            "start time; accepts multiple formats: "
+            "seconds since epoch timestamp or human readable timestamp "
+            "(e.g. '01/01/2025', '2025-01-01 08:00:00', 'Jan 1, 2025 8am')"
+        ),
         metavar="START TIME",
     )
     subparser_view_job_records.add_argument(
         "-b",
         "--before-end-time",
-        help="end time",
+        help=(
+            "end time; accepts multiple formats: "
+            "seconds since epoch timestamp or human readable timestamp "
+            "(e.g. '01/01/2025', '2025-01-01 08:00:00', 'Jan 1, 2025 8am')"
+        ),
         metavar="END TIME",
     )
     subparser_view_job_records.add_argument(
