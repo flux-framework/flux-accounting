@@ -104,6 +104,18 @@ test_expect_success 'edit a field in a user account' '
 	flux account edit-user user5011 --shares 50
 '
 
+test_expect_success 'edit the fairshare value for a user' '
+	flux account edit-user user5011 --fairshare 0.99 &&
+	flux account view-user user5011 > user.out &&
+	grep "\"fairshare\": 0.99" user.out
+'
+
+test_expect_success 'reset the fairshare value for a user' '
+	flux account edit-user user5011 --fairshare=-1 &&
+	flux account view-user user5011 > user.out &&
+	grep "\"fairshare\": 0.5" user.out
+'
+
 test_expect_success 'remove a user account' '
 	flux account delete-user user5012 A &&
 	flux account view-user user5012 > deleted_user.out &&
