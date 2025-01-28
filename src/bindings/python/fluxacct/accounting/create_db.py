@@ -101,7 +101,7 @@ def create_db(
                 default_bank     tinytext                           NOT NULL,
                 shares           int(11)     DEFAULT 1              NOT NULL    ON CONFLICT REPLACE DEFAULT 1,
                 job_usage        real        DEFAULT 0.0            NOT NULL,
-                fairshare        real        DEFAULT 0.5            NOT NULL,
+                fairshare        real        DEFAULT 0.5            NOT NULL    ON CONFLICT REPLACE DEFAULT 0.5,
                 max_running_jobs int(11)     DEFAULT 5              NOT NULL    ON CONFLICT REPLACE DEFAULT 5,
                 max_active_jobs  int(11)     DEFAULT 7              NOT NULL    ON CONFLICT REPLACE DEFAULT 7,
                 max_nodes        int(11)     DEFAULT 2147483647     NOT NULL    ON CONFLICT REPLACE DEFAULT 2147483647,
