@@ -210,6 +210,7 @@ class AccountingService:
                 bank=msg.payload["bank"],
                 uid=msg.payload["userid"],
                 shares=msg.payload["shares"],
+                fairshare=msg.payload["fairshare"],
                 max_running_jobs=msg.payload["max_running_jobs"],
                 max_active_jobs=msg.payload["max_active_jobs"],
                 max_nodes=msg.payload["max_nodes"],

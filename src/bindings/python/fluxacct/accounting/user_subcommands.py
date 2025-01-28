@@ -338,6 +338,7 @@ def add_user(
     bank,
     uid=65534,
     shares=1,
+    fairshare=0.5,
     max_running_jobs=5,
     max_active_jobs=7,
     max_nodes=2147483647,
@@ -397,10 +398,10 @@ def add_user(
             """
             INSERT INTO association_table (creation_time, mod_time, username,
                                            userid, bank, default_bank, shares,
-                                           max_running_jobs, max_active_jobs,
+                                           fairshare, max_running_jobs, max_active_jobs,
                                            max_nodes, max_cores, queues, projects,
                                            default_project)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 int(time.time()),
@@ -410,6 +411,7 @@ def add_user(
                 bank,
                 default_bank,
                 shares,
+                fairshare,
                 max_running_jobs,
                 max_active_jobs,
                 max_nodes,
