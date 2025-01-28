@@ -416,6 +416,8 @@ def edit_user(conn, username, bank=None, **kwargs):
         default_bank: The user's default bank.
         shares: The amount of available resources their organization considers the user
             should be entitled to use relative to other competing users.
+        fairshare: The ratio between the amount of resources an association is
+            allocated versus the amount actually consumed.
         max_running_jobs: The max number of running jobs the association can have at any
             given time.
         max_active_jobs: The max number of both pending and running jobs the association
@@ -441,6 +443,7 @@ def edit_user(conn, username, bank=None, **kwargs):
         "userid",
         "default_bank",
         "shares",
+        "fairshare",
         "max_running_jobs",
         "max_active_jobs",
         "max_nodes",
