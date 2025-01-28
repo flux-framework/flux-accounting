@@ -544,18 +544,15 @@ static int priority_cb (flux_plugin_t *p,
                                                     FLUX_JOBTAP_CURRENT_JOB,
                                                     "mf_priority:bank_info"));
 
-    if (b == NULL) {
-        flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "mf_priority",
-                                     0, "internal error: bank info is missing");
-
-        return -1;
-    }
-
-    if (b->max_run_jobs == BANK_INFO_MISSING) {
-        // the association that this job is submitted under could not be found
-        // in the plugin's internal map when the job was first submitted and is
-        // held in PRIORITY by assigning special temporary values to the job;
-        // try to look up the association for this job again
+    if (b == nullptr || b->max_run_jobs == BANK_INFO_MISSING) {
+        /*
+         * The flux-accounting information associated with this job could not
+         * be found by the time this job got to job.state.priority. This could
+         * be due to Flux being restarted and pending jobs having their aux
+         * items reset or the plugin being reloaded and jobs being "re-seen"
+         * (see Flux RFC 21). Attempt to look up the association again and
+         * attach its information to the job with aux_set.
+         */
         Association *assoc = get_association (userid,
                                               bank,
                                               users,
