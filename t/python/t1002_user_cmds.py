@@ -282,6 +282,40 @@ class TestAccountingCLI(unittest.TestCase):
         fairshare = cur.fetchall()
         self.assertEqual(fairshare[0][0], 0.95)
 
+    # actually remove a user from the association_table
+    def test_17_delete_user_force(self):
+        cur = acct_conn.cursor()
+        select_stmt = "SELECT * FROM association_table WHERE username='test_user5'"
+        cur.execute(select_stmt)
+        result = cur.fetchall()
+        self.assertEqual(len(result), 1)
+
+        # pass force=True to actually remove the user row from the table
+        u.delete_user(acct_conn, username="test_user5", bank="A", force=True)
+        cur.execute(select_stmt)
+        result = cur.fetchall()
+        self.assertEqual(len(result), 0)
+
+    # actually remove a user from the association_table where their default
+    # bank needs to be updated
+    def test_18_delete_user_force_update_bank(self):
+        cur = acct_conn.cursor()
+        select_stmt = (
+            "SELECT default_bank FROM association_table WHERE username='test_user6'"
+        )
+        # add two associations
+        u.add_user(acct_conn, username="test_user6", bank="A")
+        u.add_user(acct_conn, username="test_user6", bank="B")
+        cur.execute(select_stmt)
+        default_bank = cur.fetchall()
+        self.assertEqual(default_bank[0][0], "A")
+
+        # delete one of the rows with force=True
+        u.delete_user(acct_conn, username="test_user6", bank="A", force=True)
+        cur.execute(select_stmt)
+        default_bank = cur.fetchall()
+        self.assertEqual(default_bank[0][0], "B")
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):
