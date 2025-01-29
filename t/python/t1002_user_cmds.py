@@ -266,6 +266,22 @@ class TestAccountingCLI(unittest.TestCase):
         with self.assertRaises(ValueError):
             u.add_user(acct_conn, username="test_user4", bank="A", projects="foo")
 
+    # edit a user's fair-share value
+    def test_16_edit_user_fairshare(self):
+        cur = acct_conn.cursor()
+        cur.execute(
+            "SELECT fairshare FROM association_table WHERE username='test_user5'"
+        )
+        fairshare = cur.fetchall()
+        self.assertEqual(fairshare[0][0], 0.5)
+
+        u.edit_user(acct_conn, username="test_user5", fairshare=0.95)
+        cur.execute(
+            "SELECT fairshare FROM association_table WHERE username='test_user5'"
+        )
+        fairshare = cur.fetchall()
+        self.assertEqual(fairshare[0][0], 0.95)
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):

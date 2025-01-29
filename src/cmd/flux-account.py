@@ -187,6 +187,12 @@ def add_edit_user_arg(subparsers):
         metavar="SHARES",
     )
     subparser_edit_user.add_argument(
+        "--fairshare",
+        help="fairshare",
+        default=None,
+        metavar="SHARES",
+    )
+    subparser_edit_user.add_argument(
         "--max-running-jobs",
         help="max number of jobs that can be running at the same time",
         default=None,

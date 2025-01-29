@@ -1,6 +1,6 @@
 DB_DIR = "@X_LOCALSTATEDIR@/lib/flux/"
 DB_PATH = "@X_LOCALSTATEDIR@/lib/flux/FluxAccounting.db"
-DB_SCHEMA_VERSION = 25
+DB_SCHEMA_VERSION = 26
 
 # flux-accounting DB table column names
 ASSOCIATION_TABLE = [
