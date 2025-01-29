@@ -151,7 +151,9 @@ def get_default_bank(cur, username):
     cur.execute(select_stmt, (username,))
     result = cur.fetchall()
 
-    return result[0][0]
+    if result:
+        return result[0][0]
+    return None
 
 
 def update_default_bank(conn, cur, username):
