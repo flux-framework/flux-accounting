@@ -122,6 +122,21 @@ test_expect_success 'remove a user account' '
 	grep -f ${EXPECTED_FILES}/deleted_user.expected deleted_user.out
 '
 
+test_expect_success 'remove a user with --force' '
+	flux account delete-user user5011 A --force &&
+	test_must_fail flux account view-user user5011 > user5011_nonexistent.out 2>&1 &&
+	grep "view-user: user user5011 not found in association_table" user5011_nonexistent.out
+'
+
+test_expect_success 'remove a user with --force/make sure default bank gets updated' '
+	flux account add-user --username=user5201 --bank=A &&
+	flux account add-user --username=user5201 --bank=B &&
+	flux account add-user --username=user5201 --bank=C &&
+	flux account delete-user --force user5201 A &&
+	flux account view-user user5201 > user5201.out &&
+	test $(grep -c "\"default_bank\": \"B\"" user5201.out) -eq 2 
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
