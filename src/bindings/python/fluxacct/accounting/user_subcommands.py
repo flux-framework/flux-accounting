@@ -378,13 +378,29 @@ def add_user(
         raise sqlite3.IntegrityError()
 
 
-def delete_user(conn, username, bank):
-    cur = conn.cursor()
+def delete_user(conn, username, bank, force=False):
+    """
+    Deactivate a user row in the association_table by setting its 'active' status to 0.
+    If force=True, actually remove the user row from the association_table. If the
+    association belongs to multiple banks and the row being deactivated or removed is
+    the user's default bank, update other rows to set the new default bank to one that
+    is currently active.
 
-    # set deleted flag in user row
-    update_stmt = "UPDATE association_table SET active=0 WHERE username=? AND bank=?"
+    Args:
+        conn: The SQLite Connection object
+        username: the name of the user
+        bank: the bank that the user belongs to
+        force: an option to actually remove the row from the association_table instead of
+            just setting the 'active' column to 0.
+    """
+    cur = conn.cursor()
+    sql_stmt = "UPDATE association_table SET active=0 WHERE username=? AND bank=?"
+
+    if force:
+        sql_stmt = "DELETE FROM association_table WHERE username=? AND bank=?"
+
     conn.execute(
-        update_stmt,
+        sql_stmt,
         (
             username,
             bank,

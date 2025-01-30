@@ -146,6 +146,17 @@ def add_delete_user_arg(subparsers):
         "username", help="username", metavar=("USERNAME")
     )
     subparser_delete_user.add_argument("bank", help="bank", metavar=("BANK"))
+    subparser_delete_user.add_argument(
+        "--force",
+        action="store_const",
+        const=True,
+        default=False,
+        help=(
+            "actually remove user from association_table (WARNING: removing a row from "
+            "the association_table can affect a bank and its users' fair-share value; "
+            "proceed with caution)"
+        ),
+    )
 
 
 def add_edit_user_arg(subparsers):

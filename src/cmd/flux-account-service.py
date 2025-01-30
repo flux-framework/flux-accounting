@@ -201,7 +201,12 @@ class AccountingService:
 
     def delete_user(self, handle, watcher, msg, arg):
         try:
-            val = u.delete_user(self.conn, msg.payload["username"], msg.payload["bank"])
+            val = u.delete_user(
+                self.conn,
+                msg.payload["username"],
+                msg.payload["bank"],
+                msg.payload["force"],
+            )
 
             payload = {"delete_user": val}
 
