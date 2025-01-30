@@ -153,6 +153,23 @@ class TestAccountingCLI(unittest.TestCase):
         rows = cur.fetchall()
         self.assertEqual(rows[0][0], 1)
 
+    # actually remove a bank row from the bank_table
+    def test_13_delete_bank_force(self):
+        b.delete_bank(acct_conn, bank="G", force=True)
+        cur.execute("SELECT * FROM bank_table WHERE bank='G'")
+        rows = cur.fetchall()
+        self.assertEqual(len(rows), 0)
+
+    # actually delete multiple banks from bank_table by deleting a parent bank
+    def test_14_delete_parent_bank_force(self):
+        b.delete_bank(acct_conn, bank="C", force=True)
+        cur.execute("SELECT * FROM bank_table WHERE bank='C'")
+        rows = cur.fetchall()
+        self.assertEqual(len(rows), 0)
+        cur.execute("SELECT * FROM bank_table WHERE parent_bank='C'")
+        rows = cur.fetchall()
+        self.assertEqual(len(rows), 0)
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):

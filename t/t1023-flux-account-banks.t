@@ -151,6 +151,24 @@ test_expect_success 'combining --tree with --fields does not work' '
     grep "tree option does not support custom formatting" error.out
 '
 
+test_expect_success 'delete a bank with --force; ensure users also get deleted' '
+	flux account delete-bank C --force &&
+	test_must_fail flux account view-bank C > nonexistent_bank.out 2>&1 &&
+	grep "view-bank: bank C not found in bank_table" nonexistent_bank.out &&
+	test_must_fail flux account view-user user5014 > nonexistent_user.out 2>&1 &&
+	grep "view-user: user user5014 not found in association_table" nonexistent_user.out
+'
+
+test_expect_success 'delete a bank with multiple sub-banks and users with --force' '
+	flux account delete-bank D --force &&
+	test_must_fail flux account view-bank E > bankE_noexist.out 2>&1 &&
+	grep "view-bank: bank E not found in bank_table" bankE_noexist.out &&
+	test_must_fail flux account view-bank F > bankF_noexist.out 2>&1 &&
+	grep "view-bank: bank F not found in bank_table" bankF_noexist.out &&
+	test_must_fail flux account view-user user5030 > nonexistent_user.out 2>&1 &&
+	grep "view-user: user user5030 not found in association_table" nonexistent_user.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
