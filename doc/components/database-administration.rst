@@ -80,9 +80,16 @@ If you wish to delete an association or bank from the database, you can run the
 that this will not actually remove the association's or bank's row from the
 table where their data is stored, but will instead set their ``active`` column
 to 0. To re-enable an association's ``active`` status, simply re-add them with
-``flux account add-user``.
+``flux account add-user``. To permanently remove an association or a bank, pass
+the ``--force`` option to ``delete-user``.
 
-Information for associations can be viewed in more than one format:
+.. warning::
+    Permanently deleting rows from the ``association_table`` or ``bank_table``
+    can affect the fair-share calculation for other rows in their respective
+    tables. Proceed with caution when deleting rows with ``--force``.
+
+Information for associations can be viewed in more than one format and
+customized:
 
 .. code-block:: console
 
