@@ -301,7 +301,7 @@ class AccountingService:
 
     def delete_bank(self, handle, watcher, msg, arg):
         try:
-            val = b.delete_bank(self.conn, msg.payload["bank"])
+            val = b.delete_bank(self.conn, msg.payload["bank"], msg.payload["force"])
 
             payload = {"delete_bank": val}
 

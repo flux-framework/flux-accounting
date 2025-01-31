@@ -171,11 +171,27 @@ def view_bank(conn, bank, tree=False, users=False, parsable=False, cols=None):
         raise ValueError(f"view-bank: {exc}")
 
 
-def delete_bank(conn, bank):
+def delete_bank(conn, bank, force=False):
+    """
+    Deactivate a bank row in the bank_table by setting its 'active' status to 0.
+    If force=True, actually remove the bank row from the bank_table. If the bank contains
+    multiple sub-banks and associations, either disable or actually remove those rows as
+    well.
+
+    Args:
+        conn: The SQLite Connection object
+        bank: the name of the bank
+        force: an option to actually remove the row from the bank_table instead of
+            just setting the 'active' column to 0.
+    """
     cursor = conn.cursor()
+    if force:
+        sql_stmt = "DELETE FROM bank_table WHERE bank=?"
+    else:
+        sql_stmt = "UPDATE bank_table SET active=0 WHERE bank=?"
 
     try:
-        cursor.execute("UPDATE bank_table SET active=0 WHERE bank=?", (bank,))
+        cursor.execute(sql_stmt, (bank,))
 
         # helper function to traverse the bank table and disable all of its sub banks
         def get_sub_banks(bank):
@@ -190,13 +206,13 @@ def delete_bank(conn, bank):
                     FROM association_table WHERE bank=?
                     """
                 for assoc_row in cursor.execute(select_assoc_stmt, (bank,)):
-                    u.delete_user(conn, username=assoc_row[0], bank=assoc_row[1])
+                    u.delete_user(
+                        conn, username=assoc_row[0], bank=assoc_row[1], force=force
+                    )
             # else, disable all of its sub banks and continue traversing
             else:
                 for row in result:
-                    cursor.execute(
-                        "UPDATE bank_table SET active=0 WHERE bank=?", (row[0],)
-                    )
+                    cursor.execute(sql_stmt, (row[0],))
                     get_sub_banks(row[0])
 
         get_sub_banks(bank)

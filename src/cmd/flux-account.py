@@ -387,6 +387,17 @@ def add_delete_bank_arg(subparsers):
         help="bank name",
         metavar="BANK",
     )
+    subparser_delete_bank.add_argument(
+        "--force",
+        action="store_const",
+        const=True,
+        default=False,
+        help=(
+            "actually remove bank from bank_table (WARNING: removing a row from "
+            "the bank_table can affect a bank and its users' fair-share value; "
+            "proceed with caution)"
+        ),
+    )
 
 
 def add_edit_bank_arg(subparsers):
