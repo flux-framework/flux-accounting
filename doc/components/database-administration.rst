@@ -80,53 +80,48 @@ If you wish to delete an association or bank from the database, you can run the
 that this will not actually remove the association's or bank's row from the
 table where their data is stored, but will instead set their ``active`` column
 to 0. To re-enable an association's ``active`` status, simply re-add them with
-``flux account add-user``.
+``flux account add-user``. To permanently remove an association or a bank, pass
+the ``--force`` option to ``delete-user``.
 
-Information for associations can be viewed in more than one format:
+.. warning::
+    Permanently deleting rows from the ``association_table`` or ``bank_table``
+    can affect the fair-share calculation for other rows in their respective
+    tables. Proceed with caution when deleting rows with ``--force``.
+
+Information for associations can be viewed in more than one format and
+customized:
 
 .. code-block:: console
 
  $ flux account view-user user_1
  
- creation_time: 1728922316
- mod_time: 1728922316
- active: 1
- username: user_1
- userid: 5001
- bank: bank_A
- default_bank: bank_A
- shares: 1
- job_usage: 0.0
- fairshare: 0.5
- max_running_jobs: 5
- max_active_jobs: 7
- max_nodes: 2147483647
- queues: 
- projects: *
- default_project: *
+ [
+   {
+     "creation_time": 1738269371,
+     "mod_time": 1738269371,
+       "active": 1,
+       "username": "user_1",
+       "userid": 5001,
+       "bank": "bank_A",
+       "default_bank": "bank_A",
+       "shares": 1,
+       "job_usage": 0.0,
+       "fairshare": 0.5,
+       "max_running_jobs": 5,
+       "max_active_jobs": 7,
+       "max_nodes": 2147483647,
+       "max_cores": 2147483647,
+       "queues": "",
+       "projects": "*",
+       "default_project": "*"
+   }
+ ]
 
- $ flux account view-user user_1 --json
+ $ flux account view-user user_1 --parsable --fields=username,userid,bank
 
- {
-     "username": "user_1",
-     "userid": 5001,
-     "default_bank": "bank_A",
-     "banks": [
-         {
-             "bank": "bank_A",
-             "active": 1,
-             "shares": 1,
-             "job_usage": 0.0,
-             "fairshare": 0.5,
-             "max_running_jobs": 5,
-             "max_active_jobs": 7,
-             "max_nodes": 2147483647,
-             "queues": "",
-             "projects": "*",
-             "default_project": "*"
-         }
-     ]
- }
+ username | userid | bank   | fairshare
+ ---------+--------+--------+----------
+ user_1   | 5001   | bank_A | 0.5
 
 If you are familiar with SQLite syntax, you can also launch into an interactive
 SQLite shell. From there, you can open the database file and interface with
