@@ -12,8 +12,8 @@
 import sqlite3
 
 import fluxacct.accounting
-from fluxacct.accounting import formatter as fmt
-from fluxacct.accounting import sql_util as sql
+from fluxacct.util import formatter as fmt
+from fluxacct.util import sql_util as sql
 
 
 def view_queue(conn, queue, parsable=False, format_string=""):

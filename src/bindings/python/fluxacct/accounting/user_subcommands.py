@@ -14,8 +14,8 @@ import time
 import pwd
 
 import fluxacct.accounting
-from fluxacct.accounting import formatter as fmt
-from fluxacct.accounting import sql_util as sql
+from fluxacct.util import formatter as fmt
+from fluxacct.util import sql_util as sql
 
 ###############################################################
 #                                                             #

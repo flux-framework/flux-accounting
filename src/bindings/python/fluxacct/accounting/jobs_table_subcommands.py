@@ -16,7 +16,7 @@ import json
 from flux.resource import ResourceSet
 from flux.util import parse_datetime
 from flux.job.JobID import JobID
-from fluxacct.accounting import formatter as fmt
+from fluxacct.util import formatter as fmt
 
 
 def get_username(userid):
