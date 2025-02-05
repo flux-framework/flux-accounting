@@ -18,7 +18,7 @@ import fluxacct.accounting
 from fluxacct.accounting import create_db as c
 from fluxacct.accounting import bank_subcommands as b
 from fluxacct.accounting import user_subcommands as u
-from fluxacct.accounting import formatter as fmt
+from fluxacct.util import formatter as fmt
 
 
 class TestAccountingCLI(unittest.TestCase):

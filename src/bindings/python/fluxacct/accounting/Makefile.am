@@ -7,9 +7,7 @@ acctpy_PYTHON = \
 	job_usage_calculation.py \
 	jobs_table_subcommands.py \
 	db_info_subcommands.py \
-	create_db.py \
-	formatter.py \
-	sql_util.py
+	create_db.py
 
 clean-local:
 	-rm -f *.pyc *.pyo
