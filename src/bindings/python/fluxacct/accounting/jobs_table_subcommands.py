@@ -16,6 +16,7 @@ import json
 from flux.resource import ResourceSet
 from flux.util import parse_datetime
 from flux.job.JobID import JobID
+from fluxacct.accounting import formatter as fmt
 
 
 def get_username(userid):
@@ -123,41 +124,22 @@ def write_records_to_file(job_records, output_file):
             )
 
 
-def convert_to_str(job_records):
+def convert_to_str(job_records, fmt_string=None):
     """
     Convert the results of a query to the jobs table to a readable string
     that can either be output to stdout or written to a file.
     """
-    job_record_str = []
-    job_record_str.append(
-        "{:<10} {:<10} {:<20} {:<20} {:<20} {:<20} {:<10} {:<20} {:<20}".format(
-            "UserID",
-            "Username",
-            "JobID",
-            "T_Submit",
-            "T_Run",
-            "T_Inactive",
-            "Nodes",
-            "Project",
-            "Bank",
+    # default format string
+    if not fmt_string:
+        fmt_string = (
+            "{jobid:<15} | {username:<8} | {userid:<8} | {t_submit:<15.2f} | "
+            + "{t_run:<15.2f} | {t_inactive:<15.2f} | {nnodes:<8} | {project:<8} | "
+            + "{bank:<8}"
         )
-    )
-    for record in job_records:
-        job_record_str.append(
-            "{:<10} {:<10} {:<20} {:<20} {:<20} {:<20} {:<10} {:<20} {:<20}".format(
-                record.userid,
-                record.username,
-                record.jobid,
-                record.t_submit,
-                record.t_run,
-                record.t_inactive,
-                record.nnodes,
-                record.project,
-                record.bank,
-            )
-        )
+    output = fmt.JobsFormatter(fmt_string)
+    job_record_str = output.build_table(job_records)
 
-    return "\n".join(job_record_str)
+    return job_record_str
 
 
 def convert_to_obj(rows):
@@ -307,11 +289,11 @@ def get_jobs(conn, **kwargs):
     return job_records
 
 
-def view_jobs(conn, output_file, **kwargs):
+def view_jobs(conn, output_file, fields, **kwargs):
     # look up jobs in jobs table
     job_records = convert_to_obj(get_jobs(conn, **kwargs))
     # convert query result to a readable string
-    job_records_str = convert_to_str(job_records)
+    job_records_str = convert_to_str(job_records, fields)
 
     if output_file is None:
         return job_records_str
