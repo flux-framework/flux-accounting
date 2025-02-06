@@ -29,6 +29,7 @@ class TestAccountingCLI(unittest.TestCase):
         global cur
 
         conn = sqlite3.connect("test_view_banks.db")
+        conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
     # add some banks, initialize formatter

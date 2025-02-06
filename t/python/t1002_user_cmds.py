@@ -31,6 +31,7 @@ class TestAccountingCLI(unittest.TestCase):
         global acct_conn
         try:
             acct_conn = sqlite3.connect("file:TestUserSubcommands.db?mode=rw", uri=True)
+            acct_conn.row_factory = sqlite3.Row
             cur = acct_conn.cursor()
         except sqlite3.OperationalError:
             print(f"Unable to open test database file", file=sys.stderr)

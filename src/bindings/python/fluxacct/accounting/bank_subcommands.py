@@ -207,13 +207,16 @@ def delete_bank(conn, bank, force=False):
                     """
                 for assoc_row in cursor.execute(select_assoc_stmt, (bank,)):
                     u.delete_user(
-                        conn, username=assoc_row[0], bank=assoc_row[1], force=force
+                        conn,
+                        username=assoc_row["username"],
+                        bank=assoc_row["bank"],
+                        force=force,
                     )
             # else, disable all of its sub banks and continue traversing
             else:
                 for row in result:
-                    cursor.execute(sql_stmt, (row[0],))
-                    get_sub_banks(row[0])
+                    cursor.execute(sql_stmt, (row["bank"],))
+                    get_sub_banks(row["bank"])
 
         get_sub_banks(bank)
     # if an exception occurs while recursively deleting

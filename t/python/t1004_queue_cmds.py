@@ -26,6 +26,7 @@ class TestAccountingCLI(unittest.TestCase):
         global cur
 
         acct_conn = sqlite3.connect("TestQueueSubcommands.db")
+        acct_conn.row_factory = sqlite3.Row
         cur = acct_conn.cursor()
 
     # add a valid queue to queue_table

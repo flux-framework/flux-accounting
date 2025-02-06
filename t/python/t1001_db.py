@@ -26,6 +26,7 @@ class TestDB(unittest.TestCase):
         global cur
         try:
             conn = sqlite3.connect("file:FluxAccounting.db?mode=rw", uri=True)
+            conn.row_factory = sqlite3.Row
             cur = conn.cursor()
         except sqlite3.OperationalError:
             print(f"Unable to open test database file", file=sys.stderr)

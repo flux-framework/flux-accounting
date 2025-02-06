@@ -29,6 +29,7 @@ class TestAccountingCLI(unittest.TestCase):
         global cur
 
         conn = sqlite3.connect("TestFormatter.db")
+        conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
     # initialize Formatter object with no data in Cursor object

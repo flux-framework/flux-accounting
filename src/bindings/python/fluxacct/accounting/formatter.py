@@ -246,21 +246,26 @@ class BankFormatter(AccountingFormatter):
                 if users:
                     for user in users:
                         hierarchy += (
-                            f"{indent} {bank}|{user[0]}|{user[1]}|{user[2]}|{user[3]}\n"
+                            f"{indent} {bank}|{user['username']}|{user['shares']}|"
+                            f"{user['job_usage']}|{user['fairshare']}\n"
                         )
+
             else:
                 # continue traversing the hierarchy
                 for sub_bank in sub_banks:
-                    hierarchy += f"{indent} {str(sub_bank[0])}||{str(sub_bank[1])}|{str(sub_bank[2])}\n"
+                    hierarchy += (
+                        f"{indent} {str(sub_bank['bank'])}||{str(sub_bank['shares'])}|"
+                        f"{str(sub_bank['job_usage'])}\n"
+                    )
                     hierarchy = construct_parsable_hierarchy(
-                        cur, sub_bank[0], hierarchy, indent + " "
+                        cur, sub_bank["bank"], hierarchy, indent + " "
                     )
 
             return hierarchy
 
         # construct a hierarchy string starting with the bank passed in
         hierarchy = "Bank|Username|RawShares|RawUsage|Fairshare\n"
-        hierarchy += f"{self.rows[0][1]}||{str(self.rows[0][4])}|{str(round(self.rows[0][5], 2))}\n"
+        hierarchy += f"{self.rows[0]['bank']}||{str(self.rows[0]['shares'])}|{str(round(self.rows[0]['job_usage'], 2))}\n"
         hierarchy = construct_parsable_hierarchy(self.cursor, bank, hierarchy, "")
         return hierarchy
 
@@ -321,7 +326,7 @@ class AssociationFormatter(AccountingFormatter):
         result = self.cursor.fetchall()
         banks = ""
         for bank in result:
-            banks += f"{str(bank[0])}\n"
+            banks += f"{str(bank['bank'])}\n"
 
         return banks
 

@@ -28,6 +28,7 @@ class TestAccountingCLI(unittest.TestCase):
         global cur
 
         acct_conn = sqlite3.connect("TestProjectSubcommands.db")
+        acct_conn.row_factory = sqlite3.Row
         cur = acct_conn.cursor()
 
     # add a valid project to project_table
