@@ -39,6 +39,7 @@ def establish_sqlite_connection(path):
         conn = sqlite3.connect(db_uri, uri=True)
         # set foreign keys constraint
         conn.execute("PRAGMA foreign_keys = 1")
+        conn.row_factory = sqlite3.Row
     except sqlite3.OperationalError as exc:
         print(f"Unable to open database file: {db_uri}", file=sys.stderr)
         print(f"Exception: {exc}")
