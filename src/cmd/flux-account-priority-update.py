@@ -67,6 +67,7 @@ def est_sqlite_conn(path):
 
 def bulk_update(path):
     conn = est_sqlite_conn(path)
+    conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
     data = {}
@@ -83,18 +84,18 @@ def bulk_update(path):
     ):
         # create a JSON payload with the results of the query
         single_user_data = {
-            "userid": int(row[0]),
-            "bank": str(row[1]),
-            "def_bank": str(row[2]),
-            "fairshare": float(row[3]),
-            "max_running_jobs": int(row[4]),
-            "max_active_jobs": int(row[5]),
-            "queues": str(row[6]),
-            "active": int(row[7]),
-            "projects": str(row[8]),
-            "def_project": str(row[9]),
-            "max_nodes": int(row[10]),
-            "max_cores": int(row[11]),
+            "userid": int(row["userid"]),
+            "bank": str(row["bank"]),
+            "def_bank": str(row["default_bank"]),
+            "fairshare": float(row["fairshare"]),
+            "max_running_jobs": int(row["max_running_jobs"]),
+            "max_active_jobs": int(row["max_active_jobs"]),
+            "queues": str(row["queues"]),
+            "active": int(row["active"]),
+            "projects": str(row["projects"]),
+            "def_project": str(row["default_project"]),
+            "max_nodes": int(row["max_nodes"]),
+            "max_cores": int(row["max_cores"]),
         }
         bulk_user_data.append(single_user_data)
 
@@ -106,11 +107,11 @@ def bulk_update(path):
     for row in cur.execute("SELECT * FROM queue_table"):
         # create a JSON payload with the results of the query
         single_q_data = {
-            "queue": str(row[0]),
-            "min_nodes_per_job": int(row[1]),
-            "max_nodes_per_job": int(row[2]),
-            "max_time_per_job": int(row[3]),
-            "priority": int(row[4]),
+            "queue": str(row["queue"]),
+            "min_nodes_per_job": int(row["min_nodes_per_job"]),
+            "max_nodes_per_job": int(row["max_nodes_per_job"]),
+            "max_time_per_job": int(row["max_time_per_job"]),
+            "priority": int(row["priority"]),
         }
         bulk_q_data.append(single_q_data)
 
@@ -122,7 +123,7 @@ def bulk_update(path):
     for row in cur.execute("SELECT project FROM project_table"):
         # create a JSON payload with the results of the query
         single_project = {
-            "project": str(row[0]),
+            "project": str(row["project"]),
         }
         bulk_proj_data.append(single_project)
 
