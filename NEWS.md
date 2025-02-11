@@ -1,3 +1,22 @@
+flux-accounting version 0.42.0 - 2025-02-11
+-------------------------------------------
+
+#### Fixes
+
+* python: use column names when accessing results of a query instead of row
+indices (#579)
+
+* `update-fshare`: change job usage variable from 32-bit `int` to `double`
+(#581)
+
+#### Features
+
+* doc: add man(1) page support, entries for DB administration subcommands
+(#538)
+
+* `formatter`: add new `JobsFormatter` class, restructure view-job-records to
+use new class (#563)
+
 flux-accounting version 0.41.0 - 2025-02-04
 -------------------------------------------
 
