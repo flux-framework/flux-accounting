@@ -16,7 +16,7 @@ jobs:
     - uses: flux-framework/pr-validator@master
 
   spelling:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - name: Check Spelling
@@ -24,7 +24,7 @@ jobs:
 
   python-format:
     name: python format
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
       with:
@@ -33,7 +33,7 @@ jobs:
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: 3.7
+        python-version: 3.9
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -46,11 +46,11 @@ jobs:
 
   python-lint:
     name: python lint
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/setup-python@v4
       with:
-        python-version: 3.6
+        python-version: 3.9
     - uses: actions/checkout@v3
       with:
         ref: ${{ github.event.pull_request.head.sha }}
