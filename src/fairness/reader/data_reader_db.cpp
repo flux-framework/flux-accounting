@@ -230,7 +230,7 @@ std::shared_ptr<weighted_tree_node_t> data_reader_db_t::get_sub_banks (
 
     // we've reached a bank with no sub banks, so add associations to the tree
     if (rc != SQLITE_ROW) {
-        int bank_usg = 0;
+        double bank_usg = 0.0;
 
         rc = sqlite3_bind_text (c_assoc, 1, bank_name.c_str (), -1, NULL);
         if (rc != SQLITE_OK) {
@@ -262,7 +262,7 @@ std::shared_ptr<weighted_tree_node_t> data_reader_db_t::get_sub_banks (
                         return nullptr;
                     }
 
-                    bank_usg += std::stoi (usage);
+                    bank_usg += std::stod (usage);
                 }
                 catch (const std::invalid_argument &ia) {
                     m_err_msg += "Invalid argument: "
