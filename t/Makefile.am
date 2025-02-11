@@ -48,6 +48,7 @@ TESTSCRIPTS = \
 	t1046-issue565.t \
 	t1047-issue564.t \
 	t1048-issue575.t \
+	t1049-issue580.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
