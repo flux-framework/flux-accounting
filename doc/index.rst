@@ -14,4 +14,5 @@ Table of Contents
    guide/accounting-guide
    components/database-administration
    components/fair-share
+   components/job-usage-calculation
    index_man
