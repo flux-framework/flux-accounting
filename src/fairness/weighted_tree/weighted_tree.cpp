@@ -44,15 +44,16 @@ bool weighted_tree_node_t::is_equal (double a, double b) const
 }
 
 void weighted_tree_node_t::calc_set_weight (uint64_t sibling_shares_sum,
-                                            uint64_t sibling_usage_sum)
+                                            double sibling_usage_sum)
 {
     double s_weight, u_weight;
+    const double EPSILON = 1e-9;
 
     if (get_shares () == 0) {
         // if shares are not non-zero, sibling_shares_sum is guaranteed
         // to be non-zero
         m_weight = 0.0f;
-    } else if (get_usage () == 0) {
+    } else if (std::abs (get_usage ()) < EPSILON) {
         // if usage is zero, we must give the highest weight
         // one higher than 1.0/(1.0/MAX_UINT64)
         m_weight = static_cast<double> (std::numeric_limits<uint64_t>::max ());
@@ -60,8 +61,7 @@ void weighted_tree_node_t::calc_set_weight (uint64_t sibling_shares_sum,
     } else {
         s_weight = static_cast<double> (get_shares ())
                        / static_cast<double> (sibling_shares_sum);
-        u_weight = static_cast<double> (get_usage ())
-                       / static_cast<double> (sibling_usage_sum);
+        u_weight = get_usage () / sibling_usage_sum;
 
         // The higher the given shares relative to the shares
         // of its siblings and
@@ -81,7 +81,7 @@ void weighted_tree_node_t::calc_set_children_weight ()
                      [] (const std::pair<uint64_t, uint64_t> &a,
                          const std::shared_ptr<weighted_tree_node_t> &b) {
                          uint64_t s_sum = a.first + b->get_shares ();
-                         uint64_t u_sum = a.second + b->get_usage ();
+                         double u_sum = a.second + b->get_usage ();
                          return std::make_pair (s_sum, u_sum);
                      });
     // total.first: sibling_shares_sum
@@ -115,7 +115,7 @@ void weighted_tree_node_t::propagate_subtree_leaf_size ()
 
 weighted_tree_node_t::weighted_tree_node_t (
     std::shared_ptr<weighted_tree_node_t> parent, const std::string &name,
-    bool is_user, uint64_t shares, uint64_t usage)
+    bool is_user, uint64_t shares, double usage)
     : account_t (name, is_user, shares, usage)
 {
     m_parent = parent;

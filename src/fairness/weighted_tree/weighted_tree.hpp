@@ -25,7 +25,7 @@ class weighted_tree_node_t : public account_t {
 public:
     weighted_tree_node_t (std::shared_ptr<weighted_tree_node_t> parent,
                           const std::string &name, bool is_user,
-                          uint64_t shares, uint64_t usage);
+                          uint64_t shares, double usage);
 
     uint64_t get_rank () const;
     uint64_t get_subtree_size () const;
@@ -55,7 +55,7 @@ private:
 
     bool is_equal (double a, double b) const;
     void calc_set_weight (uint64_t sibling_shares_sum,
-                          uint64_t sibling_usage_sum);
+                          double sibling_usage_sum);
     void calc_set_children_weight ();
     void propagate_subtree_size ();
     void propagate_subtree_leaf_size ();

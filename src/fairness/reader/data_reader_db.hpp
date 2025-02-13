@@ -39,8 +39,8 @@ private:
                                     sqlite3_stmt *c_assoc);
 
     int add_assoc (const std::string &username,
-                   const std::string &shrs,
-                   const std::string &usg,
+                   uint64_t shrs,
+                   double usg,
                    double fshare,
                    std::shared_ptr<weighted_tree_node_t> &node);
 
