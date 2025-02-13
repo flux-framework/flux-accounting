@@ -15,4 +15,5 @@ Table of Contents
    components/database-administration
    components/fair-share
    components/job-usage-calculation
+   components/projects
    index_man
