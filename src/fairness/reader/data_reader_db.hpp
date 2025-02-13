@@ -40,7 +40,7 @@ private:
 
     int add_assoc (const std::string &username,
                    uint64_t shrs,
-                   const std::string &usg,
+                   double usg,
                    double fshare,
                    std::shared_ptr<weighted_tree_node_t> &node);
 

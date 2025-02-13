@@ -19,7 +19,7 @@ extern "C" {
 using namespace Flux::accounting;
 
 account_t::account_t (const std::string &name,
-                      bool is_user,  uint64_t shares, uint64_t usage)
+                      bool is_user,  uint64_t shares, double usage)
 {
     m_name = name;
     m_is_user = is_user;
@@ -37,7 +37,7 @@ void account_t::set_shares (uint64_t shares)
     m_shares = shares;
 }
 
-void account_t::set_usage (uint64_t usage)
+void account_t::set_usage (double usage)
 {
     m_usage = usage;
 }
@@ -62,7 +62,7 @@ uint64_t account_t::get_shares () const
     return m_shares;
 }
 
-uint64_t account_t::get_usage () const
+double account_t::get_usage () const
 {
     return m_usage;
 }
