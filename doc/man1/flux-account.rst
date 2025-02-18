@@ -51,14 +51,30 @@ USER ADMINISTRATION
 view-user
 ^^^^^^^^^
 
+View information about an association in the flux-accounting database.
+
+See :man1:`flux-account-view-user` for more details.
+
 add-user
 ^^^^^^^^
+
+Add an association to the flux-accounting database.
+
+See :man1:`flux-account-add-user` for more details.
 
 delete-user
 ^^^^^^^^^^^
 
+Deactivate an association in the flux-accounting database.
+
+See :man1:`flux-account-delete-user` for more details.
+
 edit-user
 ^^^^^^^^^
+
+Modify an attribute for an association in the flux-accounting database.
+
+See :man1:`flux-account-edit-user` for more details.
 
 BANK ADMINISTRATION
 ===================
