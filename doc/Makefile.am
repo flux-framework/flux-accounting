@@ -20,7 +20,12 @@ MAN1_FILES_PRIMARY = \
 	man1/flux-account-add-bank.1 \
 	man1/flux-account-delete-bank.1 \
 	man1/flux-account-edit-bank.1 \
-	man1/flux-account-list-banks.1
+	man1/flux-account-list-banks.1 \
+	man1/flux-account-view-queue.1 \
+	man1/flux-account-add-queue.1 \
+	man1/flux-account-delete-queue.1 \
+	man1/flux-account-edit-queue.1 \
+	man1/flux-account-list-queues.1
 
 MAN5_FILES_PRIMARY = \
 	man5/flux-config-accounting.5
