@@ -521,6 +521,13 @@ def add_view_queue_arg(subparsers):
 
     subparser_view_queue.set_defaults(func="view_queue")
     subparser_view_queue.add_argument("queue", help="queue name", metavar="QUEUE")
+    subparser_view_queue.add_argument(
+        "--parsable",
+        action="store_const",
+        const=True,
+        help="print all information about a queue on one line",
+        metavar="PARSABLE",
+    )
 
 
 def add_edit_queue_arg(subparsers):

@@ -11,28 +11,20 @@
 ###############################################################
 import sqlite3
 
+from fluxacct.accounting import formatter as fmt
 
-def view_queue(conn, queue):
-    cur = conn.cursor()
+
+def view_queue(conn, queue, parsable=False):
     try:
+        cur = conn.cursor()
         # get the information pertaining to a queue in the DB
         cur.execute("SELECT * FROM queue_table where queue=?", (queue,))
-        result = cur.fetchall()
-        headers = [description[0] for description in cur.description]
-        queue_str = ""
-        if not result:
-            raise ValueError(f"queue {queue} not found in queue_table")
 
-        # print column names of queue_table
-        for header in headers:
-            queue_str += header.ljust(18)
-        queue_str += "\n"
-        for row in result:
-            for col in list(row):
-                queue_str += str(col).ljust(18)
-            queue_str += "\n"
+        formatter = fmt.QueueFormatter(cur, queue)
 
-        return queue_str
+        if parsable:
+            return formatter.as_table()
+        return formatter.as_json()
     except sqlite3.OperationalError as exc:
         raise sqlite3.OperationalError(f"an sqlite3.OperationalError occurred: {exc}")
 
