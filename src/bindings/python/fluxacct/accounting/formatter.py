@@ -400,3 +400,22 @@ class JobsFormatter(flux.util.OutputFormat):
                 )
 
         return output_str
+
+
+class QueueFormatter(AccountingFormatter):
+    """
+    Subclass of AccountingFormatter that includes a custom error message in the
+    case where a queue does not exist in the queue_table.
+    """
+
+    def __init__(self, cursor, queue_name):
+        """
+        Initialize a QueueFormatter object with a SQLite cursor.
+        Args:
+            cursor: a SQLite Cursor object that has the results of a SQL query.
+            queue_name: the name of the queue.
+        """
+        self.queue_name = queue_name
+        super().__init__(
+            cursor, error_msg=f"queue {self.queue_name} not found in queue_table"
+        )
