@@ -43,6 +43,17 @@ test_expect_success 'add some queues to the DB' '
 	flux account add-queue special --priority=99999
 '
 
+test_expect_success 'view some queue information' '
+	flux account view-queue standby > standby.out &&
+	grep "\"queue\": \"standby\"" standby.out &&
+	grep "\"priority\": 0" standby.out
+'
+
+test_expect_success 'view some queue information with --parsable' '
+	flux account view-queue standby --parsable > standby_parsable.out &&
+	grep "standby | 1                 | 1                 | 60               | 0" standby_parsable.out
+'
+
 test_expect_success 'add a queue to an existing user account' '
 	flux account edit-user user5011 --queue="expedite"
 '
