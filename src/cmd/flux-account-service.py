@@ -427,7 +427,9 @@ class AccountingService:
 
     def view_queue(self, handle, watcher, msg, arg):
         try:
-            val = qu.view_queue(self.conn, msg.payload["queue"])
+            val = qu.view_queue(
+                self.conn, msg.payload["queue"], msg.payload["parsable"]
+            )
 
             payload = {"view_queue": val}
 
