@@ -716,6 +716,28 @@ def add_pop_db_arg(subparsers):
     )
 
 
+def add_list_queues_arg(subparsers):
+    subparser_list_queues = subparsers.add_parser(
+        "list-queues",
+        help="list all queues in the flux-accounting DB",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparser_list_queues.set_defaults(func="list_queues")
+    subparser_list_queues.add_argument(
+        "--fields",
+        type=str,
+        help="list of fields to include in JSON output",
+        default=None,
+        metavar="QUEUE,MIN_NODES_PER_JOB,MAX_NODES_PER_JOB,MAX_TIME_PER_JOB,PRIORITY",
+    )
+    subparser_list_queues.add_argument(
+        "--table",
+        action="store_const",
+        const=True,
+        help="list all queues in table format",
+    )
+
+
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_output_file_arg(parser)
@@ -742,6 +764,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_scrub_job_records_arg(subparsers)
     add_export_db_arg(subparsers)
     add_pop_db_arg(subparsers)
+    add_list_queues_arg(subparsers)
 
 
 def set_db_location(args):
@@ -784,6 +807,7 @@ def select_accounting_function(args, output_file, parser):
         "scrub_old_jobs": "accounting.scrub_old_jobs",
         "export_db": "accounting.export_db",
         "pop_db": "accounting.pop_db",
+        "list_queues": "accounting.list_queues",
     }
 
     if args.func in func_map:
