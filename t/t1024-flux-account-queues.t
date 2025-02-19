@@ -121,6 +121,22 @@ test_expect_success 'trying to view a queue that does not exist should raise a V
 	grep "queue foo not found in queue_table" queue_nonexistent.out
 '
 
+test_expect_success 'call list-queues' '
+	flux account list-queues > list_queues.out &&
+	grep "\"queue\": \"standby\"" list_queues.out &&
+	grep "\"queue\": \"expedite\"" list_queues.out &&
+	grep "\"queue\": \"queue_1\"" list_queues.out &&
+	grep "\"queue\": \"queue_2\"" list_queues.out
+'
+
+test_expect_success 'call list-queues and customize output' '
+	flux account list-queues --fields=queue,priority --table > list_queues_table.out &&
+	grep "standby  | 0" list_queues_table.out &&
+	grep "expedite | 20000" list_queues_table.out &&
+	grep "queue_1  | 0" list_queues_table.out &&
+	grep "queue_2  | 0" list_queues_table.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '

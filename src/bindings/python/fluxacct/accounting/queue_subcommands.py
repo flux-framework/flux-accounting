@@ -11,7 +11,9 @@
 ###############################################################
 import sqlite3
 
+import fluxacct.accounting
 from fluxacct.accounting import formatter as fmt
+from fluxacct.accounting import sql_util as sql
 
 
 def view_queue(conn, queue, parsable=False):
@@ -110,3 +112,35 @@ def edit_queue(
             conn.commit()
 
     return 0
+
+
+def list_queues(conn, cols=None, table=False):
+    """
+    List all queues in queue_table.
+
+    Args:
+        cols: a list of columns from the table to include in the output. By default, all
+            columns are included.
+        table: output data in bank_table in table format. By default, the format of any
+            returned data is in JSON.
+    """
+    # use all column names if none are passed in
+    cols = cols or fluxacct.accounting.QUEUE_TABLE
+
+    try:
+        cur = conn.cursor()
+
+        sql.validate_columns(cols, fluxacct.accounting.QUEUE_TABLE)
+        # construct SELECT statement
+        select_stmt = f"SELECT {', '.join(cols)} FROM queue_table"
+        cur.execute(select_stmt)
+
+        # initialize AccountingFormatter object
+        formatter = fmt.AccountingFormatter(cur)
+        if table:
+            return formatter.as_table()
+        return formatter.as_json()
+    except sqlite3.Error as err:
+        raise sqlite3.Error(f"list-queues: an sqlite3.Error occurred: {err}")
+    except ValueError as exc:
+        raise ValueError(f"list-queues: {exc}")
