@@ -1130,12 +1130,26 @@ static int update_bank_cb (flux_plugin_t *p,
 
     // look up association
     a = get_association (userid, bank, users, users_def_bank);
-    if (a == nullptr)
-        return flux_jobtap_reject_job (p,
-                                       args,
-                                       "cannot find user/bank or "
-                                       "user/default bank entry "
-                                       "for uid: %i", userid);
+    if (a == nullptr) {
+        // the association could not be found in the plugin's internal map,
+        // so perform a check to see if the map has any loaded flux-accounting
+        // data before rejecting the update
+        bool only_dne_data = check_map_for_dne_only (users, users_def_bank);
+
+        if (users.empty () || only_dne_data) {
+            return flux_jobtap_error (p,
+                                      args,
+                                      "update_bank: plugin still waiting on "
+                                      "flux-accounting data");
+        } else {
+            return flux_jobtap_error (p,
+                                      args,
+                                      "update_bank: cannot find "
+                                      "flux-accounting entry for uid/bank: "
+                                      "%i/%s",
+                                      userid, bank);
+        }
+    }
 
     if (a->max_active_jobs > 0 && a->cur_active_jobs >= a->max_active_jobs)
         // new bank is already at its max active jobs limit; reject update
