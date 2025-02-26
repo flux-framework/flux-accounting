@@ -75,13 +75,13 @@ test_expect_success 'update of bank of pending job works' '
 test_expect_success 'trying to update to a bank user does not have access to fails in job.validate' '
 	test_must_fail flux update ${job1} bank=C > invalid_bank.out 2>&1 &&
 	test_debug "cat invalid_bank.out" &&
-	grep "cannot find user/bank or user/default bank entry for uid:" invalid_bank.out
+	grep "cannot find flux-accounting entry for uid/bank: 5001/C" invalid_bank.out
 '
 
 test_expect_success 'trying to update to a bank that does not exist fails in job.validate' '
 	test_must_fail flux update ${job1} bank=foo > nonexistent_bank.out 2>&1 &&
 	test_debug "cat nonexistent_bank.out" &&
-	grep "cannot find user/bank or user/default bank entry for uid:" nonexistent_bank.out
+	grep "cannot find flux-accounting entry for uid/bank: 5001/foo" nonexistent_bank.out
 '
 
 test_expect_success 'update a job to another bank that is at max-active-jobs limit' '
