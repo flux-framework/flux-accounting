@@ -97,7 +97,7 @@ test_expect_success 'submit another job for testing' '
 test_expect_success 'update job with invalid combination (invalid bank)' '
 	test_must_fail flux update ${jobid} queue=silver bank=foo > nonexistent_bank.out 2>&1 &&
 	test_debug "cat nonexistent_bank.out" &&
-	grep "cannot find user/bank or user/default bank entry for uid:" nonexistent_bank.out
+	grep "cannot find flux-accounting entry for uid/bank: 5001/foo" nonexistent_bank.out
 '
 
 test_expect_success 'check that job is still in original queue' '
