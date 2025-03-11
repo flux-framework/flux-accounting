@@ -62,8 +62,8 @@ test_expect_success 'add some projects to the DB' '
 '
 
 test_expect_success 'add a user with two different banks to the DB' '
-	flux account add-user --username=user5001 --userid=5001 --bank=account1 --max-running-jobs=2 &&
-	flux account add-user --username=user5001 --userid=5001 --bank=account2
+	flux account add-user --username=user1 --userid=${TEST_UID1} --bank=account1 --max-running-jobs=2 &&
+	flux account add-user --username=user1 --userid=${TEST_UID1} --bank=account2
 '
 
 test_expect_success 'send flux-accounting DB information to the plugin' '
@@ -73,22 +73,22 @@ test_expect_success 'send flux-accounting DB information to the plugin' '
 test_expect_success HAVE_JQ 'fetch plugin state' '
 	flux jobtap query mf_priority.so > query_1.json &&
 	test_debug "jq -S . <query_1.json" &&
-	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].bank_name == \"account1\"" <query_1.json &&
-	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[1].bank_name == \"account2\"" <query_1.json
+	jq -e ".mf_priority_map[] | select(.userid == ${TEST_UID1}) | .banks[0].bank_name == \"account1\"" <query_1.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${TEST_UID1}) | .banks[1].bank_name == \"account2\"" <query_1.json
 '
 
 test_expect_success 'submit max number of jobs under default bank (1 held job due to max_run_jobs limit)' '
-	jobid1=$(flux python ${SUBMIT_AS} 5001 sleep 60) &&
-	jobid2=$(flux python ${SUBMIT_AS} 5001 sleep 60) &&
-	jobid3=$(flux python ${SUBMIT_AS} 5001 sleep 60)
+	jobid1=$(flux python ${SUBMIT_AS} ${TEST_UID1} sleep 60) &&
+	jobid2=$(flux python ${SUBMIT_AS} ${TEST_UID1} sleep 60) &&
+	jobid3=$(flux python ${SUBMIT_AS} ${TEST_UID1} sleep 60)
 '
 
 test_expect_success HAVE_JQ 'fetch plugin state and make sure that jobs are reflected in JSON object' '
 	flux jobtap query mf_priority.so > query_2.json &&
 	test_debug "jq -S . <query_2.json" &&
-	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].held_jobs | length == 1" <query_2.json &&
-	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].cur_run_jobs == 2" <query_2.json &&
-	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].cur_active_jobs == 3" <query_2.json
+	jq -e ".mf_priority_map[] | select(.userid == ${TEST_UID1}) | .banks[0].held_jobs | length == 1" <query_2.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${TEST_UID1}) | .banks[0].cur_run_jobs == 2" <query_2.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${TEST_UID1}) | .banks[0].cur_active_jobs == 3" <query_2.json
 '
 
 test_expect_success 'cancel jobs in reverse order so last job does not get alloc event' '
@@ -99,8 +99,8 @@ test_expect_success 'cancel jobs in reverse order so last job does not get alloc
 
 test_expect_success 'add another user to flux-accounting DB and send it to plugin' '
 	flux account add-user \
-		--username=user5002 \
-		--userid=5002 \
+		--username=user2 \
+		--userid=${TEST_UID2} \
 		--bank=account3 \
 		--queues="bronze" \
 		--projects="A,B" \
@@ -111,9 +111,9 @@ test_expect_success 'add another user to flux-accounting DB and send it to plugi
 test_expect_success HAVE_JQ 'fetch plugin state again with multiple users' '
 	flux jobtap query mf_priority.so > query_3.json &&
 	test_debug "jq -S . <query_3.json" &&
-	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].bank_name == \"account1\"" <query_3.json &&
-	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[1].bank_name == \"account2\"" <query_3.json &&
-	jq -e ".mf_priority_map[] | select(.userid == 5002) | .banks[0].bank_name == \"account3\"" <query_3.json
+	jq -e ".mf_priority_map[] | select(.userid == ${TEST_UID1}) | .banks[0].bank_name == \"account1\"" <query_3.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${TEST_UID1}) | .banks[1].bank_name == \"account2\"" <query_3.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${TEST_UID2}) | .banks[0].bank_name == \"account3\"" <query_3.json
 '
 
 test_expect_success 'shut down flux-accounting service' '
