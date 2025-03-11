@@ -117,10 +117,11 @@ def apply_decay_factor(decay, acct_conn, user=None, bank=None):
     for power, usage_factor in enumerate(usg_past, start=1):
         usg_past_decay.append(usage_factor * math.pow(decay, power))
 
-    # update job_usage_factor_table with new values, starting with period-2;
-    # the last usage factor in the table will get discarded after the update
+    # update job_usage_factor_table with new values, starting with the second usage
+    # period and working back to the oldest usage period since the most recent usage
+    # period is updated separately
     period = 1
-    for usage_factor in usg_past_decay[1 : len(usg_past_decay) - 1]:
+    for usage_factor in usg_past_decay[0:-1]:
         update_stmt = (
             "UPDATE job_usage_factor_table SET usage_factor_period_"
             + str(period)
