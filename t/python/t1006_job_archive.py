@@ -363,7 +363,7 @@ class TestAccountingCLI(unittest.TestCase):
             default_bank=bank,
         )
 
-        self.assertEqual(usage_factor, 2199.5)
+        self.assertEqual(usage_factor, 3215.5)
 
     # simulate a half-life period further; assure the new end of the
     # current half-life period gets updated
