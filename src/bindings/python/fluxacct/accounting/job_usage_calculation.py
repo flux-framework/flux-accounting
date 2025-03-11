@@ -137,6 +137,7 @@ def apply_decay_factor(decay, acct_conn, user=None, bank=None):
         )
         period += 1
 
+    acct_conn.commit()
     # only return the usage factors up to but not including the oldest one
     # since it no longer affects a user's historical usage factor
     return sum(usg_past_decay[:-1])
