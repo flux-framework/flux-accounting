@@ -50,6 +50,7 @@ TESTSCRIPTS = \
 	t1048-issue575.t \
 	t1049-issue580.t \
 	t1050-mf-priority-update-on-reload.t \
+	t1051-list-users.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
