@@ -568,6 +568,12 @@ def add_add_queue_arg(subparsers):
         default=0,
         metavar="PRIORITY",
     )
+    subparser_add_queue.add_argument(
+        "--max-running-jobs",
+        help="max number of running jobs an association can have in the queue",
+        default=100,
+        metavar="MAX_RUNNING_JOBS",
+    )
 
 
 def add_view_queue_arg(subparsers):
@@ -624,6 +630,13 @@ def add_edit_queue_arg(subparsers):
         help="associated priority for the queue",
         default=None,
         metavar="PRIORITY",
+    )
+    subparser_edit_queue.add_argument(
+        "--max-running-jobs",
+        type=int,
+        help="max number of running jobs an association can have in the queue",
+        default=None,
+        metavar="MAX_RUNNING_JOBS",
     )
 
 

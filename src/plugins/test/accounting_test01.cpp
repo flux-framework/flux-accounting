@@ -58,7 +58,9 @@ void add_user_to_map (
         a.max_nodes,
         a.max_cores,
         a.cur_nodes,
-        a.cur_cores
+        a.cur_cores,
+        a.queue_usage,
+        a.queue_held_jobs
     };
 }
 
@@ -70,9 +72,11 @@ void initialize_map (
     std::map<int, std::map<std::string, Association>> &users)
 {
     Association user1 = {"bank_A", 0.5, 5, 0, 7, 0, {},
-                         {}, 0, 1, {"*"}, "*", 2147483647, 2147483647, 0, 0};
+                         {}, 0, 1, {"*"}, "*", 2147483647, 2147483647, 0, 0,
+                         {}, {}};
     Association user2 = {"bank_A", 0.5, 5, 0, 7, 0, {},
-                         {}, 0, 1, {"*"}, "*", 2147483647, 2147483647, 0, 0};
+                         {}, 0, 1, {"*"}, "*", 2147483647, 2147483647, 0, 0,
+                         {}, {}};
 
     add_user_to_map (users, 1001, "bank_A", user1);
     users_def_bank[1001] = "bank_A";
@@ -86,9 +90,9 @@ void initialize_map (
  * helper function to add test queues to the queues map
  */
 void initialize_queues () {
-    queues["bronze"] = {0, 5, 60, 100};
-    queues["silver"] = {0, 5, 60, 200};
-    queues["gold"] = {0, 5, 60, 300};
+    queues["bronze"] = {0, 5, 60, 100, 100};
+    queues["silver"] = {0, 5, 60, 200, 100};
+    queues["gold"] = {0, 5, 60, 300, 100};
 }
 
 
@@ -275,7 +279,7 @@ static void test_check_map_dne_true ()
 
     Association tmp_user = {"DNE", 0.5, 5, 0, 7, 0, {},
                             {}, 0, 1, {"*"}, "*", 2147483647, 2147483647,
-                            0, 0};
+                            0, 0, {}, {}};
     add_user_to_map (users, 9999, "DNE", tmp_user);
     users_def_bank[9999] = "DNE";
 

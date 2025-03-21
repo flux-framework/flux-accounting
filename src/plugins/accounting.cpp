@@ -84,10 +84,29 @@ json_t* Association::to_json () const
         }
     }
 
+    json_t *queue_usage_json = json_object ();
+    if (!queue_usage_json) {
+        json_decref (held_job_ids);
+        json_decref (user_queues);
+        json_decref (user_projects);
+        return nullptr;
+    }
+    for (const auto &entry : queue_usage) {
+        if (json_object_set_new (queue_usage_json,
+                                 entry.first.c_str (),
+                                 json_integer (entry.second)) < 0) {
+            json_decref (held_job_ids);
+            json_decref (user_queues);
+            json_decref (user_projects);
+            json_decref (queue_usage_json);
+            return nullptr;
+        }
+    }
+
     // 'o' steals the reference for both held_job_ids and user_queues
     json_t *u = json_pack ("{s:s, s:f, s:i, s:i, s:i, s:i, s:o,"
                            " s:o, s:i, s:o, s:s, s:i, s:i, s:i,"
-                           " s:i, s:i}",
+                           " s:i, s:i, s:o}",
                            "bank_name", bank_name.c_str (),
                            "fairshare", fairshare,
                            "max_run_jobs", max_run_jobs,
@@ -103,7 +122,8 @@ json_t* Association::to_json () const
                            "max_cores", max_cores,
                            "cur_nodes", cur_nodes,
                            "cur_cores", cur_cores,
-                           "active", active);
+                           "active", active,
+                           "queue_usage", queue_usage_json);
 
     if (!u)
         return nullptr;
@@ -231,4 +251,15 @@ int get_project_info (const char *project,
         return INVALID_PROJECT;
 
     return 0;
+}
+
+
+int max_run_jobs_per_queue (const std::map<std::string, Queue> &queues,
+                            const std::string &queue)
+{
+    auto it = queues.find (queue);
+    if (it == queues.end ())
+        return -1;
+
+    return it->second.max_running_jobs;
 }

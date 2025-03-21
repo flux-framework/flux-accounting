@@ -395,6 +395,7 @@ static void rec_q_cb (flux_t *h,
 {
     char *queue = NULL;
     int min_nodes_per_job, max_nodes_per_job, max_time_per_job, priority = 0;
+    int max_running_jobs = 0;
     json_t *data, *jtemp = NULL;
     json_error_t error;
     int num_data = 0;
@@ -417,12 +418,13 @@ static void rec_q_cb (flux_t *h,
         json_t *el = json_array_get(data, i);
 
         if (json_unpack_ex (el, &error, 0,
-                            "{s:s, s:i, s:i, s:i, s:i}",
+                            "{s:s, s:i, s:i, s:i, s:i, s:i}",
                             "queue", &queue,
                             "min_nodes_per_job", &min_nodes_per_job,
                             "max_nodes_per_job", &max_nodes_per_job,
                             "max_time_per_job", &max_time_per_job,
-                            "priority", &priority) < 0)
+                            "priority", &priority,
+                            "max_running_jobs", &max_running_jobs) < 0)
             flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
 
         Queue *q;
@@ -432,6 +434,7 @@ static void rec_q_cb (flux_t *h,
         q->max_nodes_per_job = max_nodes_per_job;
         q->max_time_per_job = max_time_per_job;
         q->priority = priority;
+        q->max_running_jobs = max_running_jobs;
     }
 
     if (flux_respond (h, msg, NULL) < 0)
@@ -866,12 +869,15 @@ static int depend_cb (flux_plugin_t *p,
     int userid;
     long int id;
     Association *b;
+    char *queue = NULL;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s:I}",
-                                "userid", &userid, "id", &id) < 0) {
+                                "{s:i, s:I, s{s{s{s?s}}}}",
+                                "userid", &userid, "id", &id,
+                                "jobspec", "attributes", "system",
+                                "queue", &queue) < 0) {
         flux_log (h,
                   LOG_ERR,
                   "flux_plugin_arg_unpack: %s",
@@ -890,6 +896,38 @@ static int depend_cb (flux_plugin_t *p,
                                      "missing");
 
         return -1;
+    }
+
+    if (queue != NULL) {
+        // safely assign "queue" to an std::string
+        std::string value (queue);
+        // fetch max number of running jobs in this queue
+        int queue_max_run_jobs = max_run_jobs_per_queue (queues, queue);
+        if (queue_max_run_jobs < 0) {
+            // can't find a max_run_jobs limit for this queue because it
+            // might not be defined in the flux-accounting DB, so just set
+            // it to a large number
+            queue_max_run_jobs = std::numeric_limits<int>::max ();
+        }
+
+        // look up the association's current number of running jobs;
+        // if queue cannot be found, an entry in the Association object will be
+        // initialized with a current running jobs count of 0
+        int assoc_cur_run_jobs = b->queue_usage[queue];
+        if (assoc_cur_run_jobs >= queue_max_run_jobs) {
+            // association is already at their max number of running jobs
+            // in this queue; add a dependency
+            if (flux_jobtap_dependency_add (p, id, "max-run-jobs-queue") < 0) {
+                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                            "mf_priority", 0, "failed to "
+                                            "add dependency for max run jobs "
+                                            "per-queue limit");
+                return -1;
+            }
+            b->queue_held_jobs[queue].push_back (id);
+
+            return 0;
+        }
     }
 
     // if user has already hit their max running jobs count, add a job
@@ -919,12 +957,15 @@ static int run_cb (flux_plugin_t *p,
     int userid;
     Association *b;
     json_t *jobspec = NULL;
+    char *queue = NULL;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:o}",
-                                "jobspec", &jobspec) < 0) {
+                                "{s:o, s{s{s{s?s}}}}",
+                                "jobspec", &jobspec,
+                                "jobspec", "attributes", "system",
+                                "queue", &queue) < 0) {
         flux_log (h,
                   LOG_ERR,
                   "flux_plugin_arg_unpack: %s",
@@ -945,7 +986,12 @@ static int run_cb (flux_plugin_t *p,
         return -1;
     }
 
-    // increment the user's current running jobs and resources counts
+    if (queue != NULL)
+        // a queue was passed-in; increment counter of the number of
+        // queue-specific running jobs for this association
+        b->queue_usage[std::string (queue)]++;
+
+    // increment the user's current running jobs count
     b->cur_run_jobs++;
     if (jobspec == NULL) {
         flux_jobtap_raise_exception (p,
@@ -1181,13 +1227,16 @@ static int inactive_cb (flux_plugin_t *p,
     int userid;
     Association *b;
     json_t *jobspec = NULL;
+    char *queue = NULL;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s:o}",
+                                "{s:i, s:o, s{s{s{s?s}}}}",
                                 "userid", &userid,
-                                "jobspec", &jobspec) < 0) {
+                                "jobspec", &jobspec,
+                                "jobspec", "attributes", "system",
+                                "queue", &queue) < 0) {
         flux_log (h,
                   LOG_ERR,
                   "flux_plugin_arg_unpack: %s",
@@ -1233,6 +1282,43 @@ static int inactive_cb (flux_plugin_t *p,
                                          "job.state.inactive: failed to " \
                                          "decrement resource count");
             return -1;
+        }
+    }
+
+    if (queue != NULL) {
+        // safely assign "queue" to an std::string
+        std::string value (queue);
+        if (b->queue_usage[queue] > 0) {
+            // decrement the counter of running jobs the association in queue
+            b->queue_usage[queue]--;
+
+            // fetch max number of running jobs in queue
+            int queue_max_run_jobs = max_run_jobs_per_queue (queues, queue);
+            if (queue_max_run_jobs < 0) {
+                // can't find a max_run_jobs limit for this queue because it
+                // might not be defined in the flux-accounting DB, so just set
+                // it to a large number
+                queue_max_run_jobs = std::numeric_limits<int>::max ();
+            }
+
+            if ((b->queue_held_jobs[queue].size () > 0) &&
+                (b->queue_usage[queue] < queue_max_run_jobs)) {
+                // association has at least one held job in queue;
+                // remove the dependency from the first held job
+                long int id = b->queue_held_jobs[queue].front ();
+                if (flux_jobtap_dependency_remove (p,
+                                                   id,
+                                                   "max-run-jobs-queue") < 0) {
+                    flux_jobtap_raise_exception (p, id, "mf_priority",
+                                                 0, "failed to remove job "
+                                                 " dependency for max run jobs "
+                                                 "per-queue limit");
+                    return -1;
+                }
+                b->queue_held_jobs[queue].erase (
+                    b->queue_held_jobs[queue].begin ()
+                );
+            }
         }
     }
 

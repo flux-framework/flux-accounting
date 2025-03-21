@@ -1,6 +1,6 @@
 DB_DIR = "@X_LOCALSTATEDIR@/lib/flux/"
 DB_PATH = "@X_LOCALSTATEDIR@/lib/flux/FluxAccounting.db"
-DB_SCHEMA_VERSION = 26
+DB_SCHEMA_VERSION = 27
 
 # flux-accounting DB table column names
 ASSOCIATION_TABLE = [
@@ -29,6 +29,7 @@ QUEUE_TABLE = [
     "max_nodes_per_job",
     "max_time_per_job",
     "priority",
+    "max_running_jobs",
 ]
 PROJECT_TABLE = ["project_id", "project", "usage"]
 JOBS_TABLE = [
