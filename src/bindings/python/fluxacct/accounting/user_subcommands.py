@@ -269,6 +269,61 @@ def view_user(conn, user, parsable=False, cols=None, list_banks=False):
         raise ValueError(f"view-user: {exc}")
 
 
+def list_users(conn, cols=None, json_fmt=False, **kwargs):
+    """
+    List all associations in the association_table in the flux-accounting DB. If
+    filters are passed in, limit the associations returned to the ones which fit
+    all filters.
+
+    Args:
+        conn: a SQLite connection object
+        cols: a list of columns from the table to include in the output. By default, all
+            columns are included.
+        filters: a list of optional constraints passed-in to filter the
+            association_table by.
+    """
+    # use all column names if none are passed in
+    cols = cols or fluxacct.accounting.ASSOCIATION_TABLE
+
+    # if any filters are passed in, make sure they are valid columns
+    table_filters = {key: val for key, val in kwargs.items() if val is not None}
+
+    try:
+        cur = conn.cursor()
+
+        sql.validate_columns(cols, fluxacct.accounting.ASSOCIATION_TABLE)
+        # construct SELECT statement
+        select_stmt = f"SELECT {', '.join(cols)} FROM association_table"
+        # filter by any constraints passed in
+        where_clauses = []
+        filters_list = []
+        for table_filter in table_filters:
+            if table_filter in ("queues", "projects"):
+                # we are filtering the table with a string; append wildcards ('%') to
+                # the string so we can match multiple cases (e.g the association belongs
+                # to more than one queue or project)
+                where_clauses.append(f"{table_filter} LIKE ?")
+                filters_list.append(f"%{table_filters[table_filter]}%")
+            else:
+                where_clauses.append(f"{table_filter} = ?")
+                filters_list.append(table_filters[f"{table_filter}"])
+
+        if where_clauses:
+            select_stmt += " WHERE " + " AND ".join(where_clauses)
+
+        cur.execute(select_stmt, tuple(filters_list))
+
+        # initialize AccountingFormatter object
+        formatter = fmt.AccountingFormatter(cur)
+        if json_fmt:
+            return formatter.as_json()
+        return formatter.as_table()
+    except sqlite3.Error as err:
+        raise sqlite3.Error(f"list-users: an sqlite3.Error occurred: {err}")
+    except ValueError as exc:
+        raise ValueError(f"list-users: {exc}")
+
+
 def add_user(
     conn,
     username,

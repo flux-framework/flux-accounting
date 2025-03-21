@@ -66,6 +66,64 @@ def add_view_user_arg(subparsers):
     )
 
 
+def add_list_users_arg(subparsers):
+    subparser_list_users = subparsers.add_parser(
+        "list-users",
+        help="list all associations in association_table",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparser_list_users.set_defaults(func="list_users")
+    subparser_list_users.add_argument(
+        "--fields",
+        type=str,
+        help="list of fields to include in output",
+        default=None,
+        metavar=f"{','.join(fluxacct.accounting.ASSOCIATION_TABLE)}",
+    )
+    subparser_list_users.add_argument(
+        "--json",
+        action="store_const",
+        const=True,
+        help="print output in JSON format",
+    )
+    subparser_list_users.add_argument(
+        "--active",
+        metavar="ACTIVE_STATUS",
+    )
+    subparser_list_users.add_argument(
+        "--bank",
+        metavar="BANK",
+    )
+    subparser_list_users.add_argument(
+        "--shares",
+        metavar="SHARES",
+    )
+    subparser_list_users.add_argument(
+        "--max-running-jobs",
+        metavar="MAX_RUNNING_JOBS",
+    )
+    subparser_list_users.add_argument(
+        "--max-active-jobs",
+        metavar="MAX_ACTIVE_JOBS",
+    )
+    subparser_list_users.add_argument(
+        "--max-nodes",
+        metavar="MAX_NODES",
+    )
+    subparser_list_users.add_argument(
+        "--max-cores",
+        metavar="MAX_CORES",
+    )
+    subparser_list_users.add_argument(
+        "--queues",
+        metavar="QUEUES",
+    )
+    subparser_list_users.add_argument(
+        "--projects",
+        metavar="PROJECTS",
+    )
+
+
 def add_add_user_arg(subparsers):
     subparser_add_user = subparsers.add_parser(
         "add-user",
@@ -742,6 +800,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_output_file_arg(parser)
     add_view_user_arg(subparsers)
+    add_list_users_arg(subparsers)
     add_add_user_arg(subparsers)
     add_delete_user_arg(subparsers)
     add_edit_user_arg(subparsers)
@@ -786,6 +845,7 @@ def select_accounting_function(args, output_file, parser):
     # map each command to the corresponding accounting RPC call
     func_map = {
         "view_user": "accounting.view_user",
+        "list_users": "accounting.list_users",
         "add_user": "accounting.add_user",
         "delete_user": "accounting.delete_user",
         "edit_user": "accounting.edit_user",

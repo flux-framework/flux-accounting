@@ -95,6 +95,7 @@ class AccountingService:
             "view_project",
             "list_projects",
             "list_queues",
+            "list_users",
         ]
 
         privileged_endpoints = [
@@ -170,6 +171,34 @@ class AccountingService:
             handle.respond_error(
                 msg, 0, f"a non-OSError exception was caught: {str(exc)}"
             )
+
+    # pylint: disable=no-self-use
+    def list_users(self, handle, watcher, msg, arg):
+        try:
+            val = u.list_users(
+                self.conn,
+                cols=msg.payload.get("fields").split(",")
+                if msg.payload.get("fields")
+                else None,
+                json_fmt=msg.payload.get("json"),
+                active=msg.payload.get("active"),
+                bank=msg.payload.get("bank"),
+                shares=msg.payload.get("shares"),
+                max_running_jobs=msg.payload.get("max_running_jobs"),
+                max_active_jobs=msg.payload.get("max_active_jobs"),
+                max_nodes=msg.payload.get("max_nodes"),
+                max_cores=msg.payload.get("max_cores"),
+                queues=msg.payload.get("queues"),
+                projects=msg.payload.get("projects"),
+            )
+
+            payload = {"list_users": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+        except Exception as exc:
+            handle.respond_error(msg, 0, str(exc))
 
     def add_user(self, handle, watcher, msg, arg):
         try:
