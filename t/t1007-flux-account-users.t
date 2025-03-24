@@ -77,6 +77,18 @@ test_expect_success 'view some user information with --parsable' '
 	grep -w "user5011\|5011\|A" user_info_parsable.out
 '
 
+test_expect_success 'call view-user with a format string (userid, bank)' '
+	flux account view-user -o "{userid:<8} | {bank:<12}" user5011 > user5011_format_string.out &&
+	grep "userid   | bank" user5011_format_string.out &&
+	grep "5011     | A" user5011_format_string.out
+'
+
+test_expect_success 'call view-user with an invalid format string' '
+	test_must_fail flux account \
+		view-user -o "{foo:<8}" user5011 > bad_format_string.out 2>&1 &&
+	grep "Invalid column name in format string: foo" bad_format_string.out
+'
+
 test_expect_success 'edit a userid for a user' '
 	flux account edit-user user5011 --userid=12345 &&
 	flux account view-user user5011 > edit_userid.out &&

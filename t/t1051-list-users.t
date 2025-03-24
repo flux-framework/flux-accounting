@@ -143,6 +143,13 @@ test_expect_success 'customize table output of list-users' '
 	grep "user2" bankA_custom_table.out
 '
 
+# In the following test, we customize the output with a format string.
+test_expect_success 'customize output using a format string' '
+	flux account list-users -o "{username:<8}||{userid:<6}|{bank:<7}|" > format_string.out &&
+	grep "username||userid|bank   |" format_string.out &&
+	grep "user1   ||5011  |A      |" format_string.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm ${FLUX_ACCOUNTING_DB}
 '
