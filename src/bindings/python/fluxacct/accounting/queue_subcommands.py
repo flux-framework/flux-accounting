@@ -16,7 +16,7 @@ from fluxacct.accounting import formatter as fmt
 from fluxacct.accounting import sql_util as sql
 
 
-def view_queue(conn, queue, parsable=False):
+def view_queue(conn, queue, parsable=False, format_string=""):
     try:
         cur = conn.cursor()
         # get the information pertaining to a queue in the DB
@@ -24,11 +24,15 @@ def view_queue(conn, queue, parsable=False):
 
         formatter = fmt.QueueFormatter(cur, queue)
 
+        if format_string != "":
+            return formatter.as_format_string(format_string)
         if parsable:
             return formatter.as_table()
         return formatter.as_json()
     except sqlite3.OperationalError as exc:
         raise sqlite3.OperationalError(f"an sqlite3.OperationalError occurred: {exc}")
+    except ValueError as exc:
+        raise ValueError(f"view-queue: {exc}")
 
 
 def add_queue(

@@ -64,6 +64,14 @@ def add_view_user_arg(subparsers):
         help="list all of the banks a user belongs to",
         metavar="LIST_BANKS",
     )
+    subparser_view_user.add_argument(
+        "-o",
+        "--format",
+        type=str,
+        default="",
+        help="Specify output format using Python's string format syntax.",
+        metavar="FORMAT",
+    )
 
 
 def add_list_users_arg(subparsers):
@@ -444,6 +452,14 @@ def add_view_bank_arg(subparsers):
         default=None,
         metavar="BANK_ID,BANK,ACTIVE,PARENT_BANK,SHARES,JOB_USAGE",
     )
+    subparser_view_bank.add_argument(
+        "-o",
+        "--format",
+        type=str,
+        default="",
+        help="Specify output format using Python's string format syntax.",
+        metavar="FORMAT",
+    )
 
 
 def add_delete_bank_arg(subparsers):
@@ -591,6 +607,14 @@ def add_view_queue_arg(subparsers):
         const=True,
         help="print all information about a queue on one line",
         metavar="PARSABLE",
+    )
+    subparser_view_queue.add_argument(
+        "-o",
+        "--format",
+        type=str,
+        default="",
+        help="Specify output format using Python's string format syntax.",
+        metavar="FORMAT",
     )
 
 

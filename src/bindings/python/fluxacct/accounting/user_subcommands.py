@@ -235,7 +235,9 @@ def clear_projects(conn, username, bank=None):
 #                   Subcommand Functions                      #
 #                                                             #
 ###############################################################
-def view_user(conn, user, parsable=False, cols=None, list_banks=False):
+def view_user(
+    conn, user, parsable=False, cols=None, list_banks=False, format_string=""
+):
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.ASSOCIATION_TABLE
 
@@ -252,6 +254,8 @@ def view_user(conn, user, parsable=False, cols=None, list_banks=False):
         # initialize AssociationFormatter object
         formatter = fmt.AssociationFormatter(cur, user)
 
+        if format_string != "":
+            return formatter.as_format_string(format_string)
         if list_banks:
             return formatter.list_banks()
         if parsable:

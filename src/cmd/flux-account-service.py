@@ -154,6 +154,7 @@ class AccountingService:
                 msg.payload["parsable"],
                 msg.payload["fields"].split(",") if msg.payload.get("fields") else None,
                 msg.payload["list_banks"],
+                msg.payload["format"],
             )
 
             payload = {"view_user": val}
@@ -289,6 +290,7 @@ class AccountingService:
                 msg.payload["users"],
                 msg.payload["parsable"],
                 msg.payload["fields"].split(",") if msg.payload.get("fields") else None,
+                msg.payload["format"],
             )
 
             payload = {"view_bank": val}
@@ -459,7 +461,10 @@ class AccountingService:
     def view_queue(self, handle, watcher, msg, arg):
         try:
             val = qu.view_queue(
-                self.conn, msg.payload["queue"], msg.payload["parsable"]
+                self.conn,
+                msg.payload["queue"],
+                msg.payload["parsable"],
+                msg.payload["format"],
             )
 
             payload = {"view_queue": val}

@@ -136,7 +136,9 @@ def add_bank(conn, bank, shares, parent_bank=""):
         raise sqlite3.IntegrityError(f"bank {bank} already exists in bank_table")
 
 
-def view_bank(conn, bank, tree=False, users=False, parsable=False, cols=None):
+def view_bank(
+    conn, bank, tree=False, users=False, parsable=False, cols=None, format_string=""
+):
     if tree and cols is not None:
         # tree format cannot be combined with custom formatting, so raise an Exception
         raise ValueError(f"--tree option does not support custom formatting")
@@ -158,6 +160,8 @@ def view_bank(conn, bank, tree=False, users=False, parsable=False, cols=None):
         # initialize BankFormatter object
         formatter = fmt.BankFormatter(cur, bank)
 
+        if format_string != "":
+            return formatter.as_format_string(format_string)
         if tree:
             if parsable:
                 return formatter.as_parsable_tree(bank)
