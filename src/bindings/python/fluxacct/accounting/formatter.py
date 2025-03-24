@@ -98,6 +98,34 @@ class AccountingFormatter:
 
         return json_string
 
+    def as_format_string(self, format_string):
+        """
+        Return the output as a formatted string with the results of the query.
+
+        Args:
+            format_string (str): A format string defining how each row should be
+                formatted. Column names should be used as placeholders.
+
+        Returns:
+            str: A formatted string containing the query results, including column headers.
+        """
+        try:
+            header = format_string.format(
+                **dict(zip(self.column_names, self.column_names))
+            )
+            formatted_rows = [
+                format_string.format(**dict(zip(self.column_names, row)))
+                for row in self.rows
+            ]
+
+            return "\n".join([header] + formatted_rows)
+        except KeyError as exc:
+            # one of the column names in the format string is invalid; raise ValueError
+            raise ValueError(
+                f"Invalid column name in format string: {exc.args[0]}."
+                + f"\nAvailable columns: {','.join(self.column_names)}"
+            )
+
 
 class BankFormatter(AccountingFormatter):
     """
