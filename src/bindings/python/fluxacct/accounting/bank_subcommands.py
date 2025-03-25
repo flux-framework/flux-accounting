@@ -282,6 +282,7 @@ def list_banks(
     inactive=False,
     cols=None,
     table=False,
+    format_string="",
 ):
     """
     List all banks in bank_table.
@@ -293,6 +294,8 @@ def list_banks(
             columns are included.
         table: output data in bank_table in table format. By default, the format of any
             returned data is in JSON.
+        format_string: a format string defining how each row should be formatted. Column
+            names should be used as placeholders.
     """
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.BANK_TABLE
@@ -309,6 +312,8 @@ def list_banks(
 
         # initialize AccountingFormatter object
         formatter = fmt.AccountingFormatter(cur)
+        if format_string != "":
+            return formatter.as_format_string(format_string)
         if table:
             return formatter.as_table()
         return formatter.as_json()

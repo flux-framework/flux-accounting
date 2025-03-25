@@ -95,6 +95,14 @@ def add_list_users_arg(subparsers):
         help="print output in JSON format",
     )
     subparser_list_users.add_argument(
+        "-o",
+        "--format",
+        type=str,
+        default="",
+        help="Specify output format using Python's string format syntax.",
+        metavar="FORMAT",
+    )
+    subparser_list_users.add_argument(
         "--active",
         metavar="ACTIVE_STATUS",
     )
@@ -535,6 +543,14 @@ def add_list_banks_arg(subparsers):
         const=True,
         help="list all banks in table format",
     )
+    subparser_list_banks.add_argument(
+        "-o",
+        "--format",
+        type=str,
+        default="",
+        help="Specify output format using Python's string format syntax.",
+        metavar="FORMAT",
+    )
 
 
 def add_update_usage_arg(subparsers):
@@ -830,6 +846,14 @@ def add_list_queues_arg(subparsers):
         action="store_const",
         const=True,
         help="list all queues in table format",
+    )
+    subparser_list_queues.add_argument(
+        "-o",
+        "--format",
+        type=str,
+        default="",
+        help="Specify output format using Python's string format syntax.",
+        metavar="FORMAT",
     )
 
 

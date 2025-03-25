@@ -182,6 +182,7 @@ class AccountingService:
                 if msg.payload.get("fields")
                 else None,
                 json_fmt=msg.payload.get("json"),
+                format_string=msg.payload.get("format"),
                 active=msg.payload.get("active"),
                 bank=msg.payload.get("bank"),
                 shares=msg.payload.get("shares"),
@@ -376,6 +377,7 @@ class AccountingService:
                 msg.payload["inactive"],
                 msg.payload["fields"].split(",") if msg.payload.get("fields") else None,
                 msg.payload["table"],
+                msg.payload["format"],
             )
 
             payload = {"list_banks": val}
@@ -637,6 +639,7 @@ class AccountingService:
                 self.conn,
                 msg.payload["fields"].split(",") if msg.payload.get("fields") else None,
                 msg.payload["table"],
+                msg.payload["format"],
             )
 
             payload = {"list_queues": val}
