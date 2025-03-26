@@ -447,3 +447,22 @@ class QueueFormatter(AccountingFormatter):
         super().__init__(
             cursor, error_msg=f"queue {self.queue_name} not found in queue_table"
         )
+
+
+class ProjectFormatter(AccountingFormatter):
+    """
+    Subclass of AccountingFormatter that includes a custom error message in the
+    case where a project does not exist in the project_table.
+    """
+
+    def __init__(self, cursor, project_name):
+        """
+        Initialize a ProjectFormatter object with a SQLite cursor.
+        Args:
+            cursor: a SQLite Cursor object that has the results of a SQL query.
+            project: the name of the project.
+        """
+        self.project_name = project_name
+        super().__init__(
+            cursor, error_msg=f"project {self.project_name} not found in project_table"
+        )
