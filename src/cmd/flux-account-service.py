@@ -540,7 +540,10 @@ class AccountingService:
     def view_project(self, handle, watcher, msg, arg):
         try:
             val = p.view_project(
-                self.conn, msg.payload["project"], msg.payload["parsable"]
+                self.conn,
+                msg.payload["project"],
+                msg.payload["parsable"],
+                msg.payload["format"],
             )
 
             payload = {"view_project": val}
@@ -577,6 +580,7 @@ class AccountingService:
                 self.conn,
                 msg.payload["fields"].split(",") if msg.payload.get("fields") else None,
                 msg.payload["table"],
+                msg.payload["format"],
             )
 
             payload = {"list_projects": val}

@@ -44,7 +44,7 @@ def project_is_active(cur, project):
 ###############################################################
 
 
-def view_project(conn, project, parsable=False):
+def view_project(conn, project, parsable=False, format_string=None):
     try:
         cur = conn.cursor()
         # get the information pertaining to a project in the DB
@@ -52,6 +52,8 @@ def view_project(conn, project, parsable=False):
 
         formatter = fmt.ProjectFormatter(cur, project)
 
+        if format_string is not None:
+            return formatter.as_format_string(format_string)
         if parsable:
             return formatter.as_table()
         return formatter.as_json()
@@ -111,7 +113,7 @@ def delete_project(conn, project):
     return 0
 
 
-def list_projects(conn, cols=None, table=False):
+def list_projects(conn, cols=None, table=False, format_string=None):
     """
     List all of the available projects registered in the project_table.
 
@@ -134,6 +136,8 @@ def list_projects(conn, cols=None, table=False):
 
         # initialize AccountingFormatter object
         formatter = fmt.AccountingFormatter(cur)
+        if format_string is not None:
+            return formatter.as_format_string(format_string)
         if table:
             return formatter.as_table()
         return formatter.as_json()
