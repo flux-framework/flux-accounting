@@ -715,6 +715,19 @@ def add_view_project_arg(subparsers):
     subparser_view_project.add_argument(
         "project", help="project name", metavar="PROJECT"
     )
+    subparser_view_project.add_argument(
+        "--parsable",
+        action="store_const",
+        const=True,
+        help="print all information about a project on one line",
+        metavar="PARSABLE",
+    )
+    subparser_view_project.add_argument(
+        "-o",
+        "--format",
+        help="Specify output format using Python's string format syntax.",
+        metavar="FORMAT",
+    )
 
 
 def add_delete_project_arg(subparsers):
@@ -738,6 +751,24 @@ def add_list_projects_arg(subparsers):
     )
 
     subparser_list_projects.set_defaults(func="list_projects")
+    subparser_list_projects.add_argument(
+        "--fields",
+        help="list of fields to include in output",
+        default=None,
+        metavar="PROJECT_ID,PROJECT,USAGE",
+    )
+    subparser_list_projects.add_argument(
+        "--table",
+        action="store_const",
+        const=True,
+        help="list all projects in table format",
+    )
+    subparser_list_projects.add_argument(
+        "-o",
+        "--format",
+        help="Specify output format using Python's string format syntax.",
+        metavar="FORMAT",
+    )
 
 
 def add_scrub_job_records_arg(subparsers):

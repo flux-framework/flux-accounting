@@ -11,6 +11,9 @@
 ###############################################################
 import sqlite3
 
+import fluxacct.accounting
+from fluxacct.accounting import formatter as fmt
+from fluxacct.accounting import sql_util as sql
 
 ###############################################################
 #                                                             #
@@ -41,26 +44,19 @@ def project_is_active(cur, project):
 ###############################################################
 
 
-def view_project(conn, project):
-    cur = conn.cursor()
+def view_project(conn, project, parsable=False, format_string=None):
     try:
+        cur = conn.cursor()
         # get the information pertaining to a project in the DB
         cur.execute("SELECT * FROM project_table where project=?", (project,))
-        result = cur.fetchall()
-        headers = [description[0] for description in cur.description]
-        project_str = ""
-        if not result:
-            raise ValueError(f"project {project} not found in project_table")
 
-        for header in headers:
-            project_str += header.ljust(18)
-        project_str += "\n"
-        for row in result:
-            for col in list(row):
-                project_str += str(col).ljust(18)
-            project_str += "\n"
+        formatter = fmt.ProjectFormatter(cur, project)
 
-        return project_str
+        if format_string is not None:
+            return formatter.as_format_string(format_string)
+        if parsable:
+            return formatter.as_table()
+        return formatter.as_json()
     except sqlite3.OperationalError as exc:
         raise sqlite3.OperationalError(f"an sqlite3.OperationalError occurred: {exc}")
 
@@ -117,30 +113,35 @@ def delete_project(conn, project):
     return 0
 
 
-def list_projects(conn):
+def list_projects(conn, cols=None, table=False, format_string=None):
     """
     List all of the available projects registered in the project_table.
+
+    Args:
+        cols: a list of columns from the table to include in the output. By default, all
+            columns are included.
+        table: output data in bank_table in table format. By default, the format of any
+            returned data is in JSON.
     """
-    cur = conn.cursor()
+    # use all column names if none are passed in
+    cols = cols or fluxacct.accounting.PROJECT_TABLE
 
-    cur.execute("SELECT * FROM project_table")
-    rows = cur.fetchall()
+    try:
+        cur = conn.cursor()
 
-    # fetch column names and determine width of each column
-    col_names = [description[0] for description in cur.description]
-    col_widths = [
-        max(len(str(value)) for value in [col] + [row[i] for row in rows])
-        for i, col in enumerate(col_names)
-    ]
+        sql.validate_columns(cols, fluxacct.accounting.PROJECT_TABLE)
+        # construct SELECT statement
+        select_stmt = f"SELECT {', '.join(cols)} FROM project_table"
+        cur.execute(select_stmt)
 
-    def format_row(row):
-        return " | ".join(
-            [f"{str(value).ljust(col_widths[i])}" for i, value in enumerate(row)]
-        )
-
-    header = format_row(col_names)
-    separator = "-+-".join(["-" * width for width in col_widths])
-    data_rows = "\n".join([format_row(row) for row in rows])
-    table = f"{header}\n{separator}\n{data_rows}"
-
-    return table
+        # initialize AccountingFormatter object
+        formatter = fmt.AccountingFormatter(cur)
+        if format_string is not None:
+            return formatter.as_format_string(format_string)
+        if table:
+            return formatter.as_table()
+        return formatter.as_json()
+    except sqlite3.Error as err:
+        raise sqlite3.Error(f"list-projects: an sqlite3.Error occurred: {err}")
+    except ValueError as exc:
+        raise ValueError(f"list-projects: {exc}")
