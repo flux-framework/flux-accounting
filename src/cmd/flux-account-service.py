@@ -154,6 +154,7 @@ class AccountingService:
                 msg.payload["parsable"],
                 msg.payload["fields"].split(",") if msg.payload.get("fields") else None,
                 msg.payload["list_banks"],
+                msg.payload["format"],
             )
 
             payload = {"view_user": val}
@@ -181,6 +182,7 @@ class AccountingService:
                 if msg.payload.get("fields")
                 else None,
                 json_fmt=msg.payload.get("json"),
+                format_string=msg.payload.get("format"),
                 active=msg.payload.get("active"),
                 bank=msg.payload.get("bank"),
                 shares=msg.payload.get("shares"),
@@ -289,6 +291,7 @@ class AccountingService:
                 msg.payload["users"],
                 msg.payload["parsable"],
                 msg.payload["fields"].split(",") if msg.payload.get("fields") else None,
+                msg.payload["format"],
             )
 
             payload = {"view_bank": val}
@@ -374,6 +377,7 @@ class AccountingService:
                 msg.payload["inactive"],
                 msg.payload["fields"].split(",") if msg.payload.get("fields") else None,
                 msg.payload["table"],
+                msg.payload["format"],
             )
 
             payload = {"list_banks": val}
@@ -459,7 +463,10 @@ class AccountingService:
     def view_queue(self, handle, watcher, msg, arg):
         try:
             val = qu.view_queue(
-                self.conn, msg.payload["queue"], msg.payload["parsable"]
+                self.conn,
+                msg.payload["queue"],
+                msg.payload["parsable"],
+                msg.payload["format"],
             )
 
             payload = {"view_queue": val}
@@ -632,6 +639,7 @@ class AccountingService:
                 self.conn,
                 msg.payload["fields"].split(",") if msg.payload.get("fields") else None,
                 msg.payload["table"],
+                msg.payload["format"],
             )
 
             payload = {"list_queues": val}

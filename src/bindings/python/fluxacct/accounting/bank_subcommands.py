@@ -136,7 +136,9 @@ def add_bank(conn, bank, shares, parent_bank=""):
         raise sqlite3.IntegrityError(f"bank {bank} already exists in bank_table")
 
 
-def view_bank(conn, bank, tree=False, users=False, parsable=False, cols=None):
+def view_bank(
+    conn, bank, tree=False, users=False, parsable=False, cols=None, format_string=""
+):
     if tree and cols is not None:
         # tree format cannot be combined with custom formatting, so raise an Exception
         raise ValueError(f"--tree option does not support custom formatting")
@@ -158,6 +160,8 @@ def view_bank(conn, bank, tree=False, users=False, parsable=False, cols=None):
         # initialize BankFormatter object
         formatter = fmt.BankFormatter(cur, bank)
 
+        if format_string != "":
+            return formatter.as_format_string(format_string)
         if tree:
             if parsable:
                 return formatter.as_parsable_tree(bank)
@@ -278,6 +282,7 @@ def list_banks(
     inactive=False,
     cols=None,
     table=False,
+    format_string="",
 ):
     """
     List all banks in bank_table.
@@ -289,6 +294,8 @@ def list_banks(
             columns are included.
         table: output data in bank_table in table format. By default, the format of any
             returned data is in JSON.
+        format_string: a format string defining how each row should be formatted. Column
+            names should be used as placeholders.
     """
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.BANK_TABLE
@@ -305,6 +312,8 @@ def list_banks(
 
         # initialize AccountingFormatter object
         formatter = fmt.AccountingFormatter(cur)
+        if format_string != "":
+            return formatter.as_format_string(format_string)
         if table:
             return formatter.as_table()
         return formatter.as_json()

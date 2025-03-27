@@ -16,7 +16,7 @@ from fluxacct.accounting import formatter as fmt
 from fluxacct.accounting import sql_util as sql
 
 
-def view_queue(conn, queue, parsable=False):
+def view_queue(conn, queue, parsable=False, format_string=""):
     try:
         cur = conn.cursor()
         # get the information pertaining to a queue in the DB
@@ -24,11 +24,15 @@ def view_queue(conn, queue, parsable=False):
 
         formatter = fmt.QueueFormatter(cur, queue)
 
+        if format_string != "":
+            return formatter.as_format_string(format_string)
         if parsable:
             return formatter.as_table()
         return formatter.as_json()
     except sqlite3.OperationalError as exc:
         raise sqlite3.OperationalError(f"an sqlite3.OperationalError occurred: {exc}")
+    except ValueError as exc:
+        raise ValueError(f"view-queue: {exc}")
 
 
 def add_queue(
@@ -120,7 +124,7 @@ def edit_queue(
     return 0
 
 
-def list_queues(conn, cols=None, table=False):
+def list_queues(conn, cols=None, table=False, format_string=""):
     """
     List all queues in queue_table.
 
@@ -129,6 +133,8 @@ def list_queues(conn, cols=None, table=False):
             columns are included.
         table: output data in bank_table in table format. By default, the format of any
             returned data is in JSON.
+        format_string: a format string defining how each row should be formatted. Column
+            names should be used as placeholders.
     """
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.QUEUE_TABLE
@@ -143,6 +149,8 @@ def list_queues(conn, cols=None, table=False):
 
         # initialize AccountingFormatter object
         formatter = fmt.AccountingFormatter(cur)
+        if format_string != "":
+            return formatter.as_format_string(format_string)
         if table:
             return formatter.as_table()
         return formatter.as_json()

@@ -64,6 +64,14 @@ def add_view_user_arg(subparsers):
         help="list all of the banks a user belongs to",
         metavar="LIST_BANKS",
     )
+    subparser_view_user.add_argument(
+        "-o",
+        "--format",
+        type=str,
+        default="",
+        help="Specify output format using Python's string format syntax.",
+        metavar="FORMAT",
+    )
 
 
 def add_list_users_arg(subparsers):
@@ -85,6 +93,14 @@ def add_list_users_arg(subparsers):
         action="store_const",
         const=True,
         help="print output in JSON format",
+    )
+    subparser_list_users.add_argument(
+        "-o",
+        "--format",
+        type=str,
+        default="",
+        help="Specify output format using Python's string format syntax.",
+        metavar="FORMAT",
     )
     subparser_list_users.add_argument(
         "--active",
@@ -444,6 +460,14 @@ def add_view_bank_arg(subparsers):
         default=None,
         metavar="BANK_ID,BANK,ACTIVE,PARENT_BANK,SHARES,JOB_USAGE",
     )
+    subparser_view_bank.add_argument(
+        "-o",
+        "--format",
+        type=str,
+        default="",
+        help="Specify output format using Python's string format syntax.",
+        metavar="FORMAT",
+    )
 
 
 def add_delete_bank_arg(subparsers):
@@ -519,6 +543,14 @@ def add_list_banks_arg(subparsers):
         const=True,
         help="list all banks in table format",
     )
+    subparser_list_banks.add_argument(
+        "-o",
+        "--format",
+        type=str,
+        default="",
+        help="Specify output format using Python's string format syntax.",
+        metavar="FORMAT",
+    )
 
 
 def add_update_usage_arg(subparsers):
@@ -591,6 +623,14 @@ def add_view_queue_arg(subparsers):
         const=True,
         help="print all information about a queue on one line",
         metavar="PARSABLE",
+    )
+    subparser_view_queue.add_argument(
+        "-o",
+        "--format",
+        type=str,
+        default="",
+        help="Specify output format using Python's string format syntax.",
+        metavar="FORMAT",
     )
 
 
@@ -806,6 +846,14 @@ def add_list_queues_arg(subparsers):
         action="store_const",
         const=True,
         help="list all queues in table format",
+    )
+    subparser_list_queues.add_argument(
+        "-o",
+        "--format",
+        type=str,
+        default="",
+        help="Specify output format using Python's string format syntax.",
+        metavar="FORMAT",
     )
 
 

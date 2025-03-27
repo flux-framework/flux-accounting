@@ -235,7 +235,9 @@ def clear_projects(conn, username, bank=None):
 #                   Subcommand Functions                      #
 #                                                             #
 ###############################################################
-def view_user(conn, user, parsable=False, cols=None, list_banks=False):
+def view_user(
+    conn, user, parsable=False, cols=None, list_banks=False, format_string=""
+):
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.ASSOCIATION_TABLE
 
@@ -252,6 +254,8 @@ def view_user(conn, user, parsable=False, cols=None, list_banks=False):
         # initialize AssociationFormatter object
         formatter = fmt.AssociationFormatter(cur, user)
 
+        if format_string != "":
+            return formatter.as_format_string(format_string)
         if list_banks:
             return formatter.list_banks()
         if parsable:
@@ -269,7 +273,7 @@ def view_user(conn, user, parsable=False, cols=None, list_banks=False):
         raise ValueError(f"view-user: {exc}")
 
 
-def list_users(conn, cols=None, json_fmt=False, **kwargs):
+def list_users(conn, cols=None, json_fmt=False, format_string="", **kwargs):
     """
     List all associations in the association_table in the flux-accounting DB. If
     filters are passed in, limit the associations returned to the ones which fit
@@ -281,6 +285,8 @@ def list_users(conn, cols=None, json_fmt=False, **kwargs):
             columns are included.
         filters: a list of optional constraints passed-in to filter the
             association_table by.
+        format_string: a format string defining how each row should be formatted. Column
+            names should be used as placeholders.
     """
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.ASSOCIATION_TABLE
@@ -315,6 +321,8 @@ def list_users(conn, cols=None, json_fmt=False, **kwargs):
 
         # initialize AccountingFormatter object
         formatter = fmt.AccountingFormatter(cur)
+        if format_string != "":
+            return formatter.as_format_string(format_string)
         if json_fmt:
             return formatter.as_json()
         return formatter.as_table()

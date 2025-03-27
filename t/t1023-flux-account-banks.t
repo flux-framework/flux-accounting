@@ -53,6 +53,12 @@ test_expect_success 'viewing the root bank with no optional args should show bas
 	test_cmp ${EXPECTED_FILES}/root_bank.expected root_bank.test
 '
 
+test_expect_success 'call view-bank with a format string (bank_id, bank, shares)' '
+	flux account view-bank -o "{bank_id:<8} || {bank:<12} || {shares:<5}" A > A_format_string.out &&
+	grep "bank_id  || bank         || shares" A_format_string.out &&
+	grep "2        || A            || 1" A_format_string.out
+'
+
 test_expect_success 'viewing the root bank with -t should show the entire hierarchy' '
 	flux account -p ${DB_PATH} view-bank root -t > full_hierarchy.test &&
 	test_cmp ${EXPECTED_FILES}/full_hierarchy.expected full_hierarchy.test
@@ -149,6 +155,12 @@ test_expect_success 'call list-banks with a bad field' '
 test_expect_success 'combining --tree with --fields does not work' '
     test_must_fail flux account view-bank root --tree --fields=bank_id > error.out 2>&1 &&
     grep "tree option does not support custom formatting" error.out
+'
+
+test_expect_success 'call list-banks with a format string' '
+	flux account list-banks -o "{bank_id:<7}||{bank:<7}||{shares:>2}" > format_string.out &&
+	grep "bank_id||bank   ||shares" format_string.out &&
+	grep "1      ||root   || 1" format_string.out
 '
 
 test_expect_success 'delete a bank with --force; ensure users also get deleted' '

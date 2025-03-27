@@ -54,6 +54,12 @@ test_expect_success 'view some queue information with --parsable' '
 	grep "standby | 1                 | 1                 | 60               | 0" standby_parsable.out
 '
 
+test_expect_success 'call view-queue with a format string' '
+	flux account view-queue standby -o "{queue:<8} || {priority:<12}" > standby_format_string.out &&
+	grep "queue    || priority" standby_format_string.out &&
+	grep "standby  || 0" standby_format_string.out
+'
+
 test_expect_success 'add a queue to an existing user account' '
 	flux account edit-user user5011 --queue="expedite"
 '
@@ -135,6 +141,13 @@ test_expect_success 'call list-queues and customize output' '
 	grep "expedite | 20000" list_queues_table.out &&
 	grep "queue_1  | 0" list_queues_table.out &&
 	grep "queue_2  | 0" list_queues_table.out
+'
+
+test_expect_success 'call list-queues with a format string' '
+	flux account list-queues \
+		-o "{queue:<8}||{max_time_per_job:<12}" > format_string.out &&
+	grep "queue   ||max_time_per_job" format_string.out &&
+	grep "standby ||60" format_string.out
 '
 
 test_expect_success 'remove flux-accounting DB' '
