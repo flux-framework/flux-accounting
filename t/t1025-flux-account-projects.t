@@ -53,6 +53,12 @@ test_expect_success 'list contents of project_table before adding projects' '
 	grep -f project_table.expected project_table.test
 '
 
+test_expect_success 'call list-projects with a format string' '
+	flux account list-projects -o "{project_id:>12} || {project:<10}" > projects_format_string.out &&
+	grep "project_id || project" projects_format_string.out &&
+	grep "         1 || *" projects_format_string.out
+'
+
 test_expect_success 'add some projects to the project_table' '
 	flux account add-project project_1 &&
 	flux account add-project project_2 &&
@@ -63,6 +69,13 @@ test_expect_success 'add some projects to the project_table' '
 test_expect_success 'view project information from the project_table' '
 	flux account view-project project_1 > project_1.out &&
 	grep -w "1\|project_1" project_1.out
+'
+
+test_expect_success 'view project information with a format string' '
+	flux account view-project -o "{project_id:>12} || {project:<10}" \
+		project_1 > project_1_format_string.out &&
+	grep "project_id || project" project_1_format_string.out &&
+	grep "         2 || project_1" project_1_format_string.out
 '
 
 test_expect_success 'add a user with some specified projects to the association_table' '
