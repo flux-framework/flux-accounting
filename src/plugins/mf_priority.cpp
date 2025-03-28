@@ -32,6 +32,8 @@ extern "C" {
 
 // custom bank_info class file
 #include "accounting.hpp"
+// custom job class file
+#include "job.hpp"
 // custom job resource counting file
 #include "jj.hpp"
 
@@ -50,6 +52,9 @@ std::map<std::string, Queue> queues;
 std::map<int, std::string> users_def_bank;
 std::vector<std::string> projects;
 std::map<std::string, int> priority_weights;
+// map to keep track of which flux-accounting dependencies are
+// associated with a held job
+std::map<long int, Job> held_jobs;
 
 /******************************************************************************
  *                                                                            *
@@ -870,12 +875,15 @@ static int depend_cb (flux_plugin_t *p,
     long int id;
     Association *b;
     char *queue = NULL;
+    json_t *jobspec = NULL;
+    Job job;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s:I, s{s{s{s?s}}}}",
+                                "{s:i, s:I, s:o, s{s{s{s?s}}}}",
                                 "userid", &userid, "id", &id,
+                                "jobspec", &jobspec,
                                 "jobspec", "attributes", "system",
                                 "queue", &queue) < 0) {
         flux_log (h,
@@ -930,19 +938,74 @@ static int depend_cb (flux_plugin_t *p,
         }
     }
 
-    // if user has already hit their max running jobs count, add a job
-    // dependency to hold job until an already running job has finished
-    if ((b->max_run_jobs > 0) && (b->cur_run_jobs == b->max_run_jobs)) {
-        if (flux_jobtap_dependency_add (p,
-                                        id,
-                                        "max-running-jobs-user-limit") < 0) {
-            flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
-                                         "mf_priority", 0, "failed to add " \
-                                         "job dependency");
-
+    if (jobspec == NULL) {
+        flux_jobtap_raise_exception (p,
+                                     FLUX_JOBTAP_CURRENT_JOB,
+                                     "mf_priority",
+                                     0,
+                                     "job.state.depend: failed to unpack " \
+                                     "jobspec");
+        return -1;
+    } else {
+        // count resources requested for the job
+        if (count_resources (job, jobspec) < 0) {
+            flux_jobtap_raise_exception (p,
+                                         FLUX_JOBTAP_CURRENT_JOB,
+                                         "mf_priority",
+                                         0,
+                                         "job.state.depend: unable to " \
+                                         "unpack jobspec");
             return -1;
         }
-        b->held_jobs.push_back (id);
+
+        // if user has already hit their max running jobs count, add a job
+        // dependency to hold job until an already running job has finished
+        if ((b->max_run_jobs > 0) && (b->cur_run_jobs == b->max_run_jobs)) {
+            if (flux_jobtap_dependency_add (p,
+                                            id,
+                                            "max-running-jobs-user-limit") < 0) {
+                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                            "mf_priority", 0, "failed to add " \
+                                            "job dependency");
+
+                return -1;
+            }
+            b->held_jobs.push_back (id);
+            // add job to plugin's internal map of held jobs, initialize the
+            // Job object with the job ID and resources
+            held_jobs[id].id = id;
+            held_jobs[id].nnodes = job.nnodes;
+            held_jobs[id].ncores = job.ncores;
+            held_jobs[id].deps.push_back ("max-running-jobs-user-limit");
+        }
+
+        if ((b->max_nodes > 0 && b->max_cores > 0) &&
+            (((b->cur_nodes + job.nnodes) > b->max_nodes) ||
+            ((b->cur_cores + job.ncores) > b->max_cores))) {
+            // the job would put the association over either their max cores or
+            // max nodes limit(s); add a dependency on the job
+            if (flux_jobtap_dependency_add (p,
+                                            id,
+                                            "max-resource-user-limit") < 0) {
+                flux_jobtap_raise_exception (p,
+                                            FLUX_JOBTAP_CURRENT_JOB,
+                                            "mf_priority",
+                                            0,
+                                            "failed to add job dependency");
+
+                    return -1;
+            }
+            held_jobs[id].id = id;
+            held_jobs[id].nnodes = job.nnodes;
+            held_jobs[id].ncores = job.ncores;
+            held_jobs[id].deps.push_back ("max-resource-user-limit");
+            if (std::find (b->held_jobs.begin (),
+                        b->held_jobs.end (),
+                        id) == b->held_jobs.end ()) {
+                // add held job to Association object
+                b->held_jobs.push_back (id);
+            }
+        }
     }
 
     return 0;
@@ -1322,21 +1385,69 @@ static int inactive_cb (flux_plugin_t *p,
         }
     }
 
-    // if the user/bank combo has any currently held jobs and the user is now
-    // under their max jobs limit, remove the dependency from first held job
-    if ((b->held_jobs.size () > 0) && (b->cur_run_jobs < b->max_run_jobs)) {
+    if (b->held_jobs.size () > 0) {
+        // association has at least one held job; check to see if it fits all
+        // requirements in order to be released
         long int jobid = b->held_jobs.front ();
-
-        if (flux_jobtap_dependency_remove (p,
-                                           jobid,
-                                           "max-running-jobs-user-limit") < 0)
-        {
-            flux_jobtap_raise_exception (p, jobid, "mf_priority",
-                                         0, "failed to remove job dependency");
+        if (held_jobs.find (jobid) == held_jobs.end ()) {
+            // held job cannot be found in plugin's internal map; raise error
+            flux_jobtap_raise_exception (p,
+                                         FLUX_JOBTAP_CURRENT_JOB,
+                                         "mf_priority",
+                                         0,
+                                         "job.state.inactive: failed to " \
+                                         "locate held job in priority plugin");
             return -1;
         }
 
-        b->held_jobs.erase (b->held_jobs.begin ());
+        if (b->cur_run_jobs < b->max_run_jobs) {
+            // association is under their max running jobs limit;
+            // see if the job has this dependency and remove it
+            if (contains_dep (held_jobs[jobid],
+                              "max-running-jobs-user-limit")) {
+                if (flux_jobtap_dependency_remove (
+                                        p,
+                                        jobid,
+                                        "max-running-jobs-user-limit") < 0) {
+                    flux_jobtap_raise_exception (p,
+                                                 jobid,
+                                                 "mf_priority",
+                                                 0,
+                                                 "failed to remove " \
+                                                 "running jobs " \
+                                                 "dependency");
+                }
+                // remove dependency from job ID's entry in plugin's
+                // internal map of held jobs
+                remove_dep (held_jobs[jobid], "max-running-jobs-user-limit");
+            }
+        }
+
+        if (((b->cur_nodes + held_jobs[jobid].nnodes) <= b->max_nodes) &&
+            ((b->cur_cores + held_jobs[jobid].ncores) <= b->max_cores)) {
+            // association is under their max resources limit;
+            // see if the job has this dependency and remove it
+            if (contains_dep (held_jobs[jobid], "max-resource-user-limit")) {
+                if (flux_jobtap_dependency_remove (
+                                            p,
+                                            jobid,
+                                            "max-resource-user-limit") < 0) {
+                    flux_jobtap_raise_exception (p,
+                                                 jobid,
+                                                 "mf_priority",
+                                                 0,
+                                                 "failed to remove " \
+                                                 "max resources " \
+                                                 "dependency");
+                }
+            }
+            remove_dep (held_jobs[jobid], "max-resource-user-limit");
+        }
+        if (held_jobs[jobid].deps.size () == 0)
+            // job no longer has any dependencies on it and was removed
+            // from the plugin's internal map of held jobs; also remove
+            // it from the Association object
+            b->held_jobs.erase (b->held_jobs.begin ());
     }
 
     return 0;
