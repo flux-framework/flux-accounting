@@ -1,3 +1,46 @@
+flux-accounting version 0.43.0 - 2025-04-01
+-------------------------------------------
+
+#### Fixes
+
+* fair-share calculation: change `shares`, `usage` types to more appropriate
+types (#585)
+
+* plugin: return more specific error messages when updating bank attribute
+(#590)
+
+* `apply_decay_factor ()`: fix iteration through usage periods, actually
+`commit` SQL statements (#594)
+
+* mf_priority: update jj library from flux-core (#603)
+
+* plugin: clean up error handling, comments in `job.state.depend` (#605)
+
+#### Features
+
+* plugin: add enforcement of max running jobs limit for a queue per-association
+(#491)
+
+* python: create new `QueueFormatter` class, refactor `view_queue()` to use new
+class (#586)
+
+* cmd: add `list-queues` command (#588)
+
+* cmd: add new `list-users` command (#597)
+
+* `view-*`/`list-*` commands: add `-o/--format` optional argument (#600)
+
+* bindings: add `ProjectFormatter` subclass, `-o/--format` options to
+`view-project`/`list-projects` (#602)
+
+#### Testsuite
+
+* ci: update Ubuntu version for GitHub actions (#584)
+
+#### Documentation
+
+* doc: add health/sanity checklist for flux-accounting (#592)
+
 flux-accounting version 0.42.0 - 2025-02-11
 -------------------------------------------
 
