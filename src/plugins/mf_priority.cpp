@@ -922,8 +922,6 @@ static int depend_cb (flux_plugin_t *p,
             if (flux_jobtap_dependency_add (p, id, dependency.c_str ()) < 0)
                 goto error;
             b->queue_held_jobs[queue].push_back (id);
-
-            return 0;
         }
     }
 
