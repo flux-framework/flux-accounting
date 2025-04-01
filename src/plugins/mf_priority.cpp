@@ -870,6 +870,7 @@ static int depend_cb (flux_plugin_t *p,
     long int id;
     Association *b;
     char *queue = NULL;
+    std::string dependency;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
@@ -917,35 +918,32 @@ static int depend_cb (flux_plugin_t *p,
         if (assoc_cur_run_jobs >= queue_max_run_jobs) {
             // association is already at their max number of running jobs
             // in this queue; add a dependency
-            if (flux_jobtap_dependency_add (p, id, "max-run-jobs-queue") < 0) {
-                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
-                                            "mf_priority", 0, "failed to "
-                                            "add dependency for max run jobs "
-                                            "per-queue limit");
-                return -1;
-            }
+            dependency = "max-run-jobs-queue";
+            if (flux_jobtap_dependency_add (p, id, dependency.c_str ()) < 0)
+                goto error;
             b->queue_held_jobs[queue].push_back (id);
-
-            return 0;
         }
     }
 
-    // if user has already hit their max running jobs count, add a job
-    // dependency to hold job until an already running job has finished
     if ((b->max_run_jobs > 0) && (b->cur_run_jobs == b->max_run_jobs)) {
-        if (flux_jobtap_dependency_add (p,
-                                        id,
-                                        "max-running-jobs-user-limit") < 0) {
-            flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
-                                         "mf_priority", 0, "failed to add " \
-                                         "job dependency");
-
-            return -1;
-        }
+        // association is already at their max running jobs count; add a
+        // dependency to hold the job until an already running one finishes
+        dependency = "max-running-jobs-user-limit";
+        if (flux_jobtap_dependency_add (p, id, dependency.c_str ()) < 0)
+            goto error;
         b->held_jobs.push_back (id);
     }
 
     return 0;
+error:
+    flux_jobtap_raise_exception (p,
+                                 FLUX_JOBTAP_CURRENT_JOB,
+                                 "mf_priority",
+                                 0,
+                                 "job.state.depend: failed to add %s "
+                                 "dependency to job",
+                                 dependency.c_str ());
+    return -1;
 }
 
 

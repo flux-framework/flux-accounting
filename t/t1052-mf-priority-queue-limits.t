@@ -200,6 +200,61 @@ test_expect_success 'cancel running jobs' '
 	flux cancel ${job3}
 '
 
+# In this set of tests, an association hits both their max running jobs limit
+# *as well as* the max running jobs limit for a specific queue. In this case,
+# BOTH dependencies are added to the job. Once a currently running job in this
+# queue completes, the dependencies are checked one at a time to make sure that
+# both conditions are satisfied before releasing the job to be scheduled to be
+# run.
+test_expect_success 'add a user' '
+	flux account add-user \
+		--username=user2 \
+		--userid=5002 \
+		--bank=bankA \
+		--queues="gold" \
+		--max-running-jobs=1 &&
+	flux account-priority-update -p ${DB_PATH}
+'
+
+test_expect_success 'submit enough jobs to take up both limits' '
+	job1=$(flux python ${SUBMIT_AS} 5002 --queue=gold sleep 60) &&
+	flux job wait-event -vt 10 ${job1} priority
+'
+
+test_expect_success 'ensure both dependencies get added to job' '
+	job2=$(flux python ${SUBMIT_AS} 5002 --queue=gold sleep 60) &&
+	flux job wait-event -vt 10 \
+		--match-context=description="max-running-jobs-user-limit" \
+		${job2} dependency-add &&
+	flux job wait-event -vt 10 \
+		--match-context=description="max-run-jobs-queue" \
+		${job2} dependency-add &&
+	flux jobtap query mf_priority.so > query.json &&
+	test_debug "jq -S . <query.json" &&
+	jq -e ".mf_priority_map[] | select(.userid == 5002) | .banks[0].held_jobs | length == 1" <query.json
+'
+
+test_expect_success 'once enough resources have been freed up, job can transition to run' '
+	flux cancel ${job1} &&
+	flux job wait-event -vt 5 \
+		--match-context=description="max-running-jobs-user-limit" \
+		${job2} dependency-remove &&
+	flux job wait-event -vt 5 \
+		--match-context=description="max-run-jobs-queue" \
+		${job2} dependency-remove &&
+	flux job wait-event -vt 10 ${job2} alloc
+'
+
+test_expect_success 'cancel running job' '
+	flux cancel ${job2}
+'
+
+test_expect_success 'make sure association has no held jobs in their Association object' '
+	flux jobtap query mf_priority.so > query.json &&
+	test_debug "jq -S . <query.json" &&
+	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].held_jobs | length == 0" <query.json
+'
+
 test_expect_success 'shut down flux-accounting service' '
 	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
