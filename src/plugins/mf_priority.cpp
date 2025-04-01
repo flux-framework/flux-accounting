@@ -1226,6 +1226,7 @@ static int inactive_cb (flux_plugin_t *p,
     Association *b;
     json_t *jobspec = NULL;
     char *queue = NULL;
+    std::string dependency;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
@@ -1303,16 +1304,12 @@ static int inactive_cb (flux_plugin_t *p,
                 (b->queue_usage[queue] < queue_max_run_jobs)) {
                 // association has at least one held job in queue;
                 // remove the dependency from the first held job
+                dependency = "max-run-jobs-queue";
                 long int id = b->queue_held_jobs[queue].front ();
                 if (flux_jobtap_dependency_remove (p,
                                                    id,
-                                                   "max-run-jobs-queue") < 0) {
-                    flux_jobtap_raise_exception (p, id, "mf_priority",
-                                                 0, "failed to remove job "
-                                                 " dependency for max run jobs "
-                                                 "per-queue limit");
-                    return -1;
-                }
+                                                   dependency.c_str ()) < 0)
+                    goto error;
                 b->queue_held_jobs[queue].erase (
                     b->queue_held_jobs[queue].begin ()
                 );
@@ -1324,20 +1321,22 @@ static int inactive_cb (flux_plugin_t *p,
     // under their max jobs limit, remove the dependency from first held job
     if ((b->held_jobs.size () > 0) && (b->cur_run_jobs < b->max_run_jobs)) {
         long int jobid = b->held_jobs.front ();
-
-        if (flux_jobtap_dependency_remove (p,
-                                           jobid,
-                                           "max-running-jobs-user-limit") < 0)
-        {
-            flux_jobtap_raise_exception (p, jobid, "mf_priority",
-                                         0, "failed to remove job dependency");
-            return -1;
-        }
-
+        dependency = "max-running-jobs-user-limit";
+        if (flux_jobtap_dependency_remove (p, jobid, dependency.c_str ()) < 0)
+            goto error;
         b->held_jobs.erase (b->held_jobs.begin ());
     }
 
     return 0;
+error:
+    flux_jobtap_raise_exception (p,
+                                 FLUX_JOBTAP_CURRENT_JOB,
+                                 "mf_priority",
+                                 0,
+                                 "job.state.inactive: failed to remove %s "
+                                 "dependency from job",
+                                 dependency.c_str ());
+    return -1;
 }
 
 
