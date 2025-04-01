@@ -927,9 +927,9 @@ static int depend_cb (flux_plugin_t *p,
         }
     }
 
-    // if user has already hit their max running jobs count, add a job
-    // dependency to hold job until an already running job has finished
     if ((b->max_run_jobs > 0) && (b->cur_run_jobs == b->max_run_jobs)) {
+        // association is already at their max running jobs count; add a
+        // dependency to hold the job until an already running one finishes
         dependency = "max-running-jobs-user-limit";
         if (flux_jobtap_dependency_add (p, id, dependency.c_str ()) < 0)
             goto error;
