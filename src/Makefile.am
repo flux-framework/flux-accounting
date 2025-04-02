@@ -50,7 +50,8 @@ TESTS = \
 	weighted_tree_test01.t \
 	data_reader_db_test01.t \
 	data_writer_db_test01.t \
-	accounting_test01.t
+	accounting_test01.t \
+	job_test02.t
 check_PROGRAMS = $(TESTS)
 
 TEST_EXTENSIONS = .t
@@ -103,6 +104,16 @@ accounting_test01_t_SOURCES = \
 	plugins/accounting.hpp
 accounting_test01_t_CXXFLAGS = $(AM_CXXFLAGS) -I$(top_srcdir) $(JANSSON_CFLAGS)
 accounting_test01_t_LDADD = \
+	common/libtap/libtap.la \
+	$(JANSSON_LIBS)
+
+job_test02_t_SOURCES = \
+	plugins/test/job_test02.cpp \
+	plugins/job.cpp \
+	plugins/job.hpp \
+	plugins/jj.cpp
+job_test02_t_CXXFLAGS = $(AM_CXXFLAGS) -I$(top_srcdir) $(JANSSON_CFLAGS)
+job_test02_t_LDADD = \
 	common/libtap/libtap.la \
 	$(JANSSON_LIBS)
 
