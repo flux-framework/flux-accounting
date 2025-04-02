@@ -30,7 +30,7 @@ extern "C" {
 #include <sstream>
 #include <cstdint>
 
-// custom bank_info class file
+// custom Association class file
 #include "accounting.hpp"
 // custom job resource counting file
 #include "jj.hpp"
