@@ -85,6 +85,7 @@ public:
     std::unordered_map<std::string,
                        std::vector<long int>>
       queue_held_jobs;                // keep track of held job ID's per queue
+    std::map<flux_jobid_t, Job> hj;    // map to keep track of held Jobs
 
     // methods
     json_t* to_json () const;    // convert object to JSON string
