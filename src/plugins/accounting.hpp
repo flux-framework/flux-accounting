@@ -124,8 +124,4 @@ int get_project_info (const char *project,
                       std::vector<std::string> &permissible_projects,
                       std::vector<std::string> projects);
 
-// fetch the max number of running jobs a queue can have per-association
-int max_run_jobs_per_queue (const std::map<std::string, Queue> &queues,
-                            const std::string &queue);
-
 #endif // ACCOUNTING_H

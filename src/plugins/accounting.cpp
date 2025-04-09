@@ -252,14 +252,3 @@ int get_project_info (const char *project,
 
     return 0;
 }
-
-
-int max_run_jobs_per_queue (const std::map<std::string, Queue> &queues,
-                            const std::string &queue)
-{
-    auto it = queues.find (queue);
-    if (it == queues.end ())
-        return -1;
-
-    return it->second.max_running_jobs;
-}
