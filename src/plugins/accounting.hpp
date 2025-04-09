@@ -28,8 +28,36 @@ extern "C" {
 #include <sstream>
 #include <algorithm>
 #include <unordered_map>
+#include <cmath>
 
 #include "job.hpp"
+
+// - UNKNOWN_QUEUE: a queue is specified for a submitted job that flux-accounting
+// does not know about
+// - NO_QUEUE_SPECIFIED: no queue was specified for this job
+// - INVALID_QUEUE: the association does not have permission to run jobs under
+// this queue
+#define UNKNOWN_QUEUE 0
+#define NO_QUEUE_SPECIFIED 0
+#define INVALID_QUEUE -6
+
+// - UNKNOWN_PROJECT: a project that flux-accounting doesn't know about
+// - INVALID_PROJECT: a project that the association doesn't have permission
+// to charge jobs under
+#define UNKNOWN_PROJECT -6
+#define INVALID_PROJECT -7
+
+// min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
+// currently used or enforced in this plugin, so their values have no
+// effect in queue limit enforcement.
+class Queue {
+public:
+    int min_nodes_per_job = 0;
+    int max_nodes_per_job = std::numeric_limits<int>::max ();
+    int max_time_per_job = std::numeric_limits<int>::max ();
+    int priority = 0;
+    int max_running_jobs = std::numeric_limits<int>::max ();
+};
 
 // all attributes are per-user/bank
 class Association {
@@ -59,33 +87,6 @@ public:
 
     // methods
     json_t* to_json () const;    // convert object to JSON string
-};
-
-// - UNKNOWN_QUEUE: a queue is specified for a submitted job that flux-accounting
-// does not know about
-// - NO_QUEUE_SPECIFIED: no queue was specified for this job
-// - INVALID_QUEUE: the association does not have permission to run jobs under
-// this queue
-#define UNKNOWN_QUEUE 0
-#define NO_QUEUE_SPECIFIED 0
-#define INVALID_QUEUE -6
-
-// - UNKNOWN_PROJECT: a project that flux-accounting doesn't know about
-// - INVALID_PROJECT: a project that the association doesn't have permission
-// to charge jobs under
-#define UNKNOWN_PROJECT -6
-#define INVALID_PROJECT -7
-
-// min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
-// currently used or enforced in this plugin, so their values have no
-// effect in queue limit enforcement.
-class Queue {
-public:
-    int min_nodes_per_job;
-    int max_nodes_per_job;
-    int max_time_per_job;
-    int priority;
-    int max_running_jobs;
 };
 
 // get an Association object that points to user/bank in the users map;
