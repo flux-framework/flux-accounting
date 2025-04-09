@@ -90,9 +90,9 @@ void initialize_map (
  * helper function to add test queues to the queues map
  */
 void initialize_queues () {
-    queues["bronze"] = {0, 5, 60, 100, 100};
-    queues["silver"] = {0, 5, 60, 200, 100};
-    queues["gold"] = {0, 5, 60, 300, 100};
+    queues["bronze"] = {"bronze", 0, 5, 60, 100, 100};
+    queues["silver"] = {"silver", 0, 5, 60, 200, 100};
+    queues["gold"] = {"gold", 0, 5, 60, 300, 100};
 }
 
 
@@ -262,6 +262,29 @@ static void test_get_project_info_invalid_project ()
 }
 
 
+// make sure we can determine if an Association is under the max running jobs
+// limit for a queue
+static void test_under_queue_max_running_jobs_true ()
+{
+    Association a = users[1001]["bank_A"];
+    Queue bronze = queues["bronze"];
+    ok ((a.queue_usage["bronze"] < bronze.max_running_jobs) == true,
+        "association is under the max running jobs limit for the queue");
+}
+
+
+static void test_under_queue_max_running_jobs_false ()
+{
+    Association a = users[1001]["bank_A"];
+    Queue bronze = queues["bronze"];
+    // simulate the Association being at their queue max running jobs limit
+    bronze.max_running_jobs = 5;
+    a.queue_usage["bronze"] = 5;
+    ok ((a.queue_usage["bronze"] < bronze.max_running_jobs) == false,
+        "association is at their max running jobs limit for the queue");
+}
+
+
 // ensure false is returned because we have valid flux-accounting data in map
 static void test_check_map_dne_false ()
 {
@@ -291,9 +314,6 @@ static void test_check_map_dne_true ()
 
 int main (int argc, char* argv[])
 {
-    // declare the number of tests that we plan to run
-    plan (15);
-
     // add users to the test map
     initialize_map (users);
     // add queues to the test queues map
@@ -316,6 +336,8 @@ int main (int argc, char* argv[])
     test_get_project_info_invalid_project ();
     test_check_map_dne_false ();
     test_check_map_dne_true ();
+    test_under_queue_max_running_jobs_true ();
+    test_under_queue_max_running_jobs_false ();
 
     // indicate we are done testing
     done_testing ();
