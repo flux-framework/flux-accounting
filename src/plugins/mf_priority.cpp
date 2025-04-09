@@ -193,7 +193,6 @@ static void add_special_association (flux_plugin_t *p, flux_t *h, int userid)
     a->max_active_jobs = 1000;
     a->cur_active_jobs = 0;
     a->active = 1;
-    a->held_jobs = std::vector<long int>();
     a->max_nodes = INT16_MAX;
     a->max_cores = INT16_MAX;
 

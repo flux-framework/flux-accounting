@@ -39,29 +39,14 @@ Association* get_association (int userid,
 
 json_t* Association::to_json () const
 {
-    json_t *held_job_ids = json_array ();
-    if (!held_job_ids) {
-        return nullptr;
-    }
-    for (const auto &job_id : held_jobs) {
-        json_t *temp;
-        if (!(temp = json_integer (job_id))
-            || json_array_append_new (held_job_ids, temp) < 0) {
-            json_decref (held_job_ids);
-            return nullptr;
-        }
-    }
-
     json_t *user_queues = json_array ();
     if (!user_queues) {
-        json_decref (held_job_ids);
         return nullptr;
     }
     for (const auto &queue : queues) {
         json_t *temp;
         if (!(temp = json_string (queue.c_str ()))
             || json_array_append_new (user_queues, temp) < 0) {
-            json_decref (held_job_ids);
             json_decref (user_queues);
             return nullptr;
         }
@@ -69,7 +54,6 @@ json_t* Association::to_json () const
 
     json_t *user_projects = json_array ();
     if (!user_projects) {
-        json_decref (held_job_ids);
         json_decref (user_queues);
         return nullptr;
     }
@@ -77,7 +61,6 @@ json_t* Association::to_json () const
         json_t *temp;
         if (!(temp = json_string (project.c_str ()))
             || json_array_append_new (user_projects, temp) < 0) {
-            json_decref (held_job_ids);
             json_decref (user_queues);
             json_decref (user_projects);
             return nullptr;
@@ -86,7 +69,6 @@ json_t* Association::to_json () const
 
     json_t *queue_usage_json = json_object ();
     if (!queue_usage_json) {
-        json_decref (held_job_ids);
         json_decref (user_queues);
         json_decref (user_projects);
         return nullptr;
@@ -95,7 +77,6 @@ json_t* Association::to_json () const
         if (json_object_set_new (queue_usage_json,
                                  entry.first.c_str (),
                                  json_integer (entry.second)) < 0) {
-            json_decref (held_job_ids);
             json_decref (user_queues);
             json_decref (user_projects);
             json_decref (queue_usage_json);
@@ -165,7 +146,7 @@ json_t* Association::to_json () const
     }
 
     // 'o' steals the reference for both held_job_ids and user_queues
-    json_t *u = json_pack ("{s:s, s:f, s:i, s:i, s:i, s:i, s:o,"
+    json_t *u = json_pack ("{s:s, s:f, s:i, s:i, s:i, s:i"
                            " s:o, s:i, s:o, s:s, s:i, s:i, s:i,"
                            " s:i, s:i, s:o, s:o}",
                            "bank_name", bank_name.c_str (),
@@ -174,7 +155,6 @@ json_t* Association::to_json () const
                            "cur_run_jobs", cur_run_jobs,
                            "max_active_jobs", max_active_jobs,
                            "cur_active_jobs", cur_active_jobs,
-                           "held_jobs", held_job_ids,
                            "queues", user_queues,
                            "queue_factor", queue_factor,
                            "projects", user_projects,
