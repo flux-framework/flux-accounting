@@ -52,6 +52,7 @@ extern "C" {
 // effect in queue limit enforcement.
 class Queue {
 public:
+    std::string name = "";
     int min_nodes_per_job = 0;
     int max_nodes_per_job = std::numeric_limits<int>::max ();
     int max_time_per_job = std::numeric_limits<int>::max ();

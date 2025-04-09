@@ -432,6 +432,7 @@ static void rec_q_cb (flux_t *h,
         Queue *q;
         q = &queues[queue];
 
+        q->name = queue;
         q->min_nodes_per_job = min_nodes_per_job;
         q->max_nodes_per_job = max_nodes_per_job;
         q->max_time_per_job = max_time_per_job;

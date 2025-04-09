@@ -90,9 +90,9 @@ void initialize_map (
  * helper function to add test queues to the queues map
  */
 void initialize_queues () {
-    queues["bronze"] = {0, 5, 60, 100, 100};
-    queues["silver"] = {0, 5, 60, 200, 100};
-    queues["gold"] = {0, 5, 60, 300, 100};
+    queues["bronze"] = {"bronze", 0, 5, 60, 100, 100};
+    queues["silver"] = {"silver", 0, 5, 60, 200, 100};
+    queues["gold"] = {"gold", 0, 5, 60, 300, 100};
 }
 
 
