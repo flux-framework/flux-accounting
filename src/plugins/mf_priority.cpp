@@ -906,13 +906,7 @@ static int depend_cb (flux_plugin_t *p,
         // safely assign "queue" to an std::string
         std::string value (queue);
         // fetch max number of running jobs in this queue
-        int queue_max_run_jobs = max_run_jobs_per_queue (queues, queue);
-        if (queue_max_run_jobs < 0) {
-            // can't find a max_run_jobs limit for this queue because it
-            // might not be defined in the flux-accounting DB, so just set
-            // it to a large number
-            queue_max_run_jobs = std::numeric_limits<int>::max ();
-        }
+        int queue_max_run_jobs = queues[queue].max_running_jobs;
 
         // look up the association's current number of running jobs;
         // if queue cannot be found, an entry in the Association object will be
@@ -1295,13 +1289,7 @@ static int inactive_cb (flux_plugin_t *p,
             b->queue_usage[queue]--;
 
             // fetch max number of running jobs in queue
-            int queue_max_run_jobs = max_run_jobs_per_queue (queues, queue);
-            if (queue_max_run_jobs < 0) {
-                // can't find a max_run_jobs limit for this queue because it
-                // might not be defined in the flux-accounting DB, so just set
-                // it to a large number
-                queue_max_run_jobs = std::numeric_limits<int>::max ();
-            }
+            int queue_max_run_jobs = queues[queue].max_running_jobs;
 
             if ((b->queue_held_jobs[queue].size () > 0) &&
                 (b->queue_usage[queue] < queue_max_run_jobs)) {
