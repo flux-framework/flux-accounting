@@ -291,9 +291,6 @@ static void test_check_map_dne_true ()
 
 int main (int argc, char* argv[])
 {
-    // declare the number of tests that we plan to run
-    plan (15);
-
     // add users to the test map
     initialize_map (users);
     // add queues to the test queues map
