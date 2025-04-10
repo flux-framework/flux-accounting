@@ -39,29 +39,14 @@ Association* get_association (int userid,
 
 json_t* Association::to_json () const
 {
-    json_t *held_job_ids = json_array ();
-    if (!held_job_ids) {
-        return nullptr;
-    }
-    for (const auto &job_id : held_jobs) {
-        json_t *temp;
-        if (!(temp = json_integer (job_id))
-            || json_array_append_new (held_job_ids, temp) < 0) {
-            json_decref (held_job_ids);
-            return nullptr;
-        }
-    }
-
     json_t *user_queues = json_array ();
     if (!user_queues) {
-        json_decref (held_job_ids);
         return nullptr;
     }
     for (const auto &queue : queues) {
         json_t *temp;
         if (!(temp = json_string (queue.c_str ()))
             || json_array_append_new (user_queues, temp) < 0) {
-            json_decref (held_job_ids);
             json_decref (user_queues);
             return nullptr;
         }
@@ -69,7 +54,6 @@ json_t* Association::to_json () const
 
     json_t *user_projects = json_array ();
     if (!user_projects) {
-        json_decref (held_job_ids);
         json_decref (user_queues);
         return nullptr;
     }
@@ -77,7 +61,6 @@ json_t* Association::to_json () const
         json_t *temp;
         if (!(temp = json_string (project.c_str ()))
             || json_array_append_new (user_projects, temp) < 0) {
-            json_decref (held_job_ids);
             json_decref (user_queues);
             json_decref (user_projects);
             return nullptr;
@@ -86,7 +69,6 @@ json_t* Association::to_json () const
 
     json_t *queue_usage_json = json_object ();
     if (!queue_usage_json) {
-        json_decref (held_job_ids);
         json_decref (user_queues);
         json_decref (user_projects);
         return nullptr;
@@ -95,7 +77,6 @@ json_t* Association::to_json () const
         if (json_object_set_new (queue_usage_json,
                                  entry.first.c_str (),
                                  json_integer (entry.second)) < 0) {
-            json_decref (held_job_ids);
             json_decref (user_queues);
             json_decref (user_projects);
             json_decref (queue_usage_json);
@@ -103,17 +84,85 @@ json_t* Association::to_json () const
         }
     }
 
+    json_t *hj_json = json_object ();
+    if (!hj_json) {
+        json_decref (user_queues);
+        json_decref (user_projects);
+        json_decref (queue_usage_json);
+        return nullptr;
+    }
+
+    for (const auto &entry : held_jobs) {
+        const Job &job = entry;
+        json_t *job_json = json_pack ("{s:i, s:i, s:s, s:o}",
+                                      "nnodes", job.nnodes,
+                                      "ncores", job.ncores,
+                                      "queue", job.queue.c_str (),
+                                      "deps", json_array ());
+
+        if (!job_json) {
+            json_decref (user_queues);
+            json_decref (user_projects);
+            json_decref (queue_usage_json);
+            json_decref (hj_json);
+            return nullptr;
+        }
+
+        json_t *deps_array = json_array ();
+        if (!deps_array) {
+            json_decref (user_queues);
+            json_decref (user_projects);
+            json_decref (queue_usage_json);
+            json_decref (hj_json);
+            json_decref (job_json);
+            return nullptr;
+        }
+
+        for (const auto &dep : job.deps) {
+            json_t *dep_str = json_string (dep.c_str ());
+            if (!dep_str || json_array_append_new (deps_array, dep_str) < 0) {
+                json_decref (user_queues);
+                json_decref (user_projects);
+                json_decref (queue_usage_json);
+                json_decref (hj_json);
+                json_decref (deps_array);
+                json_decref (job_json);
+                return nullptr;
+            }
+        }
+
+        if (json_object_set_new (job_json, "deps", deps_array) < 0) {
+            json_decref (user_queues);
+            json_decref (user_projects);
+            json_decref (queue_usage_json);
+            json_decref (hj_json);
+            json_decref (deps_array);
+            json_decref (job_json);
+            return nullptr;
+        }
+
+        // use job id (flux_jobid_t) as string key
+        char keybuf[32];
+        snprintf (keybuf, sizeof(keybuf), "%ld", entry.id);
+        if (json_object_set_new (hj_json, keybuf, job_json) < 0) {
+            json_decref (user_queues);
+            json_decref (user_projects);
+            json_decref (queue_usage_json);
+            json_decref (hj_json);
+            return nullptr;
+        }
+    }
+
     // 'o' steals the reference for both held_job_ids and user_queues
-    json_t *u = json_pack ("{s:s, s:f, s:i, s:i, s:i, s:i, s:o,"
+    json_t *u = json_pack ("{s:s, s:f, s:i, s:i, s:i, s:i"
                            " s:o, s:i, s:o, s:s, s:i, s:i, s:i,"
-                           " s:i, s:i, s:o}",
+                           " s:i, s:i, s:o, s:o}",
                            "bank_name", bank_name.c_str (),
                            "fairshare", fairshare,
                            "max_run_jobs", max_run_jobs,
                            "cur_run_jobs", cur_run_jobs,
                            "max_active_jobs", max_active_jobs,
                            "cur_active_jobs", cur_active_jobs,
-                           "held_jobs", held_job_ids,
                            "queues", user_queues,
                            "queue_factor", queue_factor,
                            "projects", user_projects,
@@ -123,7 +172,8 @@ json_t* Association::to_json () const
                            "cur_nodes", cur_nodes,
                            "cur_cores", cur_cores,
                            "active", active,
-                           "queue_usage", queue_usage_json);
+                           "queue_usage", queue_usage_json,
+                           "held_jobs", hj_json);
 
     if (!u)
         return nullptr;
