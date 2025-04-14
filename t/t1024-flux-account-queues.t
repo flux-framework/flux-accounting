@@ -150,6 +150,12 @@ test_expect_success 'call list-queues with a format string' '
 	grep "standby ||60" format_string.out
 '
 
+test_expect_success 'remove a queue that is referenced by at least one association' '
+	flux account edit-user user5014 --queues="queue_2" &&
+	flux account delete-queue queue_2 > warning_message.out &&
+	grep "WARNING: user(s) in the association_table still reference this queue." warning_message.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
