@@ -39,3 +39,7 @@ database hierarchy.
 .. option:: --fields
 
     Customize which fields are returned in the output of ``view-bank``.
+
+.. option:: -o/--format
+
+    Specify output format using Python's string format syntax.
