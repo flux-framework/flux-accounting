@@ -70,11 +70,29 @@ def add_queue(
 
 
 def delete_queue(conn, queue):
-    delete_stmt = "DELETE FROM queue_table WHERE queue=?"
+    """
+    Remove a queue from the queue_table. If any associations still have permissions
+    to this queue, issue a warning that the queue is still referenced elsewhere in the
+    DB.
+    """
     cursor = conn.cursor()
-    cursor.execute(delete_stmt, (queue,))
+    # look for any rows in the association_table that reference this queue
+    select_stmt = "SELECT * FROM association_table WHERE queues LIKE ?"
+    cursor.execute(select_stmt, ("%" + queue + "%",))
+    result = cursor.fetchall()
+    warning_stmt = (
+        "WARNING: user(s) in the association_table still "
+        "reference this queue. Make sure to edit user rows to "
+        "account for this deleted queue."
+    )
 
+    delete_stmt = "DELETE FROM queue_table WHERE queue=?"
+    cursor.execute(delete_stmt, (queue,))
     conn.commit()
+
+    if len(result) > 0:
+        # at least one association references this queue; return warning message
+        return warning_stmt
 
     return 0
 
