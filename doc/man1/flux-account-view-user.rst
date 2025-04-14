@@ -31,3 +31,7 @@ well as customizing which fields are returned.
 .. option:: --list-banks
 
     Concisely list all of the banks a user belongs to.
+
+.. option:: -o/--format
+
+    Specify output format using Python's string format syntax.
