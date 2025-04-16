@@ -74,7 +74,7 @@ public:
     int cur_run_jobs;                  // current number of running jobs
     int max_active_jobs;               // max number of active jobs
     int cur_active_jobs;               // current number of active jobs
-    std::vector<long int> held_jobs;   // list of currently held job ID's
+    std::vector<Job> held_jobs;        // vector to keep track of held Jobs
     std::vector<std::string> queues;   // list of accessible queues
     int queue_factor;                  // priority factor associated with queue
     int active;                        // active status
@@ -86,9 +86,6 @@ public:
     int cur_cores;                     // current number of used cores
     std::unordered_map<std::string, int>
       queue_usage;                     // track num of running jobs per queue
-    std::unordered_map<std::string,
-                       std::vector<long int>>
-      queue_held_jobs;                // keep track of held job ID's per queue
 
     // methods
     json_t* to_json () const;    // convert object to JSON string

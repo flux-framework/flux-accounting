@@ -59,8 +59,7 @@ void add_user_to_map (
         a.max_cores,
         a.cur_nodes,
         a.cur_cores,
-        a.queue_usage,
-        a.queue_held_jobs
+        a.queue_usage
     };
 }
 
@@ -73,10 +72,10 @@ void initialize_map (
 {
     Association user1 = {"bank_A", 0.5, 5, 0, 7, 0, {},
                          {}, 0, 1, {"*"}, "*", 2147483647, 2147483647, 0, 0,
-                         {}, {}};
+                         {}};
     Association user2 = {"bank_A", 0.5, 5, 0, 7, 0, {},
                          {}, 0, 1, {"*"}, "*", 2147483647, 2147483647, 0, 0,
-                         {}, {}};
+                         {}};
 
     add_user_to_map (users, 1001, "bank_A", user1);
     users_def_bank[1001] = "bank_A";
@@ -302,7 +301,7 @@ static void test_check_map_dne_true ()
 
     Association tmp_user = {"DNE", 0.5, 5, 0, 7, 0, {},
                             {}, 0, 1, {"*"}, "*", 2147483647, 2147483647,
-                            0, 0, {}, {}};
+                            0, 0, {}};
     add_user_to_map (users, 9999, "DNE", tmp_user);
     users_def_bank[9999] = "DNE";
 
