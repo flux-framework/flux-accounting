@@ -252,3 +252,21 @@ int get_project_info (const char *project,
 
     return 0;
 }
+
+
+bool Association::under_max_run_jobs ()
+{
+    bool under_assoc_max_run_jobs = cur_run_jobs < max_run_jobs;
+
+    return under_assoc_max_run_jobs;
+}
+
+
+bool Association::under_queue_max_run_jobs (
+                                const std::string &queue,
+                                std::map<std::string, Queue> queues) {
+    bool under_queue_max_run_jobs = queue_usage[queue] <
+                                    queues[queue].max_running_jobs;
+
+    return under_queue_max_run_jobs;
+}

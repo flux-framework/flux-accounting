@@ -47,6 +47,10 @@ extern "C" {
 #define UNKNOWN_PROJECT -6
 #define INVALID_PROJECT -7
 
+// dependency names for flux-accounting dependencies
+#define D_QUEUE_MRJ "max-run-jobs-queue"
+#define D_ASSOC_MRJ "max-running-jobs-user-limit"
+
 // min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
 // currently used or enforced in this plugin, so their values have no
 // effect in queue limit enforcement.
@@ -88,6 +92,11 @@ public:
 
     // methods
     json_t* to_json () const;    // convert object to JSON string
+    // check to see if a job can be released from all flux-accounting
+    // dependencies
+    bool under_max_run_jobs ();
+    bool under_queue_max_run_jobs (const std::string &queue,
+                                   std::map<std::string, Queue> queues);
 };
 
 // get an Association object that points to user/bank in the users map;
