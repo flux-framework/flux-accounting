@@ -47,6 +47,10 @@ extern "C" {
 #define UNKNOWN_PROJECT -6
 #define INVALID_PROJECT -7
 
+// dependency names for flux-accounting dependencies
+#define D_QUEUE_MRJ "max-run-jobs-queue"
+#define D_ASSOC_MRJ "max-running-jobs-user-limit"
+
 // min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
 // currently used or enforced in this plugin, so their values have no
 // effect in queue limit enforcement.
@@ -70,7 +74,7 @@ public:
     int cur_run_jobs;                  // current number of running jobs
     int max_active_jobs;               // max number of active jobs
     int cur_active_jobs;               // current number of active jobs
-    std::vector<long int> held_jobs;   // list of currently held job ID's
+    std::vector<Job> held_jobs;        // vector to keep track of held Jobs
     std::vector<std::string> queues;   // list of accessible queues
     int queue_factor;                  // priority factor associated with queue
     int active;                        // active status
@@ -82,12 +86,14 @@ public:
     int cur_cores;                     // current number of used cores
     std::unordered_map<std::string, int>
       queue_usage;                     // track num of running jobs per queue
-    std::unordered_map<std::string,
-                       std::vector<long int>>
-      queue_held_jobs;                // keep track of held job ID's per queue
 
     // methods
     json_t* to_json () const;    // convert object to JSON string
+    // check to see if a job can be released from all flux-accounting
+    // dependencies
+    bool under_max_run_jobs ();
+    bool under_queue_max_run_jobs (const std::string &queue,
+                                   std::map<std::string, Queue> queues);
 };
 
 // get an Association object that points to user/bank in the users map;
@@ -123,9 +129,5 @@ bool check_map_for_dne_only (std::map<int, std::map<std::string, Association>>
 int get_project_info (const char *project,
                       std::vector<std::string> &permissible_projects,
                       std::vector<std::string> projects);
-
-// fetch the max number of running jobs a queue can have per-association
-int max_run_jobs_per_queue (const std::map<std::string, Queue> &queues,
-                            const std::string &queue);
 
 #endif // ACCOUNTING_H
