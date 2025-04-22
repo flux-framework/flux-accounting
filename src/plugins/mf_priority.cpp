@@ -238,6 +238,75 @@ static int decrement_resources (Association *b, json_t *jobspec)
 }
 
 
+/*
+ * Loop through an association's held_jobs vector and see if each job satisfies
+ * all requirements to be released by the plugin. Check each flux-accounting
+ * limit individually to 1) ensure that the association is under the particular
+ * limit, and 2) the job currently contains a dependency related to that
+ * particular limit.
+ *
+ * If by the end of these limit checks, the Job object contains no
+ * dependencies, remove the Job from the association's list of held jobs and
+ * move onto the next job. If it contains at least one dependency, move the
+ * iterator to the next job and check to see if it satisfies all requirements
+ * to be released. Continue to loop until we've checked every held job for the
+ * association.
+ */
+static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
+{
+    std::string dependency;
+    // the Association has at least one held Job; begin looping through
+    // held Jobs and see if they satisfy the requirements to be released
+    auto it = b->held_jobs.begin ();
+    while (it != b->held_jobs.end ()) {
+        // grab held Job object
+        Job &held_job = *it;
+
+        // is the association under the max running jobs limit for the
+        // queue the held job is submitted under?
+        if (b->under_queue_max_run_jobs (held_job.queue, queues) &&
+            held_job.contains_dep (D_QUEUE_MRJ)) {
+            if (flux_jobtap_dependency_remove (p,
+                                               held_job.id,
+                                               D_QUEUE_MRJ) < 0) {
+                dependency = D_QUEUE_MRJ;
+                goto error;
+            }
+            held_job.remove_dep (D_QUEUE_MRJ);
+        }
+        // is association under their overall max running jobs limit?
+        if (b->under_max_run_jobs () && held_job.contains_dep (D_ASSOC_MRJ)) {
+            if (flux_jobtap_dependency_remove (p,
+                                               held_job.id,
+                                               D_ASSOC_MRJ) < 0) {
+                dependency = D_ASSOC_MRJ;
+                goto error;
+            }
+            held_job.remove_dep (D_ASSOC_MRJ);
+        }
+
+        if (held_job.deps.empty ())
+            // the Job no longer has any flux-accounting dependencies on
+            // it; remove it from the Association's vector of held jobs
+            // (erase () will return the next valid iterator)
+            it = b->held_jobs.erase (it);
+        else
+            // the job did not meet all requirements to be released;
+            // move onto the next Job
+            ++it;
+    }
+error:
+    flux_jobtap_raise_exception (p,
+                                 FLUX_JOBTAP_CURRENT_JOB,
+                                 "mf_priority",
+                                 0,
+                                 "job.state.inactive: failed to remove %s "
+                                 "dependency from job",
+                                 dependency.c_str ());
+    return -1;
+}
+
+
 /******************************************************************************
  *                                                                            *
  *                               Callbacks                                    *
@@ -1231,7 +1300,6 @@ static int inactive_cb (flux_plugin_t *p,
     Association *b;
     json_t *jobspec = NULL;
     char *queue = NULL;
-    std::string dependency;
     std::string queue_str;
 
     flux_t *h = flux_jobtap_get_flux (p);
@@ -1299,41 +1367,8 @@ static int inactive_cb (flux_plugin_t *p,
     if (!b->held_jobs.empty ()) {
         // the Association has at least one held Job; begin looping through
         // held Jobs and see if they satisfy the requirements to be released
-        auto it = b->held_jobs.begin ();
-        while (it != b->held_jobs.end ()) {
-            // grab held Job object
-            Job &held_job = *it;
-
-            // is the association under the max running jobs limit for the
-            // queue the held job is submitted under?
-            if (b->under_queue_max_run_jobs (held_job.queue, queues) &&
-                held_job.contains_dep (D_QUEUE_MRJ)) {
-                if (flux_jobtap_dependency_remove (p,
-                                                   held_job.id,
-                                                   D_QUEUE_MRJ) < 0)
-                    goto error;
-                held_job.remove_dep (D_QUEUE_MRJ);
-            }
-            // is association under their overall max running jobs limit?
-            if (b->under_max_run_jobs () &&
-                held_job.contains_dep (D_ASSOC_MRJ)) {
-                if (flux_jobtap_dependency_remove (p,
-                                                   held_job.id,
-                                                   D_ASSOC_MRJ) < 0)
-                    goto error;
-                held_job.remove_dep (D_ASSOC_MRJ);
-            }
-
-            if (held_job.deps.empty ())
-                // the Job no longer has any flux-accounting dependencies on
-                // it; remove it from the Association's vector of held jobs
-                // (erase () will return the next valid iterator)
-                it = b->held_jobs.erase (it);
-            else
-                // the job did not meet all requirements to be released;
-                // move onto the next Job
-                ++it;
-        }
+        if (check_and_release_held_jobs (p, b) < 0)
+            goto error;
     }
 
     return 0;
@@ -1342,9 +1377,8 @@ error:
                                  FLUX_JOBTAP_CURRENT_JOB,
                                  "mf_priority",
                                  0,
-                                 "job.state.inactive: failed to remove %s "
-                                 "dependency from job",
-                                 dependency.c_str ());
+                                 "job.state.inactive: failed to check and "
+                                 "release association's held jobs");
     return -1;
 }
 
