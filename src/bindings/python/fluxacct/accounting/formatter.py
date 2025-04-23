@@ -187,10 +187,10 @@ class BankFormatter(AccountingFormatter):
                             indent
                             + " "
                             + bank.ljust(20)
-                            + str(user[0]).rjust(20 - (len(indent) + 1))
-                            + str(user[1]).rjust(20)
-                            + str(user[2]).rjust(20)
-                            + str(user[3]).rjust(20)
+                            + str(user["username"]).rjust(20 - (len(indent) + 1))
+                            + str(user["shares"]).rjust(20)
+                            + str(user["job_usage"]).rjust(20)
+                            + str(user["fairshare"]).rjust(20)
                             + "\n"
                         )
             else:
@@ -199,16 +199,16 @@ class BankFormatter(AccountingFormatter):
                     hierarchy += (
                         indent
                         + " "
-                        + str(sub_bank[0]).ljust(20)
+                        + str(sub_bank["bank"]).ljust(20)
                         + "".rjust(
                             20 - (len(indent) + 1)
                         )  # this skips the "Username" column
-                        + str(sub_bank[1]).rjust(20)
-                        + str(sub_bank[2]).rjust(20)
+                        + str(sub_bank["shares"]).rjust(20)
+                        + str(sub_bank["job_usage"]).rjust(20)
                         + "\n"
                     )
                     hierarchy = construct_hierarchy(
-                        cur, sub_bank[0], hierarchy, indent + " "
+                        cur, sub_bank["bank"], hierarchy, indent + " "
                     )
 
             return hierarchy
@@ -224,14 +224,16 @@ class BankFormatter(AccountingFormatter):
         )
         # add the bank passed in to the hierarchy string
         hierarchy += (
-            self.rows[0][1].ljust(20)
+            self.rows[0]["bank"].ljust(20)
             + "".rjust(20)
-            + str(self.rows[0][4]).rjust(20)
-            + str(round(self.rows[0][5], 2)).rjust(20)
+            + str(self.rows[0]["shares"]).rjust(20)
+            + str(round(self.rows[0]["job_usage"], 2)).rjust(20)
             + "\n"
         )
 
-        hierarchy = construct_hierarchy(self.cursor, self.rows[0][1], hierarchy, "")
+        hierarchy = construct_hierarchy(
+            self.cursor, self.rows[0]["bank"], hierarchy, ""
+        )
         return hierarchy
 
     def as_parsable_tree(self, bank):
