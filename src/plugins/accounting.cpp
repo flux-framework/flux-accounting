@@ -305,3 +305,13 @@ double get_bank_priority (const char *bank,
         return 0.0;
     }
 }
+
+bool Association::under_max_resources (const Job &job)
+{
+    bool under_max_nodes = ((cur_nodes + job.nnodes) <= max_nodes);
+    bool under_max_cores = ((cur_cores + job.ncores) <= max_cores);
+    bool under_max_resources = (max_nodes > 0 && max_cores > 0) &&
+                               (under_max_nodes && under_max_cores);
+
+    return under_max_resources;
+}
