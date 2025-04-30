@@ -49,7 +49,7 @@ fields for a given association. The list of modifiable fields are as follows:
 
 .. option:: --max-nodes
 
-    The man number of nodes an association can have across all of their running
+    The max number of nodes an association can have across all of their running
     jobs.
 
 .. option:: --queues
