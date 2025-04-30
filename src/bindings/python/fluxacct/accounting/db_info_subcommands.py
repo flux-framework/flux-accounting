@@ -86,14 +86,14 @@ def populate_db(conn, users=None, banks=None):
 
                     u.add_user(
                         conn,
-                        username,
-                        bank,
-                        uid,
-                        shares,
-                        max_running_jobs,
-                        max_active_jobs,
-                        max_nodes,
-                        queues,
+                        username=username,
+                        bank=bank,
+                        uid=uid,
+                        shares=shares,
+                        max_running_jobs=max_running_jobs,
+                        max_active_jobs=max_active_jobs,
+                        max_nodes=max_nodes,
+                        queues=queues,
                     )
         except IOError as err:
             print(err)

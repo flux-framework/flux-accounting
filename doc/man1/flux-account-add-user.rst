@@ -41,6 +41,11 @@ be defined upon user creation.
     The amount of available resources their organization considers they should
     be entitled to use relative to other competing users.
 
+.. option:: --fairshare
+
+    The ratio between the amount of resources an association is allocated
+    versus the amount actually consumed.
+
 .. option:: --max-running-jobs
 
     The max number of running jobs the association can have at any given time.
