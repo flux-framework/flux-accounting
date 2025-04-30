@@ -25,7 +25,8 @@ MAN1_FILES_PRIMARY = \
 	man1/flux-account-add-queue.1 \
 	man1/flux-account-delete-queue.1 \
 	man1/flux-account-edit-queue.1 \
-	man1/flux-account-list-queues.1
+	man1/flux-account-list-queues.1 \
+	man1/flux-account-list-users.1
 
 MAN5_FILES_PRIMARY = \
 	man5/flux-config-accounting.5

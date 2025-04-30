@@ -150,4 +150,11 @@ man_pages = [
         [author],
         5,
     ),
+    (
+        "man1/flux-account-list-users",
+        "flux-account-list-users",
+        "list all associations in the association_table",
+        [author],
+        1,
+    ),
 ]
