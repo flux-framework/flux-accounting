@@ -304,7 +304,7 @@ def list_users(conn, cols=None, json_fmt=False, format_string="", **kwargs):
         where_clauses = []
         filters_list = []
         for table_filter in table_filters:
-            if table_filter in ("queues", "projects"):
+            if table_filter in ("queues", "projects", "default_project"):
                 # we are filtering the table with a string; append wildcards ('%') to
                 # the string so we can match multiple cases (e.g the association belongs
                 # to more than one queue or project)
