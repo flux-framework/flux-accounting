@@ -59,7 +59,10 @@ test_expect_success 'edit associations to belong to different queues' '
 
 test_expect_success 'edit associations to belong to different projects' '
 	flux account edit-user user1 --projects="leviathan_wakes" &&
-	flux account edit-user user2 --bank=B --projects="leviathan_wakes,babylons_gate"
+	flux account edit-user user2 \
+		--bank=B \
+		--projects="leviathan_wakes,babylons_gate" \
+		--default-project="leviathan_wakes"
 '
 
 test_expect_success 'call list-users --help' '
@@ -148,6 +151,13 @@ test_expect_success 'customize output using a format string' '
 	flux account list-users -o "{username:<8}||{userid:<6}|{bank:<7}|" > format_string.out &&
 	grep "username||userid|bank   |" format_string.out &&
 	grep "user1   ||5011  |A      |" format_string.out
+'
+
+test_expect_success 'call list-users and pass --default-project' '
+	flux account list-users \
+		-o "{username:<8}||{userid:<6}|{bank:<7}|{default_project:<16}" \
+		--default-project="leviathan_wakes" > default_project.out &&
+	grep "user2   ||5012  |B      |leviathan_wakes" default_project.out
 '
 
 test_expect_success 'remove flux-accounting DB' '
