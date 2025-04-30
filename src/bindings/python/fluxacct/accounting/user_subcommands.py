@@ -283,10 +283,9 @@ def list_users(conn, cols=None, json_fmt=False, format_string="", **kwargs):
         conn: a SQLite connection object
         cols: a list of columns from the table to include in the output. By default, all
             columns are included.
-        filters: a list of optional constraints passed-in to filter the
-            association_table by.
         format_string: a format string defining how each row should be formatted. Column
             names should be used as placeholders.
+        **kwargs: a list of optional constraints to filter the association_table by.
     """
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.ASSOCIATION_TABLE
