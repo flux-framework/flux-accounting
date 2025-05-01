@@ -344,6 +344,7 @@ def add_user(
     max_cores=2147483647,
     queues="",
     projects="*",
+    default_project=None,
 ):
     cur = conn.cursor()
 
@@ -386,10 +387,16 @@ def add_user(
         except ValueError as bad_project:
             raise ValueError(f"project {bad_project} does not exist in project_table")
 
-    # determine default_project for user; if no other projects
-    # were specified, use '*' as the default. If a project was
-    # specified, then use the first one as the default
-    default_project = set_default_project(projects)
+    # Determine the default project for user. If no projects were specified, use '*' as
+    # the default. If projects were specified and a default project name was not passed,
+    # use the first project specified as the default.
+    if not default_project:
+        default_project = set_default_project(projects)
+    else:
+        # a default project was specified; make sure it is also a part of the projects
+        # list, and if not, add it
+        if default_project not in projects.split(","):
+            projects += f",{default_project}"
 
     try:
         # insert the user values into association_table

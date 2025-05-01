@@ -218,6 +218,12 @@ def add_add_user_arg(subparsers):
         default="*",
         metavar="PROJECTS",
     )
+    subparser_add_user.add_argument(
+        "--default-project",
+        help="the default project for the association to submit jobs under",
+        default=None,
+        metavar="DEFAULT_PROJECT",
+    )
 
 
 def add_delete_user_arg(subparsers):
