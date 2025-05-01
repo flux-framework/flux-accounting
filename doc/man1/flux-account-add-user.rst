@@ -68,7 +68,9 @@ be defined upon user creation.
 .. option:: --projects
 
     A comma-separated list of all of the projects an association can run jobs
-    under.
+    under. If this option is passed, the **first** project listed will become
+    the association's default project. The association's default can be changed
+    with :man1:`flux-account-edit-user`.
 
 EXAMPLES
 --------
