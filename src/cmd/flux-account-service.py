@@ -192,6 +192,7 @@ class AccountingService:
                 max_cores=msg.payload.get("max_cores"),
                 queues=msg.payload.get("queues"),
                 projects=msg.payload.get("projects"),
+                default_project=msg.payload.get("default_project"),
             )
 
             payload = {"list_users": val}

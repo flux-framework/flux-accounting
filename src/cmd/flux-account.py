@@ -138,6 +138,10 @@ def add_list_users_arg(subparsers):
         "--projects",
         metavar="PROJECTS",
     )
+    subparser_list_users.add_argument(
+        "--default-project",
+        metavar="DEFAULT_PROJECT",
+    )
 
 
 def add_add_user_arg(subparsers):
