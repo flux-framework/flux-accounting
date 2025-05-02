@@ -72,6 +72,10 @@ be defined upon user creation.
     the association's default project. The association's default can be changed
     with :man1:`flux-account-edit-user`.
 
+.. option:: --default-project
+
+    The default project an association will run jobs under.
+
 EXAMPLES
 --------
 

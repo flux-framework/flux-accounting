@@ -218,6 +218,7 @@ class AccountingService:
                 max_cores=msg.payload["max_cores"],
                 queues=msg.payload["queues"],
                 projects=msg.payload["projects"],
+                default_project=msg.payload["default_project"],
             )
 
             payload = {"add_user": val}

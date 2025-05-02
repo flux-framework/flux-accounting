@@ -168,6 +168,17 @@ test_expect_success 'list all of the projects currently registered in project_ta
 	grep -f project_table.expected project_table.test
 '
 
+test_expect_success 'add an association with a default project specified' '
+	flux account add-user \
+		--username=user5025 \
+		--userid=5025 \
+		--bank=B \
+		--default-project=project_2 &&
+	flux account view-user user5025 > default_project.out &&
+	grep "\"default_project\": \"project_2\"" default_project.out &&
+	grep "\"projects\": \"\*,project_2\"" default_project.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
