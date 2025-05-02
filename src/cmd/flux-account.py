@@ -9,6 +9,7 @@
 ###############################################################
 import argparse
 import sys
+import logging
 
 import flux
 import fluxacct.accounting
@@ -989,6 +990,10 @@ def select_accounting_function(args, output_file, parser):
         print(list(return_val.values())[0])
 
 
+LOGGER = logging.getLogger("flux-account")
+
+
+@flux.util.CLIMain(LOGGER)
 def main():
 
     parser = argparse.ArgumentParser(
