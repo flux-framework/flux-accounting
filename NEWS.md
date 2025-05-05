@@ -1,3 +1,41 @@
+flux-accounting version 0.44.0 - 2025-05-06
+-------------------------------------------
+
+#### Fixes
+
+* plugin: create label for `dependency_remove < 0` (#606)
+
+* plugin: improve `Queue` class (#609)
+
+* `delete-queue`: add warning statement when deleting a queue still referenced
+by associations (#612)
+
+* `construct_hierarchy()`: use column names (#614)
+
+* plugin: improve how dependency logic works with new `Job` class (#610)
+
+* `flux-account`: add `@CLIMain` decorator (#621)
+
+* `flux-account`: standardize prefixes for error messages (#622)
+
+#### Features
+
+* plugin: add a new `Job` class (#608)
+
+* `add-user`: add `--fairshare` as an optional argument (#615)
+
+* `list-users`: add `--default-project` optional argument, man page (#616)
+
+* `add-user`: add `--default-project` as an optional argument (#619)
+
+#### Documentation
+
+* `view-*` man pages: add `-o/--format` optional arg (#611)
+
+* doc: add `man(1)` pages for `*-queue` commands (#613)
+
+* `add-user(1)`: clarify how default project is set (#618)
+
 flux-accounting version 0.43.0 - 2025-04-01
 -------------------------------------------
 
