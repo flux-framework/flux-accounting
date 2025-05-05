@@ -241,34 +241,21 @@ def view_user(
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.ASSOCIATION_TABLE
 
-    try:
-        cur = conn.cursor()
+    cur = conn.cursor()
 
-        sql.validate_columns(cols, fluxacct.accounting.ASSOCIATION_TABLE)
-        # construct SELECT statement
-        select_stmt = (
-            f"SELECT {', '.join(cols)} FROM association_table WHERE username=?"
-        )
-        cur.execute(select_stmt, (user,))
-
-        # initialize AssociationFormatter object
-        formatter = fmt.AssociationFormatter(cur, user)
-
-        if format_string != "":
-            return formatter.as_format_string(format_string)
-        if list_banks:
-            return formatter.list_banks()
-        if parsable:
-            return formatter.as_table()
-        return formatter.as_json()
-    # this kind of exception is raised for errors related to the DB's operation,
-    # not necessarily under the control of the programmer, e.g DB path cannot be
-    # found or transaction could not be processed
-    # (https://docs.python.org/3/library/sqlite3.html#sqlite3.OperationalError)
-    except sqlite3.OperationalError as exc:
-        raise sqlite3.OperationalError(exc)
-    except ValueError as exc:
-        raise ValueError(exc)
+    sql.validate_columns(cols, fluxacct.accounting.ASSOCIATION_TABLE)
+    # construct SELECT statement
+    select_stmt = f"SELECT {', '.join(cols)} FROM association_table WHERE username=?"
+    cur.execute(select_stmt, (user,))
+    # initialize AssociationFormatter object
+    formatter = fmt.AssociationFormatter(cur, user)
+    if format_string != "":
+        return formatter.as_format_string(format_string)
+    if list_banks:
+        return formatter.list_banks()
+    if parsable:
+        return formatter.as_table()
+    return formatter.as_json()
 
 
 def list_users(conn, cols=None, json_fmt=False, format_string="", **kwargs):
@@ -291,42 +278,37 @@ def list_users(conn, cols=None, json_fmt=False, format_string="", **kwargs):
     # if any filters are passed in, make sure they are valid columns
     table_filters = {key: val for key, val in kwargs.items() if val is not None}
 
-    try:
-        cur = conn.cursor()
+    cur = conn.cursor()
 
-        sql.validate_columns(cols, fluxacct.accounting.ASSOCIATION_TABLE)
-        # construct SELECT statement
-        select_stmt = f"SELECT {', '.join(cols)} FROM association_table"
-        # filter by any constraints passed in
-        where_clauses = []
-        filters_list = []
-        for table_filter in table_filters:
-            if table_filter in ("queues", "projects", "default_project"):
-                # we are filtering the table with a string; append wildcards ('%') to
-                # the string so we can match multiple cases (e.g the association belongs
-                # to more than one queue or project)
-                where_clauses.append(f"{table_filter} LIKE ?")
-                filters_list.append(f"%{table_filters[table_filter]}%")
-            else:
-                where_clauses.append(f"{table_filter} = ?")
-                filters_list.append(table_filters[f"{table_filter}"])
+    sql.validate_columns(cols, fluxacct.accounting.ASSOCIATION_TABLE)
+    # construct SELECT statement
+    select_stmt = f"SELECT {', '.join(cols)} FROM association_table"
+    # filter by any constraints passed in
+    where_clauses = []
+    filters_list = []
+    for table_filter in table_filters:
+        if table_filter in ("queues", "projects", "default_project"):
+            # we are filtering the table with a string; append wildcards ('%') to
+            # the string so we can match multiple cases (e.g the association belongs
+            # to more than one queue or project)
+            where_clauses.append(f"{table_filter} LIKE ?")
+            filters_list.append(f"%{table_filters[table_filter]}%")
+        else:
+            where_clauses.append(f"{table_filter} = ?")
+            filters_list.append(table_filters[f"{table_filter}"])
 
-        if where_clauses:
-            select_stmt += " WHERE " + " AND ".join(where_clauses)
+    if where_clauses:
+        select_stmt += " WHERE " + " AND ".join(where_clauses)
 
-        cur.execute(select_stmt, tuple(filters_list))
+    cur.execute(select_stmt, tuple(filters_list))
 
-        # initialize AccountingFormatter object
-        formatter = fmt.AccountingFormatter(cur)
-        if format_string != "":
-            return formatter.as_format_string(format_string)
-        if json_fmt:
-            return formatter.as_json()
-        return formatter.as_table()
-    except sqlite3.Error as err:
-        raise sqlite3.Error(err)
-    except ValueError as exc:
-        raise ValueError(exc)
+    # initialize AccountingFormatter object
+    formatter = fmt.AccountingFormatter(cur)
+    if format_string != "":
+        return formatter.as_format_string(format_string)
+    if json_fmt:
+        return formatter.as_json()
+    return formatter.as_table()
 
 
 def add_user(
@@ -396,55 +378,51 @@ def add_user(
         if default_project not in projects.split(","):
             projects += f",{default_project}"
 
-    try:
-        # insert the user values into association_table
-        conn.execute(
-            """
-            INSERT INTO association_table (creation_time, mod_time, username,
-                                           userid, bank, default_bank, shares,
-                                           fairshare, max_running_jobs, max_active_jobs,
-                                           max_nodes, max_cores, queues, projects,
-                                           default_project)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                int(time.time()),
-                int(time.time()),
-                username,
-                userid,
-                bank,
-                default_bank,
-                shares,
-                fairshare,
-                max_running_jobs,
-                max_active_jobs,
-                max_nodes,
-                max_cores,
-                queues,
-                projects,
-                default_project,
-            ),
-        )
-        # commit changes
-        conn.commit()
-        # insert the user values into job_usage_factor_table
-        conn.execute(
-            """
-            INSERT OR IGNORE INTO job_usage_factor_table (username, userid, bank)
-            VALUES (?, ?, ?)
-            """,
-            (
-                username,
-                uid,
-                bank,
-            ),
-        )
-        conn.commit()
+    # insert the user values into association_table
+    conn.execute(
+        """
+        INSERT INTO association_table (creation_time, mod_time, username,
+                                       userid, bank, default_bank, shares,
+                                       fairshare, max_running_jobs, max_active_jobs,
+                                       max_nodes, max_cores, queues, projects,
+                                       default_project)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            int(time.time()),
+            int(time.time()),
+            username,
+            userid,
+            bank,
+            default_bank,
+            shares,
+            fairshare,
+            max_running_jobs,
+            max_active_jobs,
+            max_nodes,
+            max_cores,
+            queues,
+            projects,
+            default_project,
+        ),
+    )
+    # commit changes
+    conn.commit()
+    # insert the user values into job_usage_factor_table
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO job_usage_factor_table (username, userid, bank)
+        VALUES (?, ?, ?)
+        """,
+        (
+            username,
+            uid,
+            bank,
+        ),
+    )
+    conn.commit()
 
-        return 0
-    # make sure entry is unique
-    except sqlite3.IntegrityError:
-        raise sqlite3.IntegrityError()
+    return 0
 
 
 def delete_user(conn, username, bank, force=False):
