@@ -58,7 +58,7 @@ def view_project(conn, project, parsable=False, format_string=None):
             return formatter.as_table()
         return formatter.as_json()
     except sqlite3.OperationalError as exc:
-        raise sqlite3.OperationalError(f"an sqlite3.OperationalError occurred: {exc}")
+        raise sqlite3.OperationalError(exc)
 
 
 def add_project(conn, project):
@@ -142,6 +142,6 @@ def list_projects(conn, cols=None, table=False, format_string=None):
             return formatter.as_table()
         return formatter.as_json()
     except sqlite3.Error as err:
-        raise sqlite3.Error(f"list-projects: an sqlite3.Error occurred: {err}")
+        raise sqlite3.Error(err)
     except ValueError as exc:
-        raise ValueError(f"list-projects: {exc}")
+        raise ValueError(exc)

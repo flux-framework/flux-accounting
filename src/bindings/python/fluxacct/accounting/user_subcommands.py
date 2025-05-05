@@ -266,11 +266,9 @@ def view_user(
     # found or transaction could not be processed
     # (https://docs.python.org/3/library/sqlite3.html#sqlite3.OperationalError)
     except sqlite3.OperationalError as exc:
-        raise sqlite3.OperationalError(
-            f"view-user: an sqlite3.OperationalError occurred: {exc}"
-        )
+        raise sqlite3.OperationalError(exc)
     except ValueError as exc:
-        raise ValueError(f"view-user: {exc}")
+        raise ValueError(exc)
 
 
 def list_users(conn, cols=None, json_fmt=False, format_string="", **kwargs):
@@ -326,9 +324,9 @@ def list_users(conn, cols=None, json_fmt=False, format_string="", **kwargs):
             return formatter.as_json()
         return formatter.as_table()
     except sqlite3.Error as err:
-        raise sqlite3.Error(f"list-users: an sqlite3.Error occurred: {err}")
+        raise sqlite3.Error(err)
     except ValueError as exc:
-        raise ValueError(f"list-users: {exc}")
+        raise ValueError(exc)
 
 
 def add_user(
