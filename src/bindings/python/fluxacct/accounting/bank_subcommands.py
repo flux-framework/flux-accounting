@@ -170,9 +170,9 @@ def view_bank(
             return formatter.with_users(bank)
         return formatter.as_json()
     except sqlite3.Error as err:
-        raise sqlite3.Error(f"view-bank: an sqlite3.Error occurred: {err}")
+        raise sqlite3.Error(err)
     except ValueError as exc:
-        raise ValueError(f"view-bank: {exc}")
+        raise ValueError(exc)
 
 
 def delete_bank(conn, bank, force=False):
@@ -318,6 +318,6 @@ def list_banks(
             return formatter.as_table()
         return formatter.as_json()
     except sqlite3.Error as err:
-        raise sqlite3.Error(f"list-banks: an sqlite3.Error occurred: {err}")
+        raise sqlite3.Error(err)
     except ValueError as exc:
-        raise ValueError(f"list-banks: {exc}")
+        raise ValueError(exc)

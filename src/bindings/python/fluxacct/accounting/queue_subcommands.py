@@ -30,9 +30,9 @@ def view_queue(conn, queue, parsable=False, format_string=""):
             return formatter.as_table()
         return formatter.as_json()
     except sqlite3.OperationalError as exc:
-        raise sqlite3.OperationalError(f"an sqlite3.OperationalError occurred: {exc}")
+        raise sqlite3.OperationalError(exc)
     except ValueError as exc:
-        raise ValueError(f"view-queue: {exc}")
+        raise ValueError(exc)
 
 
 def add_queue(
@@ -173,6 +173,6 @@ def list_queues(conn, cols=None, table=False, format_string=""):
             return formatter.as_table()
         return formatter.as_json()
     except sqlite3.Error as err:
-        raise sqlite3.Error(f"list-queues: an sqlite3.Error occurred: {err}")
+        raise sqlite3.Error(err)
     except ValueError as exc:
-        raise ValueError(f"list-queues: {exc}")
+        raise ValueError(exc)

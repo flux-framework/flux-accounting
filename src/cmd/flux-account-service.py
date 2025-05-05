@@ -162,16 +162,9 @@ class AccountingService:
             # handle a flux-accounting.view_user request
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
-        except ValueError as val_err:
-            handle.respond_error(msg, 0, f"error in view-user: {val_err}")
-        except sqlite3.OperationalError as sql_err:
-            handle.respond_error(msg, 0, f"sqlite3.OperationalError: {sql_err}")
+            handle.respond_error(msg, 0, f"view-user: missing key in payload: {exc}")
         except Exception as exc:
-            # fall through to a non-OSError exception
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"view-user: {type(exc).__name__}: {exc}")
 
     # pylint: disable=no-self-use
     def list_users(self, handle, watcher, msg, arg):
@@ -199,9 +192,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+            handle.respond_error(msg, 0, f"list-users: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(msg, 0, str(exc))
+            handle.respond_error(msg, 0, f"list-users: {type(exc).__name__}: {exc}")
 
     def add_user(self, handle, watcher, msg, arg):
         try:
@@ -225,15 +218,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
-        except ValueError as val_err:
-            handle.respond_error(msg, 0, f"error in add_user: {val_err}")
-        except sqlite3.IntegrityError as integ_err:
-            handle.respond_error(msg, 0, f"error in add_user: {integ_err}")
+            handle.respond_error(msg, 0, f"add-user: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"add-user: {type(exc).__name__}: {exc}")
 
     def delete_user(self, handle, watcher, msg, arg):
         try:
@@ -248,11 +235,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+            handle.respond_error(msg, 0, f"delete-user: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"delete-user: {type(exc).__name__}: {exc}")
 
     def edit_user(self, handle, watcher, msg, arg):
         try:
@@ -277,13 +262,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
-        except ValueError as val_err:
-            handle.respond_error(msg, 0, f"error in edit_user: {val_err}")
+            handle.respond_error(msg, 0, f"edit-user: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"edit-user: {type(exc).__name__}: {exc}")
 
     def view_bank(self, handle, watcher, msg, arg):
         try:
@@ -301,15 +282,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
-        except ValueError as val_err:
-            handle.respond_error(msg, 0, f"error in view-bank: {val_err}")
-        except sqlite3.OperationalError as sql_err:
-            handle.respond_error(msg, 0, f"sqlite3.OperationalError: {sql_err}")
+            handle.respond_error(msg, 0, f"view-bank: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"view-bank: {type(exc).__name__}: {exc}")
 
     def add_bank(self, handle, watcher, msg, arg):
         try:
@@ -324,17 +299,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
-        except ValueError as val_err:
-            handle.respond_error(msg, 0, f"error in add_bank: {val_err}")
-        except sqlite3.IntegrityError as integ_err:
-            handle.respond_error(msg, 0, f"error in add_bank: {integ_err}")
-        except sqlite3.OperationalError as sql_err:
-            handle.respond_error(msg, 0, f"sqlite3.OperationalError: {sql_err}")
+            handle.respond_error(msg, 0, f"add-bank: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"add-bank: {type(exc).__name__}: {exc}")
 
     def delete_bank(self, handle, watcher, msg, arg):
         try:
@@ -344,13 +311,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
-        except sqlite3.OperationalError as sql_err:
-            handle.respond_error(msg, 0, f"sqlite3.OperationalError: {sql_err}")
+            handle.respond_error(msg, 0, f"delete-bank: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"delete-bank: {type(exc).__name__}: {exc}")
 
     def edit_bank(self, handle, watcher, msg, arg):
         try:
@@ -365,13 +328,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
-        except ValueError as val_err:
-            handle.respond_error(msg, 0, f"error in edit_bank: {val_err}")
+            handle.respond_error(msg, 0, f"edit-bank: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"edit-bank: {type(exc).__name__}: {exc}")
 
     def list_banks(self, handle, watcher, msg, arg):
         try:
@@ -387,15 +346,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
-        except ValueError as exc:
-            handle.respond_error(msg, 0, f"{exc}")
-        except sqlite3.Error as exc:
-            handle.respond_error(msg, 0, f"a SQLite error occurred: {exc}")
+            handle.respond_error(msg, 0, f"list-banks: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"list-banks: {type(exc).__name__}: {exc}")
 
     # pylint: disable=no-self-use
     def view_job_records(self, handle, watcher, msg, arg):
@@ -416,10 +369,12 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+            handle.respond_error(
+                msg, 0, f"view-job-records: missing key in payload: {exc}"
+            )
         except Exception as exc:
             handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
+                msg, 0, f"view-job-records: {type(exc).__name__}: {exc}"
             )
 
     def update_usage(self, handle, watcher, msg, arg):
@@ -433,13 +388,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
-        except sqlite3.IntegrityError as integ_err:
-            handle.respond_error(msg, 0, f"error in add_queue: {integ_err}")
+            handle.respond_error(msg, 0, f"update-usage: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"update-usage: {type(exc).__name__}: {exc}")
 
     def add_queue(self, handle, watcher, msg, arg):
         try:
@@ -457,11 +408,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+            handle.respond_error(msg, 0, f"add-queue: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"add-queue: {type(exc).__name__}: {exc}")
 
     def view_queue(self, handle, watcher, msg, arg):
         try:
@@ -476,15 +425,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
-        except ValueError as val_err:
-            handle.respond_error(msg, 0, f"error in view-queue: {val_err}")
-        except sqlite3.OperationalError as sql_err:
-            handle.respond_error(msg, 0, f"sqlite3.OperationalError: {sql_err}")
+            handle.respond_error(msg, 0, f"view-queue: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"view-queue: {type(exc).__name__}: {exc}")
 
     def delete_queue(self, handle, watcher, msg, arg):
         try:
@@ -494,13 +437,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
-        except ValueError as val_err:
-            handle.respond_error(msg, 0, f"error in edit-queue: {val_err}")
+            handle.respond_error(msg, 0, f"delete-queue: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"delete-queue: {type(exc).__name__}: {exc}")
 
     def edit_queue(self, handle, watcher, msg, arg):
         try:
@@ -518,13 +457,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
-        except sqlite3.IntegrityError as integ_err:
-            handle.respond_error(msg, 0, f"error in add_project: {integ_err}")
+            handle.respond_error(msg, 0, f"edit-queue: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"edit-queue: {type(exc).__name__}: {exc}")
 
     def add_project(self, handle, watcher, msg, arg):
         try:
@@ -534,11 +469,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+            handle.respond_error(msg, 0, f"add-project: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"add-project: {type(exc).__name__}: {exc}")
 
     def view_project(self, handle, watcher, msg, arg):
         try:
@@ -553,15 +486,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
-        except ValueError as val_err:
-            handle.respond_error(msg, 0, f"error in view-project: {val_err}")
-        except sqlite3.OperationalError as sql_err:
-            handle.respond_error(msg, 0, f"sqlite3.OperationalError: {sql_err}")
+            handle.respond_error(msg, 0, f"view-project: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"view-project: {type(exc).__name__}: {exc}")
 
     def delete_project(self, handle, watcher, msg, arg):
         try:
@@ -571,11 +498,11 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
-        except Exception as exc:
             handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
+                msg, 0, f"delete-project: missing key in payload: {exc}"
             )
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"delete-project: {type(exc).__name__}: {exc}")
 
     def list_projects(self, handle, watcher, msg, arg):
         try:
@@ -590,11 +517,11 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
-        except Exception as exc:
             handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
+                msg, 0, f"list-projects: missing key in payload: {exc}"
             )
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"list-projects: {type(exc).__name__}: {exc}")
 
     def scrub_old_jobs(self, handle, watcher, msg, arg):
         try:
@@ -604,11 +531,11 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
-        except Exception as exc:
             handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
+                msg, 0, f"scrub-old-jobs: missing key in payload: {exc}"
             )
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"scrub-old-jobs: {type(exc).__name__}: {exc}")
 
     def export_db(self, handle, watcher, msg, arg):
         try:
@@ -622,11 +549,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+            handle.respond_error(msg, 0, f"export-db: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"export-db: {type(exc).__name__}: {exc}")
 
     def pop_db(self, handle, watcher, msg, arg):
         try:
@@ -640,11 +565,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
+            handle.respond_error(msg, 0, f"pop-db: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"pop-db: {type(exc).__name__}: {exc}")
 
     def list_queues(self, handle, watcher, msg, arg):
         try:
@@ -659,15 +582,9 @@ class AccountingService:
 
             handle.respond(msg, payload)
         except KeyError as exc:
-            handle.respond_error(msg, 0, f"missing key in payload: {exc}")
-        except ValueError as exc:
-            handle.respond_error(msg, 0, f"{exc}")
-        except sqlite3.Error as exc:
-            handle.respond_error(msg, 0, f"a SQLite error occurred: {exc}")
+            handle.respond_error(msg, 0, f"list-queues: missing key in payload: {exc}")
         except Exception as exc:
-            handle.respond_error(
-                msg, 0, f"a non-OSError exception was caught: {str(exc)}"
-            )
+            handle.respond_error(msg, 0, f"list-queues: {type(exc).__name__}: {exc}")
 
 
 LOGGER = logging.getLogger("flux-uri")
