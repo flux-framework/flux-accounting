@@ -104,7 +104,7 @@ test_expect_success 'edit the max_active_jobs of an existing user' '
 
 test_expect_success 'trying to view a user who does not exist in the DB should raise a ValueError' '
 	test_must_fail flux account view-user user9999 > user_nonexistent.out 2>&1 &&
-	grep "view-user: user user9999 not found in association_table" user_nonexistent.out
+	grep "user9999 not found in association_table" user_nonexistent.out
 '
 
 test_expect_success 'trying to view a user that does exist in the DB should return some information' '
@@ -137,7 +137,7 @@ test_expect_success 'remove a user account' '
 test_expect_success 'remove a user with --force' '
 	flux account delete-user user5011 A --force &&
 	test_must_fail flux account view-user user5011 > user5011_nonexistent.out 2>&1 &&
-	grep "view-user: user user5011 not found in association_table" user5011_nonexistent.out
+	grep "user5011 not found in association_table" user5011_nonexistent.out
 '
 
 test_expect_success 'remove a user with --force/make sure default bank gets updated' '
