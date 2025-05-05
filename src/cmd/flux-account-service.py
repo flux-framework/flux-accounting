@@ -163,6 +163,10 @@ class AccountingService:
             handle.respond(msg, payload)
         except KeyError as exc:
             handle.respond_error(msg, 0, f"view-user: missing key in payload: {exc}")
+        # SQLite errors and exceptions raised are related to the DB's operation and are
+        # not necessarily under the control of the programmer, e.g. the DB path cannot
+        # be found or transaction could not be processed
+        # (https://docs.python.org/3/library/sqlite3.html#sqlite3.OperationalError)
         except Exception as exc:
             handle.respond_error(msg, 0, f"view-user: {type(exc).__name__}: {exc}")
 
