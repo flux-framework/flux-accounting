@@ -45,20 +45,17 @@ def project_is_active(cur, project):
 
 
 def view_project(conn, project, parsable=False, format_string=None):
-    try:
-        cur = conn.cursor()
-        # get the information pertaining to a project in the DB
-        cur.execute("SELECT * FROM project_table where project=?", (project,))
+    cur = conn.cursor()
+    # get the information pertaining to a project in the DB
+    cur.execute("SELECT * FROM project_table where project=?", (project,))
 
-        formatter = fmt.ProjectFormatter(cur, project)
+    formatter = fmt.ProjectFormatter(cur, project)
 
-        if format_string is not None:
-            return formatter.as_format_string(format_string)
-        if parsable:
-            return formatter.as_table()
-        return formatter.as_json()
-    except sqlite3.OperationalError as exc:
-        raise sqlite3.OperationalError(exc)
+    if format_string is not None:
+        return formatter.as_format_string(format_string)
+    if parsable:
+        return formatter.as_table()
+    return formatter.as_json()
 
 
 def add_project(conn, project):
@@ -126,22 +123,17 @@ def list_projects(conn, cols=None, table=False, format_string=None):
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.PROJECT_TABLE
 
-    try:
-        cur = conn.cursor()
+    cur = conn.cursor()
 
-        sql.validate_columns(cols, fluxacct.accounting.PROJECT_TABLE)
-        # construct SELECT statement
-        select_stmt = f"SELECT {', '.join(cols)} FROM project_table"
-        cur.execute(select_stmt)
+    sql.validate_columns(cols, fluxacct.accounting.PROJECT_TABLE)
+    # construct SELECT statement
+    select_stmt = f"SELECT {', '.join(cols)} FROM project_table"
+    cur.execute(select_stmt)
 
-        # initialize AccountingFormatter object
-        formatter = fmt.AccountingFormatter(cur)
-        if format_string is not None:
-            return formatter.as_format_string(format_string)
-        if table:
-            return formatter.as_table()
-        return formatter.as_json()
-    except sqlite3.Error as err:
-        raise sqlite3.Error(err)
-    except ValueError as exc:
-        raise ValueError(exc)
+    # initialize AccountingFormatter object
+    formatter = fmt.AccountingFormatter(cur)
+    if format_string is not None:
+        return formatter.as_format_string(format_string)
+    if table:
+        return formatter.as_table()
+    return formatter.as_json()
