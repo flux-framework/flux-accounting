@@ -17,22 +17,17 @@ from fluxacct.accounting import sql_util as sql
 
 
 def view_queue(conn, queue, parsable=False, format_string=""):
-    try:
-        cur = conn.cursor()
-        # get the information pertaining to a queue in the DB
-        cur.execute("SELECT * FROM queue_table where queue=?", (queue,))
+    cur = conn.cursor()
+    # get the information pertaining to a queue in the DB
+    cur.execute("SELECT * FROM queue_table where queue=?", (queue,))
 
-        formatter = fmt.QueueFormatter(cur, queue)
+    formatter = fmt.QueueFormatter(cur, queue)
 
-        if format_string != "":
-            return formatter.as_format_string(format_string)
-        if parsable:
-            return formatter.as_table()
-        return formatter.as_json()
-    except sqlite3.OperationalError as exc:
-        raise sqlite3.OperationalError(exc)
-    except ValueError as exc:
-        raise ValueError(exc)
+    if format_string != "":
+        return formatter.as_format_string(format_string)
+    if parsable:
+        return formatter.as_table()
+    return formatter.as_json()
 
 
 def add_queue(
@@ -157,22 +152,17 @@ def list_queues(conn, cols=None, table=False, format_string=""):
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.QUEUE_TABLE
 
-    try:
-        cur = conn.cursor()
+    cur = conn.cursor()
 
-        sql.validate_columns(cols, fluxacct.accounting.QUEUE_TABLE)
-        # construct SELECT statement
-        select_stmt = f"SELECT {', '.join(cols)} FROM queue_table"
-        cur.execute(select_stmt)
+    sql.validate_columns(cols, fluxacct.accounting.QUEUE_TABLE)
+    # construct SELECT statement
+    select_stmt = f"SELECT {', '.join(cols)} FROM queue_table"
+    cur.execute(select_stmt)
 
-        # initialize AccountingFormatter object
-        formatter = fmt.AccountingFormatter(cur)
-        if format_string != "":
-            return formatter.as_format_string(format_string)
-        if table:
-            return formatter.as_table()
-        return formatter.as_json()
-    except sqlite3.Error as err:
-        raise sqlite3.Error(err)
-    except ValueError as exc:
-        raise ValueError(exc)
+    # initialize AccountingFormatter object
+    formatter = fmt.AccountingFormatter(cur)
+    if format_string != "":
+        return formatter.as_format_string(format_string)
+    if table:
+        return formatter.as_table()
+    return formatter.as_json()
