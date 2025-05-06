@@ -100,8 +100,6 @@ def add_bank(conn, bank, shares, parent_bank=""):
             validate_parent_bank(cur, parent_bank)
     except ValueError as bad_parent_bank:
         raise ValueError(f"parent bank {bad_parent_bank} not found in bank table")
-    except sqlite3.OperationalError as exc:
-        raise sqlite3.OperationalError(exc)
 
     # check if bank already exists and is active in bank_table; if so, raise
     # a sqlite3.IntegrityError
@@ -149,30 +147,25 @@ def view_bank(
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.BANK_TABLE
 
-    try:
-        cur = conn.cursor()
+    cur = conn.cursor()
 
-        sql.validate_columns(cols, fluxacct.accounting.BANK_TABLE)
-        # construct SELECT statement
-        select_stmt = f"SELECT {', '.join(cols)} FROM bank_table WHERE bank=?"
-        cur.execute(select_stmt, (bank,))
+    sql.validate_columns(cols, fluxacct.accounting.BANK_TABLE)
+    # construct SELECT statement
+    select_stmt = f"SELECT {', '.join(cols)} FROM bank_table WHERE bank=?"
+    cur.execute(select_stmt, (bank,))
 
-        # initialize BankFormatter object
-        formatter = fmt.BankFormatter(cur, bank)
+    # initialize BankFormatter object
+    formatter = fmt.BankFormatter(cur, bank)
 
-        if format_string != "":
-            return formatter.as_format_string(format_string)
-        if tree:
-            if parsable:
-                return formatter.as_parsable_tree(bank)
-            return formatter.as_tree()
-        if users:
-            return formatter.with_users(bank)
-        return formatter.as_json()
-    except sqlite3.Error as err:
-        raise sqlite3.Error(err)
-    except ValueError as exc:
-        raise ValueError(exc)
+    if format_string != "":
+        return formatter.as_format_string(format_string)
+    if tree:
+        if parsable:
+            return formatter.as_parsable_tree(bank)
+        return formatter.as_tree()
+    if users:
+        return formatter.with_users(bank)
+    return formatter.as_json()
 
 
 def delete_bank(conn, bank, force=False):
@@ -300,24 +293,19 @@ def list_banks(
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.BANK_TABLE
 
-    try:
-        cur = conn.cursor()
+    cur = conn.cursor()
 
-        sql.validate_columns(cols, fluxacct.accounting.BANK_TABLE)
-        # construct SELECT statement
-        select_stmt = f"SELECT {', '.join(cols)} FROM bank_table"
-        if not inactive:
-            select_stmt += " WHERE active=1"
-        cur.execute(select_stmt)
+    sql.validate_columns(cols, fluxacct.accounting.BANK_TABLE)
+    # construct SELECT statement
+    select_stmt = f"SELECT {', '.join(cols)} FROM bank_table"
+    if not inactive:
+        select_stmt += " WHERE active=1"
+    cur.execute(select_stmt)
 
-        # initialize AccountingFormatter object
-        formatter = fmt.AccountingFormatter(cur)
-        if format_string != "":
-            return formatter.as_format_string(format_string)
-        if table:
-            return formatter.as_table()
-        return formatter.as_json()
-    except sqlite3.Error as err:
-        raise sqlite3.Error(err)
-    except ValueError as exc:
-        raise ValueError(exc)
+    # initialize AccountingFormatter object
+    formatter = fmt.AccountingFormatter(cur)
+    if format_string != "":
+        return formatter.as_format_string(format_string)
+    if table:
+        return formatter.as_table()
+    return formatter.as_json()
