@@ -137,7 +137,7 @@ def edit_queue(
     return 0
 
 
-def list_queues(conn, cols=None, table=False, format_string=""):
+def list_queues(conn, cols=None, json_fmt=False, format_string=""):
     """
     List all queues in queue_table.
 
@@ -163,6 +163,6 @@ def list_queues(conn, cols=None, table=False, format_string=""):
     formatter = fmt.AccountingFormatter(cur)
     if format_string != "":
         return formatter.as_format_string(format_string)
-    if table:
-        return formatter.as_table()
-    return formatter.as_json()
+    if json_fmt:
+        return formatter.as_json()
+    return formatter.as_table()
