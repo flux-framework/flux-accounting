@@ -110,7 +110,7 @@ def delete_project(conn, project):
     return 0
 
 
-def list_projects(conn, cols=None, table=False, format_string=None):
+def list_projects(conn, cols=None, json_fmt=False, format_string=None):
     """
     List all of the available projects registered in the project_table.
 
@@ -134,6 +134,6 @@ def list_projects(conn, cols=None, table=False, format_string=None):
     formatter = fmt.AccountingFormatter(cur)
     if format_string is not None:
         return formatter.as_format_string(format_string)
-    if table:
-        return formatter.as_table()
-    return formatter.as_json()
+    if json_fmt:
+        return formatter.as_json()
+    return formatter.as_table()
