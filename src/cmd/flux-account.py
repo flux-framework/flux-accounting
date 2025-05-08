@@ -556,10 +556,10 @@ def add_list_banks_arg(subparsers):
         metavar="BANK_ID,BANK,ACTIVE,PARENT_BANK,SHARES,JOB_USAGE",
     )
     subparser_list_banks.add_argument(
-        "--table",
+        "--json",
         action="store_const",
         const=True,
-        help="list all banks in table format",
+        help="print output in JSON format",
     )
     subparser_list_banks.add_argument(
         "-o",
@@ -776,10 +776,10 @@ def add_list_projects_arg(subparsers):
         metavar="PROJECT_ID,PROJECT,USAGE",
     )
     subparser_list_projects.add_argument(
-        "--table",
+        "--json",
         action="store_const",
         const=True,
-        help="list all projects in table format",
+        help="list all projects in json format",
     )
     subparser_list_projects.add_argument(
         "-o",
@@ -891,10 +891,10 @@ def add_list_queues_arg(subparsers):
         metavar="QUEUE,MIN_NODES_PER_JOB,MAX_NODES_PER_JOB,MAX_TIME_PER_JOB,PRIORITY",
     )
     subparser_list_queues.add_argument(
-        "--table",
+        "--json",
         action="store_const",
         const=True,
-        help="list all queues in table format",
+        help="print output in JSON format",
     )
     subparser_list_queues.add_argument(
         "-o",

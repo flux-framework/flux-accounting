@@ -30,10 +30,10 @@ to include.
     A list of columns from the table to include in the output. By default, all
     columns are included.
 
-.. option:: --table
+.. option:: --json
 
-    Output data in table format. By default, the format of any returned data is
-    in JSON.
+    Output data in JSON format. By default, the format of any returned data is
+    in a table format.
 
 .. option:: -o/--format
 
