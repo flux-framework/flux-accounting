@@ -73,7 +73,7 @@ class TestAccountingCLI(unittest.TestCase):
         ]
         """
         )
-        test = b.list_banks(conn)
+        test = b.list_banks(conn, json_fmt=True)
         self.assertEqual(expected.strip(), test.strip())
 
     # test JSON output with custom columns
@@ -90,7 +90,7 @@ class TestAccountingCLI(unittest.TestCase):
         ]
         """
         )
-        test = b.list_banks(conn, cols=["bank_id"])
+        test = b.list_banks(conn, json_fmt=True, cols=["bank_id"])
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_custom_two(self):
@@ -108,7 +108,7 @@ class TestAccountingCLI(unittest.TestCase):
         ]
         """
         )
-        test = b.list_banks(conn, cols=["bank_id", "bank"])
+        test = b.list_banks(conn, json_fmt=True, cols=["bank_id", "bank"])
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_custom_three(self):
@@ -128,7 +128,7 @@ class TestAccountingCLI(unittest.TestCase):
         ]
         """
         )
-        test = b.list_banks(conn, cols=["bank_id", "bank", "active"])
+        test = b.list_banks(conn, json_fmt=True, cols=["bank_id", "bank", "active"])
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_custom_four(self):
@@ -150,7 +150,9 @@ class TestAccountingCLI(unittest.TestCase):
         ]
         """
         )
-        test = b.list_banks(conn, cols=["bank_id", "bank", "active", "parent_bank"])
+        test = b.list_banks(
+            conn, json_fmt=True, cols=["bank_id", "bank", "active", "parent_bank"]
+        )
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_custom_five(self):
@@ -175,7 +177,9 @@ class TestAccountingCLI(unittest.TestCase):
         """
         )
         test = b.list_banks(
-            conn, cols=["bank_id", "bank", "active", "parent_bank", "shares"]
+            conn,
+            json_fmt=True,
+            cols=["bank_id", "bank", "active", "parent_bank", "shares"],
         )
         self.assertEqual(expected.strip(), test.strip())
 
@@ -204,6 +208,7 @@ class TestAccountingCLI(unittest.TestCase):
         )
         test = b.list_banks(
             conn,
+            json_fmt=True,
             cols=["bank_id", "bank", "active", "parent_bank", "shares", "job_usage"],
         )
         self.assertEqual(expected.strip(), test.strip())
@@ -217,7 +222,7 @@ class TestAccountingCLI(unittest.TestCase):
         2       | A    | 1      | root        | 1      | 0.0       
         """
         )
-        test = b.list_banks(conn, table=True)
+        test = b.list_banks(conn)
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_table_custom_one(self):
@@ -229,7 +234,7 @@ class TestAccountingCLI(unittest.TestCase):
         2            
         """
         )
-        test = b.list_banks(conn, table=True, cols=["bank_id"])
+        test = b.list_banks(conn, cols=["bank_id"])
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_table_custom_two(self):
@@ -241,7 +246,7 @@ class TestAccountingCLI(unittest.TestCase):
         2       | A      
         """
         )
-        test = b.list_banks(conn, table=True, cols=["bank_id", "bank"])
+        test = b.list_banks(conn, cols=["bank_id", "bank"])
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_table_custom_three(self):
@@ -253,7 +258,7 @@ class TestAccountingCLI(unittest.TestCase):
         2       | A    | 1     
         """
         )
-        test = b.list_banks(conn, table=True, cols=["bank_id", "bank", "active"])
+        test = b.list_banks(conn, cols=["bank_id", "bank", "active"])
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_table_custom_four(self):
@@ -265,9 +270,7 @@ class TestAccountingCLI(unittest.TestCase):
         2       | A    | 1      | root
         """
         )
-        test = b.list_banks(
-            conn, table=True, cols=["bank_id", "bank", "active", "parent_bank"]
-        )
+        test = b.list_banks(conn, cols=["bank_id", "bank", "active", "parent_bank"])
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_table_custom_five(self):
@@ -281,7 +284,6 @@ class TestAccountingCLI(unittest.TestCase):
         )
         test = b.list_banks(
             conn,
-            table=True,
             cols=["bank_id", "bank", "active", "parent_bank", "shares"],
         )
         self.assertEqual(expected.strip(), test.strip())
@@ -297,7 +299,6 @@ class TestAccountingCLI(unittest.TestCase):
         )
         test = b.list_banks(
             conn,
-            table=True,
             cols=["bank_id", "bank", "active", "parent_bank", "shares", "job_usage"],
         )
         self.assertEqual(expected.strip(), test.strip())

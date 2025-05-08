@@ -556,10 +556,10 @@ def add_list_banks_arg(subparsers):
         metavar="BANK_ID,BANK,ACTIVE,PARENT_BANK,SHARES,JOB_USAGE",
     )
     subparser_list_banks.add_argument(
-        "--table",
+        "--json",
         action="store_const",
         const=True,
-        help="list all banks in table format",
+        help="print output in JSON format",
     )
     subparser_list_banks.add_argument(
         "-o",
