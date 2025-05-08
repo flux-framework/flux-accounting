@@ -776,10 +776,10 @@ def add_list_projects_arg(subparsers):
         metavar="PROJECT_ID,PROJECT,USAGE",
     )
     subparser_list_projects.add_argument(
-        "--table",
+        "--json",
         action="store_const",
         const=True,
-        help="list all projects in table format",
+        help="list all projects in json format",
     )
     subparser_list_projects.add_argument(
         "-o",
