@@ -38,6 +38,7 @@ def update_t_inactive(acct_conn, last_t_inactive, user, bank):
             bank,
         ),
     )
+    acct_conn.commit()
 
 
 def get_last_job_ts(acct_conn, user, bank):
@@ -95,6 +96,7 @@ def update_hist_usg_col(acct_conn, usg_h, user, bank):
             bank,
         ),
     )
+    acct_conn.commit()
 
 
 def update_curr_usg_col(acct_conn, usg_h, user, bank):
@@ -113,6 +115,7 @@ def update_curr_usg_col(acct_conn, usg_h, user, bank):
             bank,
         ),
     )
+    acct_conn.commit()
 
 
 def apply_decay_factor(decay, acct_conn, user=None, bank=None):
@@ -271,6 +274,7 @@ def check_end_hl(acct_conn, pdhl):
             WHERE cluster='cluster'
             """
         acct_conn.execute(update_timestamp_stmt, ((float(end_hl) + hl_period),))
+        acct_conn.commit()
 
 
 def calc_bank_usage(acct_conn, cur, bank):
@@ -294,6 +298,7 @@ def calc_bank_usage(acct_conn, cur, bank):
             bank,
         ),
     )
+    acct_conn.commit()
 
     return total_usage
 
@@ -318,6 +323,7 @@ def calc_parent_bank_usage(acct_conn, cur, bank):
     # update the usage for this bank itself
     u_job_usage = "UPDATE bank_table SET job_usage=? WHERE bank=?"
     cur.execute(u_job_usage, (total_usage, bank))
+    acct_conn.commit()
 
     return total_usage
 
@@ -327,8 +333,6 @@ def update_job_usage(acct_conn, pdhl=1):
         "beginning job-usage update for flux-accounting DB; "
         "slow response times may occur"
     )
-    # begin transaction for all of the updates in the DB
-    acct_conn.execute("BEGIN TRANSACTION")
 
     s_assoc = "SELECT username, bank, default_bank FROM association_table"
     cur = acct_conn.cursor()
