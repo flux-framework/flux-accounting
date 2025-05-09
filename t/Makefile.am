@@ -52,6 +52,7 @@ TESTSCRIPTS = \
 	t1050-mf-priority-update-on-reload.t \
 	t1051-list-users.t \
 	t1052-mf-priority-queue-limits.t \
+	t1053-issue553.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \

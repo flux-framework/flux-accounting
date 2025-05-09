@@ -1,5 +1,5 @@
-bank_id | bank | active | parent_bank | shares | job_usage
---------+------+--------+-------------+--------+----------
-7       | F    | 1      | D           | 1      | 0.0      
+bank_id | bank | active | parent_bank | shares | job_usage | max_preempt_after
+--------+------+--------+-------------+--------+-----------+------------------
+7       | F    | 1      | D           | 1      | 0.0       | None             
 
 no users under F
