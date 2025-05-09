@@ -42,7 +42,9 @@ test_expect_success 'create fake_user.json' '
 				"queues": "",
 				"active": 1,
 				"projects": "*",
-				"def_project": "*"
+				"def_project": "*",
+				"max_nodes": 2147483647,
+				"max_cores": 2147483647
 			},
 			{
 				"userid": 5011,
@@ -54,7 +56,9 @@ test_expect_success 'create fake_user.json' '
 				"queues": "",
 				"active": 1,
 				"projects": "*",
-				"def_project": "*"
+				"def_project": "*",
+				"max_nodes": 2147483647,
+				"max_cores": 2147483647
 			}
 		]
 	}
@@ -152,7 +156,9 @@ test_expect_success 'increase the max jobs count of the user' '
 				"queues": "",
 				"active": 1,
 				"projects": "*",
-				"def_project": "*"
+				"def_project": "*",
+				"max_nodes": 2147483647,
+				"max_cores": 2147483647
 			}
 		]
 	}
@@ -204,7 +210,9 @@ test_expect_success 'update max_active_jobs limit' '
 				"queues": "",
 				"active": 1,
 				"projects": "*",
-				"def_project": "*"
+				"def_project": "*",
+				"max_nodes": 2147483647,
+				"max_cores": 2147483647
 			}
 		]
 	}
@@ -264,7 +272,9 @@ test_expect_success 'create another user with the same limits in multiple banks'
 				"queues": "",
 				"active": 1,
 				"projects": "*",
-				"def_project": "*"
+				"def_project": "*",
+				"max_nodes": 2147483647,
+				"max_cores": 2147483647
 			},
 			{
 				"userid": 5012,
@@ -276,7 +286,9 @@ test_expect_success 'create another user with the same limits in multiple banks'
 				"queues": "",
 				"active": 1,
 				"projects": "*",
-				"def_project": "*"
+				"def_project": "*",
+				"max_nodes": 2147483647,
+				"max_cores": 2147483647
 			}
 		]
 	}
