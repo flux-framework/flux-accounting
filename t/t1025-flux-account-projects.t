@@ -44,7 +44,7 @@ test_expect_success 'add some queues to the DB' '
 '
 
 test_expect_success 'list contents of project_table before adding projects' '
-	flux account list-projects --table > project_table.test &&
+	flux account list-projects > project_table.test &&
 	cat <<-EOF >project_table.expected
 	project_id | project | usage
 	-----------+---------+------
@@ -157,7 +157,7 @@ test_expect_success 'reset the projects list for an association' '
 '
 
 test_expect_success 'list all of the projects currently registered in project_table' '
-	flux account list-projects --table > project_table.test &&
+	flux account list-projects > project_table.test &&
 	cat <<-EOF >project_table.expected
 	project_id | project   | usage
 	-----------+-----------+------

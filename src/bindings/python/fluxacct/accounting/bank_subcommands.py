@@ -274,7 +274,7 @@ def list_banks(
     conn,
     inactive=False,
     cols=None,
-    table=False,
+    json_fmt=False,
     format_string="",
 ):
     """
@@ -306,6 +306,6 @@ def list_banks(
     formatter = fmt.AccountingFormatter(cur)
     if format_string != "":
         return formatter.as_format_string(format_string)
-    if table:
-        return formatter.as_table()
-    return formatter.as_json()
+    if json_fmt:
+        return formatter.as_json()
+    return formatter.as_table()
