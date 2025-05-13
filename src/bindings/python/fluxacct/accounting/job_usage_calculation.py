@@ -210,6 +210,7 @@ def calc_usage_factor(conn, pdhl, user, bank, default_bank):
         # no new jobs in the new half-life period
         usg_historical = apply_decay_factor(0.5, conn, user, bank)
 
+        update_curr_usg_col(conn, usg_current, user, bank)
         update_hist_usg_col(conn, usg_historical, user, bank)
     elif (last_t_inactive - float(end_hl)) < hl_period:
         # found new jobs in the current half-life period
