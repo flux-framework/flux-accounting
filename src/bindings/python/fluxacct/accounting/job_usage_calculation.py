@@ -202,18 +202,22 @@ def calc_usage_factor(conn, pdhl, user, bank, default_bank):
         update_t_inactive(conn, last_t_inactive, user, bank)
 
     if len(user_jobs) == 0 and (float(end_hl) > (time.time() - hl_period)):
-        # no new jobs in the current half-life period
+        # no new jobs in the current half-life period; the job usage for the
+        # association stays exactly the same
         usg_past = fetch_usg_bins(conn, user, bank)
 
         usg_historical = sum(usg_past)
     elif len(user_jobs) == 0 and (float(end_hl) < (time.time() - hl_period)):
-        # no new jobs in the new half-life period
+        # no new jobs in the new half-life period; previous job usage periods need
+        # to have a half-life decay applied to them
         usg_historical = apply_decay_factor(0.5, conn, user, bank)
 
         update_curr_usg_col(conn, usg_current, user, bank)
         update_hist_usg_col(conn, usg_historical, user, bank)
     elif (last_t_inactive - float(end_hl)) < hl_period:
-        # found new jobs in the current half-life period
+        # found new jobs in the current half-life period; we need to 1) add the
+        # new jobs to the current usage period, and 2) update the historical usage
+        # period
         usg_current += get_curr_usg_bin(conn, user, bank)
 
         # usage_user_past = sum of the older usage factors
