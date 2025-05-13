@@ -121,7 +121,12 @@ jobs:
 
     - name: coverage report
       if: success() && matrix.coverage
-      run: DOCKER_REPO= bash <(curl -s https://codecov.io/bash)
+      env:
+        DOCKER_REPO:
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        flags: ${{matrix.coverage_flags}}
 
     - name: annotate errors
       if: failure() || cancelled()
