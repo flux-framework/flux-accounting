@@ -1,3 +1,6 @@
+AM_LDFLAGS = \
+	$(CODE_COVERAGE_LIBS)
+
 # This list is included in both TESTS and dist_check_SCRIPTS.
 TESTSCRIPTS = \
 	t0000-sharness.t \
