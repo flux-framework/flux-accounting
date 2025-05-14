@@ -365,6 +365,14 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(usage_factor, 3215.5)
 
+        select_stmt = (
+            "SELECT usage_factor_period_0 FROM job_usage_factor_table"
+            " WHERE username='1001'"
+        )
+        cur.execute(select_stmt)
+        curr_job_usage = cur.fetchone()[0]
+        self.assertEqual(curr_job_usage, 0.0)
+
     # simulate a half-life period further; assure the new end of the
     # current half-life period gets updated
     @mock.patch("time.time", mock.MagicMock(return_value=(10000000 + (604800 * 2.1))))
