@@ -290,32 +290,26 @@ def calc_bank_usage(acct_conn, cur, bank):
     return total_usage
 
 
-def calc_parent_bank_usage(acct_conn, cur, bank, total_usage=0.0):
-    # find all sub banks
+def calc_parent_bank_usage(acct_conn, cur, bank):
+    # find all sub-banks of the current bank
     cur.execute("SELECT bank FROM bank_table WHERE parent_bank=?", (bank,))
     sub_banks = cur.fetchall()
 
+    total_usage = 0.0
     if len(sub_banks) == 0:
         # we've reached a bank with no sub banks, so take the usage from that bank
         # and add it to the total usage for the parent bank
-        job_usage = calc_bank_usage(acct_conn, cur, bank)
-        total_usage += job_usage
+        total_usage = calc_bank_usage(acct_conn, cur, bank)
     else:
         # for each sub bank, keep traversing to find the usage for
         # each bank with users in it
         for sub_bank in sub_banks:
-            total_usage = calc_parent_bank_usage(
-                acct_conn, cur, sub_bank[0], total_usage
-            )
-            # update the bank_table with the total job usage
-            u_job_usage = "UPDATE bank_table SET job_usage=? WHERE bank=?"
-            cur.execute(
-                u_job_usage,
-                (
-                    total_usage,
-                    bank,
-                ),
-            )
+            sub_usage = calc_parent_bank_usage(acct_conn, cur, sub_bank[0])
+            total_usage += sub_usage
+
+    # update the usage for this bank itself
+    u_job_usage = "UPDATE bank_table SET job_usage=? WHERE bank=?"
+    cur.execute(u_job_usage, (total_usage, bank))
 
     return total_usage
 
@@ -340,7 +334,7 @@ def update_job_usage(acct_conn, pdhl=1):
     parent_bank = result[0][0]  # store the name of the root bank
 
     # update the job usage for every bank in the bank_table
-    calc_parent_bank_usage(acct_conn, cur, parent_bank, 0.0)
+    calc_parent_bank_usage(acct_conn, cur, parent_bank)
 
     check_end_hl(acct_conn, pdhl)
 

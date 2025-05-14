@@ -55,6 +55,7 @@ TESTSCRIPTS = \
 	t1050-mf-priority-update-on-reload.t \
 	t1051-list-users.t \
 	t1052-mf-priority-queue-limits.t \
+	t1053-issue631.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
@@ -65,7 +66,8 @@ TESTSCRIPTS = \
 	python/t1006_job_archive.py \
 	python/t1007_formatter.py \
 	python/t1008_banks_output.py \
-	python/t1009_users_output.py
+	python/t1009_users_output.py \
+	python/t1010_issue631.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
