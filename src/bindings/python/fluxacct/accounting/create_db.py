@@ -18,6 +18,8 @@ import time
 
 import fluxacct.accounting
 
+LOGGER = logging.getLogger(__name__)
+
 
 def add_usage_columns_to_table(
     conn, table_name, priority_usage_reset_period=None, priority_decay_half_life=None
@@ -77,18 +79,18 @@ def create_db(
     db_dir.mkdir(parents=True, exist_ok=True)
     try:
         # open connection to database
-        logging.info("Creating Flux Accounting DB")
+        LOGGER.info("Creating Flux Accounting DB")
         conn = sqlite3.connect("file:" + filepath + "?mode:rwc", uri=True)
-        logging.info("Created Flux Accounting DB successfully")
+        LOGGER.info("Created Flux Accounting DB successfully")
     except sqlite3.OperationalError as exception:
-        logging.error(exception)
+        LOGGER.error(exception)
         sys.exit(1)
 
     # set version number of database
     conn.execute("PRAGMA user_version = %d" % (fluxacct.accounting.DB_SCHEMA_VERSION))
 
     # Association Table
-    logging.info("Creating association_table in DB...")
+    LOGGER.info("Creating association_table in DB...")
     conn.execute(
         """
             CREATE TABLE IF NOT EXISTS association_table (
@@ -112,11 +114,11 @@ def create_db(
                 PRIMARY KEY   (username, bank)
         );"""
     )
-    logging.info("Created association_table successfully")
+    LOGGER.info("Created association_table successfully")
 
     # Bank Table
     # bank_id gets auto-incremented with every new entry
-    logging.info("Creating bank_table in DB...")
+    LOGGER.info("Creating bank_table in DB...")
     conn.execute(
         """
             CREATE TABLE IF NOT EXISTS bank_table (
@@ -128,11 +130,11 @@ def create_db(
                 job_usage   real    DEFAULT 0.0 NOT NULL
         );"""
     )
-    logging.info("Created bank_table successfully")
+    LOGGER.info("Created bank_table successfully")
 
     # Job Usage Factor Table
     # stores past job usage factors for users
-    logging.info("Creating job_usage_factor table in DB...")
+    LOGGER.info("Creating job_usage_factor table in DB...")
     conn.execute(
         """
             CREATE TABLE IF NOT EXISTS job_usage_factor_table (
@@ -149,11 +151,11 @@ def create_db(
         priority_usage_reset_period,
         priority_decay_half_life,
     )
-    logging.info("Created job_usage_factor_table successfully")
+    LOGGER.info("Created job_usage_factor_table successfully")
 
     # Half Life Timestamp Table
     # keeps track of current half-life period
-    logging.info("Creating t_half_life_period_table in DB...")
+    LOGGER.info("Creating t_half_life_period_table in DB...")
     conn.execute(
         """
             CREATE TABLE IF NOT EXISTS t_half_life_period_table (
@@ -169,11 +171,11 @@ def create_db(
         """
     )
     set_half_life_period_end(conn, priority_decay_half_life)
-    logging.info("Created t_half_life_period_table successfully")
+    LOGGER.info("Created t_half_life_period_table successfully")
 
     # Queue Table
     # stores queues, associated priorities, and limit information
-    logging.info("Creating queue_table in DB...")
+    LOGGER.info("Creating queue_table in DB...")
     conn.execute(
         """
             CREATE TABLE IF NOT EXISTS queue_table (
@@ -189,7 +191,7 @@ def create_db(
 
     # Projects Table
     # stores projects
-    logging.info("Creating project_table in DB...")
+    LOGGER.info("Creating project_table in DB...")
     conn.execute(
         """
             CREATE TABLE IF NOT EXISTS project_table (
@@ -203,7 +205,7 @@ def create_db(
 
     # Jobs Table
     # stores job records for associations
-    logging.info("Creating jobs table in DB...")
+    LOGGER.info("Creating jobs table in DB...")
     conn.execute(
         """
             CREATE TABLE IF NOT EXISTS jobs (
@@ -219,6 +221,6 @@ def create_db(
                 bank                text
             );"""
     )
-    logging.info("Created jobs table successfully")
+    LOGGER.info("Created jobs table successfully")
 
     conn.close()
