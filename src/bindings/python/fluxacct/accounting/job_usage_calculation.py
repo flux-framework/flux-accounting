@@ -11,8 +11,11 @@
 ###############################################################
 import time
 import math
+import logging
 
 from fluxacct.accounting import jobs_table_subcommands as j
+
+LOGGER = logging.getLogger(__name__)
 
 
 def update_t_inactive(acct_conn, last_t_inactive, user, bank):
@@ -315,6 +318,10 @@ def calc_parent_bank_usage(acct_conn, cur, bank):
 
 
 def update_job_usage(acct_conn, pdhl=1):
+    LOGGER.info(
+        "beginning job-usage update for flux-accounting DB; "
+        "slow response times may occur"
+    )
     # begin transaction for all of the updates in the DB
     acct_conn.execute("BEGIN TRANSACTION")
 
@@ -340,6 +347,7 @@ def update_job_usage(acct_conn, pdhl=1):
 
     # commit the transaction after the updates are finished
     acct_conn.commit()
+    LOGGER.info("job-usage update for flux-accounting DB now complete")
 
     return 0
 
