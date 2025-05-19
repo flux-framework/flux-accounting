@@ -78,7 +78,7 @@ test_expect_success 'submit a job that takes up one core' '
 	flux job wait-event -f json ${job3} priority &&
 	flux jobtap query mf_priority.so > query.json &&
 	test_debug "jq -S . <query.json" &&
-	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].cur_nodes == 0" <query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].cur_nodes == 1" <query.json &&
 	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].cur_cores == 1" <query.json
 '
 
