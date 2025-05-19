@@ -157,4 +157,32 @@ man_pages = [
         [author],
         1,
     ),
+    (
+        "man1/flux-account-add-project",
+        "flux-account-add-project",
+        "add a project to the project_table",
+        [author],
+        1,
+    ),
+    (
+        "man1/flux-account-view-project",
+        "flux-account-view-project",
+        "view information about a project in the flux-accounting database",
+        [author],
+        1,
+    ),
+    (
+        "man1/flux-account-delete-project",
+        "flux-account-delete-project",
+        "delete a project from the flux-accounting database",
+        [author],
+        1,
+    ),
+    (
+        "man1/flux-account-list-projects",
+        "flux-account-list-projects",
+        "list all projects in the project_table",
+        [author],
+        1,
+    ),
 ]
