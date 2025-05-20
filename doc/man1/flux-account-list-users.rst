@@ -22,10 +22,14 @@ columns to include. The table can also be filtered to return associations that
 meet certain criteria, such as those who belong to a certain bank, queue, or
 project, or those who have certain configured limits.
 
-.. option:: --cols
+.. option:: -f/--fields
 
     A list of columns from the table to include in the output. By default, all
     columns are included.
+
+.. option:: -j/--json
+
+    Output in JSON format.
 
 .. option:: -o/--format
 
@@ -34,6 +38,10 @@ project, or those who have certain configured limits.
 .. option:: --active
 
     An association's active status (1 = active; 0 = inactive)
+
+.. option:: -B/--bank
+
+    The bank(s) that associations belong to.
 
 .. option:: --shares
 
@@ -49,22 +57,22 @@ project, or those who have certain configured limits.
     The max number of both pending and running jobs the association can have at
     any given time.
 
-.. option:: --max-nodes
+.. option:: -N/--max-nodes
 
     The max number of nodes an association can have across all of their running
     jobs.
     
-.. option:: --max-cores
+.. option:: -c/--max-cores
 
     The max number of nodes an association can have across all of their running
     jobs.
 
-.. option:: --queues
+.. option:: -q/--queues
 
     A comma-separated list of all of the queues an association can run jobs
     under.
 
-.. option:: --projects
+.. option:: -P/--projects
 
     A comma-separated list of all of the projects an association can run jobs
     under.
