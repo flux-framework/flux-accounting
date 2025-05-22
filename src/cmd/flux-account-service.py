@@ -297,6 +297,7 @@ class AccountingService:
                 msg.payload["bank"],
                 msg.payload["shares"],
                 msg.payload["parent_bank"],
+                msg.payload["priority"],
             )
 
             payload = {"add_bank": val}
@@ -326,6 +327,7 @@ class AccountingService:
                 msg.payload["bank"],
                 msg.payload["shares"],
                 msg.payload["parent_bank"],
+                msg.payload["priority"],
             )
 
             payload = {"edit_bank": val}
