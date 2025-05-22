@@ -433,6 +433,13 @@ def add_add_bank_arg(subparsers):
     subparser_add_bank.add_argument(
         "shares", help="number of shares to allocate to bank", metavar="SHARES"
     )
+    subparser_add_bank.add_argument(
+        "--priority",
+        type=float,
+        default=0.0,
+        help="an associated priority for jobs submitted under this bank",
+        metavar="PRIORITY",
+    )
 
 
 def add_view_bank_arg(subparsers):
@@ -532,6 +539,11 @@ def add_edit_bank_arg(subparsers):
         "--parent-bank",
         help="parent bank",
         metavar="PARENT BANK",
+    )
+    subparser_edit_bank.add_argument(
+        "--priority",
+        help="an associated priority for jobs submitted under this bank",
+        metavar="PRIORITY",
     )
 
 

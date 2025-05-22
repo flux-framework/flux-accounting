@@ -84,7 +84,7 @@ def reactivate_bank(conn, cur, bank, parent_bank):
 ###############################################################
 
 
-def add_bank(conn, bank, shares, parent_bank=""):
+def add_bank(conn, bank, shares, parent_bank="", priority=0.0):
     cur = conn.cursor()
 
     if parent_bank == "":
@@ -119,11 +119,12 @@ def add_bank(conn, bank, shares, parent_bank=""):
             INSERT INTO bank_table (
                 bank,
                 parent_bank,
-                shares
+                shares,
+                priority
             )
-            VALUES (?, ?, ?)
+            VALUES (?, ?, ?, ?)
             """,
-            (bank, parent_bank, shares),
+            (bank, parent_bank, shares, priority),
         )
         # commit changes
         conn.commit()
@@ -233,12 +234,14 @@ def edit_bank(
     bank=None,
     shares=None,
     parent_bank=None,
+    priority=None,
 ):
     cur = conn.cursor()
     params = locals()
     editable_fields = [
         "shares",
         "parent_bank",
+        "priority",
     ]
     for field in editable_fields:
         if params[field] is not None:
