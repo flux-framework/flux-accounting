@@ -74,6 +74,7 @@ def bulk_update(path):
     bulk_user_data = []
     bulk_q_data = []
     bulk_proj_data = []
+    bulk_bank_data = []
 
     # fetch all rows from association_table (will print out tuples)
     for row in cur.execute(
@@ -130,6 +131,17 @@ def bulk_update(path):
 
     data = {"data": bulk_proj_data}
     flux.Flux().rpc("job-manager.mf_priority.rec_proj_update", data).get()
+
+    # fetch rows from bank_table
+    for row in cur.execute("SELECT bank, priority FROM bank_table"):
+        single_bank = {
+            "bank": str(row["bank"]),
+            "priority": float(row["priority"]),
+        }
+        bulk_bank_data.append(single_bank)
+
+    data = {"data": bulk_bank_data}
+    flux.Flux().rpc("job-manager.mf_priority.rec_bank_update", data).get()
 
     flux.Flux().rpc("job-manager.mf_priority.reprioritize")
 
