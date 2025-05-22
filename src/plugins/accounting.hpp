@@ -96,6 +96,12 @@ public:
                                    std::map<std::string, Queue> queues);
 };
 
+class Bank {
+public:
+    std::string name;        // name of the bank
+    double priority = 0.0;   // priority associated with jobs under this bank
+};
+
 // get an Association object that points to user/bank in the users map;
 // return nullptr on failure
 Association* get_association (int userid,
@@ -129,5 +135,9 @@ bool check_map_for_dne_only (std::map<int, std::map<std::string, Association>>
 int get_project_info (const char *project,
                       std::vector<std::string> &permissible_projects,
                       std::vector<std::string> projects);
+
+// return the associated priority with a bank
+double get_bank_priority (const char *bank,
+                          const std::map<std::string, Bank> &banks);
 
 #endif // ACCOUNTING_H
