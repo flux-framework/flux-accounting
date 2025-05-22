@@ -181,6 +181,18 @@ test_expect_success 'delete a bank with multiple sub-banks and users with --forc
 	grep "user user5030 not found in association_table" nonexistent_user.out
 '
 
+test_expect_success 'add a bank with a specified priority' '
+	flux account add-bank --parent-bank=root H 1 --priority=1000.567 &&
+	flux account view-bank H > bank_H.out &&
+	grep "\"priority\": 1000.567" bank_H.out
+'
+
+test_expect_success 'edit the priority of a bank' '
+	flux account edit-bank H --priority=5000 &&
+	flux account view-bank H > bank_H_edited.out &&
+	grep "\"priority\": 5000.0" bank_H_edited.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
