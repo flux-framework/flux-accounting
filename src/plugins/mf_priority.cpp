@@ -107,9 +107,11 @@ int64_t priority_calculation (flux_plugin_t *p,
 
     fshare_factor = b->fairshare;
     queue_factor = b->queue_factor;
+    bank_factor = b->bank_factor;
 
     priority = round ((fshare_weight * fshare_factor) +
                       (queue_weight * queue_factor) +
+                      (bank_weight * bank_factor) +
                       (urgency - 16));
 
     if (priority < 0)
@@ -945,6 +947,8 @@ static int new_cb (flux_plugin_t *p,
 
     // assign priority associated with validated queue
     b->queue_factor = get_queue_info (queue, b->queues, queues);
+    // assign priority associated with validated bank
+    b->bank_factor = get_bank_priority (b->bank_name.c_str (), banks);
 
     max_run_jobs = b->max_run_jobs;
     cur_active_jobs = b->cur_active_jobs;
@@ -1215,6 +1219,9 @@ static int job_updated (flux_plugin_t *p,
         a = a_new;
         // update the active jobs count of the updated bank
         a->cur_active_jobs++;
+
+        // assign priority associated with validated bank
+        a->bank_factor = get_bank_priority (a->bank_name.c_str (), banks);
 
         // re-pack the updated Association object to the job
         if (flux_jobtap_job_aux_set (p,
