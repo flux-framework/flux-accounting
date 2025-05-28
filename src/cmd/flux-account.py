@@ -83,6 +83,7 @@ def add_list_users_arg(subparsers):
     )
     subparser_list_users.set_defaults(func="list_users")
     subparser_list_users.add_argument(
+        "-f",
         "--fields",
         type=str,
         help="list of fields to include in output",
@@ -90,6 +91,7 @@ def add_list_users_arg(subparsers):
         metavar=f"{','.join(fluxacct.accounting.ASSOCIATION_TABLE)}",
     )
     subparser_list_users.add_argument(
+        "-j",
         "--json",
         action="store_const",
         const=True,
@@ -104,42 +106,52 @@ def add_list_users_arg(subparsers):
         metavar="FORMAT",
     )
     subparser_list_users.add_argument(
+        "-c",
         "--active",
         metavar="ACTIVE_STATUS",
     )
     subparser_list_users.add_argument(
+        "-b",
         "--bank",
         metavar="BANK",
     )
     subparser_list_users.add_argument(
+        "-s",
         "--shares",
         metavar="SHARES",
     )
     subparser_list_users.add_argument(
+        "-r",
         "--max-running-jobs",
         metavar="MAX_RUNNING_JOBS",
     )
     subparser_list_users.add_argument(
+        "-a",
         "--max-active-jobs",
         metavar="MAX_ACTIVE_JOBS",
     )
     subparser_list_users.add_argument(
+        "-N",
         "--max-nodes",
         metavar="MAX_NODES",
     )
     subparser_list_users.add_argument(
+        "-n",
         "--max-cores",
         metavar="MAX_CORES",
     )
     subparser_list_users.add_argument(
+        "-q",
         "--queues",
         metavar="QUEUES",
     )
     subparser_list_users.add_argument(
+        "-P",
         "--projects",
         metavar="PROJECTS",
     )
     subparser_list_users.add_argument(
+        "-k",
         "--default-project",
         metavar="DEFAULT_PROJECT",
     )
@@ -153,30 +165,35 @@ def add_add_user_arg(subparsers):
     )
     subparser_add_user.set_defaults(func="add_user")
     subparser_add_user.add_argument(
+        "-u",
         "--username",
         help="username",
         metavar="USERNAME",
         required=True,
     )
     subparser_add_user.add_argument(
+        "-i",
         "--userid",
         help="userid",
         default=65534,
         metavar="USERID",
     )
     subparser_add_user.add_argument(
+        "-b",
         "--bank",
         help="bank to charge jobs against",
         metavar="BANK",
         required=True,
     )
     subparser_add_user.add_argument(
+        "-s",
         "--shares",
         help="shares",
         default=1,
         metavar="SHARES",
     )
     subparser_add_user.add_argument(
+        "-f",
         "--fairshare",
         help="fairshare",
         type=float,
@@ -184,42 +201,49 @@ def add_add_user_arg(subparsers):
         metavar="FAIRSHARE",
     )
     subparser_add_user.add_argument(
+        "-r",
         "--max-running-jobs",
         help="max number of jobs that can be running at the same time",
         default=5,
         metavar="MAX_RUNNING_JOBS",
     )
     subparser_add_user.add_argument(
+        "-a",
         "--max-active-jobs",
         help="max number of both pending and running jobs",
         default=7,
         metavar="max_active_jobs",
     )
     subparser_add_user.add_argument(
+        "-N",
         "--max-nodes",
         help="max number of nodes a user can have across all of their running jobs",
         default=2147483647,
         metavar="MAX_NODES",
     )
     subparser_add_user.add_argument(
+        "-n",
         "--max-cores",
         help="max number of cores a user can have across all of their running jobs",
         default=2147483647,
         metavar="MAX_CORES",
     )
     subparser_add_user.add_argument(
+        "-q",
         "--queues",
         help="queues the user is allowed to run jobs in",
         default="",
         metavar="QUEUES",
     )
     subparser_add_user.add_argument(
+        "-P",
         "--projects",
         help="projects the user is allowed to submit jobs under",
         default="*",
         metavar="PROJECTS",
     )
     subparser_add_user.add_argument(
+        "-k",
         "--default-project",
         help="the default project for the association to submit jobs under",
         default=None,
@@ -264,6 +288,7 @@ def add_edit_user_arg(subparsers):
         metavar="USERNAME",
     )
     subparser_edit_user.add_argument(
+        "-b",
         "--bank",
         help=(
             "specify under which bank to make this change; if not specified,"
@@ -273,65 +298,76 @@ def add_edit_user_arg(subparsers):
         metavar="BANK",
     )
     subparser_edit_user.add_argument(
+        "-i",
         "--userid",
         default=None,
         metavar="USERID",
     )
     subparser_edit_user.add_argument(
+        "-d",
         "--default-bank",
         help="default bank",
         default=None,
         metavar="DEFAULT_BANK",
     )
     subparser_edit_user.add_argument(
+        "-s",
         "--shares",
         help="shares",
         default=None,
         metavar="SHARES",
     )
     subparser_edit_user.add_argument(
+        "-f",
         "--fairshare",
         help="fairshare",
         default=None,
         metavar="SHARES",
     )
     subparser_edit_user.add_argument(
+        "-r",
         "--max-running-jobs",
         help="max number of jobs that can be running at the same time",
         default=None,
         metavar="MAX_RUNNING_JOBS",
     )
     subparser_edit_user.add_argument(
+        "-a",
         "--max-active-jobs",
         help="max number of both pending and running jobs",
         default=None,
         metavar="max_active_jobs",
     )
     subparser_edit_user.add_argument(
+        "-N",
         "--max-nodes",
         help="max number of nodes a user can have across all of their running jobs",
         default=None,
         metavar="MAX_NODES",
     )
     subparser_edit_user.add_argument(
+        "-n",
         "--max-cores",
         help="max number of cores a user can have across all of their running jobs",
         default=None,
         metavar="MAX_CORES",
     )
     subparser_edit_user.add_argument(
+        "-q",
         "--queues",
         help="queues the user is allowed to run jobs in",
         default=None,
         metavar="QUEUES",
     )
     subparser_edit_user.add_argument(
+        "-P",
         "--projects",
         help="projects the user is allowed to submit jobs under",
         default=None,
         metavar="PROJECTS",
     )
     subparser_edit_user.add_argument(
+        "-k",
         "--default-project",
         help="default projects the user submits jobs under when no project is specified",
         default=None,
@@ -607,30 +643,35 @@ def add_add_queue_arg(subparsers):
     subparser_add_queue.set_defaults(func="add_queue")
     subparser_add_queue.add_argument("queue", help="queue name", metavar="QUEUE")
     subparser_add_queue.add_argument(
+        "-a",
         "--min-nodes-per-job",
         help="min nodes per job",
         default=1,
         metavar="MIN NODES PER JOB",
     )
     subparser_add_queue.add_argument(
+        "-m",
         "--max-nodes-per-job",
         help="max nodes per job",
         default=1,
         metavar="MAX NODES PER JOB",
     )
     subparser_add_queue.add_argument(
+        "-t",
         "--max-time-per-job",
         help="max time per job",
         default=60,
         metavar="MAX TIME PER JOB",
     )
     subparser_add_queue.add_argument(
+        "-P",
         "--priority",
         help="associated priority for the queue",
         default=0,
         metavar="PRIORITY",
     )
     subparser_add_queue.add_argument(
+        "-r",
         "--max-running-jobs",
         help="max number of running jobs an association can have in the queue",
         default=100,
@@ -674,6 +715,7 @@ def add_edit_queue_arg(subparsers):
     subparser_edit_queue.set_defaults(func="edit_queue")
     subparser_edit_queue.add_argument("queue", help="queue name", metavar="QUEUE")
     subparser_edit_queue.add_argument(
+        "-a",
         "--min-nodes-per-job",
         type=int,
         help="min nodes per job",
@@ -681,6 +723,7 @@ def add_edit_queue_arg(subparsers):
         metavar="MIN NODES PER JOB",
     )
     subparser_edit_queue.add_argument(
+        "-m",
         "--max-nodes-per-job",
         type=int,
         help="max nodes per job",
@@ -688,6 +731,7 @@ def add_edit_queue_arg(subparsers):
         metavar="MAX NODES PER JOB",
     )
     subparser_edit_queue.add_argument(
+        "-t",
         "--max-time-per-job",
         type=int,
         help="max time per job",
@@ -695,6 +739,7 @@ def add_edit_queue_arg(subparsers):
         metavar="MAX TIME PER JOB",
     )
     subparser_edit_queue.add_argument(
+        "-P",
         "--priority",
         type=int,
         help="associated priority for the queue",
@@ -702,6 +747,7 @@ def add_edit_queue_arg(subparsers):
         metavar="PRIORITY",
     )
     subparser_edit_queue.add_argument(
+        "-r",
         "--max-running-jobs",
         type=int,
         help="max number of running jobs an association can have in the queue",
