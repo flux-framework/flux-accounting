@@ -24,6 +24,10 @@ configured when adding the bank.
 
     The name of the parent bank.
 
+.. option:: --priority
+
+    An associated priority to be applied to jobs submitted under this bank.
+
 EXAMPLES
 --------
 
