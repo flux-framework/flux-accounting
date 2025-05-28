@@ -77,6 +77,7 @@ public:
     std::vector<Job> held_jobs;        // vector to keep track of held Jobs
     std::vector<std::string> queues;   // list of accessible queues
     int queue_factor;                  // priority factor associated with queue
+    double bank_factor;                // priority factor associated with bank
     int active;                        // active status
     std::vector<std::string> projects; // list of accessible projects
     std::string def_project;           // default project
