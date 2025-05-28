@@ -71,6 +71,9 @@ std::map<std::string, int> priority_weights;
  *
  * queue: a factor that can further affect the priority of a job based on the
  *     queue passed in.
+ *
+ * bank: a factor that can further affect the priority of a job based on the
+ *     bank the job is submitted under.
  */
 int64_t priority_calculation (flux_plugin_t *p,
                               flux_plugin_arg_t *args,
