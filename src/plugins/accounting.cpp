@@ -293,3 +293,15 @@ bool Association::under_queue_max_run_jobs (
 
     return under_queue_max_run_jobs;
 }
+
+
+double get_bank_priority (const char *bank,
+                          const std::map<std::string, Bank> &banks)
+{
+    try {
+        return banks.at (bank).priority;
+    } catch (const std::out_of_range &err) {
+        // can't find the bank passed in, so just return 0.0
+        return 0.0;
+    }
+}

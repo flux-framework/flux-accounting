@@ -46,9 +46,11 @@ extern "C" {
 #define DEFAULT_FSHARE_WEIGHT 100000
 #define DEFAULT_QUEUE_WEIGHT 10000
 #define DEFAULT_AGE_WEIGHT 1000
+#define DEFAULT_BANK_WEIGHT 0
 
 std::map<int, std::map<std::string, Association>> users;
 std::map<std::string, Queue> queues;
+std::map<std::string, Bank> banks;
 std::map<int, std::string> users_def_bank;
 std::vector<std::string> projects;
 std::map<std::string, int> priority_weights;
@@ -76,13 +78,14 @@ int64_t priority_calculation (flux_plugin_t *p,
                               char *bank,
                               int urgency)
 {
-    double fshare_factor = 0.0, priority = 0.0;
+    double fshare_factor = 0.0, priority = 0.0, bank_factor = 0.0;
     int queue_factor = 0;
-    int fshare_weight, queue_weight;
+    int fshare_weight, queue_weight, bank_weight;
     Association *b;
 
     fshare_weight = priority_weights["fairshare"];
     queue_weight = priority_weights["queue"];
+    bank_weight = priority_weights["bank"];
 
     if (urgency == FLUX_JOB_URGENCY_HOLD)
         return FLUX_JOB_PRIORITY_MIN;
@@ -322,16 +325,17 @@ static int conf_update_cb (flux_plugin_t *p,
                            flux_plugin_arg_t *args,
                            void *data)
 {
-    int fshare_weight = -1, queue_weight = -1;
+    int fshare_weight = -1, queue_weight = -1, bank_weight = -1;
     flux_t *h = flux_jobtap_get_flux (p);
 
     // unpack the various factors to be used in job priority calculation
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s?{s?{s?{s?i, s?i}}}}",
+                                "{s?{s?{s?{s?i, s?i, s?i}}}}",
                                 "conf", "accounting", "factor-weights",
                                 "fairshare", &fshare_weight,
-                                "queue", &queue_weight) < 0) {
+                                "queue", &queue_weight,
+                                "bank", &bank_weight) < 0) {
         flux_log_error (flux_jobtap_get_flux (p),
                         "mf_priority: conf.update: flux_plugin_arg_unpack: %s",
                         flux_plugin_arg_strerror (args));
@@ -343,6 +347,8 @@ static int conf_update_cb (flux_plugin_t *p,
         priority_weights["fairshare"] = fshare_weight;
     if (queue_weight != -1)
         priority_weights["queue"] = queue_weight;
+    if (bank_weight != -1)
+        priority_weights["bank"] = bank_weight;
 
     return 0;
 }
@@ -558,6 +564,61 @@ static void rec_proj_cb (flux_t *h,
     if (flux_respond (h, msg, NULL) < 0)
         flux_log_error (h, "flux_respond");
 
+    return;
+error:
+    flux_respond_error (h, msg, errno, flux_msg_last_error (msg));
+}
+
+
+/*
+ * Unpack a payload from an external bulk update service and place it in the
+ * "banks" map.
+ */
+static void rec_bank_cb (flux_t *h,
+                         flux_msg_handler_t *mh,
+                         const flux_msg_t *msg,
+                         void *arg)
+{
+    char *bank_name = NULL;
+    double priority = 0.0;
+    json_t *data, *jtemp = NULL;
+    json_error_t error;
+    int num_data = 0;
+    size_t index;
+    json_t *el;
+
+    if (flux_request_unpack (msg, NULL, "{s:o}", "data", &data) < 0) {
+        flux_log_error (h, "failed to unpack custom_priority.trigger msg");
+        goto error;
+    }
+
+    if (!data || !json_is_array (data)) {
+        flux_log (h, LOG_ERR, "mf_priority: invalid bank info payload");
+        goto error;
+    }
+    num_data = json_array_size (data);
+
+    // clear the banks map
+    banks.clear ();
+
+    for (int i = 0; i < num_data; i++) {
+        json_t *el = json_array_get(data, i);
+
+        if (json_unpack_ex (el, &error, 0,
+                            "{s:s, s:F}",
+                            "bank", &bank_name,
+                            "priority", &priority) < 0)
+            flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
+
+        Bank *b;
+        b = &banks[bank_name];
+
+        b->name = bank_name;
+        b->priority = priority;
+    }
+
+    if (flux_respond (h, msg, NULL) < 0)
+        flux_log_error (h, "flux_respond");
     return;
 error:
     flux_respond_error (h, msg, errno, flux_msg_last_error (msg));
@@ -1407,6 +1468,8 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
         || flux_jobtap_service_register (p, "reprioritize", reprior_cb, p) < 0
         || flux_jobtap_service_register (p, "rec_q_update", rec_q_cb, p) < 0
         || flux_jobtap_service_register (p, "rec_proj_update", rec_proj_cb, p)
+        < 0
+        || flux_jobtap_service_register (p, "rec_bank_update", rec_bank_cb, p)
         < 0)
         return -1;
 
@@ -1414,6 +1477,7 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
     priority_weights["fairshare"] = DEFAULT_FSHARE_WEIGHT;
     priority_weights["queue"] = DEFAULT_QUEUE_WEIGHT;
     priority_weights["age"] = DEFAULT_AGE_WEIGHT;
+    priority_weights["bank"] = DEFAULT_BANK_WEIGHT;
 
     return 0;
 }

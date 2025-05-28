@@ -52,7 +52,8 @@ TESTS = \
 	data_writer_db_test01.t \
 	accounting_test01.t \
 	job_test02.t \
-	dependencies_test03.t
+	dependencies_test03.t \
+	banks_test04.t
 check_PROGRAMS = $(TESTS)
 
 TEST_EXTENSIONS = .t
@@ -127,6 +128,15 @@ dependencies_test03_t_SOURCES = \
 	plugins/accounting.hpp
 dependencies_test03_t_CXXFLAGS = $(AM_CXXFLAGS) -I$(top_srcdir) $(JANSSON_CFLAGS)
 dependencies_test03_t_LDADD = \
+	common/libtap/libtap.la \
+	$(JANSSON_LIBS)
+
+banks_test04_t_SOURCES = \
+	plugins/test/banks_test04.cpp \
+	plugins/accounting.cpp \
+	plugins/accounting.hpp
+banks_test04_t_CXXFLAGS = $(AM_CXXFLAGS) -I$(top_srcdir) $(JANSSON_CFLAGS)
+banks_test04_t_LDADD = \
 	common/libtap/libtap.la \
 	$(JANSSON_LIBS)
 
