@@ -27,6 +27,10 @@ fields for a given bank. The list of modifiable fields are as follows:
     The amount of available resources their organization considers the bank 
     should be entitled to use relative to other competing banks.
 
+.. option:: --priority
+
+    An associated priority to be applied to jobs submitted under this bank.
+
 EXAMPLES
 --------
 

@@ -360,12 +360,15 @@ fair-share
 queue
   A configurable factor assigned to a queue.
 
+bank
+  A configurable factor assigned to a bank.
+
 urgency
   A user-controlled factor to prioritize their own jobs.
 
 Thus the priority :math:`P` is calculated as follows:
 
-:math:`P = (F_{fairshare} \times W_{fairshare}) + (F_{queue} \times W_{queue}) + (F_{urgency} - 16)`
+:math:`P = (F_{fairshare} \times W_{fairshare}) + (F_{queue} \times W_{queue}) + (F_{bank} \times W_{bank}) + (F_{urgency} - 16)`
 
 Each of these factors can be configured with a custom weight to increase their
 relevance to the final calculation of a job's integer priority. By default,
@@ -379,6 +382,7 @@ fair-share, you can adjust each factor's weight accordingly:
  [accounting.factor-weights]
  fairshare = 1000
  queue = 100000
+ bank = 500
 
 In addition to generating an integer priority for submitted jobs in a Flux
 system instance, the multi-factor priority plugin also enforces per-association
