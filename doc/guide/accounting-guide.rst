@@ -496,6 +496,23 @@ versus this same job submitted in the ``gold`` queue:
 
 :math:`P = (0.5 \times 100000) + (500 \times 10000) + (16 - 16) = (50000) + (5000000) = 5050000`
 
+Queue Limit Configuration
+=========================
+
+Like per-association job limits, queues in flux-accounting can be configured to
+enforce a max running jobs limit for associations. Each queue has a
+``max_running_jobs`` property that can set when creating a queue for the first
+time or changed at a later date:
+
+.. code-block:: console
+
+    $ flux account edit-queue bronze --max-running-jobs=3
+
+The above example will set a max running jobs limit of 3 running jobs
+per-association. Any subsequently submitted jobs will be held with a
+queue-specific dependency until one of the association's currently running jobs
+in that queue completes.
+
 .. _glossary-section:
 
 ********
