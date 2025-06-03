@@ -1,3 +1,28 @@
+flux-accounting version 0.46.0 - 2025-06-02
+-------------------------------------------
+
+#### Features
+
+* `bank_table`: add `priority` column (#643)
+
+* plugin: add `Bank` class, send bank priority information to plugin (#645)
+
+* plugin: utilize `bank` priority when calculating priority for a job (#647)
+
+#### Documentation
+
+* doc: remove `jinja2 < 3.1.0` requirement (#646)
+
+* doc: drop `sphinx < 6.0.0` (#648)
+
+* doc: update docs with bank factor (#649)
+
+* doc: add note about active per-queue limits (#652)
+
+#### Testsuite
+
+* codecov: include Python bindings in codecov report (#644)
+
 flux-accounting version 0.45.0 - 2025-05-21
 -------------------------------------------
 
