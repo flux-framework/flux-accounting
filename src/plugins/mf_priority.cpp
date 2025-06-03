@@ -323,7 +323,8 @@ error:
 
 /*
  * Get config information about the various priority factor weights
- * and assign them in the priority_weights map.
+ * and assign them in the priority_weights map. Update the queues map with
+ * any defined integer priorities.
  */
 static int conf_update_cb (flux_plugin_t *p,
                            const char *topic,
@@ -331,16 +332,18 @@ static int conf_update_cb (flux_plugin_t *p,
                            void *data)
 {
     int fshare_weight = -1, queue_weight = -1, bank_weight = -1;
+    json_t *queue_priorities = nullptr;
     flux_t *h = flux_jobtap_get_flux (p);
 
     // unpack the various factors to be used in job priority calculation
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s?{s?{s?{s?i, s?i, s?i}}}}",
+                                "{s?{s?{s?{s?i, s?i, s?i}, s?o}}}",
                                 "conf", "accounting", "factor-weights",
                                 "fairshare", &fshare_weight,
                                 "queue", &queue_weight,
-                                "bank", &bank_weight) < 0) {
+                                "bank", &bank_weight,
+                                "queue-priorities", &queue_priorities) < 0) {
         flux_log_error (flux_jobtap_get_flux (p),
                         "mf_priority: conf.update: flux_plugin_arg_unpack: %s",
                         flux_plugin_arg_strerror (args));
@@ -354,6 +357,32 @@ static int conf_update_cb (flux_plugin_t *p,
         priority_weights["queue"] = queue_weight;
     if (bank_weight != -1)
         priority_weights["bank"] = bank_weight;
+
+    if (queue_priorities) {
+        const char *key;
+        json_t *value;
+
+        json_object_foreach (queue_priorities, key, value) {
+            if (!key || !json_is_integer (value)) {
+                flux_log_error (h, "mf_priority: invalid data in queue-priorities");
+                continue;
+            }
+
+            const std::string queue_name (key);
+            int priority = json_integer_value (value);
+
+            auto it = queues.find (queue_name);
+            if (it != queues.end ()) {
+                // update the priority for the existing queue
+                it->second.priority = priority;
+            } else {
+                // queue does not exist; create a new queue
+                Queue new_queue;
+                new_queue.priority = priority;
+                queues[queue_name] = new_queue;
+            }
+        }
+    }
 
     return 0;
 }
