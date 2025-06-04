@@ -151,10 +151,12 @@ class AccountingService:
             val = u.view_user(
                 self.conn,
                 msg.payload["username"],
-                msg.payload["parsable"],
-                msg.payload["fields"].split(",") if msg.payload.get("fields") else None,
-                msg.payload["list_banks"],
-                msg.payload["format"],
+                msg.payload.get("parsable"),
+                msg.payload.get("fields").split(",")
+                if msg.payload.get("fields")
+                else None,
+                msg.payload.get("list_banks"),
+                msg.payload.get("format"),
             )
 
             payload = {"view_user": val}
@@ -206,16 +208,16 @@ class AccountingService:
                 conn=self.conn,
                 username=msg.payload["username"],
                 bank=msg.payload["bank"],
-                uid=msg.payload["userid"],
-                shares=msg.payload["shares"],
-                fairshare=msg.payload["fairshare"],
-                max_running_jobs=msg.payload["max_running_jobs"],
-                max_active_jobs=msg.payload["max_active_jobs"],
-                max_nodes=msg.payload["max_nodes"],
-                max_cores=msg.payload["max_cores"],
-                queues=msg.payload["queues"],
-                projects=msg.payload["projects"],
-                default_project=msg.payload["default_project"],
+                uid=msg.payload.get("userid"),
+                shares=msg.payload.get("shares"),
+                fairshare=msg.payload.get("fairshare"),
+                max_running_jobs=msg.payload.get("max_running_jobs"),
+                max_active_jobs=msg.payload.get("max_active_jobs"),
+                max_nodes=msg.payload.get("max_nodes"),
+                max_cores=msg.payload.get("max_cores"),
+                queues=msg.payload.get("queues"),
+                projects=msg.payload.get("projects"),
+                default_project=msg.payload.get("default_project"),
             )
 
             payload = {"add_user": val}
@@ -232,7 +234,7 @@ class AccountingService:
                 self.conn,
                 msg.payload["username"],
                 msg.payload["bank"],
-                msg.payload["force"],
+                msg.payload.get("force"),
             )
 
             payload = {"delete_user": val}
@@ -248,18 +250,18 @@ class AccountingService:
             val = u.edit_user(
                 conn=self.conn,
                 username=msg.payload["username"],
-                bank=msg.payload["bank"],
-                userid=msg.payload["userid"],
-                default_bank=msg.payload["default_bank"],
-                shares=msg.payload["shares"],
-                fairshare=msg.payload["fairshare"],
-                max_running_jobs=msg.payload["max_running_jobs"],
-                max_active_jobs=msg.payload["max_active_jobs"],
-                max_nodes=msg.payload["max_nodes"],
-                max_cores=msg.payload["max_cores"],
-                queues=msg.payload["queues"],
-                projects=msg.payload["projects"],
-                default_project=msg.payload["default_project"],
+                bank=msg.payload.get("bank"),
+                userid=msg.payload.get("userid"),
+                default_bank=msg.payload.get("default_bank"),
+                shares=msg.payload.get("shares"),
+                fairshare=msg.payload.get("fairshare"),
+                max_running_jobs=msg.payload.get("max_running_jobs"),
+                max_active_jobs=msg.payload.get("max_active_jobs"),
+                max_nodes=msg.payload.get("max_nodes"),
+                max_cores=msg.payload.get("max_cores"),
+                queues=msg.payload.get("queues"),
+                projects=msg.payload.get("projects"),
+                default_project=msg.payload.get("default_project"),
             )
 
             payload = {"edit_user": val}
@@ -275,11 +277,13 @@ class AccountingService:
             val = b.view_bank(
                 self.conn,
                 msg.payload["bank"],
-                msg.payload["tree"],
-                msg.payload["users"],
-                msg.payload["parsable"],
-                msg.payload["fields"].split(",") if msg.payload.get("fields") else None,
-                msg.payload["format"],
+                msg.payload.get("tree"),
+                msg.payload.get("users"),
+                msg.payload.get("parsable"),
+                msg.payload.get("fields").split(",")
+                if msg.payload.get("fields")
+                else None,
+                msg.payload.get("format"),
             )
 
             payload = {"view_bank": val}
@@ -296,8 +300,8 @@ class AccountingService:
                 self.conn,
                 msg.payload["bank"],
                 msg.payload["shares"],
-                msg.payload["parent_bank"],
-                msg.payload["priority"],
+                msg.payload.get("parent_bank"),
+                msg.payload.get("priority"),
             )
 
             payload = {"add_bank": val}
@@ -310,7 +314,9 @@ class AccountingService:
 
     def delete_bank(self, handle, watcher, msg, arg):
         try:
-            val = b.delete_bank(self.conn, msg.payload["bank"], msg.payload["force"])
+            val = b.delete_bank(
+                self.conn, msg.payload["bank"], msg.payload.get("force")
+            )
 
             payload = {"delete_bank": val}
 
@@ -325,9 +331,9 @@ class AccountingService:
             val = b.edit_bank(
                 self.conn,
                 msg.payload["bank"],
-                msg.payload["shares"],
-                msg.payload["parent_bank"],
-                msg.payload["priority"],
+                msg.payload.get("shares"),
+                msg.payload.get("parent_bank"),
+                msg.payload.get("priority"),
             )
 
             payload = {"edit_bank": val}
@@ -342,10 +348,12 @@ class AccountingService:
         try:
             val = b.list_banks(
                 self.conn,
-                msg.payload["inactive"],
-                msg.payload["fields"].split(",") if msg.payload.get("fields") else None,
-                msg.payload["json"],
-                msg.payload["format"],
+                msg.payload.get("inactive"),
+                msg.payload.get("fields").split(",")
+                if msg.payload.get("fields")
+                else None,
+                msg.payload.get("json"),
+                msg.payload.get("format"),
             )
 
             payload = {"list_banks": val}
@@ -361,14 +369,14 @@ class AccountingService:
         try:
             val = j.view_jobs(
                 self.conn,
-                msg.payload["output_file"],
-                msg.payload["format"],
-                jobid=msg.payload["jobid"],
-                user=msg.payload["user"],
-                before_end_time=msg.payload["before_end_time"],
-                after_start_time=msg.payload["after_start_time"],
-                project=msg.payload["project"],
-                bank=msg.payload["bank"],
+                msg.payload.get("output_file"),
+                msg.payload.get("format"),
+                jobid=msg.payload.get("jobid"),
+                user=msg.payload.get("user"),
+                before_end_time=msg.payload.get("before_end_time"),
+                after_start_time=msg.payload.get("after_start_time"),
+                project=msg.payload.get("project"),
+                bank=msg.payload.get("bank"),
             )
 
             payload = {"view_job_records": val}
@@ -387,7 +395,7 @@ class AccountingService:
         try:
             val = jobs.update_job_usage(
                 self.conn,
-                msg.payload["priority_decay_half_life"],
+                msg.payload.get("priority_decay_half_life"),
             )
 
             payload = {"update_job_usage": val}
@@ -403,11 +411,11 @@ class AccountingService:
             val = qu.add_queue(
                 self.conn,
                 msg.payload["queue"],
-                msg.payload["min_nodes_per_job"],
-                msg.payload["max_nodes_per_job"],
-                msg.payload["max_time_per_job"],
-                msg.payload["priority"],
-                msg.payload["max_running_jobs"],
+                msg.payload.get("min_nodes_per_job"),
+                msg.payload.get("max_nodes_per_job"),
+                msg.payload.get("max_time_per_job"),
+                msg.payload.get("priority"),
+                msg.payload.get("max_running_jobs"),
             )
 
             payload = {"add_queue": val}
@@ -423,8 +431,8 @@ class AccountingService:
             val = qu.view_queue(
                 self.conn,
                 msg.payload["queue"],
-                msg.payload["parsable"],
-                msg.payload["format"],
+                msg.payload.get("parsable"),
+                msg.payload.get("format"),
             )
 
             payload = {"view_queue": val}
@@ -452,11 +460,11 @@ class AccountingService:
             val = qu.edit_queue(
                 self.conn,
                 msg.payload["queue"],
-                msg.payload["min_nodes_per_job"],
-                msg.payload["max_nodes_per_job"],
-                msg.payload["max_time_per_job"],
-                msg.payload["priority"],
-                msg.payload["max_running_jobs"],
+                msg.payload.get("min_nodes_per_job"),
+                msg.payload.get("max_nodes_per_job"),
+                msg.payload.get("max_time_per_job"),
+                msg.payload.get("priority"),
+                msg.payload.get("max_running_jobs"),
             )
 
             payload = {"edit_queue": val}
@@ -484,8 +492,8 @@ class AccountingService:
             val = p.view_project(
                 self.conn,
                 msg.payload["project"],
-                msg.payload["parsable"],
-                msg.payload["format"],
+                msg.payload.get("parsable"),
+                msg.payload.get("format"),
             )
 
             payload = {"view_project": val}
@@ -514,9 +522,11 @@ class AccountingService:
         try:
             val = p.list_projects(
                 self.conn,
-                msg.payload["fields"].split(",") if msg.payload.get("fields") else None,
-                msg.payload["json"],
-                msg.payload["format"],
+                msg.payload.get("fields").split(",")
+                if msg.payload.get("fields")
+                else None,
+                msg.payload.get("json"),
+                msg.payload.get("format"),
             )
 
             payload = {"list_projects": val}
@@ -547,8 +557,8 @@ class AccountingService:
         try:
             val = d.export_db_info(
                 self.conn,
-                msg.payload["users"],
-                msg.payload["banks"],
+                msg.payload.get("users"),
+                msg.payload.get("banks"),
             )
 
             payload = {"export_db": val}
@@ -563,8 +573,8 @@ class AccountingService:
         try:
             val = d.populate_db(
                 self.conn,
-                msg.payload["users"],
-                msg.payload["banks"],
+                msg.payload.get("users"),
+                msg.payload.get("banks"),
             )
 
             payload = {"pop_db": val}
@@ -579,9 +589,11 @@ class AccountingService:
         try:
             val = qu.list_queues(
                 self.conn,
-                msg.payload["fields"].split(",") if msg.payload.get("fields") else None,
-                msg.payload["json"],
-                msg.payload["format"],
+                msg.payload.get("fields").split(",")
+                if msg.payload.get("fields")
+                else None,
+                msg.payload.get("json"),
+                msg.payload.get("format"),
             )
 
             payload = {"list_queues": val}
