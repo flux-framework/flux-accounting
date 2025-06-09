@@ -44,7 +44,7 @@ test_expect_success 'update usage and fair-share for the users/banks' '
 	flux python ${UPDATE_USAGE} ${SMALL_NO_TIE} leaf.2.2 3 &&
 	flux python ${UPDATE_USAGE} ${SMALL_NO_TIE} leaf.3.1 0 &&
 	flux python ${UPDATE_USAGE} ${SMALL_NO_TIE} leaf.3.2 1 &&
-	flux account update-usage &&
+	flux account-update-usage -p ${SMALL_NO_TIE} &&
 	flux account-update-fshare -p ${SMALL_NO_TIE}
 '
 
