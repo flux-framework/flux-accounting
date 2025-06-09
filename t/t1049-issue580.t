@@ -29,7 +29,7 @@ test_expect_success 'add users/banks to DB' '
 
 test_expect_success 'update usage and fair-share for the users/banks' '
 	flux python ${UPDATE_USAGE} ${TEST_DB} leaf.1.1 19115069644.16
-	flux account update-usage
+	flux account-update-usage -p ${TEST_DB}
 '
 
 test_expect_success 'ensure update-fshare works with a huge job usage value' '
