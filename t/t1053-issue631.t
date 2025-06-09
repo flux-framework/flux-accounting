@@ -70,7 +70,7 @@ test_expect_success 'edit job usage for associations in bank E (total usage = 10
 '
 
 test_expect_success 'call update-usage, update-fshare' '
-	flux account update-usage &&
+	flux account-update-usage -p ${DB_PATH} &&
 	flux account-update-fshare -p ${DB_PATH}
 '
 

@@ -33,7 +33,7 @@ test_expect_success 'create hierarchy output from t_small_no_tie.db' '
 '
 
 test_expect_success 'run update fshare script - small_no_tie.db' '
-	flux account update-usage &&
+	flux account-update-usage -p $(pwd)/t_small_no_tie.db &&
 	flux account-update-fshare -p $(pwd)/t_small_no_tie.db
 '
 
@@ -50,7 +50,7 @@ test_expect_success 'update usage column in t_small_no_tie.db' '
 '
 
 test_expect_success 'run update fshare script - small_no_tie.db' '
-	flux account update-usage &&
+	flux account-update-usage -p $(pwd)/t_small_no_tie.db &&
 	flux account-update-fshare -p $(pwd)/t_small_no_tie.db
 '
 
