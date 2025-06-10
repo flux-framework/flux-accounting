@@ -20,6 +20,12 @@ test_expect_success 'trying to run update-fshare with bad DBPATH should return a
 	grep "error opening DB: unable to open database file" failure.out
 '
 
+test_expect_success 'trying to run update-usage with bad DBPATH should also return an error' '
+	test_must_fail flux account-update-usage -p foo.db > failure.out 2>&1 &&
+	test_debug "cat failure.out" &&
+	grep "error opening DB: unable to open database file foo.db" failure.out
+'
+
 test_expect_success 'create t_small_no_tie.db' '
 	flux python ${CREATE_TEST_DB} $(pwd)/t_small_no_tie.db
 '
