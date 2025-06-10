@@ -105,7 +105,6 @@ class AccountingService:
             "add_bank",
             "delete_bank",
             "edit_bank",
-            "update_usage",
             "add_queue",
             "delete_queue",
             "edit_queue",
@@ -382,21 +381,6 @@ class AccountingService:
             handle.respond_error(
                 msg, 0, f"view-job-records: {type(exc).__name__}: {exc}"
             )
-
-    def update_usage(self, handle, watcher, msg, arg):
-        try:
-            val = jobs.update_job_usage(
-                self.conn,
-                msg.payload["priority_decay_half_life"],
-            )
-
-            payload = {"update_job_usage": val}
-
-            handle.respond(msg, payload)
-        except KeyError as exc:
-            handle.respond_error(msg, 0, f"update-usage: missing key in payload: {exc}")
-        except Exception as exc:
-            handle.respond_error(msg, 0, f"update-usage: {type(exc).__name__}: {exc}")
 
     def add_queue(self, handle, watcher, msg, arg):
         try:
