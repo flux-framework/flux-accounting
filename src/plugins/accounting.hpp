@@ -48,8 +48,9 @@ extern "C" {
 #define INVALID_PROJECT -7
 
 // dependency names for flux-accounting dependencies
-#define D_QUEUE_MRJ "max-run-jobs-queue"
-#define D_ASSOC_MRJ "max-running-jobs-user-limit"
+#define D_QUEUE_MRJ  "max-run-jobs-queue"
+#define D_ASSOC_MRJ  "max-running-jobs-user-limit"
+#define D_ASSOC_MRES "max-resources-user-limit"
 
 // min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
 // currently used or enforced in this plugin, so their values have no
@@ -95,6 +96,7 @@ public:
     bool under_max_run_jobs ();
     bool under_queue_max_run_jobs (const std::string &queue,
                                    std::map<std::string, Queue> queues);
+    bool under_max_resources (const Job &job);
 };
 
 class Bank {

@@ -221,6 +221,10 @@ static int increment_resources (Association *b, json_t *jobspec)
     if (jj_get_counts_json (jobspec, &counts) < 0)
         return -1;
 
+    if ((counts.nslots * counts.slot_size) > 0 && counts.nnodes == 0)
+        // the job only specified cores; set nnodes == 1
+        counts.nnodes = 1;
+
     b->cur_nodes = b->cur_nodes + counts.nnodes;
     b->cur_cores = b->cur_cores + (counts.nslots * counts.slot_size);
 
@@ -238,6 +242,10 @@ static int decrement_resources (Association *b, json_t *jobspec)
 
     if (jj_get_counts_json (jobspec, &counts) < 0)
         return -1;
+
+    if ((counts.nslots * counts.slot_size) > 0 && counts.nnodes == 0)
+        // the job only specified cores; set nnodes == 1
+        counts.nnodes = 1;
 
     b->cur_nodes = b->cur_nodes - counts.nnodes;
     b->cur_cores = b->cur_cores - (counts.nslots * counts.slot_size);
@@ -291,6 +299,18 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
                 goto error;
             }
             held_job.remove_dep (D_ASSOC_MRJ);
+        }
+        // will association stay under or at their overall max resources limit
+        // by releasing this job?
+        if (b->under_max_resources (held_job) &&
+            held_job.contains_dep (D_ASSOC_MRES)) {
+            if (flux_jobtap_dependency_remove (p,
+                                               held_job.id,
+                                               D_ASSOC_MRES) < 0) {
+                dependency = D_ASSOC_MRES;
+                goto error;
+            }
+            held_job.remove_dep (D_ASSOC_MRES);
         }
 
         if (held_job.deps.empty ())
@@ -1051,6 +1071,20 @@ static int depend_cb (flux_plugin_t *p,
     } else {
         // if a queue cannot be found, just set it to ""
         queue_str = queue ? queue : "";
+        // count resources requested for the job
+        if (job.count_resources (jobspec) < 0) {
+            flux_jobtap_raise_exception (p,
+                                         FLUX_JOBTAP_CURRENT_JOB,
+                                         "mf_priority",
+                                         0,
+                                         "job.state.depend: unable to count " \
+                                         "resources for job");
+            return -1;
+        }
+        if (job.ncores > 0 && job.nnodes == 0)
+            // the job specified cores but no nodes, so we need to set
+            // nnodes == 1 here
+            job.nnodes = 1;
         // look up the association's current number of running jobs in this
         // queue; if it cannot be found in the map, an entry in the Association
         // object will be initialized with a current running jobs count of 0
@@ -1067,6 +1101,15 @@ static int depend_cb (flux_plugin_t *p,
             if (flux_jobtap_dependency_add (p, id, D_ASSOC_MRJ) < 0)
                 goto error;
             job.add_dep (D_ASSOC_MRJ);
+        }
+        if (!b->under_max_resources (job)) {
+            // association is already at their max resources limit or would be
+            // over their max resources limit with this job; add a dependency
+            if (flux_jobtap_dependency_add (p, id, D_ASSOC_MRES) < 0) {
+                dependency = D_ASSOC_MRES;
+                goto error;
+            }
+            job.add_dep (D_ASSOC_MRES);
         }
         if (job.deps.size () > 0) {
             // Job has at least one dependency; store it in Association object

@@ -304,6 +304,198 @@ void under_max_run_jobs_per_queue_true ()
 }
 
 
+/*
+ * Scenario 4: The association has the following limit configuration:
+ *
+ * max_run_jobs: 10
+ * max_active_jobs: 1000
+ * max_nodes: 1
+ * max_cores: 2
+ *
+ * The first job submitted will take up all available resources for that
+ * association. Any other subsequently-submitted jobs will have a max-resources
+ * per-association limit applied to it.
+ */
+void max_resources_per_association ()
+{
+    Association *a = &users[50001]["bank_A"];
+    a->max_active_jobs = 1000;
+    a->max_run_jobs = 10;
+    a->cur_run_jobs = 1;
+    a->cur_active_jobs = 2;
+
+    a->max_nodes = 1;
+    a->max_cores = 2;
+    a->cur_nodes = 1;
+    a->cur_cores = 2;
+
+    // add held Job to Association object
+    Job job;
+    job.id = 4;
+    job.ncores = 1;
+    job.nnodes = 1;
+    job.add_dep (D_ASSOC_MRES);
+    a->held_jobs.emplace_back (job);
+
+    ok (a->held_jobs.size () == 1,
+        "second job gets held due to max-resources per-association limit");
+    ok (job.deps.size () == 1,
+        "held job has max-resources per-association dependency added to it");
+}
+
+
+// The check to see if the association is under their per-association max
+// resources limit will return false since the held job would put the
+// association over both their max_cores and their max_nodes limits.
+void under_max_resources_per_association_false ()
+{
+    Association *a = &users[50001]["bank_A"];
+    Job held_job = a->held_jobs.front ();
+
+    ok (a->under_max_resources (held_job) == false,
+        "association is still at max resources");
+}
+
+
+// Once a currently running job completes and cur_nodes and cur_cores counters
+// are decremented, the checks to see if the association is under their max
+// resources limit for the queue is now true.
+void under_max_resources_per_association_true ()
+{
+    Association *a = &users[50001]["bank_A"];
+    a->cur_run_jobs = 0;
+    a->cur_active_jobs = 1;
+    a->cur_nodes = 0;
+    a->cur_cores = 0;
+    Job held_job = a->held_jobs.front ();
+
+    ok (held_job.nnodes == 1, "held job is requesting one node");
+    ok (held_job.ncores == 1, "held job is requesting one core");
+
+    ok (a->under_max_run_jobs () == true,
+        "association is under max-run-jobs per-association limit");
+    ok (a->under_queue_max_run_jobs (held_job.queue, queues) == true,
+        "association is under max-run-jobs per-queue limit");
+    ok (a->under_max_resources (held_job) == true,
+        "association is under max-resources per-association limit");
+
+    // check that held job contains JUST max-resources per-association limit
+    ok (held_job.contains_dep (D_ASSOC_MRJ) == false,
+        "held job does not contain a max running jobs per-association limit");
+    ok (held_job.contains_dep (D_QUEUE_MRJ) == false,
+        "held job does not contain a max running jobs per-queue limit");
+    ok (held_job.contains_dep (D_ASSOC_MRES) == true,
+        "held job contains a max resources per-association limit");
+
+    held_job.remove_dep (D_ASSOC_MRES);
+
+    // check that held job no longer contains any dependencies
+    ok (held_job.deps.size () == 0,
+        "held job has no dependencies associated with it");
+
+    // erase held job from association's held_jobs vector
+    a->held_jobs.clear ();
+    ok (a->held_jobs.size () == 0,
+        "association has no more held jobs");
+}
+
+
+/*
+ * Scenario 5: The association has the following limit configuration:
+ *
+ * max_run_jobs: 10
+ * max_active_jobs: 1000
+ * max_nodes: 1
+ * max_cores: 2
+ *
+ * The first job submitted will take up SOME of the available resources for
+ * that association. Any other subsequently-submitted jobs will have a
+ * max-resources per-association limit applied to it.
+ */
+void max_resources_per_association_partial ()
+{
+    Association *a = &users[50001]["bank_A"];
+    a->max_active_jobs = 1000;
+    a->max_run_jobs = 10;
+    a->cur_run_jobs = 1;
+    a->cur_active_jobs = 2;
+
+    a->max_nodes = 1;
+    a->max_cores = 4;
+    a->cur_nodes = 1;
+    a->cur_cores = 2;
+
+    // add held Job to Association object
+    Job job;
+    job.id = 5;
+    job.ncores = 4;
+    job.nnodes = 1;
+    job.add_dep (D_ASSOC_MRES);
+    a->held_jobs.emplace_back (job);
+
+    ok (a->held_jobs.size () == 1,
+        "second job gets held due to max-resources per-association limit");
+    ok (job.deps.size () == 1,
+        "held job has max-resources per-association dependency added to it");
+}
+
+
+// The check to see if the association is under their per-association max
+// resources limit will return false since the held job would put the
+// association over their max_nodes limit.
+void under_max_resources_per_association_partial_false ()
+{
+    Association *a = &users[50001]["bank_A"];
+    Job held_job = a->held_jobs.front ();
+
+    ok (a->under_max_resources (held_job) == false,
+        "association is still at max resources");
+}
+
+
+// Once a currently running job completes and cur_nodes and cur_cores counters
+// are decremented, the checks to see if the association is under their max
+// resources limit for the queue is now true.
+void under_max_resources_per_association_partial_true ()
+{
+    Association *a = &users[50001]["bank_A"];
+    a->cur_run_jobs = 0;
+    a->cur_active_jobs = 1;
+    a->cur_nodes = 0;
+    a->cur_cores = 0;
+    Job held_job = a->held_jobs.front ();
+
+    ok (held_job.nnodes == 1, "held job is requesting one node");
+    ok (held_job.ncores == 4, "held job is requesting four cores");
+
+    ok (a->under_max_run_jobs () == true,
+        "association is under max-run-jobs per-association limit");
+    ok (a->under_queue_max_run_jobs (held_job.queue, queues) == true,
+        "association is under max-run-jobs per-queue limit");
+    ok (a->under_max_resources (held_job) == true,
+        "association is under max-resources per-association limit");
+
+    // check that held job contains JUST max-resources per-association limit
+    ok (held_job.contains_dep (D_ASSOC_MRJ) == false,
+        "held job does not contain a max running jobs per-association limit");
+    ok (held_job.contains_dep (D_QUEUE_MRJ) == false,
+        "held job does not contain a max running jobs per-queue limit");
+    ok (held_job.contains_dep (D_ASSOC_MRES) == true,
+        "held job contains a max resources per-association limit");
+
+    held_job.remove_dep (D_ASSOC_MRES);
+
+    // check that held job no longer contains any dependencies
+    ok (held_job.deps.size () == 0,
+        "held job has no dependencies associated with it");
+
+    // erase held job from association's held_jobs vector
+    a->held_jobs.clear ();
+    ok (a->held_jobs.size () == 0,
+        "association has no more held jobs");
+}
+
+
 int main (int argc, char* argv[])
 {
     // add an association
@@ -322,6 +514,14 @@ int main (int argc, char* argv[])
     max_run_jobs_per_queue ();
     under_max_run_jobs_per_queue_false ();
     under_max_run_jobs_per_queue_true ();
+
+    max_resources_per_association ();
+    under_max_resources_per_association_false ();
+    under_max_resources_per_association_true ();
+
+    max_resources_per_association_partial ();
+    under_max_resources_per_association_partial_false ();
+    under_max_resources_per_association_partial_true ();
 
     // indicate we are done testing
     done_testing ();
