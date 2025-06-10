@@ -55,7 +55,7 @@ test_expect_success 'submit a job that does not run' '
 
 test_expect_success 'run scripts to update job usage and fair-share' '
 	flux account-fetch-job-records -p ${DB_PATH} &&
-	flux account -p ${DB_PATH} update-usage &&
+	flux account-update-usage -p ${DB_PATH} &&
 	flux account-update-fshare -p ${DB_PATH}
 '
 
@@ -108,7 +108,7 @@ test_expect_success 'view job records for a user and direct it to a file' '
 '
 
 test_expect_success 'run update-usage and update-fshare commands' '
-	flux account -p ${DB_PATH} update-usage &&
+	flux account-update-usage -p ${DB_PATH} &&
 	flux account-update-fshare -p ${DB_PATH}
 '
 
@@ -131,7 +131,7 @@ test_expect_success 'run custom job-list script' '
 '
 
 test_expect_success 'run update-usage and update-fshare commands' '
-	flux account -p ${DB_PATH} update-usage &&
+	flux account-update-usage -p ${DB_PATH} &&
 	flux account-update-fshare -p ${DB_PATH}
 '
 
@@ -145,7 +145,7 @@ test_expect_success 'check that job usage and fairshare values get updated' '
 # for a user, their job usage factor should not be affected; this test is taken
 # from the set of job-archive interface Python unit tests
 test_expect_success 'call update-usage in the same half-life period where no jobs are run' '
-	flux account -p ${DB_PATH} update-usage &&
+	flux account-update-usage -p ${DB_PATH} &&
 	flux account-update-fshare -p ${DB_PATH} &&
 	flux account -p ${DB_PATH} view-user $username > query2.json &&
 	test_debug "jq -S . <query2.json" &&

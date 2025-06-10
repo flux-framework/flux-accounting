@@ -179,7 +179,7 @@ The scripts should be run by :core:man1:`flux-cron`:
 
  # /etc/flux/system/cron.d/accounting
 
- 30 * * * * bash -c "flux account-fetch-job-records; flux account update-usage; flux account-update-fshare; flux account-priority-update"
+ 30 * * * * bash -c "flux account-fetch-job-records; flux account-update-usage; flux account-update-fshare; flux account-priority-update"
 
 Periodically fetching and storing job records in the flux-accounting database
 can cause the DB to grow large in size. Since there comes a point where job
