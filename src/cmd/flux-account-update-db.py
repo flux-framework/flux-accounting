@@ -213,6 +213,28 @@ def update_columns(old_cur, new_cur):
         rename_tmp_table(old_cur, table)
 
 
+def init_priority_factor_table(cur):
+    """
+    Initialize the priority_factor_weight_table with the priority factors and
+    their weights if they do not already exist in the table.
+
+    Args:
+        cur: the Cursor object used to interact with the database.
+    """
+    cur.execute(
+        f"INSERT OR IGNORE INTO priority_factor_weight_table (factor, weight) "
+        f"VALUES ('fairshare', {fluxacct.accounting.FSHARE_WEIGHT_DEFAULT});"
+    )
+    cur.execute(
+        f"INSERT OR IGNORE INTO priority_factor_weight_table (factor, weight) "
+        f"VALUES ('queue', {fluxacct.accounting.QUEUE_WEIGHT_DEFAULT});"
+    )
+    cur.execute(
+        f"INSERT OR IGNORE INTO priority_factor_weight_table (factor, weight) "
+        f"VALUES ('bank', {fluxacct.accounting.BANK_WEIGHT_DEFAULT});"
+    )
+
+
 def update_db(path, new_db):
     old_conn = est_sqlite_conn(path)
     old_cur = old_conn.cursor()
@@ -235,6 +257,8 @@ def update_db(path, new_db):
             update_tables(old_cur, new_cur)
 
             update_columns(old_cur, new_cur)
+
+            init_priority_factor_table(old_cur)
 
             # update user_version for DB
             old_cur.execute(
