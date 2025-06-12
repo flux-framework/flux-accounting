@@ -32,3 +32,30 @@ def view_factor(conn, factor, json_fmt=False, format_string=""):
     if json_fmt:
         return formatter.as_json()
     return formatter.as_table()
+
+
+def edit_factor(conn, factor, weight):
+    """
+    Edit the integer weight for a particular priority factor in the plugin.
+
+    Args:
+        conn: the SQLite Connection object.
+        factor: the name of the priority factor.
+        weight: the new integer weight associated with the priority factor.
+    """
+    if factor not in fluxacct.accounting.PRIORITY_FACTORS:
+        raise ValueError(
+            f"factor {factor} not found in priority_factor_weight_table; "
+            f"available factors are {','.join(fluxacct.accounting.PRIORITY_FACTORS)}"
+        )
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE priority_factor_weight_table SET weight=? WHERE factor=?",
+        (
+            weight,
+            factor,
+        ),
+    )
+    conn.commit()
+
+    return 0
