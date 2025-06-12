@@ -92,3 +92,33 @@ def list_factors(conn, cols=None, json_fmt=False, format_string=""):
     if json_fmt:
         return formatter.as_json()
     return formatter.as_table()
+
+
+def reset_factors(conn):
+    """
+    Reset the configuration for the priority factors in priority_factor_weight_table
+    by re-inserting the factors and their original weight back in the database.
+
+    Args:
+        conn: the SQLite Connection object.
+    """
+    cur = conn.cursor()
+
+    cur.execute(
+        f"INSERT INTO priority_factor_weight_table (factor, weight) "
+        f"VALUES ('fairshare', {fluxacct.accounting.FSHARE_WEIGHT_DEFAULT}) "
+        f"ON CONFLICT(factor) DO UPDATE SET weight = excluded.weight;"
+    )
+    cur.execute(
+        f"INSERT INTO priority_factor_weight_table (factor, weight) "
+        f"VALUES ('queue', {fluxacct.accounting.QUEUE_WEIGHT_DEFAULT}) "
+        f"ON CONFLICT(factor) DO UPDATE SET weight = excluded.weight;"
+    )
+    cur.execute(
+        f"INSERT INTO priority_factor_weight_table (factor, weight) "
+        f"VALUES ('bank', {fluxacct.accounting.BANK_WEIGHT_DEFAULT}) "
+        f"ON CONFLICT(factor) DO UPDATE SET weight = excluded.weight;"
+    )
+
+    conn.commit()
+    return 0
