@@ -918,6 +918,35 @@ def add_list_queues_arg(subparsers):
     )
 
 
+def add_view_priority_factor_arg(subparsers):
+    subparser_view_priority_factor = subparsers.add_parser(
+        "view-factor",
+        help="view the configuration about a particular priority factor",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparser_view_priority_factor.set_defaults(func="view_factor")
+    subparser_view_priority_factor.add_argument(
+        "factor",
+        type=str,
+        help="the name of the factor",
+        metavar="FACTOR",
+    )
+    subparser_view_priority_factor.add_argument(
+        "--json",
+        action="store_const",
+        const=True,
+        help="print output in JSON format",
+    )
+    subparser_view_priority_factor.add_argument(
+        "-o",
+        "--format",
+        type=str,
+        default="",
+        help="specify output format using Python's string format syntax",
+        metavar="FORMAT",
+    )
+
+
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_output_file_arg(parser)
@@ -946,6 +975,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_export_db_arg(subparsers)
     add_pop_db_arg(subparsers)
     add_list_queues_arg(subparsers)
+    add_view_priority_factor_arg(subparsers)
 
 
 def set_db_location(args):
@@ -990,6 +1020,7 @@ def select_accounting_function(args, output_file, parser):
         "export_db": "accounting.export_db",
         "pop_db": "accounting.pop_db",
         "list_queues": "accounting.list_queues",
+        "view_factor": "accounting.view_factor",
     }
 
     if args.func in func_map:

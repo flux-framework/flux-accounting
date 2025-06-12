@@ -9,7 +9,8 @@ acctpy_PYTHON = \
 	db_info_subcommands.py \
 	create_db.py \
 	formatter.py \
-	sql_util.py
+	sql_util.py \
+	priorities.py
 
 clean-local:
 	-rm -f *.pyc *.pyo
