@@ -947,6 +947,29 @@ def add_view_priority_factor_arg(subparsers):
     )
 
 
+def add_edit_priority_factor_arg(subparsers):
+    subparser_edit_priority_factor = subparsers.add_parser(
+        "edit-factor",
+        help="edit the integer weight for a particular priority factor",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparser_edit_priority_factor.set_defaults(func="edit_factor")
+    subparser_edit_priority_factor.add_argument(
+        "--factor",
+        type=str,
+        required=True,
+        help="the name of the factor",
+        metavar="FACTOR",
+    )
+    subparser_edit_priority_factor.add_argument(
+        "--weight",
+        type=int,
+        required=True,
+        help="the new integer weight for the priority factor",
+        metavar="WEIGHT",
+    )
+
+
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_output_file_arg(parser)
@@ -976,6 +999,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_pop_db_arg(subparsers)
     add_list_queues_arg(subparsers)
     add_view_priority_factor_arg(subparsers)
+    add_edit_priority_factor_arg(subparsers)
 
 
 def set_db_location(args):
@@ -1021,6 +1045,7 @@ def select_accounting_function(args, output_file, parser):
         "pop_db": "accounting.pop_db",
         "list_queues": "accounting.list_queues",
         "view_factor": "accounting.view_factor",
+        "edit_factor": "accounting.edit_factor",
     }
 
     if args.func in func_map:

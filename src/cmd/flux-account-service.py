@@ -117,6 +117,7 @@ class AccountingService:
             "export_db",
             "pop_db",
             "shutdown_service",
+            "edit_factor",
         ]
 
         for name in general_endpoints:
@@ -622,6 +623,22 @@ class AccountingService:
             handle.respond_error(msg, 0, f"view-factor: missing key in payload: {exc}")
         except Exception as exc:
             handle.respond_error(msg, 0, f"view-factor: {type(exc).__name__}: {exc}")
+
+    def edit_factor(self, handle, watcher, msg, arg):
+        try:
+            val = prio.edit_factor(
+                conn=self.conn,
+                factor=msg.payload["factor"],
+                weight=msg.payload["weight"],
+            )
+
+            payload = {"edit_factor": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"edit-factor: missing key in payload: {exc}")
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"edit-factor: {type(exc).__name__}: {exc}")
 
 
 LOGGER = logging.getLogger("flux-uri")
