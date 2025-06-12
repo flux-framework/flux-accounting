@@ -224,4 +224,30 @@ def create_db(
     )
     LOGGER.info("Created jobs table successfully")
 
+    # Priority Factor Table
+    # stores the weights for each priority factor to be used in the plugin
+    LOGGER.info("Creating priority_factor_weight_table in DB...")
+    conn.execute(
+        """
+            CREATE TABLE IF NOT EXISTS priority_factor_weight_table (
+                factor      text     PRIMARY KEY NOT NULL,
+                weight      integer              NOT NULL
+            );"""
+    )
+    LOGGER.info("Created priority_factor_weight_table successfully")
+    # create and set the default weights for each factor
+    conn.execute(
+        f"INSERT INTO priority_factor_weight_table "
+        f"VALUES ('fairshare', {fluxacct.accounting.FSHARE_WEIGHT_DEFAULT});"
+    )
+    conn.execute(
+        f"INSERT INTO priority_factor_weight_table "
+        f"VALUES ('queue', {fluxacct.accounting.QUEUE_WEIGHT_DEFAULT});"
+    )
+    conn.execute(
+        f"INSERT INTO priority_factor_weight_table "
+        f"VALUES ('bank', {fluxacct.accounting.BANK_WEIGHT_DEFAULT});"
+    )
+    conn.commit()
+
     conn.close()
