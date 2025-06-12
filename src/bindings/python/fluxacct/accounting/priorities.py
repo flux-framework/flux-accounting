@@ -9,7 +9,9 @@
 #
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
+import fluxacct.accounting
 from fluxacct.accounting import formatter as fmt
+from fluxacct.accounting import sql_util as sql
 
 ###############################################################
 #                                                             #
@@ -59,3 +61,34 @@ def edit_factor(conn, factor, weight):
     conn.commit()
 
     return 0
+
+
+def list_factors(conn, cols=None, json_fmt=False, format_string=""):
+    """
+    List all factors in priority_factor_weight_table.
+
+    Args:
+        cols: a list of columns from the table to include in the output. By default, all
+            columns are included.
+        json_fmt: output data in JSON format. By default, the format of any returned data
+            returned data is in a table format.
+        format_string: a format string defining how each row should be formatted. Column
+            names should be used as placeholders.
+    """
+    # use all column names if none are passed in
+    cols = cols or fluxacct.accounting.PRIORITY_FACTOR_WEIGHTS_TABLE
+
+    cur = conn.cursor()
+
+    sql.validate_columns(cols, fluxacct.accounting.PRIORITY_FACTOR_WEIGHTS_TABLE)
+    # construct SELECT statement
+    select_stmt = f"SELECT {', '.join(cols)} FROM priority_factor_weight_table"
+    cur.execute(select_stmt)
+
+    # initialize AccountingFormatter object
+    formatter = fmt.AccountingFormatter(cur)
+    if format_string != "":
+        return formatter.as_format_string(format_string)
+    if json_fmt:
+        return formatter.as_json()
+    return formatter.as_table()

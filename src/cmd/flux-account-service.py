@@ -98,6 +98,7 @@ class AccountingService:
             "list_queues",
             "list_users",
             "view_factor",
+            "list_factors",
         ]
 
         privileged_endpoints = [
@@ -639,6 +640,25 @@ class AccountingService:
             handle.respond_error(msg, 0, f"edit-factor: missing key in payload: {exc}")
         except Exception as exc:
             handle.respond_error(msg, 0, f"edit-factor: {type(exc).__name__}: {exc}")
+
+    def list_factors(self, handle, watcher, msg, arg):
+        try:
+            val = prio.list_factors(
+                conn=self.conn,
+                cols=msg.payload["fields"].split(",")
+                if msg.payload.get("fields")
+                else None,
+                json_fmt=msg.payload.get("json"),
+                format_string=msg.payload.get("format"),
+            )
+
+            payload = {"list_factors": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"list-factors: missing key in payload: {exc}")
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"list-factors: {type(exc).__name__}: {exc}")
 
 
 LOGGER = logging.getLogger("flux-uri")
