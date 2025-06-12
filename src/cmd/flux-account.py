@@ -1000,6 +1000,15 @@ def add_list_priority_factors(subparsers):
     )
 
 
+def add_reset_priority_factors_arg(subparsers):
+    subparser_reset_factors = subparsers.add_parser(
+        "reset-factors",
+        help="reset the priority factors and their weights to default values",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparser_reset_factors.set_defaults(func="reset_factors")
+
+
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_output_file_arg(parser)
@@ -1031,6 +1040,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_view_priority_factor_arg(subparsers)
     add_edit_priority_factor_arg(subparsers)
     add_list_priority_factors(subparsers)
+    add_reset_priority_factors_arg(subparsers)
 
 
 def set_db_location(args):
@@ -1078,6 +1088,7 @@ def select_accounting_function(args, output_file, parser):
         "view_factor": "accounting.view_factor",
         "edit_factor": "accounting.edit_factor",
         "list_factors": "accounting.list_factors",
+        "reset_factors": "accounting.reset_factors",
     }
 
     if args.func in func_map:

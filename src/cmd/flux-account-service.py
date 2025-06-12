@@ -119,6 +119,7 @@ class AccountingService:
             "pop_db",
             "shutdown_service",
             "edit_factor",
+            "reset_factors",
         ]
 
         for name in general_endpoints:
@@ -659,6 +660,20 @@ class AccountingService:
             handle.respond_error(msg, 0, f"list-factors: missing key in payload: {exc}")
         except Exception as exc:
             handle.respond_error(msg, 0, f"list-factors: {type(exc).__name__}: {exc}")
+
+    def reset_factors(self, handle, watcher, msg, arg):
+        try:
+            val = prio.reset_factors(self.conn)
+
+            payload = {"reset_factors": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(
+                msg, 0, f"reset-factors: missing key in payload: {exc}"
+            )
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"reset-factors: {type(exc).__name__}: {exc}")
 
 
 LOGGER = logging.getLogger("flux-uri")
