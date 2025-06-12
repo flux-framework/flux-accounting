@@ -26,6 +26,7 @@ from fluxacct.accounting import queue_subcommands as qu
 from fluxacct.accounting import project_subcommands as p
 from fluxacct.accounting import jobs_table_subcommands as j
 from fluxacct.accounting import db_info_subcommands as d
+from fluxacct.accounting import priorities as prio
 
 
 def establish_sqlite_connection(path):
@@ -96,6 +97,7 @@ class AccountingService:
             "list_projects",
             "list_queues",
             "list_users",
+            "view_factor",
         ]
 
         privileged_endpoints = [
@@ -603,6 +605,23 @@ class AccountingService:
             handle.respond_error(msg, 0, f"list-queues: missing key in payload: {exc}")
         except Exception as exc:
             handle.respond_error(msg, 0, f"list-queues: {type(exc).__name__}: {exc}")
+
+    def view_factor(self, handle, watcher, msg, arg):
+        try:
+            val = prio.view_factor(
+                conn=self.conn,
+                factor=msg.payload["factor"],
+                json_fmt=msg.payload.get("json"),
+                format_string=msg.payload.get("format"),
+            )
+
+            payload = {"view_factor": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"view-factor: missing key in payload: {exc}")
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"view-factor: {type(exc).__name__}: {exc}")
 
 
 LOGGER = logging.getLogger("flux-uri")
