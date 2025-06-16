@@ -158,14 +158,30 @@ PROJECT ADMINISTRATION
 view-project
 ^^^^^^^^^^^^
 
+View information about a project in the flux-accounting database.
+
+See :man1:`flux-account-view-project` for more details.
+
 add-project
 ^^^^^^^^^^^
+
+Add a project to the flux-accounting database.
+
+See :man1:`flux-account-add-project` for more details.
 
 delete-project
 ^^^^^^^^^^^^^^
 
+Remove a project from the flux-accounting database.
+
+See :man1:`flux-account-delete-project` for more details.
+
 list-projects
 ^^^^^^^^^^^^^
+
+List all defined projects in the flux-accounting database.
+
+See :man1:`flux-account-list-projects` for more details.
 
 JOB RECORDS
 ===========
