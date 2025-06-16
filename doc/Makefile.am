@@ -93,6 +93,7 @@ EXTRA_DIST = \
 	components/fair-share.rst \
 	components/job-usage-calculation.rst \
 	components/projects.rst \
+	components/limits.rst \
 	$(RST_FILES) \
 	man1/index.rst
 

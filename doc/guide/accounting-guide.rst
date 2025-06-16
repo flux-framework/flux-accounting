@@ -384,23 +384,13 @@ fair-share, you can adjust each factor's weight accordingly:
  $ flux account edit-factor --factor=bank --weight=500
  $ flux account-priority-update
 
+Limits
+======
+
 In addition to generating an integer priority for submitted jobs in a Flux
-system instance, the multi-factor priority plugin also enforces per-association
-job limits to regulate use of the system. The two per-association limits
-enforced by this plugin are:
-
-* **max_active_jobs**: a limit on how many *active* jobs an association can have at
-  any given time. Jobs submitted after this limit has been hit will be rejected
-  with a message saying that the association has hit their active jobs limit.
-
-* **max_running_jobs**: a limit on how many *running* jobs an association can have
-  at any given time. Jobs submitted after this limit has been hit will be held
-  by adding a ``max-running-jobs-user-limit`` dependency until one of the
-  association's currently running jobs finishes running.
-
-Both "types" of jobs, *running* and *active*, are based on Flux's definitions
-of job states_. *Active* jobs can be in any state but INACTIVE. *Running* jobs
-are jobs in either RUN or CLEANUP states.
+system instance, the multi-factor priority plugin also enforces various limits
+to regulate use of the system. For more details on the types of limits and how
+they are enforced, see :doc:`../components/limits`.
 
 Queue Permissions Configuration
 ===============================
