@@ -377,12 +377,12 @@ weight of 10000. These can be modified to change how a job's priority is
 calculated. For example, if you wanted the queue to be more of a factor than
 fair-share, you can adjust each factor's weight accordingly:
 
-.. code-block:: toml
+.. code-block:: console
 
- [accounting.factor-weights]
- fairshare = 1000
- queue = 100000
- bank = 500
+ $ flux account edit-factor --factor=fairshare --weight=1000
+ $ flux account edit-factor --factor=queue --weight=100000
+ $ flux account edit-factor --factor=bank --weight=500
+ $ flux account-priority-update
 
 In addition to generating an integer priority for submitted jobs in a Flux
 system instance, the multi-factor priority plugin also enforces per-association
