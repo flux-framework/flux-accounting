@@ -45,7 +45,6 @@ extern "C" {
 // default weights for each factor in the priority calculation for a job
 #define DEFAULT_FSHARE_WEIGHT 100000
 #define DEFAULT_QUEUE_WEIGHT 10000
-#define DEFAULT_AGE_WEIGHT 1000
 #define DEFAULT_BANK_WEIGHT 0
 
 std::map<int, std::map<std::string, Association>> users;
@@ -1541,7 +1540,6 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
     // initialize the weights of the priority factors with default values
     priority_weights["fairshare"] = DEFAULT_FSHARE_WEIGHT;
     priority_weights["queue"] = DEFAULT_QUEUE_WEIGHT;
-    priority_weights["age"] = DEFAULT_AGE_WEIGHT;
     priority_weights["bank"] = DEFAULT_BANK_WEIGHT;
 
     return 0;
