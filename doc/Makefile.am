@@ -29,7 +29,11 @@ MAN1_FILES_PRIMARY = \
 	man1/flux-account-add-project.1 \
 	man1/flux-account-view-project.1 \
 	man1/flux-account-delete-project.1 \
-	man1/flux-account-list-projects.1
+	man1/flux-account-list-projects.1 \
+	man1/flux-account-view-factor.1 \
+	man1/flux-account-edit-factor.1 \
+	man1/flux-account-list-factors.1 \
+	man1/flux-account-reset-factors.1
 
 RST_FILES  = \
 	$(MAN1_FILES_PRIMARY:.1=.rst)

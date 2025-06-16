@@ -178,4 +178,32 @@ man_pages = [
         [author],
         1,
     ),
+    (
+        "man1/flux-account-view-factor",
+        "flux-account-view-factor",
+        "view the configured integer weight for a given priority factor",
+        [author],
+        1,
+    ),
+    (
+        "man1/flux-account-edit-factor",
+        "flux-account-edit-factor",
+        "edit the configured integer weight for a given priority factor",
+        [author],
+        1,
+    ),
+    (
+        "man1/flux-account-list-factors",
+        "flux-account-list-factors",
+        "list all of the priority factors and their weights",
+        [author],
+        1,
+    ),
+    (
+        "man1/flux-account-reset-factors",
+        "flux-account-reset-factors",
+        "reset all of the priority factors to their default weights",
+        [author],
+        1,
+    ),
 ]
