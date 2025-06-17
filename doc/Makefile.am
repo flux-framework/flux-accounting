@@ -30,7 +30,8 @@ MAN1_FILES_PRIMARY = \
 	man1/flux-account-add-project.1 \
 	man1/flux-account-view-project.1 \
 	man1/flux-account-delete-project.1 \
-	man1/flux-account-list-projects.1
+	man1/flux-account-list-projects.1 \
+	man1/flux-account-view-job-records.1
 
 MAN5_FILES_PRIMARY = \
 	man5/flux-config-accounting.5
