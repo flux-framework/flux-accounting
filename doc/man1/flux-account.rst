@@ -173,6 +173,10 @@ JOB RECORDS
 view-job-records
 ^^^^^^^^^^^^^^^^
 
+View job records.
+
+See :man1:`flux-account-view-job-records` for more details.
+
 update-usage
 ^^^^^^^^^^^^
 
