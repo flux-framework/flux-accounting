@@ -233,6 +233,10 @@ def init_priority_factor_table(cur):
         f"INSERT OR IGNORE INTO priority_factor_weight_table (factor, weight) "
         f"VALUES ('bank', {fluxacct.accounting.BANK_WEIGHT_DEFAULT});"
     )
+    cur.execute(
+        f"INSERT OR IGNORE INTO priority_factor_weight_table (factor, weight) "
+        f"VALUES ('urgency', {fluxacct.accounting.URGENCY_WEIGHT_DEFAULT});"
+    )
 
 
 def update_db(path, new_db):
