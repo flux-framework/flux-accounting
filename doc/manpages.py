@@ -144,13 +144,6 @@ man_pages = [
         1,
     ),
     (
-        "man5/flux-config-accounting",
-        "flux-config-accounting",
-        "flux-accounting priority plugin configuration file",
-        [author],
-        5,
-    ),
-    (
         "man1/flux-account-list-users",
         "flux-account-list-users",
         "list all associations in the association_table",

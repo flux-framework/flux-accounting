@@ -56,12 +56,9 @@ test_expect_success 'no configured priority factors will use default weights' '
 '
 
 test_expect_success 'set up new configuration for multi-factor priority plugin' '
-	cat >config/test.toml <<-EOT &&
-	[accounting.factor-weights]
-	fairshare = 1000
-	queue = 100
-	EOT
-	flux config reload
+	flux account edit-factor --factor=fairshare --weight=1000 &&
+	flux account edit-factor --factor=queue --weight=100 &&
+	flux account-priority-update -p ${DB_PATH}
 '
 
 test_expect_success 'successfully submit a job with loaded configuration' '
@@ -72,12 +69,9 @@ test_expect_success 'successfully submit a job with loaded configuration' '
 '
 
 test_expect_success 'change the configuration for the priority factors' '
-	cat >config/test.toml <<-EOT &&
-	[accounting.factor-weights]
-	fairshare = 500
-	queue = 100
-	EOT
-	flux config reload
+	flux account edit-factor --factor=fairshare --weight=500 &&
+	flux account edit-factor --factor=queue --weight=100 &&
+	flux account-priority-update -p ${DB_PATH}
 '
 
 test_expect_success 'successfully submit a job with the new configuration' '

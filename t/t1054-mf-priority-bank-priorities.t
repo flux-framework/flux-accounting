@@ -64,13 +64,10 @@ test_expect_success 'send the user and queue information to the plugin' '
 #
 # 		priority = (bank_priority * bank_weight) = (bank_priority * 100)
 test_expect_success 'make "bank" the only factor in priority calculation' '
-	cat >config/test.toml <<-EOT &&
-	[accounting.factor-weights]
-	fairshare = 0
-	queue = 0
-	bank = 100
-	EOT
-	flux config reload
+	flux account edit-factor --factor=fairshare --weight=0 &&
+	flux account edit-factor --factor=queue --weight=0 &&
+	flux account edit-factor --factor=bank --weight=100 &&
+	flux account-priority-update -p ${DB_PATH}
 '
 
 test_expect_success 'stop the queue' '

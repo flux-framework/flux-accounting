@@ -7,4 +7,3 @@ Manual Pages
    :maxdepth: 1
 
    man1/index
-   man5/index
