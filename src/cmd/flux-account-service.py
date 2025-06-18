@@ -99,6 +99,7 @@ class AccountingService:
             "list_users",
             "view_factor",
             "list_factors",
+            "jobs",
         ]
 
         privileged_endpoints = [
@@ -674,6 +675,24 @@ class AccountingService:
             )
         except Exception as exc:
             handle.respond_error(msg, 0, f"reset-factors: {type(exc).__name__}: {exc}")
+
+    def jobs(self, handle, watcher, msg, arg):
+        try:
+            val = prio.job_priorities(
+                conn=self.conn,
+                username=msg.payload["username"],
+                bank=msg.payload.get("bank"),
+                queue=msg.payload.get("queue"),
+                format_string=msg.payload.get("format"),
+            )
+
+            payload = {"jobs": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"jobs: missing key in payload: {exc}")
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"jobs: {type(exc).__name__}: {exc}")
 
 
 LOGGER = logging.getLogger("flux-uri")
