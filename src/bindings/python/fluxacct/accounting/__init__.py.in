@@ -1,6 +1,11 @@
 DB_DIR = "@X_LOCALSTATEDIR@/lib/flux/"
 DB_PATH = "@X_LOCALSTATEDIR@/lib/flux/FluxAccounting.db"
-DB_SCHEMA_VERSION = 28
+DB_SCHEMA_VERSION = 29
+
+PRIORITY_FACTORS = ["fairshare", "queue", "bank"]
+FSHARE_WEIGHT_DEFAULT = 100000
+QUEUE_WEIGHT_DEFAULT = 10000
+BANK_WEIGHT_DEFAULT = 0
 
 # flux-accounting DB table column names
 ASSOCIATION_TABLE = [
@@ -44,6 +49,7 @@ JOBS_TABLE = [
     "project",
     "bank",
 ]
+PRIORITY_FACTOR_WEIGHTS_TABLE = ["factor", "weight"]
 
 __all__ = [
     "DB_DIR",
@@ -54,4 +60,5 @@ __all__ = [
     "QUEUE_TABLE",
     "PROJECT_TABLE",
     "JOBS_TABLE",
+    "PRIORITY_FACTOR_WEIGHTS_TABLE",
 ]

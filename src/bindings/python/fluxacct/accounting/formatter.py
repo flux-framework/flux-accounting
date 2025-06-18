@@ -468,3 +468,23 @@ class ProjectFormatter(AccountingFormatter):
         super().__init__(
             cursor, error_msg=f"project {self.project_name} not found in project_table"
         )
+
+
+class PriorityFactorFormatter(AccountingFormatter):
+    """
+    Subclass of AccountingFormatter that includes a custom error message in the
+    case where a factor does not exist in the priority_factor_weight_table.
+    """
+
+    def __init__(self, cursor, factor):
+        """
+        Initialize a PriorityFactorFormatter object with a SQLite cursor.
+        Args:
+            cursor: a SQLite Cursor object that has the results of a SQL query.
+            factor: the name of the priority factor.
+        """
+        self.factor = factor
+        super().__init__(
+            cursor,
+            error_msg=f"factor {self.factor} not found in priority_factor_weight_table",
+        )
