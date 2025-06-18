@@ -377,10 +377,23 @@ Thus the priority :math:`P` is calculated as follows:
 
 Each of these factors can be configured with a custom weight to increase their
 relevance to the final calculation of a job's integer priority. By default,
-fair-share has a weight of 100000 and the queue the job is submitted in has a
-weight of 10000. These can be modified to change how a job's priority is
-calculated. For example, if you wanted the queue to be more of a factor than
-fair-share, you can adjust each factor's weight accordingly:
+each factor has the following weight:
+
++------------+---------+
+| factor     | weight  |
++============+=========+
+| fair-share | 100000  |
++------------+---------+
+| queue      | 10000   |
++------------+---------+
+| bank       | 0       |
++------------+---------+
+| urgency    | 1000    |
++------------+---------+
+
+These can be modified to change how a job's priority is calculated. For
+example, if you wanted the queue to be more of a factor than fair-share, you
+can adjust each factor's weight accordingly:
 
 .. code-block:: console
 
