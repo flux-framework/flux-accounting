@@ -368,7 +368,12 @@ urgency
 
 Thus the priority :math:`P` is calculated as follows:
 
-:math:`P = (F_{fairshare} \times W_{fairshare}) + (F_{queue} \times W_{queue}) + (F_{bank} \times W_{bank}) + (F_{urgency} - 16)`
+.. math::
+
+  P = (F_{fairshare} \times W_{fairshare})
+      + (F_{queue} \times W_{queue})
+      + (F_{bank} \times W_{bank})
+      + ((F_{urgency} - 16) \times W_{urgency})
 
 Each of these factors can be configured with a custom weight to increase their
 relevance to the final calculation of a job's integer priority. By default,
