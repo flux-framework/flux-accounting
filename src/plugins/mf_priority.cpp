@@ -46,6 +46,7 @@ extern "C" {
 #define DEFAULT_FSHARE_WEIGHT 100000
 #define DEFAULT_QUEUE_WEIGHT 10000
 #define DEFAULT_BANK_WEIGHT 0
+#define DEFAULT_URGENCY_WEIGHT 1000
 
 std::map<int, std::map<std::string, Association>> users;
 std::map<std::string, Queue> queues;
@@ -82,12 +83,13 @@ int64_t priority_calculation (flux_plugin_t *p,
 {
     double fshare_factor = 0.0, priority = 0.0, bank_factor = 0.0;
     int queue_factor = 0;
-    int fshare_weight, queue_weight, bank_weight;
+    int fshare_weight, queue_weight, bank_weight, urgency_weight;
     Association *b;
 
     fshare_weight = priority_weights["fairshare"];
     queue_weight = priority_weights["queue"];
     bank_weight = priority_weights["bank"];
+    urgency_weight = priority_weights["urgency"];
 
     if (urgency == FLUX_JOB_URGENCY_HOLD)
         return FLUX_JOB_PRIORITY_MIN;
@@ -114,7 +116,7 @@ int64_t priority_calculation (flux_plugin_t *p,
     priority = round ((fshare_weight * fshare_factor) +
                       (queue_weight * queue_factor) +
                       (bank_weight * bank_factor) +
-                      (urgency - 16));
+                      (urgency_weight * (urgency - 16)));
 
     if (priority < 0)
         return FLUX_JOB_PRIORITY_MIN;
@@ -1541,6 +1543,7 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
     priority_weights["fairshare"] = DEFAULT_FSHARE_WEIGHT;
     priority_weights["queue"] = DEFAULT_QUEUE_WEIGHT;
     priority_weights["bank"] = DEFAULT_BANK_WEIGHT;
+    priority_weights["urgency"] = DEFAULT_URGENCY_WEIGHT;
 
     return 0;
 }
