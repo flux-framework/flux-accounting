@@ -119,6 +119,11 @@ def reset_factors(conn):
         f"VALUES ('bank', {fluxacct.accounting.BANK_WEIGHT_DEFAULT}) "
         f"ON CONFLICT(factor) DO UPDATE SET weight = excluded.weight;"
     )
+    cur.execute(
+        f"INSERT INTO priority_factor_weight_table (factor, weight) "
+        f"VALUES ('urgency', {fluxacct.accounting.URGENCY_WEIGHT_DEFAULT}) "
+        f"ON CONFLICT(factor) DO UPDATE SET weight = excluded.weight;"
+    )
 
     conn.commit()
     return 0
