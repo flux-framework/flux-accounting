@@ -178,3 +178,34 @@ update-usage
 
 scrub-old-jobs
 ^^^^^^^^^^^^^^
+
+JOB PRIORITY CONFIGURATION
+==========================
+
+view-factor
+^^^^^^^^^^^
+
+View the configured integer weight for a given priority factor.
+
+See :man1:`flux-account-view-factor` for more details.
+
+edit-factor
+^^^^^^^^^^^
+
+Edit the configured integer weight for a given priority factor.
+
+See :man1:`flux-account-edit-factor` for more details.
+
+list-factors
+^^^^^^^^^^^^
+
+List all of the priority factors and their weights.
+
+See :man1:`flux-account-list-factors` for more details.
+
+reset-factors
+^^^^^^^^^^^^^
+
+Reset all of the priority factors to their default weights.
+
+See :man1:`flux-account-reset-factors` for more details.
