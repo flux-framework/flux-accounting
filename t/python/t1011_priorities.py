@@ -77,7 +77,8 @@ class TestAccountingCLI(unittest.TestCase):
         ---------
         bank     
         fairshare
-        queue     
+        queue    
+        urgency
         """
         )
         self.assertEqual(expected.strip(), test.strip())
