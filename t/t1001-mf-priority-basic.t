@@ -94,6 +94,15 @@ test_expect_success 'create fake_payload.py' '
 		]
 	}
 	flux.Flux().rpc("job-manager.mf_priority.rec_q_update", json.dumps(bulk_queue_data)).get()
+	bulk_factor_data = {
+		"data" : [
+			{
+				"factor": "urgency",
+				"weight": 1,
+			}
+		]
+	}
+	flux.Flux().rpc("job-manager.mf_priority.rec_fac_update", json.dumps(bulk_factor_data)).get()
 	EOF
 '
 

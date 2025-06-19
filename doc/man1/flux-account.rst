@@ -209,3 +209,10 @@ reset-factors
 Reset all of the priority factors to their default weights.
 
 See :man1:`flux-account-reset-factors` for more details.
+
+jobs
+^^^^
+
+View a breakdown of an association's job priorities.
+
+See :man1:`flux-account-jobs` for more details.
