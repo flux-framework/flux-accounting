@@ -346,61 +346,14 @@ Multi-Factor Priority Plugin
 ****************************
 
 The multi-factor priority plugin is a jobtap_ plugin that generates
-an integer job priority for incoming jobs in a Flux system instance. It uses
-a number of factors to calculate a priority and, in the future, can add more
-factors. Each factor :math:`F` has an associated integer weight :math:`W`
-that determines its importance in the overall priority calculation. The
-current factors present in the multi-factor priority plugin are:
+an integer job priority for incoming jobs in a Flux system instance. 
 
-fair-share
-  The ratio between the amount of resources allocated vs. resources
-  consumed. See the :ref:`Glossary definition <glossary-section>` for a more
-  detailed explanation of how fair-share is utilized within flux-accounting.
+Priority Calculation
+====================
 
-queue
-  A configurable factor assigned to a queue.
-
-bank
-  A configurable factor assigned to a bank.
-
-urgency
-  A user-controlled factor to prioritize their own jobs.
-
-Thus the priority :math:`P` is calculated as follows:
-
-.. math::
-
-  P = (F_{fairshare} \times W_{fairshare})
-      + (F_{queue} \times W_{queue})
-      + (F_{bank} \times W_{bank})
-      + ((F_{urgency} - 16) \times W_{urgency})
-
-Each of these factors can be configured with a custom weight to increase their
-relevance to the final calculation of a job's integer priority. By default,
-each factor has the following weight:
-
-+------------+---------+
-| factor     | weight  |
-+============+=========+
-| fair-share | 100000  |
-+------------+---------+
-| queue      | 10000   |
-+------------+---------+
-| bank       | 0       |
-+------------+---------+
-| urgency    | 1000    |
-+------------+---------+
-
-These can be modified to change how a job's priority is calculated. For
-example, if you wanted the queue to be more of a factor than fair-share, you
-can adjust each factor's weight accordingly:
-
-.. code-block:: console
-
- $ flux account edit-factor --factor=fairshare --weight=1000
- $ flux account edit-factor --factor=queue --weight=100000
- $ flux account edit-factor --factor=bank --weight=500
- $ flux account-priority-update
+It uses a number of factors to calculate a priority and, in the future, can add
+more factors. For more details on how job priorities are calculated, see
+:doc:`../components/job-priorities`.
 
 Limits
 ======

@@ -18,4 +18,5 @@ Table of Contents
    components/job-usage-calculation
    components/projects
    components/limits
+   components/job-priorities
    index_man
