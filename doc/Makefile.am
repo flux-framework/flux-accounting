@@ -94,6 +94,7 @@ EXTRA_DIST = \
 	components/job-usage-calculation.rst \
 	components/projects.rst \
 	components/limits.rst \
+	components/job-priorities.rst \
 	$(RST_FILES) \
 	man1/index.rst
 
