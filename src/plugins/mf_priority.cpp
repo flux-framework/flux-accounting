@@ -116,7 +116,7 @@ int64_t priority_calculation (flux_plugin_t *p,
     priority = round ((fshare_weight * fshare_factor) +
                       (queue_weight * queue_factor) +
                       (bank_weight * bank_factor) +
-                      (urgency_weight * (urgency - 16)));
+                      (urgency_weight * (urgency - FLUX_JOB_URGENCY_DEFAULT)));
 
     if (priority < 0)
         return FLUX_JOB_PRIORITY_MIN;
