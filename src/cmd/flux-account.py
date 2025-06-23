@@ -10,6 +10,7 @@
 import argparse
 import sys
 import logging
+import subprocess
 
 import flux
 import fluxacct.accounting
@@ -1109,7 +1110,6 @@ def select_accounting_function(args, output_file, parser):
         "delete_bank": "accounting.delete_bank",
         "edit_bank": "accounting.edit_bank",
         "list_banks": "accounting.list_banks",
-        "update_usage": "accounting.update_usage",
         "add_queue": "accounting.add_queue",
         "view_queue": "accounting.view_queue",
         "delete_queue": "accounting.delete_queue",
@@ -1165,6 +1165,36 @@ def main():
         c.create_db(
             path, args.priority_usage_reset_period, args.priority_decay_half_life
         )
+        sys.exit(0)
+
+    if args.func == "update_usage":
+        # temporary workaround while admins adjust cron scripts to accurately
+        # reflect the new "flux account-update-usage" syntax
+        LOGGER.warning(
+            "update-usage is deprecated. Use 'flux account-update-usage instead."
+        )
+        LOGGER.info("running 'flux account-update-usage locally")
+        try:
+            handle = flux.Flux()
+            if handle.get_rank() != 0:
+                raise Exception(
+                    f"flux account-update-usage can only run on rank 0. "
+                    f"Current rank={handle.get_rank()}"
+                )
+            subprocess.run(
+                [
+                    "flux",
+                    "account-update-usage",
+                    "-p",
+                    path,
+                    "--priority-decay-half-life",
+                    str(args.priority_decay_half_life),
+                ],
+                check=True,
+            )
+        except SystemExit as exc:
+            LOGGER.error("update-usage: %s", (exc))
+            sys.exit(1)
         sys.exit(0)
 
     output_file = set_output_file(args)
