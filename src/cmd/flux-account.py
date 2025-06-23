@@ -1009,6 +1009,41 @@ def add_reset_priority_factors_arg(subparsers):
     subparser_reset_factors.set_defaults(func="reset_factors")
 
 
+def add_jobs_arg(subparsers):
+    subparser_jobs = subparsers.add_parser(
+        "jobs",
+        help="see a compact breakdown of active job's and how their priorities were calculated",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparser_jobs.set_defaults(func="jobs")
+    subparser_jobs.add_argument(
+        "username",
+        help="username to look up jobs for",
+        type=str,
+        metavar="USERNAME",
+    )
+    subparser_jobs.add_argument(
+        "--bank",
+        help="list all jobs under a certain bank",
+        type=str,
+        metavar="BANK",
+    )
+    subparser_jobs.add_argument(
+        "--queue",
+        help="list all jobs under a certain queue",
+        type=str,
+        metavar="QUEUE",
+    )
+    subparser_jobs.add_argument(
+        "-o",
+        "--format",
+        type=str,
+        default="",
+        help="specify output format using Python's string format syntax",
+        metavar="FORMAT",
+    )
+
+
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_output_file_arg(parser)
@@ -1041,6 +1076,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_edit_priority_factor_arg(subparsers)
     add_list_priority_factors(subparsers)
     add_reset_priority_factors_arg(subparsers)
+    add_jobs_arg(subparsers)
 
 
 def set_db_location(args):
@@ -1089,6 +1125,7 @@ def select_accounting_function(args, output_file, parser):
         "edit_factor": "accounting.edit_factor",
         "list_factors": "accounting.list_factors",
         "reset_factors": "accounting.reset_factors",
+        "jobs": "accounting.jobs",
     }
 
     if args.func in func_map:

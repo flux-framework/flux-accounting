@@ -206,4 +206,11 @@ man_pages = [
         [author],
         1,
     ),
+    (
+        "man1/flux-account-jobs",
+        "flux-account-jobs",
+        "view a breakdown of an association's job priorities",
+        [author],
+        1,
+    ),
 ]
