@@ -40,27 +40,6 @@ def update_t_inactive(acct_conn, last_t_inactive, user, bank):
     )
 
 
-def get_last_job_ts(acct_conn, user, bank):
-    """
-    Fetch the timestamp of the most recent inactive job for the association.
-    This timestamp will be used in future queries to filter jobs that have run
-    after this time.
-    """
-    s_ts = """
-        SELECT last_job_timestamp FROM job_usage_factor_table WHERE username=? AND bank=?
-        """
-    cur = acct_conn.cursor()
-    cur.execute(
-        s_ts,
-        (
-            user,
-            bank,
-        ),
-    )
-    row = cur.fetchone()
-    return float(row[0])
-
-
 def fetch_usg_bins(acct_conn, user=None, bank=None):
     past_usage_factors = []
 
@@ -179,13 +158,12 @@ def get_curr_usg_bin(acct_conn, user, bank):
     return float(row[0])
 
 
-def calc_usage_factor(conn, pdhl, user, bank, default_bank, end_hl):
+def calc_usage_factor(conn, pdhl, user, bank, default_bank, end_hl, last_j_ts):
 
     # hl_period represents the number of seconds that represent one usage bin
     hl_period = pdhl * 604800
 
     # get jobs that have completed since the last seen completed job
-    last_j_ts = get_last_job_ts(conn, user, bank)
     user_jobs = j.filter_jobs_by_association(
         conn,
         bank,
@@ -339,15 +317,26 @@ def update_job_usage(acct_conn, pdhl=1):
 
     # begin transaction for all of the updates in the DB
     acct_conn.execute("BEGIN TRANSACTION")
-
-    s_assoc = "SELECT username, bank, default_bank FROM association_table"
-    cur = acct_conn.cursor()
+    s_assoc = """
+        SELECT a.username, a.bank, a.default_bank, j.last_job_timestamp
+        FROM association_table a
+        LEFT JOIN job_usage_factor_table j
+        ON a.username = j.username AND a.bank = j.bank
+        """
     cur.execute(s_assoc)
     result = cur.fetchall()
 
     # update the job usage for every user in the association_table
     for row in result:
-        calc_usage_factor(acct_conn, pdhl, row[0], row[1], row[2], end_hl)
+        calc_usage_factor(
+            conn=acct_conn,
+            pdhl=pdhl,
+            user=row[0],
+            bank=row[1],
+            default_bank=row[2],
+            end_hl=end_hl,
+            last_j_ts=row[3],
+        )
 
     # find the root bank in the flux-accounting database
     s_root_bank = "SELECT bank FROM bank_table WHERE parent_bank=''"

@@ -236,6 +236,7 @@ class TestAccountingCLI(unittest.TestCase):
             bank=bank,
             default_bank=bank,
             end_hl=9900000,
+            last_j_ts=0,
         )
         self.assertEqual(usage_factor, 17044.0)
 
@@ -262,6 +263,7 @@ class TestAccountingCLI(unittest.TestCase):
             bank=bank,
             default_bank=bank,
             end_hl=9900000,
+            last_j_ts=0,
         )
         self.assertEqual(usage_factor, 8500.0)
 
@@ -280,6 +282,7 @@ class TestAccountingCLI(unittest.TestCase):
             bank="D",
             default_bank="D",
             end_hl=0,
+            last_j_ts=0,
         )
 
         cur.execute(s_ts)
@@ -342,6 +345,11 @@ class TestAccountingCLI(unittest.TestCase):
             print(integrity_error)
 
         # re-calculate usage factor for user1001
+        cur.execute(
+            "SELECT last_job_timestamp FROM job_usage_factor_table "
+            "WHERE username='1001' AND bank='C'"
+        )
+        ts = cur.fetchone()[0]
         usage_factor = jobs.calc_usage_factor(
             acct_conn,
             pdhl=1,
@@ -349,6 +357,7 @@ class TestAccountingCLI(unittest.TestCase):
             bank=bank,
             default_bank=bank,
             end_hl=0,
+            last_j_ts=ts,
         )
         self.assertEqual(usage_factor, 4366.0)
 
@@ -358,6 +367,11 @@ class TestAccountingCLI(unittest.TestCase):
     def test_16_recalculate_usage_after_half_life_period(self):
         user = "1001"
         bank = "C"
+        cur.execute(
+            "SELECT last_job_timestamp FROM job_usage_factor_table "
+            "WHERE username='1001' AND bank='C'"
+        )
+        ts = cur.fetchone()[0]
 
         usage_factor = jobs.calc_usage_factor(
             acct_conn,
@@ -366,6 +380,7 @@ class TestAccountingCLI(unittest.TestCase):
             bank=bank,
             default_bank=bank,
             end_hl=0,
+            last_j_ts=ts,
         )
 
         self.assertEqual(usage_factor, 3215.5)
