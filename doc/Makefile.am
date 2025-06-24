@@ -34,7 +34,8 @@ MAN1_FILES_PRIMARY = \
 	man1/flux-account-edit-factor.1 \
 	man1/flux-account-list-factors.1 \
 	man1/flux-account-reset-factors.1 \
-	man1/flux-account-jobs.1
+	man1/flux-account-jobs.1 \
+	man1/flux-account-view-job-records.1
 
 RST_FILES  = \
 	$(MAN1_FILES_PRIMARY:.1=.rst)
