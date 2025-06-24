@@ -235,6 +235,7 @@ class TestAccountingCLI(unittest.TestCase):
             user=user,
             bank=bank,
             default_bank=bank,
+            end_hl=9900000,
         )
         self.assertEqual(usage_factor, 17044.0)
 
@@ -260,6 +261,7 @@ class TestAccountingCLI(unittest.TestCase):
             user=user,
             bank=bank,
             default_bank=bank,
+            end_hl=9900000,
         )
         self.assertEqual(usage_factor, 8500.0)
 
@@ -277,6 +279,7 @@ class TestAccountingCLI(unittest.TestCase):
             user="1003",
             bank="D",
             default_bank="D",
+            end_hl=0,
         )
 
         cur.execute(s_ts)
@@ -345,6 +348,7 @@ class TestAccountingCLI(unittest.TestCase):
             user=user,
             bank=bank,
             default_bank=bank,
+            end_hl=0,
         )
         self.assertEqual(usage_factor, 4366.0)
 
@@ -361,6 +365,7 @@ class TestAccountingCLI(unittest.TestCase):
             user=user,
             bank=bank,
             default_bank=bank,
+            end_hl=0,
         )
 
         self.assertEqual(usage_factor, 3215.5)

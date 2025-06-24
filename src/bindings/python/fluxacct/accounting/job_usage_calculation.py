@@ -179,20 +179,10 @@ def get_curr_usg_bin(acct_conn, user, bank):
     return float(row[0])
 
 
-def calc_usage_factor(conn, pdhl, user, bank, default_bank):
+def calc_usage_factor(conn, pdhl, user, bank, default_bank, end_hl):
 
     # hl_period represents the number of seconds that represent one usage bin
     hl_period = pdhl * 604800
-
-    cur = conn.cursor()
-
-    # fetch timestamp of the end of the current half-life period
-    s_end_hl = """
-        SELECT end_half_life_period FROM t_half_life_period_table WHERE cluster='cluster'
-        """
-    cur.execute(s_end_hl)
-    row = cur.fetchone()
-    end_hl = row[0]
 
     # get jobs that have completed since the last seen completed job
     last_j_ts = get_last_job_ts(conn, user, bank)
@@ -337,6 +327,16 @@ def update_job_usage(acct_conn, pdhl=1):
         "beginning job-usage update for flux-accounting DB; "
         "slow response times may occur"
     )
+
+    cur = acct_conn.cursor()
+    # fetch timestamp of the end of the current half-life period
+    s_end_hl = """
+        SELECT end_half_life_period FROM t_half_life_period_table WHERE cluster='cluster'
+        """
+    cur.execute(s_end_hl)
+    row = cur.fetchone()
+    end_hl = row[0]
+
     # begin transaction for all of the updates in the DB
     acct_conn.execute("BEGIN TRANSACTION")
 
@@ -347,7 +347,7 @@ def update_job_usage(acct_conn, pdhl=1):
 
     # update the job usage for every user in the association_table
     for row in result:
-        calc_usage_factor(acct_conn, pdhl, row[0], row[1], row[2])
+        calc_usage_factor(acct_conn, pdhl, row[0], row[1], row[2], end_hl)
 
     # find the root bank in the flux-accounting database
     s_root_bank = "SELECT bank FROM bank_table WHERE parent_bank=''"
