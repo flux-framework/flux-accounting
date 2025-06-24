@@ -11,8 +11,43 @@
 ###############################################################
 import json
 import string
+from typing import Any, Callable, List
 
 import flux.util
+
+
+class HierarchyFormatter:
+    """
+    Generic formatter for hierarchical data.
+
+    Args:
+        root_item: The root element of the hierarchy.
+        fetch_children: A callable that takes an item and returns its children.
+        render_item: A callable that takes an item and current indent string, and returns a formatted string.
+    """
+
+    def __init__(
+        self,
+        root_item: Any,
+        fetch_children: Callable[[Any], List[Any]],
+        render_item: Callable[[Any, str], str],
+    ) -> None:
+        self.root_item = root_item
+        self.fetch_children = fetch_children
+        self.render_item = render_item
+
+    def format(self) -> str:
+        lines: List[str] = []
+
+        def _recurse(item: Any, indent: str) -> None:
+            # render current node
+            lines.append(self.render_item(item, indent))
+            # recurse into children
+            for child in self.fetch_children(item):
+                _recurse(child, indent + "  ")
+
+        _recurse(self.root_item, "")
+        return "\n".join(lines)
 
 
 class AccountingFormatter:
@@ -145,6 +180,30 @@ class BankFormatter(AccountingFormatter):
             cursor, error_msg=f"bank {self.bank_name} not found in bank_table"
         )
 
+    def _iterate_hierarchy(self, bank, fmt_bank, fmt_user, indent=""):
+        """
+        Internal generator to traverse banks and yield formatted lines.
+        """
+        # fetch direct sub banks
+        self.cursor.execute(
+            "SELECT bank,shares,job_usage FROM bank_table WHERE parent_bank=?", (bank,)
+        )
+        sub_banks = self.cursor.fetchall()
+        if not sub_banks:
+            # leaf bank: list users
+            self.cursor.execute(
+                "SELECT username,shares,job_usage,fairshare FROM association_table WHERE bank=?",
+                (bank,),
+            )
+            for user in self.cursor.fetchall():
+                yield fmt_user(bank, user, indent)
+        else:
+            for sub_bank in sub_banks:
+                yield fmt_bank(sub_bank, indent)
+                yield from self._iterate_hierarchy(
+                    sub_bank["bank"], fmt_bank, fmt_user, indent + " "
+                )
+
     def as_tree(self):
         """
         Format the flux-accounting bank hierarchy in tree format. The bank passed
@@ -154,87 +213,48 @@ class BankFormatter(AccountingFormatter):
             hierarchy: the hierarchy of banks in bank_table with the passed-in bank
                 as the root of the tree.
         """
-
-        def construct_hierarchy(cur, bank, hierarchy, indent=""):
-            """
-            Recursively traverse bank_table and look for sub banks and associations. Add
-            them to the string representing the hierarchy of banks and users.
-
-            Args:
-                cur: the SQLite Cursor object used to execute SQL queries.
-                bank: the current bank being passed to the SQL query.
-                hierarchy: the string representing the hierarchy of banks and users.
-                indent: the level of indent for each level of sub bank or users.
-                    Each traversed level will have one additional space (" ") before the
-                    row.
-            """
-            select_stmt = (
-                "SELECT bank,shares,job_usage FROM bank_table WHERE parent_bank=?"
-            )
-            cur.execute(select_stmt, (bank,))
-            sub_banks = cur.fetchall()
-
-            if len(sub_banks) == 0:
-                # reached a bank with no sub banks, so get associations under this bank
-                cur.execute(
-                    "SELECT username,shares,job_usage,fairshare FROM association_table WHERE bank=?",
-                    (bank,),
-                )
-                users = cur.fetchall()
-                if users:
-                    for user in users:
-                        hierarchy += (
-                            indent
-                            + " "
-                            + bank.ljust(20)
-                            + str(user["username"]).rjust(20 - (len(indent) + 1))
-                            + str(user["shares"]).rjust(20)
-                            + str(user["job_usage"]).rjust(20)
-                            + str(user["fairshare"]).rjust(20)
-                            + "\n"
-                        )
-            else:
-                # continue traversing the hierarchy
-                for sub_bank in sub_banks:
-                    hierarchy += (
-                        indent
-                        + " "
-                        + str(sub_bank["bank"]).ljust(20)
-                        + "".rjust(
-                            20 - (len(indent) + 1)
-                        )  # this skips the "Username" column
-                        + str(sub_bank["shares"]).rjust(20)
-                        + str(sub_bank["job_usage"]).rjust(20)
-                        + "\n"
-                    )
-                    hierarchy = construct_hierarchy(
-                        cur, sub_bank["bank"], hierarchy, indent + " "
-                    )
-
-            return hierarchy
-
-        # construct header of the hierarchy
-        hierarchy = (
+        # header for hierarchy string
+        header = (
             "Bank".ljust(20)
             + "Username".rjust(20)
             + "RawShares".rjust(20)
             + "RawUsage".rjust(20)
             + "Fairshare".rjust(20)
-            + "\n"
-        )
-        # add the bank passed in to the hierarchy string
-        hierarchy += (
-            self.rows[0]["bank"].ljust(20)
-            + "".rjust(20)
-            + str(self.rows[0]["shares"]).rjust(20)
-            + str(round(self.rows[0]["job_usage"], 2)).rjust(20)
-            + "\n"
         )
 
-        hierarchy = construct_hierarchy(
-            self.cursor, self.rows[0]["bank"], hierarchy, ""
+        # the root line of the hierarchy will not have an indent
+        root_bank = self.rows[0]
+        root_line = (
+            str(root_bank["bank"]).ljust(20)
+            + "".rjust(20)
+            + str(root_bank["shares"]).rjust(20)
+            + str(round(root_bank["job_usage"], 2)).rjust(20)
         )
-        return hierarchy
+
+        def fmt_bank(row, indent):
+            prefix = indent + " "
+            return (
+                prefix
+                + str(row["bank"]).ljust(20)
+                + "".rjust(20 - (len(prefix)))
+                + str(row["shares"]).rjust(20)
+                + str(row["job_usage"]).rjust(20)
+            )
+
+        def fmt_user(bank, user, indent):
+            prefix = indent + " "
+            return (
+                prefix
+                + bank.ljust(20)
+                + str(user["username"]).rjust(20 - len(prefix))
+                + str(user["shares"]).rjust(20)
+                + str(user["job_usage"]).rjust(20)
+                + str(user["fairshare"]).rjust(20)
+            )
+
+        lines = [header, root_line]
+        lines.extend(self._iterate_hierarchy(root_bank["bank"], fmt_bank, fmt_user, ""))
+        return "\n".join(lines) + "\n"
 
     def as_parsable_tree(self, bank):
         """
@@ -246,58 +266,30 @@ class BankFormatter(AccountingFormatter):
             hierarchy: a string representing the hierarchy of banks in the
                 flux-accounting DB as a parsable tree.
         """
+        # header for hierarchy string
+        header = "Bank|Username|RawShares|RawUsage|Fairshare"
 
-        def construct_parsable_hierarchy(cur, bank, hierarchy, indent=""):
-            """
-            Recursively traverse bank_table and look for sub banks and users and add
-            them to a string representing the flux-accounting bank hierarchy..
+        # the root line of the hierarchy will not have an indent
+        root_bank = self.rows[0]
+        root_line = (
+            f"{root_bank['bank']}||{root_bank['shares']}|"
+            f"{str(round(root_bank['job_usage'], 2))}"
+        )
 
-            Args:
-                cur: the SQLite Cursor object used to execute SQL queries.
-                bank: the current bank being passed to the SQL query.
-                hierarchy: the string holding the parsable hierarchy tree.
-                indent: the level of indent for each level of sub bank or associations.
-                    Each traversed level will have one additional space " " before the
-                    row.
-            """
-            select_stmt = (
-                "SELECT bank,shares,job_usage FROM bank_table WHERE parent_bank=?"
+        def fmt_bank(row, indent):
+            prefix = indent + " "
+            return f"{prefix}{row['bank']}||{row['shares']}|{row['job_usage']}"
+
+        def fmt_user(bank, user, indent):
+            prefix = indent + " "
+            return (
+                f"{prefix}{bank}|{user['username']}|{user['shares']}|"
+                f"{user['job_usage']}|{user['fairshare']}"
             )
-            cur.execute(select_stmt, (bank,))
-            sub_banks = cur.fetchall()
 
-            if len(sub_banks) == 0:
-                # reached a bank with no sub banks, so get associations under this bank
-                cur.execute(
-                    "SELECT username,shares,job_usage,fairshare FROM association_table WHERE bank=?",
-                    (bank,),
-                )
-                users = cur.fetchall()
-                if users:
-                    for user in users:
-                        hierarchy += (
-                            f"{indent} {bank}|{user['username']}|{user['shares']}|"
-                            f"{user['job_usage']}|{user['fairshare']}\n"
-                        )
-
-            else:
-                # continue traversing the hierarchy
-                for sub_bank in sub_banks:
-                    hierarchy += (
-                        f"{indent} {str(sub_bank['bank'])}||{str(sub_bank['shares'])}|"
-                        f"{str(sub_bank['job_usage'])}\n"
-                    )
-                    hierarchy = construct_parsable_hierarchy(
-                        cur, sub_bank["bank"], hierarchy, indent + " "
-                    )
-
-            return hierarchy
-
-        # construct a hierarchy string starting with the bank passed in
-        hierarchy = "Bank|Username|RawShares|RawUsage|Fairshare\n"
-        hierarchy += f"{self.rows[0]['bank']}||{str(self.rows[0]['shares'])}|{str(round(self.rows[0]['job_usage'], 2))}\n"
-        hierarchy = construct_parsable_hierarchy(self.cursor, bank, hierarchy, "")
-        return hierarchy
+        lines = [header, root_line]
+        lines.extend(self._iterate_hierarchy(root_bank["bank"], fmt_bank, fmt_user, ""))
+        return "\n".join(lines) + "\n"
 
     def with_users(self, bank):
         """
