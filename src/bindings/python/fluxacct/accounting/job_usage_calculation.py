@@ -116,6 +116,17 @@ def update_curr_usg_col(acct_conn, usg_h, user, bank):
 
 
 def apply_decay_factor(decay, acct_conn, user=None, bank=None):
+    """
+    Apply a decay factor to an association's job usage period values. Since this helper
+    issues a write to the flux-accounting DB and does not have a .commit() call after the
+    update, this function should be called inside of a SQLite TRANSACTION.
+
+    Args:
+        decay: The decay factor to be applied to every job usage period.
+        acct_conn: The SQLite Connection object.
+        user: The username of the association.
+        bank: The bank name of the association.
+    """
     usg_past = []
     usg_past_decay = []
 
@@ -145,7 +156,6 @@ def apply_decay_factor(decay, acct_conn, user=None, bank=None):
         )
         period += 1
 
-    acct_conn.commit()
     # only return the usage factors up to but not including the oldest one
     # since it no longer affects a user's historical usage factor
     return sum(usg_past_decay[:-1])
