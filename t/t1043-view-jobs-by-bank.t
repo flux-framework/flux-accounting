@@ -91,6 +91,12 @@ test_expect_success 'filter jobs by bankB (will show 3 records in total)' '
 	test $(grep -c "5002" bankB_jobs.out) -eq 2 
 '
 
+test_expect_success 'filter jobs by bankB with short option' '
+	flux account view-job-records -B bankB > bankB_jobs.out &&
+	test $(grep -c "5001" bankB_jobs.out) -eq 1 &&
+	test $(grep -c "5002" bankB_jobs.out) -eq 2 
+'
+
 test_expect_success 'shut down flux-accounting service' '
 	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
