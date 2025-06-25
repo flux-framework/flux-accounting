@@ -220,4 +220,11 @@ man_pages = [
         [author],
         1,
     ),
+    (
+        "man1/flux-account-show-usage",
+        "flux-account-show-usage",
+        "display a chart of the top associations or banks in terms of job usage",
+        [author],
+        1,
+    ),
 ]

@@ -236,3 +236,13 @@ jobs
 View a breakdown of an association's job priorities.
 
 See :man1:`flux-account-jobs` for more details.
+
+DATA VISUALIZATION
+==================
+
+show-usage
+^^^^^^^^^^
+
+Display a chart of the top associations or banks in terms of job usage.
+
+See :man1:`flux-account-show-usage` for more details.
