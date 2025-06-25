@@ -60,6 +60,7 @@ TESTSCRIPTS = \
 	t1055-flux-account-priorities.t \
 	t1056-mf-priority-urgency-factor.t \
 	t1057-flux-account-jobs.t \
+	t1058-flux-account-visuals.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
