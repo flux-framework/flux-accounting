@@ -1046,6 +1046,29 @@ def add_jobs_arg(subparsers):
     )
 
 
+def add_show_usage_arg(subparsers):
+    subparsers_visuals = subparsers.add_parser(
+        "show-usage",
+        help="graph job usage values from the flux-accounting database",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparsers_visuals.set_defaults(func="show_usage")
+    subparsers_visuals.add_argument(
+        "table",
+        help="the type of job usage data to visualize ",
+        type=str,
+        choices=["associations", "banks"],
+    )
+    subparsers_visuals.add_argument(
+        "-n",
+        "--limit",
+        help="the number of rows to display on the bar chart",
+        type=int,
+        default=10,
+        metavar="LIMIT",
+    )
+
+
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_output_file_arg(parser)
@@ -1079,6 +1102,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_list_priority_factors(subparsers)
     add_reset_priority_factors_arg(subparsers)
     add_jobs_arg(subparsers)
+    add_show_usage_arg(subparsers)
 
 
 def set_db_location(args):
@@ -1127,6 +1151,7 @@ def select_accounting_function(args, output_file, parser):
         "list_factors": "accounting.list_factors",
         "reset_factors": "accounting.reset_factors",
         "jobs": "accounting.jobs",
+        "show_usage": "accounting.show_usage",
     }
 
     if args.func in func_map:
