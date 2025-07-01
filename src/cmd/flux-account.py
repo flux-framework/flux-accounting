@@ -442,6 +442,15 @@ def add_add_bank_arg(subparsers):
         help="an associated priority for jobs submitted under this bank",
         metavar="PRIORITY",
     )
+    subparser_add_bank.add_argument(
+        "--max-preempt-after",
+        help=(
+            "max amount of time until a job running under this bank can become "
+            "preemptible; duration must be in Flux Standard Duration"
+        ),
+        type=str,
+        metavar="MAX_PREEMPT_AFTER",
+    )
 
 
 def add_view_bank_arg(subparsers):
@@ -546,6 +555,15 @@ def add_edit_bank_arg(subparsers):
         "--priority",
         help="an associated priority for jobs submitted under this bank",
         metavar="PRIORITY",
+    )
+    subparser_edit_bank.add_argument(
+        "--max-preempt-after",
+        help=(
+            "max amount of time until a job running under this bank can become "
+            "preemptible; duration must be in Flux Standard Duration"
+        ),
+        type=str,
+        metavar="MAX_PREEMPT_AFTER",
     )
 
 

@@ -61,7 +61,8 @@ class TestAccountingCLI(unittest.TestCase):
             "parent_bank": "",
             "shares": 1,
             "job_usage": 0.0,
-            "priority": 0.0
+            "priority": 0.0,
+            "max_preempt_after": null
           },
           {
             "bank_id": 2,
@@ -70,7 +71,8 @@ class TestAccountingCLI(unittest.TestCase):
             "parent_bank": "root",
             "shares": 1,
             "job_usage": 0.0,
-            "priority": 0.0
+            "priority": 0.0,
+            "max_preempt_after": null
           }
         ]
         """
@@ -218,10 +220,10 @@ class TestAccountingCLI(unittest.TestCase):
     def test_list_banks_table_default(self):
         expected = textwrap.dedent(
             """\
-        bank_id | bank | active | parent_bank | shares | job_usage | priority
-        --------+------+--------+-------------+--------+-----------+---------
-        1       | root | 1      |             | 1      | 0.0       | 0.0     
-        2       | A    | 1      | root        | 1      | 0.0       | 0.0       
+        bank_id | bank | active | parent_bank | shares | job_usage | priority | max_preempt_after
+        --------+------+--------+-------------+--------+-----------+----------+------------------
+        1       | root | 1      |             | 1      | 0.0       | 0.0      | None             
+        2       | A    | 1      | root        | 1      | 0.0       | 0.0      | None
         """
         )
         test = b.list_banks(conn)

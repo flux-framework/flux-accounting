@@ -309,6 +309,7 @@ class AccountingService:
                 msg.payload["shares"],
                 msg.payload.get("parent_bank"),
                 msg.payload.get("priority"),
+                msg.payload.get("max_preempt_after"),
             )
 
             payload = {"add_bank": val}
@@ -341,6 +342,7 @@ class AccountingService:
                 msg.payload.get("shares"),
                 msg.payload.get("parent_bank"),
                 msg.payload.get("priority"),
+                msg.payload.get("max_preempt_after"),
             )
 
             payload = {"edit_bank": val}
