@@ -64,7 +64,8 @@ def check_db_version(conn):
     db_version = cur.fetchone()[0]
     if db_version < fluxacct.accounting.DB_SCHEMA_VERSION:
         print(
-            "flux-accounting database out of date; please update DB with 'flux account-update-db' before running commands"
+            "flux-accounting database out of date; please update DB with "
+            "'flux account-update-db' before running commands"
         )
         sys.exit(1)
 
