@@ -24,3 +24,16 @@ def validate_columns(columns, valid_columns):
     invalid_columns = [column for column in columns if column not in valid_columns]
     if invalid_columns:
         raise ValueError(f"invalid fields: {', '.join(invalid_columns)}")
+
+
+def db_version(conn):
+    """
+    Return the DB schema version of the flux-accounting database.
+
+    Args:
+        conn: The SQLite Connection object.
+    """
+    cur = conn.cursor()
+    cur.execute("PRAGMA user_version")
+
+    return cur.fetchone()[0]

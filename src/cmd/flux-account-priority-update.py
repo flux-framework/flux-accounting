@@ -20,6 +20,7 @@ import pwd
 import flux
 
 import fluxacct.accounting
+from fluxacct.accounting import sql_util as sql
 
 
 def set_db_loc(args):
@@ -44,12 +45,8 @@ def est_sqlite_conn(path):
         print(f"Exception: {exc}")
         sys.exit(1)
 
-    # check version of database; if not up to date, output message
-    # and exit
-    cur = conn.cursor()
-    cur.execute("PRAGMA user_version")
-    db_version = cur.fetchone()[0]
-    if db_version < fluxacct.accounting.DB_SCHEMA_VERSION:
+    # check version of database; if not up to date, output message and exit
+    if sql.db_version(conn) < fluxacct.accounting.DB_SCHEMA_VERSION:
         print(
             """flux-accounting database out of date; updating DB with """
             """'flux account-update-db' before sending information to plugin"""
