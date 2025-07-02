@@ -58,8 +58,7 @@ def background():
 
 
 def check_db_version(conn):
-    # check version of database; if not up to date, output message
-    # and exit
+    # check version of database; if not up to date, output message and exit
     cur = conn.cursor()
     cur.execute("PRAGMA user_version")
     db_version = cur.fetchone()[0]
