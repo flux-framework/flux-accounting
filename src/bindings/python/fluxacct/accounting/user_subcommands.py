@@ -406,8 +406,6 @@ def add_user(
             default_project,
         ),
     )
-    # commit changes
-    conn.commit()
     # insert the user values into job_usage_factor_table
     conn.execute(
         """
@@ -420,6 +418,7 @@ def add_user(
             bank,
         ),
     )
+    # commit changes
     conn.commit()
 
     return 0
