@@ -109,6 +109,19 @@ int64_t priority_calculation (flux_plugin_t *p, int urgency)
     queue_factor = b->queue_factor;
     bank_factor = b->bank_factor;
 
+    // pack fair-share using memo event; the error check here should not be
+    // fatal since we are just posting a memo event that is primarily used by
+    // the "flux account jobs" command, which has handling in the case that a
+    // fair-share value cannot be retrieved.
+    if (flux_jobtap_event_post_pack (p,
+                                     FLUX_JOBTAP_CURRENT_JOB,
+                                     "memo",
+                                     "{s:f}",
+                                     "fairshare", b->fairshare) < 0)
+        flux_log_error (NULL,
+                        "priority_calculation (): failed to pack "
+                        "association's fair-share in memo event");
+
     priority = round ((fshare_weight * fshare_factor) +
                       (queue_weight * queue_factor) +
                       (bank_weight * bank_factor) +

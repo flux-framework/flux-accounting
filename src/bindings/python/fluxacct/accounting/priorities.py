@@ -353,9 +353,7 @@ def job_priorities(conn, username, bank=None, queue=None, format_string=None):
                 # default of 0 to indicate it is not affecting a job's priority
                 "QPRIO": getattr(queues.get(job.queue), "priority", 0),
                 "QFACT": priority_weights.get("queue", 0),
-                "FAIRSHARE": getattr(
-                    associations.get((job.username, job.bank)), "fairshare", 0.0
-                ),
+                "FAIRSHARE": job.annotations.user.fairshare,
                 "FSFACTOR": priority_weights.get("fairshare", 0),
                 "URGENCY": job.urgency,
                 "URGFACT": priority_weights.get("urgency", 0),
