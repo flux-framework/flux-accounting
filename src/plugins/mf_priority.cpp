@@ -75,11 +75,7 @@ std::map<std::string, int> priority_weights;
  * bank: a factor that can further affect the priority of a job based on the
  *     bank the job is submitted under.
  */
-int64_t priority_calculation (flux_plugin_t *p,
-                              flux_plugin_arg_t *args,
-                              int userid,
-                              char *bank,
-                              int urgency)
+int64_t priority_calculation (flux_plugin_t *p, int urgency)
 {
     double fshare_factor = 0.0, priority = 0.0, bank_factor = 0.0;
     int queue_factor = 0;
@@ -798,7 +794,7 @@ static int priority_cb (flux_plugin_t *p,
         }
     }
 
-    priority = priority_calculation (p, args, userid, bank, urgency);
+    priority = priority_calculation (p, urgency);
 
     if (flux_plugin_arg_pack (args,
                               FLUX_PLUGIN_ARG_OUT,
