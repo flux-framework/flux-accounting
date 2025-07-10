@@ -1195,7 +1195,7 @@ static int run_cb (flux_plugin_t *p,
     if (queue != NULL)
         // a queue was passed-in; increment counter of the number of
         // queue-specific running jobs for this association
-        b->queue_usage[std::string (queue)]++;
+        b->queue_usage[std::string (queue)].cur_run_jobs++;
 
     // increment the user's current running jobs count
     b->cur_run_jobs++;
@@ -1497,9 +1497,9 @@ static int inactive_cb (flux_plugin_t *p,
 
     // if a queue cannot be found, just set it to ""
     queue_str = queue ? queue : "";
-    if (b->queue_usage[queue_str] > 0)
+    if (b->queue_usage[queue_str].cur_run_jobs > 0)
         // decrement num of running jobs the association has in queue
-        b->queue_usage[queue_str]--;
+        b->queue_usage[queue_str].cur_run_jobs--;
 
     if (!b->held_jobs.empty ()) {
         // the Association has at least one held Job; begin looping through

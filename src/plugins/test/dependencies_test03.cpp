@@ -150,7 +150,7 @@ void max_run_jobs_per_queue_and_per_association ()
     Association *a = &users[50001]["bank_A"];
     a->cur_run_jobs = 1;
     a->cur_active_jobs = 2;
-    a->queue_usage["gold"] = 1; // one running job in gold queue
+    a->queue_usage["gold"].cur_run_jobs = 1; // one running job in gold queue
 
     // add held Job to Association object
     Job job;
@@ -193,7 +193,7 @@ void under_max_run_jobs_per_association_and_per_queue_true ()
     Association *a = &users[50001]["bank_A"];
     a->cur_run_jobs = 0;
     a->cur_active_jobs = 1;
-    a->queue_usage["gold"] = 0;
+    a->queue_usage["gold"].cur_run_jobs = 0;
     Job held_job = a->held_jobs.front ();
 
     ok (a->under_max_run_jobs () == true,
@@ -241,7 +241,7 @@ void max_run_jobs_per_queue ()
     a->max_run_jobs = 10;
     a->cur_run_jobs = 1;
     a->cur_active_jobs = 2;
-    a->queue_usage["gold"] = 1;
+    a->queue_usage["gold"].cur_run_jobs = 1;
 
     // add held Job to Association object
     Job job;
@@ -277,7 +277,7 @@ void under_max_run_jobs_per_queue_true ()
     Association *a = &users[50001]["bank_A"];
     a->cur_run_jobs = 0;
     a->cur_active_jobs = 1;
-    a->queue_usage["gold"] = 0;
+    a->queue_usage["gold"].cur_run_jobs = 0;
     Job held_job = a->held_jobs.front ();
 
     ok (a->under_max_run_jobs () == true,
