@@ -63,6 +63,7 @@ public:
     int max_time_per_job = std::numeric_limits<int>::max ();
     int priority = 0;
     int max_running_jobs = std::numeric_limits<int>::max ();
+    int max_nodes_per_assoc = 2147483647;
 };
 
 // all attributes are per-user/bank
