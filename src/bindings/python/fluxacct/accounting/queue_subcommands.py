@@ -31,7 +31,14 @@ def view_queue(conn, queue, parsable=False, format_string=""):
 
 
 def add_queue(
-    conn, queue, min_nodes=1, max_nodes=1, max_time=60, priority=0, max_running_jobs=100
+    conn,
+    queue,
+    min_nodes_per_job=1,
+    max_nodes_per_job=1,
+    max_time=60,
+    priority=0,
+    max_running_jobs=100,
+    max_nodes=2147483647,
 ):
     try:
         insert_stmt = """
@@ -41,18 +48,20 @@ def add_queue(
                         max_nodes_per_job,
                         max_time_per_job,
                         priority,
-                        max_running_jobs
-                      ) VALUES (?, ?, ?, ?, ?, ?)
+                        max_running_jobs,
+                        max_nodes
+                      ) VALUES (?, ?, ?, ?, ?, ?, ?)
                       """
         conn.execute(
             insert_stmt,
             (
                 queue,
-                min_nodes,
-                max_nodes,
+                min_nodes_per_job,
+                max_nodes_per_job,
                 max_time,
                 priority,
                 max_running_jobs,
+                max_nodes,
             ),
         )
 
@@ -100,6 +109,7 @@ def edit_queue(
     max_time_per_job=None,
     priority=None,
     max_running_jobs=None,
+    max_nodes=None,
 ):
     params = locals()
     editable_fields = [
@@ -108,6 +118,7 @@ def edit_queue(
         "max_time_per_job",
         "priority",
         "max_running_jobs",
+        "max_nodes",
     ]
 
     for field in editable_fields:
