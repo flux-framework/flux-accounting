@@ -44,6 +44,11 @@ each queue:
 
     Max number of running jobs an association can have in this queue.
 
+.. option:: --max-nodes-per-assoc
+
+    The maximum number of nodes an association can have across all of their
+    running jobs in this queue.
+
 .. _flux-core: https://flux-framework.readthedocs.io/projects/flux-core/en/latest/man5/flux-config-queues.html
 
 .. _flux-sched: https://flux-framework.readthedocs.io/projects/flux-sched/en/latest/man5/flux-config-sched-fluxion-qmanager.html
