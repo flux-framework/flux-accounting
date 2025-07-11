@@ -99,9 +99,13 @@ test_expect_success 'add a queue with no optional args to the queue_table' '
 '
 
 test_expect_success 'add another queue with some optional args' '
-	flux account add-queue queue_2 --min-nodes-per-job=1 --max-nodes-per-job=10 --max-time-per-job=120 &&
+	flux account add-queue queue_2 \
+		--min-nodes-per-job=1 \
+		--max-nodes-per-job=10 \
+		--max-time-per-job=120 \
+		--max-nodes-per-assoc=1234 &&
 	flux account view-queue queue_2 > new_queue2.out &&
-	grep -w "queue_1\|1\|10\|120" new_queue2.out
+	grep -w "queue_1\|1\|10\|120\|1234" new_queue2.out
 '
 
 test_expect_success 'edit some queue information' '
@@ -111,9 +115,13 @@ test_expect_success 'edit some queue information' '
 '
 
 test_expect_success 'edit multiple columns for one queue' '
-	flux account edit-queue queue_1 --min-nodes-per-job 1 --max-nodes-per-job 128 --max-time-per-job 120 &&
+	flux account edit-queue queue_1 \
+		--min-nodes-per-job 1 \
+		--max-nodes-per-job 128 \
+		--max-time-per-job 120 \
+		--max-nodes-per-assoc 1234 &&
 	flux account view-queue queue_1 > edited_queue_multiple.out &&
-	grep -w "queue_1\|1\|128\|120" edited_queue_multiple.out
+	grep -w "queue_1\|1\|128\|120\|1234" edited_queue_multiple.out
 '
 
 test_expect_success 'reset a queue limit' '
