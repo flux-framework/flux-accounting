@@ -227,4 +227,11 @@ man_pages = [
         [author],
         1,
     ),
+    (
+        "man1/flux-account-edit-all-users",
+        "flux-account-edit-all-users",
+        "edit a column for every association in association_table",
+        [author],
+        1,
+    ),
 ]
