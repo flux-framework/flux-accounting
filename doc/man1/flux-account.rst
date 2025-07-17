@@ -76,6 +76,13 @@ Modify an attribute for an association in the flux-accounting database.
 
 See :man1:`flux-account-edit-user` for more details.
 
+edit-all-users
+^^^^^^^^^^^^^^
+
+Modify an attribute for every association in the flux-accounting database.
+
+See :man1:`flux-account-edit-all-users` for more details.
+
 BANK ADMINISTRATION
 ===================
 
