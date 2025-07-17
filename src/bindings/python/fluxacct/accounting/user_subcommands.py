@@ -581,3 +581,95 @@ def edit_user(conn, username, bank=None, **kwargs):
     conn.commit()
 
     return 0
+
+
+def edit_all_users(conn, **kwargs):
+    """
+    Edit an attribute for every row in association_table.
+
+    Args:
+        conn: A SQLite Connection object.
+        bank: The bank that the user belongs to.
+        default_bank: The default bank that the user belongs to.
+        shares: The amount of available resources their organization considers the user
+            should be entitled to use relative to other competing users.
+        fairshare: The ratio between the amount of resources an association is
+            allocated versus the amount actually consumed.
+        max_running_jobs: The max number of running jobs the association can have at any
+            given time.
+        max_active_jobs: The max number of both pending and running jobs the association
+            can have at any given time.
+        max_nodes: The max number of nodes an association can have across all of their
+            running jobs.
+        max_cores: The max number of cores an association can have across all of their
+            running jobs.
+        queues: A comma-separated list of all of the queues an association can run jobs
+            under.
+        projects: A comma-separated list of all of the projects an association can run jobs
+            under.
+        default_project: The association's default project.
+    """
+    cur = conn.cursor()
+    editable_fields = {
+        "bank",
+        "default_bank",
+        "shares",
+        "fairshare",
+        "max_running_jobs",
+        "max_active_jobs",
+        "max_nodes",
+        "max_cores",
+        "queues",
+        "projects",
+        "default_project",
+    }
+
+    if not set(kwargs.keys()) <= editable_fields:
+        raise ValueError(
+            f"unrecognized argument(s) passed: "
+            f"{[kwarg for kwarg in kwargs if kwarg not in editable_fields]}"
+        )
+
+    updates = {
+        field: value
+        for field, value in kwargs.items()
+        if value is not None and field in editable_fields
+    }
+
+    if not updates:
+        raise ValueError("no fields provided for update")
+
+    reset_statements = []
+    reset_values = []
+
+    for field, value in updates.items():
+        if str(value) == "-1":
+            if field == "default_bank":
+                raise ValueError(
+                    "default bank cannot be reset with -1; please specify a value"
+                )
+            if field == "projects":
+                # the "projects" column needs to keep the global default project "*" for
+                # every association
+                reset_statements.append(f"projects='*'")
+            elif field == "queues":
+                reset_statements.append(f"queues=''")
+            else:
+                reset_statements.append(f"{field}=NULL")
+        else:
+            if field == "queues":
+                validate_queue(conn, value)
+            elif field == "projects":
+                updates[field] = validate_project(conn, value)
+            reset_statements.append(f"{field}=?")
+            reset_values.append(updates[field])
+
+    # combine everything into a single UPDATE statement
+    if reset_statements:
+        stmt = f"UPDATE association_table SET {', '.join(reset_statements)}"
+        cur.execute(stmt, reset_values)
+        # update mod_time
+        cur.execute("UPDATE association_table SET mod_time=?", (int(time.time()),))
+        conn.commit()
+
+    return 0
