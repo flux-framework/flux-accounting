@@ -122,6 +122,7 @@ class AccountingService:
             "shutdown_service",
             "edit_factor",
             "reset_factors",
+            "edit_all_users",
         ]
 
         for name in general_endpoints:
@@ -697,6 +698,33 @@ class AccountingService:
             handle.respond_error(msg, 0, f"show-usage: missing key in payload: {exc}")
         except Exception as exc:
             handle.respond_error(msg, 0, f"show-usage: {type(exc).__name__}: {exc}")
+
+    def edit_all_users(self, handle, watcher, msg, arg):
+        try:
+            val = u.edit_all_users(
+                conn=self.conn,
+                bank=msg.payload.get("bank"),
+                default_bank=msg.payload.get("default_bank"),
+                shares=msg.payload.get("shares"),
+                fairshare=msg.payload.get("fairshare"),
+                max_running_jobs=msg.payload.get("max_running_jobs"),
+                max_active_jobs=msg.payload.get("max_active_jobs"),
+                max_nodes=msg.payload.get("max_nodes"),
+                max_cores=msg.payload.get("max_cores"),
+                queues=msg.payload.get("queues"),
+                projects=msg.payload.get("projects"),
+                default_project=msg.payload.get("default_project"),
+            )
+
+            payload = {"edit_all_users": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(
+                msg, 0, f"edit-all-users: missing key in payload: {exc}"
+            )
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"edit-all-users: {type(exc).__name__}: {exc}")
 
 
 LOGGER = logging.getLogger("flux-uri")
