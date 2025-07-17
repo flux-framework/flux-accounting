@@ -63,6 +63,7 @@ TESTSCRIPTS = \
 	t1058-flux-account-visuals.t \
 	t1059-issue685.t \
 	t1060-mf-priority-queue-usage.t \
+	t1061-flux-account-edit-all-users.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
