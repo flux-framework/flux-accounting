@@ -1211,7 +1211,7 @@ static int run_cb (flux_plugin_t *p,
                                          FLUX_JOBTAP_CURRENT_JOB,
                                          "mf_priority",
                                          0,
-                                         "job.state.run: failed to increment " \
+                                         "job.state.run: failed to increment "
                                          "resource count");
             return -1;
         }
