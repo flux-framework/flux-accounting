@@ -75,6 +75,12 @@ From here, users can be added to these banks to create *associations*, a
 
  $ flux account add-user --username=user_1 --bank=bank_A
 
+.. note::
+    Both usernames and bank names are case sensitive. Make sure that if a name
+    contains a capital letter, it is referenced by its exact case throughout
+    the various flux-accounting components that take these names as a
+    parameter.
+
 If you wish to delete an association or bank from the database, you can run the
 ``flux account delete-user`` or ``flux account delete-bank`` commands. Note
 that this will not actually remove the association's or bank's row from the
