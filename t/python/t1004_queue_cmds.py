@@ -53,15 +53,21 @@ class TestAccountingCLI(unittest.TestCase):
     # edit multiple fields for a given queue
     def test_04_edit_multiple_fields(self):
         q.edit_queue(
-            acct_conn, queue="queue_1", min_nodes_per_job=1, max_nodes_per_job=128
+            acct_conn,
+            queue="queue_1",
+            min_nodes_per_job=1,
+            max_nodes_per_job=128,
+            max_nodes_per_assoc=1234,
         )
         cur.execute(
-            "SELECT min_nodes_per_job, max_nodes_per_job FROM queue_table WHERE queue='queue_1'"
+            "SELECT min_nodes_per_job, max_nodes_per_job, max_nodes_per_assoc "
+            "FROM queue_table WHERE queue='queue_1'"
         )
         results = cur.fetchall()
 
         self.assertEqual(results[0][0], 1)
         self.assertEqual(results[0][1], 128)
+        self.assertEqual(results[0][2], 1234)
 
     # edit a value with a bad type for a queue in the queue_table
     def test_05_edit_queue_bad_type(self):
