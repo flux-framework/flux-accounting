@@ -94,7 +94,7 @@ test_expect_success 'running jobs count for the queues are incremented once jobs
 	flux jobtap query mf_priority.so > silver.json &&
 	jq -e ".mf_priority_map[] | \
 		select(.userid == 5001) | \
-		.banks[0].queue_usage.silver == 2" <silver.json
+		.banks[0].queue_usage[\"silver\"].cur_run_jobs == 2" <silver.json
 '
 
 test_expect_success 'a third job to the silver queue results in a dependency-add' '
@@ -141,7 +141,7 @@ test_expect_success 'running jobs count for the queues are decremented once jobs
 	flux jobtap query mf_priority.so > query.json &&
 	jq -e ".mf_priority_map[] | \
 		select(.userid == 5001) | \
-		.banks[0].queue_usage.silver == 0" <query.json &&
+		.banks[0].queue_usage[\"silver\"].cur_run_jobs == 0" <query.json &&
 	jq -e ".mf_priority_map[] | \
 		select(.userid == 5001) | \
 		.banks[0].cur_run_jobs == 0" <query.json &&

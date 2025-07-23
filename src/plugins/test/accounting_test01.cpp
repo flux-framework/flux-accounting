@@ -268,7 +268,7 @@ static void test_under_queue_max_running_jobs_true ()
 {
     Association a = users[1001]["bank_A"];
     Queue bronze = queues["bronze"];
-    ok ((a.queue_usage["bronze"] < bronze.max_running_jobs) == true,
+    ok ((a.queue_usage["bronze"].cur_run_jobs < bronze.max_running_jobs) == true,
         "association is under the max running jobs limit for the queue");
 }
 
@@ -279,8 +279,8 @@ static void test_under_queue_max_running_jobs_false ()
     Queue bronze = queues["bronze"];
     // simulate the Association being at their queue max running jobs limit
     bronze.max_running_jobs = 5;
-    a.queue_usage["bronze"] = 5;
-    ok ((a.queue_usage["bronze"] < bronze.max_running_jobs) == false,
+    a.queue_usage["bronze"].cur_run_jobs = 5;
+    ok ((a.queue_usage["bronze"].cur_run_jobs < bronze.max_running_jobs) == false,
         "association is at their max running jobs limit for the queue");
 }
 

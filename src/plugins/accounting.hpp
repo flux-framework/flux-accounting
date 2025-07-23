@@ -66,6 +66,13 @@ public:
     int max_nodes_per_assoc = 2147483647;
 };
 
+// a class to track an association's usage in a particular queue
+class QueueUsage {
+public:
+    int cur_run_jobs = 0; // number of running jobs in queue
+    int cur_nodes = 0;    // number of nodes across all running jobs in queue
+};
+
 // all attributes are per-user/bank
 class Association {
 public:
@@ -87,8 +94,8 @@ public:
     int max_cores;                     // max num cores across all running jobs
     int cur_nodes;                     // current number of used nodes
     int cur_cores;                     // current number of used cores
-    std::unordered_map<std::string, int>
-      queue_usage;                     // track num of running jobs per queue
+    std::unordered_map<std::string, QueueUsage>
+      queue_usage;                     // the association's usage per-queue
 
     // methods
     json_t* to_json () const;    // convert object to JSON string

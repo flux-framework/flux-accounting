@@ -43,6 +43,7 @@ json_t* Association::to_json () const
     json_t *user_projects = nullptr;
     json_t *temp = nullptr;
     json_t *queue_usage_json = nullptr;
+    json_t *usage_object = nullptr;
     json_t *hj_json = nullptr;
     json_t *job_json = nullptr;
     json_t *deps_array = nullptr;
@@ -74,9 +75,16 @@ json_t* Association::to_json () const
     if (!queue_usage_json)
         goto error;
     for (const auto &entry : queue_usage) {
+        const QueueUsage &usage = entry.second;
+        usage_object = json_pack ("{s:i, s:i}",
+                                  "cur_run_jobs", usage.cur_run_jobs,
+                                  "cur_nodes", usage.cur_nodes);
+        if (!usage_object)
+            goto error;
+
         if (json_object_set_new (queue_usage_json,
                                  entry.first.c_str (),
-                                 json_integer (entry.second)) < 0)
+                                 usage_object) < 0)
             goto error;
     }
 
@@ -147,6 +155,7 @@ error:
     json_decref (user_projects);
     json_decref (temp);
     json_decref (queue_usage_json);
+    json_decref (usage_object);
     json_decref (hj_json);
     json_decref (deps_array);
     json_decref (job_json);
@@ -288,8 +297,8 @@ bool Association::under_max_run_jobs ()
 bool Association::under_queue_max_run_jobs (
                                 const std::string &queue,
                                 std::map<std::string, Queue> queues) {
-    bool under_queue_max_run_jobs = queue_usage[queue] <
-                                    queues[queue].max_running_jobs;
+    bool under_queue_max_run_jobs = queue_usage[queue].cur_run_jobs
+                                    < queues[queue].max_running_jobs;
 
     return under_queue_max_run_jobs;
 }
