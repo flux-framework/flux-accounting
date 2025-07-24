@@ -16,17 +16,20 @@ DESCRIPTION
 .. program:: flux account edit-user
 
 :program:`flux account edit-user` allows for the modifications of certain
-fields for a given association. The list of modifiable fields are as follows:
+fields for a given association. Passing the ``--bank`` option will specify a
+specific row for the update to be applied. If left out, the update will be
+applied across all of the rows in ``association_table`` where ``username`` is
+found.
+
+The list of modifiable fields for an association are as follows:
 
 .. option:: --userid
 
     The userid of the association.
 
-.. option:: --bank
+.. option:: --default-bank
 
-    An optional bank name that can be specified. If left out, the update will
-    be applied across all of the rows in ``association_table`` where
-    ``username`` is found.
+    The default bank that the user belongs to.
 
 .. option:: --shares
 
@@ -50,6 +53,11 @@ fields for a given association. The list of modifiable fields are as follows:
 .. option:: --max-nodes
 
     The max number of nodes an association can have across all of their running
+    jobs.
+
+.. option:: --max-cores
+
+    The max number of cores an association can have across all of their running
     jobs.
 
 .. option:: --queues
