@@ -340,6 +340,84 @@ def add_edit_user_arg(subparsers):
     )
 
 
+def add_edit_all_users_arg(subparsers):
+    subparser_edit_all_users = subparsers.add_parser(
+        "edit-all-users",
+        help="edit an attribute for every row in association_table",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparser_edit_all_users.set_defaults(func="edit_all_users")
+    subparser_edit_all_users.add_argument(
+        "--bank",
+        help="bank to charge jobs against",
+        default=None,
+        metavar="BANK",
+    )
+    subparser_edit_all_users.add_argument(
+        "--default-bank",
+        help="default bank",
+        default=None,
+        metavar="DEFAULT_BANK",
+    )
+    subparser_edit_all_users.add_argument(
+        "--shares",
+        help="shares",
+        default=None,
+        metavar="SHARES",
+    )
+    subparser_edit_all_users.add_argument(
+        "--fairshare",
+        help="fairshare",
+        default=None,
+        metavar="SHARES",
+    )
+    subparser_edit_all_users.add_argument(
+        "--max-running-jobs",
+        help="max number of jobs that can be running at the same time",
+        default=None,
+        metavar="MAX_RUNNING_JOBS",
+    )
+    subparser_edit_all_users.add_argument(
+        "--max-active-jobs",
+        help="max number of both pending and running jobs",
+        default=None,
+        metavar="max_active_jobs",
+    )
+    subparser_edit_all_users.add_argument(
+        "--max-nodes",
+        help="max number of nodes all users can have across all of their running jobs",
+        default=None,
+        metavar="MAX_NODES",
+    )
+    subparser_edit_all_users.add_argument(
+        "--max-cores",
+        help="max number of cores all users can have across all of their running jobs",
+        default=None,
+        metavar="MAX_CORES",
+    )
+    subparser_edit_all_users.add_argument(
+        "--queues",
+        help="queues the users are allowed to run jobs in",
+        default=None,
+        metavar="QUEUES",
+    )
+    subparser_edit_all_users.add_argument(
+        "--projects",
+        help="projects the users are allowed to submit jobs under",
+        default=None,
+        metavar="PROJECTS",
+    )
+    subparser_edit_all_users.add_argument(
+        "--default-project",
+        help=(
+            "the default project the users submit jobs under when no project is "
+            "specified"
+        ),
+        default=None,
+        metavar="DEFAULT_PROJECT",
+    )
+
+
 def add_view_job_records_arg(subparsers):
     subparser_view_job_records = subparsers.add_parser(
         "view-job-records",
@@ -1122,6 +1200,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_reset_priority_factors_arg(subparsers)
     add_jobs_arg(subparsers)
     add_show_usage_arg(subparsers)
+    add_edit_all_users_arg(subparsers)
 
 
 def set_db_location(args):
@@ -1171,6 +1250,7 @@ def select_accounting_function(args, output_file, parser):
         "reset_factors": "accounting.reset_factors",
         "jobs": "accounting.jobs",
         "show_usage": "accounting.show_usage",
+        "edit_all_users": "accounting.edit_all_users",
     }
 
     if args.func in func_map:

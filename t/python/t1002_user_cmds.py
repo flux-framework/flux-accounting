@@ -317,6 +317,14 @@ class TestAccountingCLI(unittest.TestCase):
         default_bank = cur.fetchall()
         self.assertEqual(default_bank[0][0], "B")
 
+    # pass a bad kwarg to edit_all_users(); ensure a ValueError is raised
+    def test_19_edit_all_users_bad_kwarg(self):
+        with self.assertRaises(ValueError) as err:
+            u.edit_all_users(acct_conn, foo="bar")
+
+        print(str(err.exception))
+        self.assertIn("unrecognized argument(s) passed: ['foo']", str(err.exception))
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):
