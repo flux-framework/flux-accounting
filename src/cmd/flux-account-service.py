@@ -28,6 +28,7 @@ from fluxacct.accounting import jobs_table_subcommands as j
 from fluxacct.accounting import db_info_subcommands as d
 from fluxacct.accounting import priorities as prio
 from fluxacct.accounting import visuals as vis
+from fluxacct.accounting import sql_util as sql
 
 
 def establish_sqlite_connection(path):
@@ -55,19 +56,6 @@ def background():
     if pid > 0:
         # exit first parent
         sys.exit(0)
-
-
-def check_db_version(conn):
-    # check version of database; if not up to date, output message and exit
-    cur = conn.cursor()
-    cur.execute("PRAGMA user_version")
-    db_version = cur.fetchone()[0]
-    if db_version < fluxacct.accounting.DB_SCHEMA_VERSION:
-        print(
-            "flux-accounting database out of date; please update DB with "
-            "'flux account-update-db' before running commands"
-        )
-        sys.exit(1)
 
 
 # pylint: disable=broad-except, too-many-public-methods
@@ -750,14 +738,11 @@ def main():
     db_path = args.path if args.path else fluxacct.accounting.DB_PATH
     conn = establish_sqlite_connection(db_path)
 
-    # check version of database; if not up to date, output message
-    # and exit
-    cur = conn.cursor()
-    cur.execute("PRAGMA user_version")
-    db_version = cur.fetchone()[0]
-    if db_version < fluxacct.accounting.DB_SCHEMA_VERSION:
+    # check version of database; if not up to date, output message and exit
+    if sql.db_version(conn) < fluxacct.accounting.DB_SCHEMA_VERSION:
         LOGGER.error(
-            "flux-accounting database out of date; please update DB with 'flux account-update-db' before running commands"
+            "flux-accounting database out of date; please update DB with "
+            "'flux account-update-db' before running commands"
         )
         sys.exit(1)
 
