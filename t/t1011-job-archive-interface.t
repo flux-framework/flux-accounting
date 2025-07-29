@@ -161,6 +161,21 @@ test_expect_success 'call view-job-records -o with an invalid field' '
 	grep "Unknown format field: foo" invalid_field.out
 '
 
+# ensure that job usage factors are displayed with -j/--job-usage;
+# make sure that both rows have job usage values of at least 4 in the
+# most recent job usage factor column
+test_expect_success 'call view-user -J/--job-usage' '
+	flux account view-user -J ${username} > job_usage_breakdown.json &&
+	test_debug "jq -S . <job_usage_breakdown.json" &&
+	jq -e ".[0].usage_factor_period_0 >= 4" job_usage_breakdown.json &&
+	jq -e ".[1].usage_factor_period_0 >= 4" job_usage_breakdown.json
+'
+
+test_expect_success 'pass both -J and --fields; ensure ValueError is raised' '
+	test_must_fail flux account view-user --fields=username -J ${username} > bad_args.error 2>&1 &&
+	grep "argument \-J/\-\-job-usage: not allowed with argument \-\-fields" bad_args.error
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
