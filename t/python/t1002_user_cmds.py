@@ -322,7 +322,6 @@ class TestAccountingCLI(unittest.TestCase):
         with self.assertRaises(ValueError) as err:
             u.edit_all_users(acct_conn, foo="bar")
 
-        print(str(err.exception))
         self.assertIn("unrecognized argument(s) passed: ['foo']", str(err.exception))
 
     # remove database and log file
