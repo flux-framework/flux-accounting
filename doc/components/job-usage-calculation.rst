@@ -83,3 +83,21 @@ The past usage factors have the decay factor applied to them:
 
 :math:`U_{user1002}`'s job usage value now becomes :math:`16089.0`, which takes
 into account both their most recent *and* historical job usage.
+
+
+Viewing Breakdowns of Historical Job Usage
+==========================================
+
+Since an association's historical job usage (i.e. the value reported in the
+``job_usage`` column) is comprised of potentially multiple usage factors that
+make up an association's job usage value, it would be useful to see how this
+value is calculated. The ``view-user`` command offers a ``-j/--job-usage``
+optional argument, which will return all of the association's job usage columns
+that make up their historical job usage value:
+
+.. code-block:: console
+
+    $ flux account view-user --parsable -j moussa
+    username | userid | bank     | usage_factor_period_0 | usage_factor_period_1 | usage_factor_period_2 | usage_factor_period_3
+    ---------+--------+----------+-----------------------+-----------------------+-----------------------+----------------------
+    moussa   | 12345  | A        | 100.0                 | 243.5                 | 8.7                   | 0.0  
