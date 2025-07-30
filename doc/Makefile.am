@@ -93,12 +93,17 @@ EXTRA_DIST = \
 	guide/accounting-guide.rst \
 	guide/sanity-checklist.rst \
 	images/lgplv3-147x51.png \
+	images/flux-accounting-db.png \
+	images/flux-accounting-service.png \
+	images/priority-update.png \
+	images/update-usage-and-fshare.png \
 	components/database-administration.rst \
 	components/fair-share.rst \
 	components/job-usage-calculation.rst \
 	components/projects.rst \
 	components/limits.rst \
 	components/job-priorities.rst \
+	components/module-structure.rst \
 	$(RST_FILES) \
 	man1/index.rst
 
