@@ -153,6 +153,7 @@ class AccountingService:
                 else None,
                 msg.payload.get("list_banks"),
                 msg.payload.get("format"),
+                msg.payload.get("job_usage"),
             )
 
             payload = {"view_user": val}

@@ -236,19 +236,38 @@ def clear_projects(conn, username, bank=None):
 #                                                             #
 ###############################################################
 def view_user(
-    conn, user, parsable=False, cols=None, list_banks=False, format_string=""
+    conn,
+    user,
+    parsable=False,
+    cols=None,
+    list_banks=False,
+    format_string="",
+    job_usage=False,
 ):
+    if job_usage and cols:
+        # job_usage is setting a flag to fetch user data from another table different
+        # from association_table, so raise an Exception
+        raise ValueError(f"-J/--job-usage cannot be combined with --fields")
+
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.ASSOCIATION_TABLE
 
     cur = conn.cursor()
 
-    sql.validate_columns(cols, fluxacct.accounting.ASSOCIATION_TABLE)
-    # construct SELECT statement
-    select_stmt = f"SELECT {', '.join(cols)} FROM association_table WHERE username=?"
-    cur.execute(select_stmt, (user,))
-    # initialize AssociationFormatter object
-    formatter = fmt.AssociationFormatter(cur, user)
+    if job_usage:
+        # only return a breakdown of the association's job usage factors that make up
+        # their historical usage
+        cur.execute("SELECT * FROM job_usage_factor_table WHERE username=?", (user,))
+        formatter = fmt.AccountingFormatter(cur)
+    else:
+        sql.validate_columns(cols, fluxacct.accounting.ASSOCIATION_TABLE)
+        # construct SELECT statement
+        select_stmt = (
+            f"SELECT {', '.join(cols)} FROM association_table WHERE username=?"
+        )
+        cur.execute(select_stmt, (user,))
+        # initialize AssociationFormatter object
+        formatter = fmt.AssociationFormatter(cur, user)
     if format_string != "":
         return formatter.as_format_string(format_string)
     if list_banks:

@@ -35,3 +35,11 @@ well as customizing which fields are returned.
 .. option:: -o/--format
 
     Specify output format using Python's string format syntax.
+
+.. option:: -j/--job-usage
+
+    List all of the past job usage factors that make up an association's
+    historical job usage value.
+
+    .. note::
+        This optional argument cannot be combined with ``--fields``.

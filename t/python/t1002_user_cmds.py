@@ -322,8 +322,38 @@ class TestAccountingCLI(unittest.TestCase):
         with self.assertRaises(ValueError) as err:
             u.edit_all_users(acct_conn, foo="bar")
 
-        print(str(err.exception))
         self.assertIn("unrecognized argument(s) passed: ['foo']", str(err.exception))
+
+    # set job_usage to True to get breakdown of job usage
+    def test_20_view_user_job_usage_no_usage(self):
+        result = u.view_user(acct_conn, user="test_user5", job_usage=True)
+
+        self.assertIn("username", result)
+        self.assertIn("bank", result)
+        self.assertIn("last_job_timestamp", result)
+        self.assertIn("usage_factor_period_0", result)
+        self.assertIn("usage_factor_period_1", result)
+        self.assertIn("usage_factor_period_2", result)
+        self.assertIn("usage_factor_period_3", result)
+        self.assertIn("test_user5", result)
+        self.assertIn("A", result)
+        self.assertIn("0.0", result)
+
+    # edit the job usage columns and make suer they are populated in result
+    def test_21_view_user_job_usage_usage(self):
+        cur = acct_conn.cursor()
+        cur.execute(
+            "UPDATE job_usage_factor_table SET usage_factor_period_0=1.23 "
+            "WHERE username='test_user5'"
+        )
+        cur.execute(
+            "UPDATE job_usage_factor_table SET usage_factor_period_1=4.56 "
+            "WHERE username='test_user5'"
+        )
+        acct_conn.commit()
+        result = u.view_user(acct_conn, user="test_user5", job_usage=True)
+        self.assertIn("1.23", result)
+        self.assertIn("4.56", result)
 
     # remove database and log file
     @classmethod

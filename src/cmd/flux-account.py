@@ -49,17 +49,6 @@ def add_view_user_arg(subparsers):
         metavar="PARSABLE",
     )
     subparser_view_user.add_argument(
-        "--fields",
-        type=str,
-        help="list of fields to include in JSON output",
-        default=None,
-        metavar=(
-            "CREATION_TIME,MOD_TIME,ACTIVE,USERNAME,USERID,BANK,DEFAULT_BANK,"
-            "SHARES,JOB_USAGE,FAIRSHARE,MAX_RUNNING_JOBS,MAX_ACTIVE_JOBS,MAX_NODES,"
-            "MAX_CORES,QUEUES,PROJECTS,DEFAULT_PROJECT"
-        ),
-    )
-    subparser_view_user.add_argument(
         "--list-banks",
         action="store_const",
         const=True,
@@ -73,6 +62,25 @@ def add_view_user_arg(subparsers):
         default="",
         help="Specify output format using Python's string format syntax.",
         metavar="FORMAT",
+    )
+    group = subparser_view_user.add_mutually_exclusive_group()
+    group.add_argument(
+        "--fields",
+        type=str,
+        help="list of fields to include in JSON output",
+        default=None,
+        metavar=(
+            "CREATION_TIME,MOD_TIME,ACTIVE,USERNAME,USERID,BANK,DEFAULT_BANK,"
+            "SHARES,JOB_USAGE,FAIRSHARE,MAX_RUNNING_JOBS,MAX_ACTIVE_JOBS,MAX_NODES,"
+            "MAX_CORES,QUEUES,PROJECTS,DEFAULT_PROJECT"
+        ),
+    )
+    group.add_argument(
+        "-J",
+        "--job-usage",
+        action="store_const",
+        const=True,
+        help="display breakdown of an association's historical job usage",
     )
 
 
