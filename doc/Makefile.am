@@ -92,7 +92,7 @@ EXTRA_DIST = \
 	requirements.txt \
 	guide/accounting-guide.rst \
 	guide/sanity-checklist.rst \
-	guide/images/lgplv3-147x51.png \
+	images/lgplv3-147x51.png \
 	components/database-administration.rst \
 	components/fair-share.rst \
 	components/job-usage-calculation.rst \
