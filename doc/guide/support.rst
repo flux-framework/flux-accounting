@@ -4,7 +4,7 @@ License and Support
 License
 -------
 
-.. figure:: images/lgplv3-147x51.png
+.. figure:: ../images/lgplv3-147x51.png
    :alt: LGPL-3.0 logo
    :align: right
 
