@@ -1,3 +1,11 @@
+flux-accounting version 0.49.0 - 2025-08-04
+-------------------------------------------
+
+#### Fixes
+
+* plugin: reject jobs that exceed an association's or queue's max resources
+limits (#710)
+
 flux-accounting version 0.48.0 - 2025-08-01
 -------------------------------------------
 
