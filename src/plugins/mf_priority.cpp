@@ -882,18 +882,22 @@ static int validate_cb (flux_plugin_t *p,
     double fairshare = 0.0;
     bool only_dne_data;
     Association *a;
+    json_t *jobspec = NULL;
+    Job job;
+    std::string queue_str;
 
     // unpack the attributes of the user/bank's submitted job when it
     // enters job.validate and place them into their respective variables
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s:i, s{s{s{s?s, s?s, s?s}}}}",
+                                "{s:i, s:i, s{s{s{s?s, s?s, s?s}}}, s:o}",
                                 "userid", &userid,
                                 "state", &state,
                                 "jobspec", "attributes", "system",
                                 "bank", &bank, "queue", &queue,
-                                "project", &project) < 0) {
+                                "project", &project,
+                                "jobspec", &jobspec) < 0) {
         return flux_jobtap_reject_job (p, args, "unable to unpack bank arg");
     }
 
@@ -948,6 +952,53 @@ static int validate_cb (flux_plugin_t *p,
             return flux_jobtap_reject_job (p,
                                            args,
                                            "user has max active jobs");
+    }
+
+    if (jobspec == NULL) {
+        flux_jobtap_reject_job (p,
+                                args,
+                                "failed to unpack jobspec");
+    } else {
+        // if a queue was not unpacked, just set it to ""
+        queue_str = queue ? queue : "";
+        // count resources requested for the job
+        if (job.count_resources (jobspec) < 0) {
+            return flux_jobtap_reject_job (p,
+                                           args,
+                                           "unable to count resources for "
+                                           "job");
+        }
+        // look up queue in queues map to see if it has a defined
+        // max_nodes_per_association limit
+        auto it = queues.find(queue_str);
+        if (it != queues.end ()) {
+            int queue_max_nodes = queues[queue_str].max_nodes_per_assoc;
+            if (job.nnodes > queue_max_nodes) {
+            // the job size is greater than the max nodes per-association limit
+            // configured for this queue; reject the job
+            return flux_jobtap_reject_job (p,
+                                           args,
+                                           "job size (%i node(s)) is greater "
+                                           "than max resources limit "
+                                           "configured for queue (%i node(s))",
+                                           job.nnodes,
+                                           queue_max_nodes);
+            }
+        }
+        if ((job.nnodes > a->max_nodes) || (job.ncores > a->max_cores)) {
+            // the job size is greater than the max resources limits (max nodes
+            // OR max cores) configured for this association; reject the job
+            return flux_jobtap_reject_job (p,
+                                           args,
+                                           "job size (%i node(s), %i core(s)) "
+                                           "is greater than max resources "
+                                           "limits configured for association "
+                                           "(%i node(s), %i core(s))",
+                                           job.nnodes,
+                                           job.ncores,
+                                           a->max_nodes,
+                                           a->max_cores);
+        }
     }
 
     return 0;
