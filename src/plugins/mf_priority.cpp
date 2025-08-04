@@ -1128,10 +1128,6 @@ static int depend_cb (flux_plugin_t *p,
                                          "resources for job");
             return -1;
         }
-        if (job.ncores > 0 && job.nnodes == 0)
-            // the job specified cores but no nodes, so we need to set
-            // nnodes == 1 here
-            job.nnodes = 1;
         // look up the association's current number of running jobs in this
         // queue; if it cannot be found in the map, an entry in the Association
         // object will be initialized with a current running jobs count of 0
