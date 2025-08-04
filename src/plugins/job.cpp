@@ -18,6 +18,11 @@ int Job::count_resources (json_t *jobspec)
         
     nnodes = counts.nnodes;
     ncores = counts.nslots * counts.slot_size;
+    if (ncores > 0 && nnodes == 0) {
+        // the job specified cores but no nodes, so we need to set nnodes == 1
+        // here
+        nnodes = 1;
+    }
     return 0;
 }
 
