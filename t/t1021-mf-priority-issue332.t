@@ -86,7 +86,7 @@ test_expect_success 're-send flux-accounting DB information to the plugin' '
 
 test_expect_success 'submitting a job while specifying a queue they no longer have access to should be rejected' '
 	test_must_fail flux python ${SUBMIT_AS} 5001 -n1 --queue=bronze hostname > no_queue_access.out 2>&1 &&
-	grep "Queue not valid for user: bronze" no_queue_access.out
+	grep "queue \"bronze\" not valid for user; valid queues for user:" no_queue_access.out
 '
 
 test_expect_success 're-add the available queues to the user' '
@@ -128,7 +128,7 @@ test_expect_success 're-send flux-accounting DB information to the plugin' '
 
 test_expect_success 'submitting a job specifying a queue should now trigger queue validation' '
 	test_must_fail flux python ${SUBMIT_AS} 5001 -n1 --queue=bronze hostname > no_queue_access2.out 2>&1 &&
-	grep "Queue not valid for user: bronze" no_queue_access2.out
+	grep "queue \"bronze\" not valid for user; valid queues for user:" no_queue_access2.out
 '
 
 test_expect_success 'submitting a job to a nonexistent queue should be rejected' '

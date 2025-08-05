@@ -106,14 +106,18 @@ test_expect_success 'submit a job under a project that does not exist' '
 	test_must_fail flux python ${SUBMIT_AS} 5003 --setattr=system.project=projectFOO \
 		hostname > project_dne.out 2>&1 &&
 	test_debug "cat project_dne.out" &&
-	grep "project not valid for user: projectFOO" project_dne.out
+	grep \
+		"project \"projectFOO\" not valid for user;
+		 valid projects for user: projectA,projectB,*" project_dne.out
 '
 
 test_expect_success 'submit a job under a project that user does not belong to' '
 	test_must_fail flux python ${SUBMIT_AS} 5003 --setattr=system.project=projectC \
 		hostname > project_invalid.out 2>&1 &&
 	test_debug "cat project_invalid.out" &&
-	grep "project not valid for user: projectC" project_invalid.out
+	grep \
+		"project \"projectC\" not valid for user;
+		 valid projects for user: projectA,projectB,*" project_invalid.out
 '
 
 test_expect_success 'successfully submit a job under a default project' '

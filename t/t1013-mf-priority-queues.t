@@ -102,7 +102,10 @@ test_expect_success 'submit a job using a queue the user does not belong to' '
 	test_must_fail flux python ${SUBMIT_AS} 5011 --setattr=system.bank=account2 \
 		--queue=expedite -n1 hostname > unavail_queue.out 2>&1 &&
 	test_debug "unavail_queue.out" &&
-	grep "Queue not valid for user: expedite" unavail_queue.out
+	cat unavail_queue.out &&
+	grep \
+		"queue \"expedite\" not valid for user;
+		 available queues for user: standby" unavail_queue.out
 '
 
 test_expect_success 'submit a job using standby queue, which should not increase job priority' '
