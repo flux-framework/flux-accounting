@@ -1001,8 +1001,7 @@ static int validate_cb (flux_plugin_t *p,
         }
         // look up queue in queues map to see if it has a defined
         // max_nodes_per_association limit
-        auto it = queues.find(queue_str);
-        if (it != queues.end ()) {
+        if (queues.find (queue_str) != queues.end ()) {
             int queue_max_nodes = queues[queue_str].max_nodes_per_assoc;
             if (job.nnodes > queue_max_nodes) {
                 // the job size is greater than the max nodes per-association limit
