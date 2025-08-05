@@ -53,6 +53,18 @@ extern "C" {
 #define D_ASSOC_MRES "max-resources-user-limit"
 #define D_QUEUE_MRES "max-resources-queue"
 
+// error messages for flux-accounting-specific validation messages
+#define MSG_INVALID_QUEUE \
+  "queue \"%s\" not valid for user; valid queues for user: %s"
+#define MSG_INVALID_PROJECT \
+  "project \"%s\" not valid for user; valid projects for user: %s"
+#define MSG_QUEUE_MRES \
+  "job size (%i node(s)) is greater than max resources limit configured for " \
+  "queue (%i node(s))"
+#define MSG_ASSOC_MRES \
+  "job size (%i node(s), %i core(s)) is greater than max resources limits " \
+  "configured for association (%i node(s), %i core(s))"
+
 // min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
 // currently used or enforced in this plugin, so their values have no
 // effect in queue limit enforcement.
