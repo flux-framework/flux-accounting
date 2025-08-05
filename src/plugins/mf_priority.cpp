@@ -369,6 +369,25 @@ error:
 }
 
 
+/*
+ * Take a vector of strings and join them into just one string with a custom
+ * delimiter.
+ */
+std::string join_strings (const std::vector<std::string> &vec,
+                          const std::string &delimiter)
+{
+    std::string result;
+    bool first = true;
+    for (const std::string &s : vec) {
+        if (!first)
+            result += delimiter;
+        result += s;
+        first = false;
+    }
+    return result;
+}
+
+
 /******************************************************************************
  *                                                                            *
  *                               Callbacks                                    *
