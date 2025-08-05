@@ -918,7 +918,8 @@ static int validate_cb (flux_plugin_t *p,
                                            args,
                                            "cannot find user/bank or "
                                            "user/default bank entry "
-                                           "for uid: %i", userid);
+                                           "for uid: %i",
+                                           userid);
         }
     }
 
