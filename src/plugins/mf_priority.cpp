@@ -369,6 +369,25 @@ error:
 }
 
 
+/*
+ * Take a vector of strings and join them into just one string with a custom
+ * delimiter.
+ */
+std::string join_strings (const std::vector<std::string> &vec,
+                          const std::string &delimiter)
+{
+    std::string result;
+    bool first = true;
+    for (const std::string &s : vec) {
+        if (!first)
+            result += delimiter;
+        result += s;
+        first = false;
+    }
+    return result;
+}
+
+
 /******************************************************************************
  *                                                                            *
  *                               Callbacks                                    *
@@ -918,7 +937,8 @@ static int validate_cb (flux_plugin_t *p,
                                            args,
                                            "cannot find user/bank or "
                                            "user/default bank entry "
-                                           "for uid: %i", userid);
+                                           "for uid: %i",
+                                           userid);
         }
     }
 
@@ -927,19 +947,30 @@ static int validate_cb (flux_plugin_t *p,
         return flux_jobtap_reject_job (p, args, "user/bank entry has been "
                                        "disabled from flux-accounting DB");
 
-    if (get_queue_info (queue, a->queues, queues) == INVALID_QUEUE)
-        // the user/bank specified a queue that they do not belong to;
-        // reject the job
-        return flux_jobtap_reject_job (p, args, "Queue not valid for user: %s",
-                                       queue);
+    if (get_queue_info (queue, a->queues, queues) == INVALID_QUEUE) {
+        // the association specified a queue that they do not belong to; reject
+        // the job and return which queues they belong to
+        std::string valid_queues = join_strings (a->queues, ",");
+        return flux_jobtap_reject_job (p,
+                                       args,
+                                       MSG_INVALID_QUEUE,
+                                       queue,
+                                       valid_queues.c_str ());
+    }
 
     if (project != NULL) {
         // a project was specified on job submission; validate it
-        if (get_project_info (project, a->projects, projects) < 0)
+        if (get_project_info (project, a->projects, projects) < 0) {
             // the association specified a project that they do not belong to
             // or that flux-accounting does not know about; reject the job
-            return flux_jobtap_reject_job (p, args, "project not valid for "
-                                           "user: %s", project);
+            // and return which projects they belong to
+            std::string valid_projects = join_strings (a->projects, ",");
+            return flux_jobtap_reject_job (p,
+                                           args,
+                                           MSG_INVALID_PROJECT,
+                                           project,
+                                           valid_projects.c_str ());
+        }
     }
 
     cur_active_jobs = a->cur_active_jobs;
@@ -970,19 +1001,16 @@ static int validate_cb (flux_plugin_t *p,
         }
         // look up queue in queues map to see if it has a defined
         // max_nodes_per_association limit
-        auto it = queues.find(queue_str);
-        if (it != queues.end ()) {
+        if (queues.find (queue_str) != queues.end ()) {
             int queue_max_nodes = queues[queue_str].max_nodes_per_assoc;
             if (job.nnodes > queue_max_nodes) {
-            // the job size is greater than the max nodes per-association limit
-            // configured for this queue; reject the job
-            return flux_jobtap_reject_job (p,
-                                           args,
-                                           "job size (%i node(s)) is greater "
-                                           "than max resources limit "
-                                           "configured for queue (%i node(s))",
-                                           job.nnodes,
-                                           queue_max_nodes);
+                // the job size is greater than the max nodes per-association limit
+                // configured for this queue; reject the job
+                return flux_jobtap_reject_job (p,
+                                               args,
+                                               MSG_QUEUE_MRES,
+                                               job.nnodes,
+                                               queue_max_nodes);
             }
         }
         if ((job.nnodes > a->max_nodes) || (job.ncores > a->max_cores)) {
@@ -990,10 +1018,7 @@ static int validate_cb (flux_plugin_t *p,
             // OR max cores) configured for this association; reject the job
             return flux_jobtap_reject_job (p,
                                            args,
-                                           "job size (%i node(s), %i core(s)) "
-                                           "is greater than max resources "
-                                           "limits configured for association "
-                                           "(%i node(s), %i core(s))",
+                                           MSG_ASSOC_MRES,
                                            job.nnodes,
                                            job.ncores,
                                            a->max_nodes,
