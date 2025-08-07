@@ -66,6 +66,8 @@ class JobRecord:
         resources,
         project,
         bank,
+        requested_duration,
+        actual_duration,
     ):
         self.userid = userid
         self.username = get_username(userid)
@@ -77,6 +79,8 @@ class JobRecord:
         self.resources = resources
         self.project = project
         self.bank = bank
+        self.requested_duration = requested_duration
+        self.actual_duration = actual_duration
 
     @property
     def elapsed(self):
@@ -97,7 +101,7 @@ def convert_to_str(job_records, fmt_string=None):
         fmt_string = (
             "{jobid:<15} | {username:<8} | {userid:<8} | {t_submit:<15.2f} | "
             + "{t_run:<15.2f} | {t_inactive:<15.2f} | {nnodes:<8} | {project:<8} | "
-            + "{bank:<8}"
+            + "{bank:<8} | {requested_duration:<18.2f} | {actual_duration:<15.2f}"
         )
     output = fmt.JobsFormatter(fmt_string)
     job_record_str = output.build_table(job_records)
@@ -131,6 +135,8 @@ def convert_to_obj(rows):
             resources=row[6],
             project=row[8] if row[8] is not None else "",
             bank=row[9] if row[9] is not None else "",
+            requested_duration=row[10],
+            actual_duration=row[11],
         )
         job_records.append(job_record)
 
@@ -216,7 +222,10 @@ def get_jobs(conn, **kwargs):
         if val is not None and key in valid_params
     }
 
-    select_stmt = "SELECT userid,id,t_submit,t_run,t_inactive,ranks,R,jobspec,project,bank FROM jobs"
+    select_stmt = (
+        "SELECT userid,id,t_submit,t_run,t_inactive,ranks,R,jobspec,project,bank,"
+        "requested_duration,actual_duration FROM jobs"
+    )
     where_clauses = []
     params_list = []
 
