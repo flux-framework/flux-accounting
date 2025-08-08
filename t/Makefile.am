@@ -66,6 +66,7 @@ TESTSCRIPTS = \
 	t1061-flux-account-edit-all-users.t \
 	t1062-mf-priority-queue-resource-limits.t \
 	t1063-issue709.t \
+	t1064-store-job-duration.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
