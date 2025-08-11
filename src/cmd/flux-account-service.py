@@ -366,7 +366,6 @@ class AccountingService:
         try:
             val = j.view_jobs(
                 self.conn,
-                msg.payload.get("output_file"),
                 msg.payload.get("format"),
                 jobid=msg.payload.get("jobid"),
                 user=msg.payload.get("user"),

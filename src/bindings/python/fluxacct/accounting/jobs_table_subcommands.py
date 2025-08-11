@@ -10,7 +10,6 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import pwd
-import csv
 import json
 
 from flux.resource import ResourceSet
@@ -86,42 +85,6 @@ class JobRecord:
     @property
     def queued(self):
         return self.t_run - self.t_submit
-
-
-def write_records_to_file(job_records, output_file):
-    with open(output_file, "w", newline="") as csvfile:
-        spamwriter = csv.writer(
-            csvfile, delimiter="|", escapechar="'", quoting=csv.QUOTE_NONE
-        )
-        spamwriter.writerow(
-            (
-                "UserID",
-                "Username",
-                "JobID",
-                "T_Submit",
-                "T_Run",
-                "T_Inactive",
-                "Nodes",
-                "R",
-                "Project",
-                "Bank",
-            )
-        )
-        for record in job_records:
-            spamwriter.writerow(
-                (
-                    str(record.userid),
-                    str(record.username),
-                    str(record.jobid),
-                    str(record.t_submit),
-                    str(record.t_run),
-                    str(record.t_inactive),
-                    str(record.nnodes),
-                    str(record.resources),
-                    str(record.project),
-                    str(record.bank),
-                )
-            )
 
 
 def convert_to_str(job_records, fmt_string=None):
@@ -289,15 +252,10 @@ def get_jobs(conn, **kwargs):
     return job_records
 
 
-def view_jobs(conn, output_file, fields, **kwargs):
+def view_jobs(conn, fields, **kwargs):
     # look up jobs in jobs table
     job_records = convert_to_obj(get_jobs(conn, **kwargs))
     # convert query result to a readable string
     job_records_str = convert_to_str(job_records, fields)
-
-    if output_file is None:
-        return job_records_str
-
-    write_records_to_file(job_records, output_file)
 
     return job_records_str

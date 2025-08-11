@@ -103,10 +103,6 @@ test_expect_success 'run fetch-job-records script' '
 	flux account-fetch-job-records -p ${DB_PATH}
 '
 
-test_expect_success 'view job records for a user and direct it to a file' '
-	flux account -p ${DB_PATH} --output-file $(pwd)/test.txt view-job-records --user $username
-'
-
 test_expect_success 'run update-usage and update-fshare commands' '
 	flux account-update-usage -p ${DB_PATH} &&
 	flux account-update-fshare -p ${DB_PATH}

@@ -24,15 +24,6 @@ def add_path_arg(parser):
     )
 
 
-def add_output_file_arg(parser):
-    parser.add_argument(
-        "-o",
-        "--output-file",
-        dest="output_file",
-        help="specify location of output file",
-    )
-
-
 def add_view_user_arg(subparsers):
     subparser_view_user = subparsers.add_parser(
         "view-user",
@@ -1176,7 +1167,6 @@ def add_show_usage_arg(subparsers):
 
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
-    add_output_file_arg(parser)
     add_view_user_arg(subparsers)
     add_list_users_arg(subparsers)
     add_add_user_arg(subparsers)
@@ -1217,14 +1207,7 @@ def set_db_location(args):
     return path
 
 
-def set_output_file(args):
-    # set path for output file
-    output_file = args.output_file if args.output_file else None
-
-    return output_file
-
-
-def select_accounting_function(args, output_file, parser):
+def select_accounting_function(args, parser):
     data = vars(args)
 
     # map each command to the corresponding accounting RPC call
@@ -1329,9 +1312,7 @@ def main():
             sys.exit(1)
         sys.exit(0)
 
-    output_file = set_output_file(args)
-
-    select_accounting_function(args, output_file, parser)
+    select_accounting_function(args, parser)
 
 
 if __name__ == "__main__":
