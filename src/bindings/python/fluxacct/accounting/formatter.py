@@ -11,43 +11,8 @@
 ###############################################################
 import json
 import string
-from typing import Any, Callable, List
 
 import flux.util
-
-
-class HierarchyFormatter:
-    """
-    Generic formatter for hierarchical data.
-
-    Args:
-        root_item: The root element of the hierarchy.
-        fetch_children: A callable that takes an item and returns its children.
-        render_item: A callable that takes an item and current indent string, and returns a formatted string.
-    """
-
-    def __init__(
-        self,
-        root_item: Any,
-        fetch_children: Callable[[Any], List[Any]],
-        render_item: Callable[[Any, str], str],
-    ) -> None:
-        self.root_item = root_item
-        self.fetch_children = fetch_children
-        self.render_item = render_item
-
-    def format(self) -> str:
-        lines: List[str] = []
-
-        def _recurse(item: Any, indent: str) -> None:
-            # render current node
-            lines.append(self.render_item(item, indent))
-            # recurse into children
-            for child in self.fetch_children(item):
-                _recurse(child, indent + "  ")
-
-        _recurse(self.root_item, "")
-        return "\n".join(lines)
 
 
 class AccountingFormatter:
