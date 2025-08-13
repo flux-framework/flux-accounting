@@ -373,6 +373,7 @@ class AccountingService:
                 after_start_time=msg.payload.get("after_start_time"),
                 project=msg.payload.get("project"),
                 bank=msg.payload.get("bank"),
+                requested_duration=msg.payload.get("requested_duration"),
             )
 
             payload = {"view_job_records": val}
