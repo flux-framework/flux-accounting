@@ -8,6 +8,7 @@ mkdir -p config
 
 MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
 SUBMIT_AS=${SHARNESS_TEST_SRCDIR}/scripts/submit_as.py
+UPDATE_DURATION=${SHARNESS_TEST_SRCDIR}/scripts/update_duration_column.py
 DB_PATH=$(pwd)/FluxAccountingTest.db
 
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
@@ -137,6 +138,46 @@ test_expect_success 'filter jobs with a duration greater than 3600 seconds' '
 test_expect_success 'filter jobs with multiple expressions' '
 	flux account view-job-records -d "> 1" "< 121" > filtered_jobs_multiple.out &&
 	test $(grep -c "A" filtered_jobs_multiple.out) -eq 2
+'
+
+test_expect_success 'submit some test jobs to populate jobs table' '
+	job1=$(flux python ${SUBMIT_AS} 50001 -S duration=3600 hostname) &&
+	job2=$(flux python ${SUBMIT_AS} 50001 -S duration=3600 hostname) &&
+	job3=$(flux python ${SUBMIT_AS} 50001 -S duration=3600 hostname) &&
+	flux job wait-event -vt 3 ${job1} alloc &&
+	flux job wait-event -vt 3 ${job2} alloc &&
+	flux job wait-event -vt 3 ${job3} alloc &&
+	flux cancel ${job1} &&
+	flux cancel ${job2} &&
+	flux cancel ${job3} &&
+	flux job wait-event -vt 3 ${job1} clean &&
+	flux job wait-event -vt 3 ${job2} clean &&
+	flux job wait-event -vt 3 ${job3} clean &&
+	flux account-fetch-job-records -p ${DB_PATH}
+'
+
+# Edit the actual duration of the jobs that ran just above for test purposes
+# without actually having to run those jobs for a certain duration.
+test_expect_success 'edit actual duration of test jobs' '
+	flux python ${UPDATE_DURATION} ${DB_PATH} ${job1} 120 &&
+	flux python ${UPDATE_DURATION} ${DB_PATH} ${job2} 1800 &&
+	flux python ${UPDATE_DURATION} ${DB_PATH} ${job3} 2400
+'
+
+test_expect_success 'filter job records with an actual duration greater than 100 seconds' '
+	flux account view-job-records -e "> 100" > filtered_jobs_gt100.out &&
+	test $(grep -c "A" filtered_jobs_gt100.out) -eq 3
+'
+
+test_expect_success 'filter job records with an actual duration greater than 1800 seconds' '
+	flux account view-job-records -e ">= 1800" > filtered_jobs_ge1800.out &&
+	test $(grep -c "A" filtered_jobs_ge1800.out) -eq 2
+'
+
+test_expect_success 'filter job records with both requested and actual duration' '
+	flux account view-job-records -d "= 3600" -e "> 1600" "< 2400" \
+		> filtered_jobs_both_durations.out &&
+	test $(grep -c "A" filtered_jobs_both_durations.out) -eq 1
 '
 
 test_expect_success 'shut down flux-accounting service' '
