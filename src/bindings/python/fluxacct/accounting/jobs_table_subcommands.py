@@ -232,6 +232,7 @@ def get_jobs(conn, **kwargs):
     - project
     - bank
     - requested duration
+    - actual duration
 
     The function will execute a SQL query and return a list of jobs. If no
     jobs are found, an empty list is returned.
@@ -245,6 +246,7 @@ def get_jobs(conn, **kwargs):
         "project",
         "bank",
         "requested_duration",
+        "actual_duration",
     }
     params = {
         key: val
@@ -285,6 +287,12 @@ def get_jobs(conn, **kwargs):
         expressions = validate_expressions(params["requested_duration"])
         for expression in expressions:
             where_clauses.append(f"requested_duration {expression[0]} ?")
+            params_list.append(expression[1])
+    if "actual_duration" in params:
+        # validate one or multiple expressions
+        expressions = validate_expressions(params["actual_duration"])
+        for expression in expressions:
+            where_clauses.append(f"actual_duration {expression[0]} ?")
             params_list.append(expression[1])
 
     if where_clauses:
