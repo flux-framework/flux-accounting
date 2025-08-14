@@ -28,6 +28,7 @@ sqlite3* data_writer_db_t::open_db (const std::string &path)
 {
     int rc;
     sqlite3 *DB = nullptr;
+    char *errmsg = nullptr;
 
     // open flux-accounting DB in read-write mode
     rc = sqlite3_open_v2 (path.c_str (), &DB, SQLITE_OPEN_READWRITE, NULL);
@@ -38,7 +39,67 @@ sqlite3* data_writer_db_t::open_db (const std::string &path)
         return nullptr;
     }
 
+    rc = sqlite3_busy_timeout (DB, 30000);
+    if (rc != SQLITE_OK) {
+        m_err_msg = std::string ("sqlite3_busy_timeout failed: ")
+                    + sqlite3_errmsg (DB);
+        goto error;
+    }
+
+    // decouple the readers and writer
+    rc = sqlite3_exec (DB,
+                       "PRAGMA journal_mode=WAL;",
+                       nullptr,
+                       nullptr,
+                       &errmsg);
+    if (rc != SQLITE_OK) {
+        m_err_msg = std::string("PRAGMA journal_mode=WAL failed: ")
+                    + (errmsg ? errmsg : sqlite3_errmsg (DB));
+        goto error;
+    }
+    sqlite3_free (errmsg);
+    errmsg = nullptr;
+
+    // reduce fsync cost while keeping durability reasonable for WAL
+    rc = sqlite3_exec (DB,
+                       "PRAGMA synchronous=NORMAL;",
+                       nullptr,
+                       nullptr,
+                       &errmsg);
+    if (rc != SQLITE_OK) {
+        m_err_msg = std::string ("PRAGMA synchronous=NORMAL failed: ")
+                    + (errmsg ? errmsg : sqlite3_errmsg (DB));
+        goto error;
+    }
+    sqlite3_free (errmsg);
+    errmsg = nullptr;
+
+    // keep temp objects in memory to avoid extra file churn
+    rc = sqlite3_exec (DB,
+                       "PRAGMA temp_store=MEMORY;",
+                       nullptr,
+                       nullptr,
+                       &errmsg);
+    if (rc != SQLITE_OK) {
+        m_err_msg = std::string("PRAGMA temp_store=MEMORY failed: ")
+                    + (errmsg ? errmsg : sqlite3_errmsg (DB));
+        goto error;
+    }
+    sqlite3_free (errmsg);
+    errmsg = nullptr;
+
     return DB;
+error:
+    if (errmsg) {
+        sqlite3_free (errmsg);
+        errmsg = nullptr;
+    }
+    if (DB) {
+        sqlite3_close (DB);
+        DB = nullptr;
+    }
+    errno = EIO;
+    return nullptr;
 }
 
 
