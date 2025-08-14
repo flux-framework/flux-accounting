@@ -126,10 +126,12 @@ sqlite3_stmt* data_writer_db_t::bind_param (sqlite3 *DB,
                                             int index,
                                             const char *param)
 {
-    int rc;
-
     // bind parameter to compiled SQL statement
-    rc = sqlite3_bind_text (c_stmt, index, param, -1, NULL);
+    int rc = sqlite3_bind_text (c_stmt,
+                                index,
+                                param,
+                                -1,
+                                (sqlite3_destructor_type) SQLITE_TRANSIENT);
     if (rc != SQLITE_OK) {
         m_err_msg = std::string (sqlite3_errmsg (DB)) + "\n";
         errno = EINVAL;
