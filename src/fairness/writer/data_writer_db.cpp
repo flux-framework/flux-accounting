@@ -239,22 +239,41 @@ int data_writer_db_t::write_acct_info (
         return -1;
     }
 
-    ud = "UPDATE association_table SET fairshare=? WHERE username=? AND bank=?";
-
-    c_ud = compile_stmt (DB, ud);
-    if (c_ud == nullptr)
-        return -1;
-
-    rc = update_fairshare_values (DB, c_ud, node);
-
-    // destroy prepared statement
-    rc = sqlite3_finalize (c_ud);
+    // take the write lock upfront to fail fast if another writer is active
+    char *errmsg = nullptr;
+    rc = sqlite3_exec (DB, "BEGIN IMMEDIATE;", nullptr, nullptr, &errmsg);
     if (rc != SQLITE_OK) {
-        m_err_msg = "Failed to delete prepared statement";
-
+        m_err_msg = "BEGIN IMMEDIATE failed: "
+                    + std::string (sqlite3_errmsg(DB));
+        sqlite3_close (DB);
         return rc;
     }
 
+    ud = "UPDATE association_table SET fairshare=? WHERE username=? AND bank=?";
+
+    c_ud = compile_stmt (DB, ud);
+    if (c_ud == nullptr) {
+        sqlite3_exec (DB, "ROLLBACK;", nullptr, nullptr, nullptr);
+        sqlite3_close (DB);
+        return -1;
+    }
+
+    rc = update_fairshare_values (DB, c_ud, node);
+    int rc_finalize = sqlite3_finalize (c_ud);
+    if (rc_finalize != SQLITE_OK) {
+        m_err_msg = "Failed to delete prepared statement";
+        rc = (rc == SQLITE_OK || rc == SQLITE_DONE) ? rc_finalize : rc;
+    }
+
+    if (rc == SQLITE_OK || rc == SQLITE_DONE) {
+        if (sqlite3_exec (DB, "COMMIT;", nullptr, nullptr, nullptr)
+            != SQLITE_OK) {
+            m_err_msg = "COMMIT failed: " + std::string (sqlite3_errmsg (DB));
+            rc = SQLITE_ERROR;
+        }
+    } else {
+        sqlite3_exec (DB, "ROLLBACK;", nullptr, nullptr, nullptr);
+    }
     // close DB connection
     sqlite3_close (DB);
 
