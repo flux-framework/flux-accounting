@@ -49,6 +49,20 @@ job records.
 
     Return jobs that were run under a certain bank.
 
+.. option:: -d/--requested-duration
+
+    Return jobs that fit a certain requested duration's criteria by passing an
+    expression. Multiple filters can be passed to refine the
+    ``requested_duration`` column by. Expressions can be started with any of
+    the following operators: ``<``, ``<=``, ``=``, ``>=``, or ``>``.
+
+.. option:: -e/--actual-duration
+
+    Return jobs that fit a certain actual duration's criteria by passing an
+    expression Multiple filters can be passed to refine the ``actual_duration``
+    column by. Expressions can be started with any of the following operators:
+    ``<``, ``<=``, ``=``, ``>=``, or ``>``.
+
 .. option:: -o/--format
 
     Specify output format using Python's string format syntax. The available
@@ -86,6 +100,29 @@ And customized using Python's string format syntax:
   5001     || 1750178788.238
   5001     || 1750178788.147
   5001     || 1750178789.810
+
+To filter the ``jobs`` table by duration values, you can pass an expression:
+
+.. code-block:: console
+
+  $ flux account view-job-records -d "< 60"
+
+The above will filter job records with a requested duration *less than* 60
+seconds long.
+
+Multiple expressions can be passed to further filter the ``requested_duration``
+column:
+
+.. code-block:: console
+
+  $ flux account view-job-records -d "> 60" "< 1200"
+
+Both requested duration *and* actual duration can be passed to search for 
+certain jobs:
+
+.. code-block:: console
+
+  $ flux account view-job-records -d "< 60" -e "> 30" "< 45"
 
 .. _Flux locally unique ID: https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_19.html
 

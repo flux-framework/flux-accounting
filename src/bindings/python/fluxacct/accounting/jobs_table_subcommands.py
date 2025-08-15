@@ -192,6 +192,31 @@ def filter_jobs_by_association(conn, bank, default_bank, **kwargs):
     return convert_to_obj(jobs)
 
 
+def validate_expressions(expressions):
+    """
+    Validate a list of passed-in expressions, such as "< 60", "> 120",
+    or "= 90".
+
+    Args:
+        expressions: A list of expressions.
+    """
+    valid_expressions = []
+    for expression in expressions:
+        if not expression.startswith(("<", "<=", "=", ">=", ">")):
+            raise ValueError("expression must start with <, <=, =, >=, or >")
+        # split expression on spaces
+        expression = expression.split(" ")
+        if len(expression) != 2:
+            raise ValueError("expression expects one operator and one value")
+        try:
+            float(expression[1])
+        except ValueError:
+            raise ValueError("expression expects to be compared with a number")
+        valid_expressions.append(expression)
+
+    return valid_expressions
+
+
 def get_jobs(conn, **kwargs):
     """
     A function to return jobs from the jobs table in the flux-accounting
@@ -203,6 +228,8 @@ def get_jobs(conn, **kwargs):
     - jobid
     - project
     - bank
+    - requested duration
+    - actual duration
 
     The function will execute a SQL query and return a list of jobs. If no
     jobs are found, an empty list is returned.
@@ -215,6 +242,8 @@ def get_jobs(conn, **kwargs):
         "jobid",
         "project",
         "bank",
+        "requested_duration",
+        "actual_duration",
     }
     params = {
         key: val
@@ -250,6 +279,16 @@ def get_jobs(conn, **kwargs):
     if "bank" in params:
         where_clauses.append("bank = ?")
         params_list.append(params["bank"])
+    if "requested_duration" in params:
+        # validate one or multiple expressions
+        expressions = validate_expressions(params["requested_duration"])
+        for expression in expressions:
+            where_clauses.append(f"requested_duration {expression[0]} {expression[1]}")
+    if "actual_duration" in params:
+        # validate one or multiple expressions
+        expressions = validate_expressions(params["actual_duration"])
+        for expression in expressions:
+            where_clauses.append(f"actual_duration {expression[0]} {expression[1]}")
 
     if where_clauses:
         select_stmt += " WHERE " + " AND ".join(where_clauses)
