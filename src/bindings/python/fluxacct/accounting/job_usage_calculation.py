@@ -236,7 +236,7 @@ def check_end_hl(acct_conn, pdhl):
         acct_conn.execute(update_timestamp_stmt, ((float(end_hl) + hl_period),))
 
 
-def calc_bank_usage(acct_conn, cur, bank):
+def calc_bank_usage(cur, bank):
     # fetch the job_usage value for every user under the passed-in bank
     s_associations = "SELECT job_usage FROM association_table WHERE bank=?"
     cur.execute(s_associations, (bank,))
@@ -270,7 +270,7 @@ def calc_parent_bank_usage(acct_conn, cur, bank):
     if len(sub_banks) == 0:
         # we've reached a bank with no sub banks, so take the usage from that bank
         # and add it to the total usage for the parent bank
-        total_usage = calc_bank_usage(acct_conn, cur, bank)
+        total_usage = calc_bank_usage(cur, bank)
     else:
         # for each sub bank, keep traversing to find the usage for
         # each bank with users in it
