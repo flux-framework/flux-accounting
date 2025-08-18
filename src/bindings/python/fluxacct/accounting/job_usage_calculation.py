@@ -12,6 +12,7 @@
 import time
 import math
 import logging
+import sqlite3
 
 from fluxacct.accounting import jobs_table_subcommands as j
 
@@ -140,25 +141,9 @@ def apply_decay_factor(decay, acct_conn, user=None, bank=None):
     return sum(usg_past_decay[:-1])
 
 
-def get_curr_usg_bin(acct_conn, user, bank):
-    """Fetch the current job usage factor value for a given association."""
-    s_usg = """
-        SELECT usage_factor_period_0 FROM job_usage_factor_table
-        WHERE username=? AND bank=?
-        """
-    cur = acct_conn.cursor()
-    cur.execute(
-        s_usg,
-        (
-            user,
-            bank,
-        ),
-    )
-    row = cur.fetchone()
-    return float(row[0])
-
-
-def calc_usage_factor(conn, pdhl, user, bank, default_bank, end_hl, last_j_ts):
+def calc_usage_factor(
+    conn, pdhl, user, bank, default_bank, end_hl, last_j_ts, usage_period_0
+):
 
     # hl_period represents the number of seconds that represent one usage bin
     hl_period = pdhl * 604800
@@ -204,7 +189,7 @@ def calc_usage_factor(conn, pdhl, user, bank, default_bank, end_hl, last_j_ts):
         # found new jobs in the current half-life period; we need to 1) add the
         # new jobs to the current usage period, and 2) update the historical usage
         # period
-        usg_current += get_curr_usg_bin(conn, user, bank)
+        usg_current += usage_period_0
 
         # usage_user_past = sum of the older usage factors
         usg_past = fetch_usg_bins(conn, user, bank)
@@ -251,7 +236,7 @@ def check_end_hl(acct_conn, pdhl):
         acct_conn.execute(update_timestamp_stmt, ((float(end_hl) + hl_period),))
 
 
-def calc_bank_usage(acct_conn, cur, bank):
+def calc_bank_usage(cur, bank):
     # fetch the job_usage value for every user under the passed-in bank
     s_associations = "SELECT job_usage FROM association_table WHERE bank=?"
     cur.execute(s_associations, (bank,))
@@ -285,7 +270,7 @@ def calc_parent_bank_usage(acct_conn, cur, bank):
     if len(sub_banks) == 0:
         # we've reached a bank with no sub banks, so take the usage from that bank
         # and add it to the total usage for the parent bank
-        total_usage = calc_bank_usage(acct_conn, cur, bank)
+        total_usage = calc_bank_usage(cur, bank)
     else:
         # for each sub bank, keep traversing to find the usage for
         # each bank with users in it
@@ -305,7 +290,7 @@ def update_job_usage(acct_conn, pdhl=1):
         "beginning job-usage update for flux-accounting DB; "
         "slow response times may occur"
     )
-
+    acct_conn.row_factory = sqlite3.Row
     cur = acct_conn.cursor()
     # fetch timestamp of the end of the current half-life period
     s_end_hl = """
@@ -318,7 +303,8 @@ def update_job_usage(acct_conn, pdhl=1):
     # begin transaction for all of the updates in the DB
     acct_conn.execute("BEGIN TRANSACTION")
     s_assoc = """
-        SELECT a.username, a.bank, a.default_bank, j.last_job_timestamp
+        SELECT a.username, a.bank, a.default_bank, j.last_job_timestamp,
+        j.usage_factor_period_0
         FROM association_table a
         LEFT JOIN job_usage_factor_table j
         ON a.username = j.username AND a.bank = j.bank
@@ -331,11 +317,12 @@ def update_job_usage(acct_conn, pdhl=1):
         calc_usage_factor(
             conn=acct_conn,
             pdhl=pdhl,
-            user=row[0],
-            bank=row[1],
-            default_bank=row[2],
+            user=row["username"],
+            bank=row["bank"],
+            default_bank=row["default_bank"],
             end_hl=end_hl,
-            last_j_ts=row[3],
+            last_j_ts=row["last_job_timestamp"],
+            usage_period_0=row["usage_factor_period_0"],
         )
 
     # find the root bank in the flux-accounting database
