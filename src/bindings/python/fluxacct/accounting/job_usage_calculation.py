@@ -141,25 +141,9 @@ def apply_decay_factor(decay, acct_conn, user=None, bank=None):
     return sum(usg_past_decay[:-1])
 
 
-def get_curr_usg_bin(acct_conn, user, bank):
-    """Fetch the current job usage factor value for a given association."""
-    s_usg = """
-        SELECT usage_factor_period_0 FROM job_usage_factor_table
-        WHERE username=? AND bank=?
-        """
-    cur = acct_conn.cursor()
-    cur.execute(
-        s_usg,
-        (
-            user,
-            bank,
-        ),
-    )
-    row = cur.fetchone()
-    return float(row[0])
-
-
-def calc_usage_factor(conn, pdhl, user, bank, default_bank, end_hl, last_j_ts):
+def calc_usage_factor(
+    conn, pdhl, user, bank, default_bank, end_hl, last_j_ts, usage_period_0
+):
 
     # hl_period represents the number of seconds that represent one usage bin
     hl_period = pdhl * 604800
@@ -205,7 +189,7 @@ def calc_usage_factor(conn, pdhl, user, bank, default_bank, end_hl, last_j_ts):
         # found new jobs in the current half-life period; we need to 1) add the
         # new jobs to the current usage period, and 2) update the historical usage
         # period
-        usg_current += get_curr_usg_bin(conn, user, bank)
+        usg_current += usage_period_0
 
         # usage_user_past = sum of the older usage factors
         usg_past = fetch_usg_bins(conn, user, bank)
@@ -319,7 +303,8 @@ def update_job_usage(acct_conn, pdhl=1):
     # begin transaction for all of the updates in the DB
     acct_conn.execute("BEGIN TRANSACTION")
     s_assoc = """
-        SELECT a.username, a.bank, a.default_bank, j.last_job_timestamp
+        SELECT a.username, a.bank, a.default_bank, j.last_job_timestamp,
+        j.usage_factor_period_0
         FROM association_table a
         LEFT JOIN job_usage_factor_table j
         ON a.username = j.username AND a.bank = j.bank
@@ -337,6 +322,7 @@ def update_job_usage(acct_conn, pdhl=1):
             default_bank=row["default_bank"],
             end_hl=end_hl,
             last_j_ts=row["last_job_timestamp"],
+            usage_period_0=row["usage_factor_period_0"],
         )
 
     # find the root bank in the flux-accounting database
