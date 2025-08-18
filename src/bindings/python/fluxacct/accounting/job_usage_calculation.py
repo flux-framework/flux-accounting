@@ -12,6 +12,7 @@
 import time
 import math
 import logging
+import sqlite3
 
 from fluxacct.accounting import jobs_table_subcommands as j
 
@@ -305,7 +306,7 @@ def update_job_usage(acct_conn, pdhl=1):
         "beginning job-usage update for flux-accounting DB; "
         "slow response times may occur"
     )
-
+    acct_conn.row_factory = sqlite3.Row
     cur = acct_conn.cursor()
     # fetch timestamp of the end of the current half-life period
     s_end_hl = """
@@ -331,11 +332,11 @@ def update_job_usage(acct_conn, pdhl=1):
         calc_usage_factor(
             conn=acct_conn,
             pdhl=pdhl,
-            user=row[0],
-            bank=row[1],
-            default_bank=row[2],
+            user=row["username"],
+            bank=row["bank"],
+            default_bank=row["default_bank"],
             end_hl=end_hl,
-            last_j_ts=row[3],
+            last_j_ts=row["last_job_timestamp"],
         )
 
     # find the root bank in the flux-accounting database
