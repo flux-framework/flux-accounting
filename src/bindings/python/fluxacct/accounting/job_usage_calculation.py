@@ -371,3 +371,5 @@ def scrub_old_jobs(conn, num_weeks=26):
     select_stmt = "DELETE FROM jobs WHERE t_inactive < ?"
     cur.execute(select_stmt, (cutoff_time,))
     conn.commit()
+
+    return 0
