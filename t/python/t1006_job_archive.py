@@ -237,7 +237,7 @@ class TestAccountingCLI(unittest.TestCase):
             default_bank=bank,
             end_hl=9900000,
             last_j_ts=0,
-            usage_period_0=256,
+            usage_factors=[256, 64, 16, 8],
         )
         self.assertEqual(usage_factor, 17044.0)
 
@@ -265,7 +265,7 @@ class TestAccountingCLI(unittest.TestCase):
             default_bank=bank,
             end_hl=9900000,
             last_j_ts=0,
-            usage_period_0=4096,
+            usage_factors=[4096, 256, 32, 16],
         )
         self.assertEqual(usage_factor, 8500.0)
 
@@ -289,7 +289,7 @@ class TestAccountingCLI(unittest.TestCase):
             default_bank="D",
             end_hl=0,
             last_j_ts=0,
-            usage_period_0=result[0]["usage_factor_period_0"],
+            usage_factors=[result[0]["usage_factor_period_0"], 0.0, 0.0, 0.0],
         )
 
         cur.execute(s_ts)
@@ -353,8 +353,9 @@ class TestAccountingCLI(unittest.TestCase):
 
         # re-calculate usage factor for user1001
         cur.execute(
-            "SELECT last_job_timestamp,usage_factor_period_0 "
-            "FROM job_usage_factor_table WHERE username='1001' AND bank='C'"
+            "SELECT last_job_timestamp,usage_factor_period_0,usage_factor_period_1, "
+            "usage_factor_period_2,usage_factor_period_3 FROM job_usage_factor_table "
+            "WHERE username='1001' AND bank='C'"
         )
         result = cur.fetchall()
         ts = result[0]["last_job_timestamp"]
@@ -366,7 +367,12 @@ class TestAccountingCLI(unittest.TestCase):
             default_bank=bank,
             end_hl=0,
             last_j_ts=ts,
-            usage_period_0=result[0]["usage_factor_period_0"],
+            usage_factors=[
+                result[0]["usage_factor_period_0"],
+                result[0]["usage_factor_period_1"],
+                result[0]["usage_factor_period_2"],
+                result[0]["usage_factor_period_3"],
+            ],
         )
         self.assertEqual(usage_factor, 4366.0)
 
@@ -377,8 +383,9 @@ class TestAccountingCLI(unittest.TestCase):
         user = "1001"
         bank = "C"
         cur.execute(
-            "SELECT last_job_timestamp,usage_factor_period_0 "
-            "FROM job_usage_factor_table WHERE username='1001' AND bank='C'"
+            "SELECT last_job_timestamp,usage_factor_period_0,usage_factor_period_1, "
+            "usage_factor_period_2,usage_factor_period_3 FROM job_usage_factor_table "
+            "WHERE username='1001' AND bank='C'"
         )
         result = cur.fetchall()
         ts = result[0]["last_job_timestamp"]
@@ -391,7 +398,12 @@ class TestAccountingCLI(unittest.TestCase):
             default_bank=bank,
             end_hl=0,
             last_j_ts=ts,
-            usage_period_0=result[0]["usage_factor_period_0"],
+            usage_factors=[
+                result[0]["usage_factor_period_0"],
+                result[0]["usage_factor_period_1"],
+                result[0]["usage_factor_period_2"],
+                result[0]["usage_factor_period_3"],
+            ],
         )
 
         self.assertEqual(usage_factor, 3215.5)

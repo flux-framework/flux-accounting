@@ -41,27 +41,6 @@ def update_t_inactive(acct_conn, last_t_inactive, user, bank):
     )
 
 
-def fetch_usg_bins(acct_conn, user=None, bank=None):
-    past_usage_factors = []
-
-    select_stmt = "SELECT * from job_usage_factor_table WHERE username=? AND bank=?"
-    cur = acct_conn.cursor()
-    cur.execute(
-        select_stmt,
-        (
-            user,
-            bank,
-        ),
-    )
-    row = cur.fetchone()
-
-    for val in row[4:]:
-        if isinstance(val, float):
-            past_usage_factors.append(val)
-
-    return past_usage_factors
-
-
 def update_hist_usg_col(acct_conn, usg_h, user, bank):
     """Update the job_usage column for the association."""
     u_usg = """
@@ -95,7 +74,7 @@ def update_curr_usg_col(acct_conn, usg_h, user, bank):
     )
 
 
-def apply_decay_factor(decay, acct_conn, user=None, bank=None):
+def apply_decay_factor(decay, acct_conn, user, bank, usage_factors):
     """
     Apply a decay factor to an association's job usage period values. Since this helper
     issues a write to the flux-accounting DB and does not have a .commit() call after the
@@ -107,13 +86,10 @@ def apply_decay_factor(decay, acct_conn, user=None, bank=None):
         user: The username of the association.
         bank: The bank name of the association.
     """
-    usg_past = []
     usg_past_decay = []
 
-    usg_past = fetch_usg_bins(acct_conn, user, bank)
-
     # apply decay factor to past usage periods of a user's jobs
-    for power, usage_factor in enumerate(usg_past, start=1):
+    for power, usage_factor in enumerate(usage_factors, start=1):
         usg_past_decay.append(usage_factor * math.pow(decay, power))
 
     # update job_usage_factor_table with new values, starting with the second usage
@@ -142,7 +118,14 @@ def apply_decay_factor(decay, acct_conn, user=None, bank=None):
 
 
 def calc_usage_factor(
-    conn, pdhl, user, bank, default_bank, end_hl, last_j_ts, usage_period_0
+    conn,
+    pdhl,
+    user,
+    bank,
+    default_bank,
+    end_hl,
+    last_j_ts,
+    usage_factors,
 ):
 
     # hl_period represents the number of seconds that represent one usage bin
@@ -175,13 +158,11 @@ def calc_usage_factor(
     if len(user_jobs) == 0 and (float(end_hl) > (time.time() - hl_period)):
         # no new jobs in the current half-life period; the job usage for the
         # association stays exactly the same
-        usg_past = fetch_usg_bins(conn, user, bank)
-
-        usg_historical = sum(usg_past)
+        usg_historical = sum(usage_factors)
     elif len(user_jobs) == 0 and (float(end_hl) < (time.time() - hl_period)):
         # no new jobs in the new half-life period; previous job usage periods need
         # to have a half-life decay applied to them
-        usg_historical = apply_decay_factor(0.5, conn, user, bank)
+        usg_historical = apply_decay_factor(0.5, conn, user, bank, usage_factors)
 
         update_curr_usg_col(conn, usg_current, user, bank)
         update_hist_usg_col(conn, usg_historical, user, bank)
@@ -189,20 +170,15 @@ def calc_usage_factor(
         # found new jobs in the current half-life period; we need to 1) add the
         # new jobs to the current usage period, and 2) update the historical usage
         # period
-        usg_current += usage_period_0
-
-        # usage_user_past = sum of the older usage factors
-        usg_past = fetch_usg_bins(conn, user, bank)
-
-        usg_historical = usg_current + sum(usg_past[1:])
+        usg_current += usage_factors[0]
+        usg_historical = usg_current + sum(usage_factors[1:])
 
         update_curr_usg_col(conn, usg_current, user, bank)
         update_hist_usg_col(conn, usg_historical, user, bank)
     else:
         # found new jobs in the new half-life period
-
         # apply decay factor to past usage periods of a user's jobs
-        usg_past = apply_decay_factor(0.5, conn, user, bank)
+        usg_past = apply_decay_factor(0.5, conn, user, bank, usage_factors)
         usg_historical = usg_current + usg_past
 
         update_curr_usg_col(conn, usg_historical, user, bank)
@@ -303,8 +279,7 @@ def update_job_usage(acct_conn, pdhl=1):
     # begin transaction for all of the updates in the DB
     acct_conn.execute("BEGIN TRANSACTION")
     s_assoc = """
-        SELECT a.username, a.bank, a.default_bank, j.last_job_timestamp,
-        j.usage_factor_period_0
+        SELECT a.username, a.bank, a.default_bank, j.*
         FROM association_table a
         LEFT JOIN job_usage_factor_table j
         ON a.username = j.username AND a.bank = j.bank
@@ -314,6 +289,11 @@ def update_job_usage(acct_conn, pdhl=1):
 
     # update the job usage for every user in the association_table
     for row in result:
+        # add all of the job_usage_factor_period_* columns to dictionary
+        usage_factors = []
+        for key in row.keys():
+            if key.startswith("usage_factor_period_"):
+                usage_factors.append(row[key])
         calc_usage_factor(
             conn=acct_conn,
             pdhl=pdhl,
@@ -322,7 +302,7 @@ def update_job_usage(acct_conn, pdhl=1):
             default_bank=row["default_bank"],
             end_hl=end_hl,
             last_j_ts=row["last_job_timestamp"],
-            usage_period_0=row["usage_factor_period_0"],
+            usage_factors=usage_factors,
         )
 
     # find the root bank in the flux-accounting database
