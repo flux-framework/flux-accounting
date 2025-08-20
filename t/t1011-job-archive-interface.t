@@ -20,6 +20,13 @@ select_job_records() {
 		${QUERYCMD} -t 100 ${dbpath} "${query}"
 }
 
+# update job records with bank name
+update_job_records_with_bank_name() {
+		local dbpath=$1
+		query="UPDATE jobs SET bank='$2'"
+		${QUERYCMD} -t 100 ${dbpath} "${query}"
+}
+
 test_expect_success 'create flux-accounting DB' '
 	flux account -p $(pwd)/FluxAccountingTest.db create-db
 '
@@ -100,7 +107,8 @@ test_expect_success 'submit some sleep 1 jobs under one user' '
 '
 
 test_expect_success 'run fetch-job-records script' '
-	flux account-fetch-job-records -p ${DB_PATH}
+	flux account-fetch-job-records -p ${DB_PATH} &&
+	update_job_records_with_bank_name ${DB_PATH} account1
 '
 
 test_expect_success 'run update-usage and update-fshare commands' '
