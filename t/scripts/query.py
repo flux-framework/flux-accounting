@@ -28,7 +28,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     try:
-        dburi = "file:" + args.dbpath[0] + "?mode=ro"
+        dburi = "file:" + args.dbpath[0] + "?mode=rw"
         con = sqlite3.connect(dburi, uri=True)
     except sqlite3.Error as e:
         print(e)
@@ -42,6 +42,7 @@ if __name__ == "__main__":
 
     try:
         cursor.execute(args.query[0])
+        con.commit()
     except sqlite3.Error as e:
         print(e)
         sys.exit(1)
