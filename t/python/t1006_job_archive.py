@@ -14,6 +14,7 @@ import os
 import sqlite3
 import time
 import sys
+from collections import defaultdict
 
 from unittest import mock
 
@@ -30,6 +31,7 @@ class TestAccountingCLI(unittest.TestCase):
     def setUpClass(self):
         global acct_conn
         global cur
+        global user_jobs
 
         # create example job-archive database, output file
         c.create_db("FluxAccountingUsers.db")
@@ -105,9 +107,10 @@ class TestAccountingCLI(unittest.TestCase):
                             t_inactive,
                             ranks,
                             R,
-                            jobspec
+                            jobspec,
+                            bank
                         )
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         (
                             jobid,
@@ -118,6 +121,7 @@ class TestAccountingCLI(unittest.TestCase):
                             ranks,
                             R_input,
                             '{ "attributes": { "system": { "bank": "' + bank + '"} } }',
+                            bank,
                         ),
                     )
                     # commit changes
@@ -140,6 +144,13 @@ class TestAccountingCLI(unittest.TestCase):
 
         populate_job_archive_db(acct_conn, 1004, "D", "0-3", "fluke[0-3]", 4)
         populate_job_archive_db(acct_conn, 1004, "D", "0", "fluke[0]", 4)
+
+        job_records = j.convert_to_obj(j.get_jobs(acct_conn))
+        # convert jobs to dictionary to be referenced in unit tests below
+        user_jobs = defaultdict(list)
+        for job in job_records:
+            key = (job.userid, job.bank)
+            user_jobs[key].append(job)
 
     # passing a valid jobid should return
     # its job information
@@ -234,10 +245,9 @@ class TestAccountingCLI(unittest.TestCase):
             pdhl=1,
             user=user,
             bank=bank,
-            default_bank=bank,
             end_hl=9900000,
-            last_j_ts=0,
             usage_factors=[256, 64, 16, 8],
+            user_jobs=user_jobs[(1002, "C")],
         )
         self.assertEqual(usage_factor, 17044.0)
 
@@ -262,10 +272,9 @@ class TestAccountingCLI(unittest.TestCase):
             pdhl=1,
             user=user,
             bank=bank,
-            default_bank=bank,
             end_hl=9900000,
-            last_j_ts=0,
             usage_factors=[4096, 256, 32, 16],
+            user_jobs=user_jobs[(1001, "C")],
         )
         self.assertEqual(usage_factor, 8500.0)
 
@@ -286,10 +295,9 @@ class TestAccountingCLI(unittest.TestCase):
             pdhl=1,
             user="1003",
             bank="D",
-            default_bank="D",
             end_hl=0,
-            last_j_ts=0,
             usage_factors=[result[0]["usage_factor_period_0"], 0.0, 0.0, 0.0],
+            user_jobs=user_jobs[(1003, "D")],
         )
 
         cur.execute(s_ts)
@@ -330,9 +338,10 @@ class TestAccountingCLI(unittest.TestCase):
                     t_inactive,
                     ranks,
                     R,
-                    jobspec
+                    jobspec,
+                    bank
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     "200",
@@ -343,6 +352,7 @@ class TestAccountingCLI(unittest.TestCase):
                     "0",
                     '{"version":1,"execution": {"R_lite":[{"rank":"0","children": {"core": "0"}}]}}',
                     '{ "attributes": { "system": { "bank": "C"} } }',
+                    bank,
                 ),
             )
             # commit changes
@@ -350,6 +360,12 @@ class TestAccountingCLI(unittest.TestCase):
         # make sure entry is unique
         except sqlite3.IntegrityError as integrity_error:
             print(integrity_error)
+
+        # convert the above job record to a JobRecord object to be passed to
+        # calc_usage_factor()
+        job_records = j.convert_to_obj(
+            j.get_jobs(acct_conn, user="1001", bank="C", after_start_time=time.time())
+        )
 
         # re-calculate usage factor for user1001
         cur.execute(
@@ -364,15 +380,14 @@ class TestAccountingCLI(unittest.TestCase):
             pdhl=1,
             user=user,
             bank=bank,
-            default_bank=bank,
             end_hl=0,
-            last_j_ts=ts,
             usage_factors=[
                 result[0]["usage_factor_period_0"],
                 result[0]["usage_factor_period_1"],
                 result[0]["usage_factor_period_2"],
                 result[0]["usage_factor_period_3"],
             ],
+            user_jobs=job_records,
         )
         self.assertEqual(usage_factor, 4366.0)
 
@@ -395,15 +410,14 @@ class TestAccountingCLI(unittest.TestCase):
             pdhl=1,
             user=user,
             bank=bank,
-            default_bank=bank,
             end_hl=0,
-            last_j_ts=ts,
             usage_factors=[
                 result[0]["usage_factor_period_0"],
                 result[0]["usage_factor_period_1"],
                 result[0]["usage_factor_period_2"],
                 result[0]["usage_factor_period_3"],
             ],
+            user_jobs=[],
         )
 
         self.assertEqual(usage_factor, 3215.5)
