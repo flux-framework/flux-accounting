@@ -465,6 +465,26 @@ def add_view_job_records_arg(subparsers):
         metavar="BANK",
     )
     subparser_view_job_records.add_argument(
+        "-d",
+        "--requested-duration",
+        nargs="+",
+        help=(
+            "the requested duration for a job; multiple expressions can be passed as "
+            "filters, e.g. -d '< 60' '> 120'"
+        ),
+        metavar="[EXPRESSIONS]",
+    )
+    subparser_view_job_records.add_argument(
+        "-e",
+        "--actual-duration",
+        nargs="+",
+        help=(
+            "the actual duration for a job; multiple expressions can be passed as "
+            "filters, e.g. -d '< 60' '> 120'"
+        ),
+        metavar="[EXPRESSIONS]",
+    )
+    subparser_view_job_records.add_argument(
         "-o",
         "--format",
         type=str,
