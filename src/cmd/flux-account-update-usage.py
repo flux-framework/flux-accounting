@@ -51,6 +51,7 @@ def est_sqlite_conn(path):
     return conn
 
 
+# pylint: disable=broad-except
 def main():
     parser = argparse.ArgumentParser(
         description="""
@@ -74,7 +75,18 @@ def main():
     path = set_db_loc(args)
     conn = est_sqlite_conn(path)
 
-    job_usage.update_job_usage(conn, args.priority_decay_half_life)
+    try:
+        job_usage.update_job_usage(conn, args.priority_decay_half_life)
+    except sqlite3.OperationalError as exc:
+        LOGGER.exception(
+            "SQLite operational error during job-usage update; rolled back. "
+            "Error: %s",
+            exc,
+        )
+    except Exception as exc:
+        LOGGER.exception("Exception caught during job-usage update: %s", exc)
+
+    conn.close()
 
 
 if __name__ == "__main__":

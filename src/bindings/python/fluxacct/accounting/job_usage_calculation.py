@@ -259,75 +259,75 @@ def update_job_usage(acct_conn, pdhl=1):
     )
     acct_conn.row_factory = sqlite3.Row
     cur = acct_conn.cursor()
-    # fetch timestamp of the end of the current half-life period
-    s_end_hl = """
-        SELECT end_half_life_period FROM t_half_life_period_table WHERE cluster='cluster'
+
+    with acct_conn:
+        # fetch timestamp of the end of the current half-life period
+        s_end_hl = """
+            SELECT end_half_life_period FROM t_half_life_period_table WHERE cluster='cluster'
+            """
+        cur.execute(s_end_hl)
+        row = cur.fetchone()
+        end_hl = row[0]
+
+        # begin transaction for all of the updates in the DB
+        acct_conn.execute("BEGIN TRANSACTION")
+        s_assoc = """
+            SELECT a.username, a.bank, a.default_bank, j.*
+            FROM association_table a
+            LEFT JOIN job_usage_factor_table j
+            ON a.username = j.username AND a.bank = j.bank
+            """
+        cur.execute(s_assoc)
+        result = cur.fetchall()
+
+        # fetch new jobs for every association based on their last completed job
+        s_new_jobs = """
+            SELECT r.userid,r.id,r.t_submit,r.t_run,r.t_inactive,r.ranks,r.R,r.jobspec,
+            r.project,r.bank,r.requested_duration,r.actual_duration
+            FROM jobs r LEFT JOIN job_usage_factor_table j
+            ON r.userid = j.userid AND r.bank = j.bank WHERE r.t_run > j.last_job_timestamp
         """
-    cur.execute(s_end_hl)
-    row = cur.fetchone()
-    end_hl = row[0]
+        cur.execute(s_new_jobs)
+        new_jobs = cur.fetchall()
+        new_job_records = j.convert_to_obj(new_jobs)
+        # convert new jobs to a dictionary where they key is a tuple of the user ID and bank
+        # associated with the job
+        association_jobs = defaultdict(list)
+        for job in new_job_records:
+            key = (job.userid, job.bank)
+            association_jobs[key].append(job)
 
-    # begin transaction for all of the updates in the DB
-    acct_conn.execute("BEGIN TRANSACTION")
-    s_assoc = """
-        SELECT a.username, a.bank, a.default_bank, j.*
-        FROM association_table a
-        LEFT JOIN job_usage_factor_table j
-        ON a.username = j.username AND a.bank = j.bank
-        """
-    cur.execute(s_assoc)
-    result = cur.fetchall()
+        # update the job usage for every user in the association_table
+        for row in result:
+            # add all of the job_usage_factor_period_* columns to dictionary
+            usage_factors = []
+            for key in row.keys():
+                if key.startswith("usage_factor_period_"):
+                    usage_factors.append(row[key])
+            calc_usage_factor(
+                conn=acct_conn,
+                pdhl=pdhl,
+                user=row["username"],
+                bank=row["bank"],
+                end_hl=end_hl,
+                usage_factors=usage_factors,
+                user_jobs=association_jobs[(row["userid"], row["bank"])],
+            )
 
-    # fetch new jobs for every association based on their last completed job
-    s_new_jobs = """
-        SELECT r.userid,r.id,r.t_submit,r.t_run,r.t_inactive,r.ranks,r.R,r.jobspec,
-        r.project,r.bank,r.requested_duration,r.actual_duration
-        FROM jobs r LEFT JOIN job_usage_factor_table j
-        ON r.userid = j.userid AND r.bank = j.bank WHERE r.t_run > j.last_job_timestamp
-    """
-    cur.execute(s_new_jobs)
-    new_jobs = cur.fetchall()
-    new_job_records = j.convert_to_obj(new_jobs)
-    # convert new jobs to a dictionary where they key is a tuple of the user ID and bank
-    # associated with the job
-    association_jobs = defaultdict(list)
-    for job in new_job_records:
-        key = (job.userid, job.bank)
-        association_jobs[key].append(job)
+        # find the root bank in the flux-accounting database
+        s_root_bank = "SELECT bank FROM bank_table WHERE parent_bank=''"
+        cur.execute(s_root_bank)
+        result = cur.fetchall()
+        parent_bank = result[0][0]  # store the name of the root bank
 
-    # update the job usage for every user in the association_table
-    for row in result:
-        # add all of the job_usage_factor_period_* columns to dictionary
-        usage_factors = []
-        for key in row.keys():
-            if key.startswith("usage_factor_period_"):
-                usage_factors.append(row[key])
-        calc_usage_factor(
-            conn=acct_conn,
-            pdhl=pdhl,
-            user=row["username"],
-            bank=row["bank"],
-            end_hl=end_hl,
-            usage_factors=usage_factors,
-            user_jobs=association_jobs[(row["userid"], row["bank"])],
-        )
+        # update the job usage for every bank in the bank_table
+        calc_parent_bank_usage(acct_conn, cur, parent_bank)
 
-    # find the root bank in the flux-accounting database
-    s_root_bank = "SELECT bank FROM bank_table WHERE parent_bank=''"
-    cur.execute(s_root_bank)
-    result = cur.fetchall()
-    parent_bank = result[0][0]  # store the name of the root bank
+        check_end_hl(acct_conn, pdhl)
 
-    # update the job usage for every bank in the bank_table
-    calc_parent_bank_usage(acct_conn, cur, parent_bank)
+        LOGGER.info("job-usage update for flux-accounting DB now complete")
 
-    check_end_hl(acct_conn, pdhl)
-
-    # commit the transaction after the updates are finished
-    acct_conn.commit()
-    LOGGER.info("job-usage update for flux-accounting DB now complete")
-
-    return 0
+        return 0
 
 
 def scrub_old_jobs(conn, num_weeks=26):
