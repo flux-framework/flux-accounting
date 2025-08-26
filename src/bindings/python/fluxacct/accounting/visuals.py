@@ -91,7 +91,7 @@ class AssociationUsageGraph(RenderBarGraph):
         Args:
             conn: The SQLite Connection object.
             limit: The max number of rows to display on the graph.
-            bar_char: The character used to dsiplay the horizontal bar on the graph.
+            bar_char: The character used to display the horizontal bar on the graph.
             fallback_char: A fallback character used to display the horizontal bar on
                 the graph.
         """
@@ -122,7 +122,7 @@ class BankUsageGraph(RenderBarGraph):
         Args:
             conn: The SQLite Connection object.
             limit: The max number of rows to display on the graph.
-            bar_char: The character used to dsiplay the horizontal bar on the graph.
+            bar_char: The character used to display the horizontal bar on the graph.
             fallback_char: A fallback character used to display the horizontal bar on
                 the graph.
         """
