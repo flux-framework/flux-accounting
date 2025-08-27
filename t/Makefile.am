@@ -68,6 +68,7 @@ TESTSCRIPTS = \
 	t1063-issue709.t \
 	t1064-store-job-duration.t \
 	t1065-view-jobs-by-duration.t \
+	t1066-view-bank-concise.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
