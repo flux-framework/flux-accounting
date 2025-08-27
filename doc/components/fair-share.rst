@@ -30,7 +30,7 @@ initial fair-share value of 0.5 when they are first added to the
 flux-accounting database.
 
 flux-accounting dynamically adjusts fair-share as resources are consumed.
-Historical job usage diminishes in signficance over time, ensuring that
+Historical job usage diminishes in significance over time, ensuring that
 short-term heavy usage does not permanently impact an association's fair-share.
 
 ***********************
