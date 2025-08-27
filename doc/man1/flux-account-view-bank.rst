@@ -43,3 +43,8 @@ database hierarchy.
 .. option:: -o/--format
 
     Specify output format using Python's string format syntax.
+
+.. option:: -c/--concise
+
+    Only list associations under this bank that have contributed to the bank's
+    current job usage value.
