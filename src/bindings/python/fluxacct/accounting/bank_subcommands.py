@@ -136,7 +136,14 @@ def add_bank(conn, bank, shares, parent_bank="", priority=0.0):
 
 
 def view_bank(
-    conn, bank, tree=False, users=False, parsable=False, cols=None, format_string=""
+    conn,
+    bank,
+    tree=False,
+    users=False,
+    parsable=False,
+    cols=None,
+    format_string="",
+    concise=False,
 ):
     if tree and cols is not None:
         # tree format cannot be combined with custom formatting, so raise an Exception
@@ -162,10 +169,10 @@ def view_bank(
         return formatter.as_format_string(format_string)
     if tree:
         if parsable:
-            return formatter.as_parsable_tree(bank)
-        return formatter.as_tree()
+            return formatter.as_parsable_tree(bank, concise)
+        return formatter.as_tree(concise)
     if users:
-        return formatter.with_users(bank)
+        return formatter.with_users(bank, concise)
     return formatter.as_json()
 
 
