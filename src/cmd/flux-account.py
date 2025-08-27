@@ -592,6 +592,13 @@ def add_view_bank_arg(subparsers):
         help="Specify output format using Python's string format syntax.",
         metavar="FORMAT",
     )
+    subparser_view_bank.add_argument(
+        "-c",
+        "--concise",
+        action="store_const",
+        const=True,
+        help="only list associations that have a job usage value > 0",
+    )
 
 
 def add_delete_bank_arg(subparsers):

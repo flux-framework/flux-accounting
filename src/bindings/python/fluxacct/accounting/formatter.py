@@ -145,7 +145,7 @@ class BankFormatter(AccountingFormatter):
             cursor, error_msg=f"bank {self.bank_name} not found in bank_table"
         )
 
-    def _iterate_hierarchy(self, bank, fmt_bank, fmt_user, indent=""):
+    def _iterate_hierarchy(self, bank, fmt_bank, fmt_user, indent="", concise=False):
         """
         Internal generator to traverse banks and yield formatted lines.
         """
@@ -156,8 +156,15 @@ class BankFormatter(AccountingFormatter):
         sub_banks = self.cursor.fetchall()
         if not sub_banks:
             # leaf bank: list users
+            select_stmt = (
+                "SELECT username,shares,job_usage,fairshare FROM association_table "
+                "WHERE bank=?"
+            )
+            if concise:
+                # only display associations that have a job usage value greater than 0
+                select_stmt += " AND job_usage > 0"
             self.cursor.execute(
-                "SELECT username,shares,job_usage,fairshare FROM association_table WHERE bank=?",
+                select_stmt,
                 (bank,),
             )
             for user in self.cursor.fetchall():
@@ -166,10 +173,10 @@ class BankFormatter(AccountingFormatter):
             for sub_bank in sub_banks:
                 yield fmt_bank(sub_bank, indent)
                 yield from self._iterate_hierarchy(
-                    sub_bank["bank"], fmt_bank, fmt_user, indent + " "
+                    sub_bank["bank"], fmt_bank, fmt_user, indent + " ", concise
                 )
 
-    def as_tree(self):
+    def as_tree(self, concise):
         """
         Format the flux-accounting bank hierarchy in tree format. The bank passed
         into the query will serve as the root of the tree.
@@ -218,10 +225,12 @@ class BankFormatter(AccountingFormatter):
             )
 
         lines = [header, root_line]
-        lines.extend(self._iterate_hierarchy(root_bank["bank"], fmt_bank, fmt_user, ""))
+        lines.extend(
+            self._iterate_hierarchy(root_bank["bank"], fmt_bank, fmt_user, "", concise)
+        )
         return "\n".join(lines) + "\n"
 
-    def as_parsable_tree(self, bank):
+    def as_parsable_tree(self, bank, concise):
         """
         Format the flux-accounting bank hierarchy in a parsable tree format starting with
         the bank passed in serving as the root of the tree. Delimit the items in each row
@@ -253,10 +262,12 @@ class BankFormatter(AccountingFormatter):
             )
 
         lines = [header, root_line]
-        lines.extend(self._iterate_hierarchy(root_bank["bank"], fmt_bank, fmt_user, ""))
+        lines.extend(
+            self._iterate_hierarchy(root_bank["bank"], fmt_bank, fmt_user, "", concise)
+        )
         return "\n".join(lines) + "\n"
 
-    def with_users(self, bank):
+    def with_users(self, bank, concise):
         """
         Print basic information for all of the users under a given bank in table
         format.
@@ -268,9 +279,12 @@ class BankFormatter(AccountingFormatter):
         try:
             info = self.as_table()
 
-            select_stmt = """SELECT username,default_bank,shares,job_usage,fairshare
-                             FROM association_table
-                             WHERE bank=?"""
+            select_stmt = (
+                "SELECT username,default_bank,shares,job_usage,fairshare "
+                "FROM association_table WHERE bank=?"
+            )
+            if concise:
+                select_stmt += " AND job_usage > 0"
             self.cursor.execute(
                 select_stmt,
                 (bank,),

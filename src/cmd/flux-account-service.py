@@ -281,6 +281,7 @@ class AccountingService:
                 if msg.payload.get("fields")
                 else None,
                 msg.payload.get("format"),
+                msg.payload.get("concise"),
             )
 
             payload = {"view_bank": val}
