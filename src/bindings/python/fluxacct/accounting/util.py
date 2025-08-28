@@ -23,7 +23,7 @@ def get_uid(username):
     try:
         return pwd.getpwnam(username).pw_uid
     except KeyError:
-        return str(username)
+        return 65534
 
 
 def get_username(userid):

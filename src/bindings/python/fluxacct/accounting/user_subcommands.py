@@ -22,22 +22,6 @@ from fluxacct.accounting import util
 #                      Helper Functions                       #
 #                                                             #
 ###############################################################
-def set_uid(username, uid):
-
-    if uid == 65534:
-        fetched_uid = util.get_uid(username)
-
-        try:
-            if isinstance(fetched_uid, int):
-                uid = fetched_uid
-            else:
-                raise KeyError
-        except KeyError:
-            uid = 65534
-
-    return uid
-
-
 def validate_queue(conn, queues):
     cur = conn.cursor()
     queue_list = queues.split(",")
@@ -340,7 +324,8 @@ def add_user(
 ):
     cur = conn.cursor()
 
-    userid = set_uid(username, uid)
+    if uid == 65534:
+        uid = util.get_uid(username)
 
     # if true, association (user, bank) is already active
     # in association_table
@@ -404,7 +389,7 @@ def add_user(
             int(time.time()),
             int(time.time()),
             username,
-            userid,
+            uid,
             bank,
             default_bank,
             shares,
