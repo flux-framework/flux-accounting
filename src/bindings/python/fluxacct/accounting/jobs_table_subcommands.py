@@ -9,27 +9,13 @@
 #
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
-import pwd
 import json
 
 from flux.resource import ResourceSet
 from flux.util import parse_datetime
 from flux.job.JobID import JobID
 from fluxacct.accounting import formatter as fmt
-
-
-def get_username(userid):
-    try:
-        return pwd.getpwuid(userid).pw_name
-    except KeyError:
-        return str(userid)
-
-
-def get_uid(username):
-    try:
-        return pwd.getpwnam(username).pw_uid
-    except KeyError:
-        return str(username)
+from fluxacct.accounting import util
 
 
 def parse_timestamp(timestamp):
@@ -70,7 +56,7 @@ class JobRecord:
         actual_duration,
     ):
         self.userid = userid
-        self.username = get_username(userid)
+        self.username = util.get_username(userid)
         self.jobid = jobid
         self.t_submit = t_submit
         self.t_run = t_run
@@ -262,7 +248,7 @@ def get_jobs(conn, **kwargs):
     params_list = []
 
     if "user" in params:
-        params["user"] = get_uid(params["user"])
+        params["user"] = util.get_uid(params["user"])
         where_clauses.append("userid = ?")
         params_list.append(params["user"])
     if "after_start_time" in params:

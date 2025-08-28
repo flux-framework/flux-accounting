@@ -11,28 +11,21 @@
 ###############################################################
 import sqlite3
 import time
-import pwd
 
 import fluxacct.accounting
 from fluxacct.accounting import formatter as fmt
 from fluxacct.accounting import sql_util as sql
+from fluxacct.accounting import util
 
 ###############################################################
 #                                                             #
 #                      Helper Functions                       #
 #                                                             #
 ###############################################################
-def get_uid(username):
-    try:
-        return pwd.getpwnam(username).pw_uid
-    except KeyError:
-        return str(username)
-
-
 def set_uid(username, uid):
 
     if uid == 65534:
-        fetched_uid = get_uid(username)
+        fetched_uid = util.get_uid(username)
 
         try:
             if isinstance(fetched_uid, int):
