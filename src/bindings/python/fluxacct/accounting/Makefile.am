@@ -11,7 +11,8 @@ acctpy_PYTHON = \
 	formatter.py \
 	sql_util.py \
 	priorities.py \
-	visuals.py
+	visuals.py \
+	util.py
 
 clean-local:
 	-rm -f *.pyc *.pyo
