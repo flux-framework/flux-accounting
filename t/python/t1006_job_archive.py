@@ -15,6 +15,7 @@ import sqlite3
 import time
 import sys
 from collections import defaultdict
+from collections import namedtuple
 
 from unittest import mock
 
@@ -23,6 +24,35 @@ from fluxacct.accounting import jobs_table_subcommands as j
 from fluxacct.accounting import create_db as c
 from fluxacct.accounting import user_subcommands as u
 from fluxacct.accounting import bank_subcommands as b
+
+
+# create a tuple-compatible ctruct like pwd.struct_passwd
+struct_passwd = namedtuple(
+    "struct_passwd",
+    "pw_name pw_passwd pw_uid pw_gid pw_gecos pw_dir pw_shell",
+)
+
+# build fake passwd entries for the unit tests below
+FAKE_ASSOCIATIONS = {
+    1001: struct_passwd("1001", "x", 1001, 1001, "", "/home/1001", "/bin/bash"),
+    1002: struct_passwd("1002", "x", 1002, 1002, "", "/home/1002", "/bin/bash"),
+    1003: struct_passwd("1003", "x", 1003, 1003, "", "/home/1003", "/bin/bash"),
+    1004: struct_passwd("1004", "x", 1004, 1004, "", "/home/1004", "/bin/bash"),
+}
+
+# helper lookup functions to overwrite those in accounting.util
+def fake_get_uid(uid):
+    try:
+        return FAKE_ASSOCIATIONS[int(uid)].pw_uid
+    except KeyError:
+        return 65534
+
+
+def fake_get_username(name):
+    for entry in FAKE_ASSOCIATIONS.values():
+        if entry.pw_name == name:
+            return entry
+    return str(name)
 
 
 class TestAccountingCLI(unittest.TestCase):
@@ -58,10 +88,10 @@ class TestAccountingCLI(unittest.TestCase):
         b.add_bank(acct_conn, bank="D", parent_bank="B", shares=1)
 
         # add users
-        u.add_user(acct_conn, username="1001", uid="1001", bank="C")
-        u.add_user(acct_conn, username="1002", uid="1002", bank="C")
-        u.add_user(acct_conn, username="1003", uid="1003", bank="D")
-        u.add_user(acct_conn, username="1004", uid="1004", bank="D")
+        u.add_user(acct_conn, username="1001", uid=1001, bank="C")
+        u.add_user(acct_conn, username="1002", uid=1002, bank="C")
+        u.add_user(acct_conn, username="1003", uid=1003, bank="D")
+        u.add_user(acct_conn, username="1004", uid=1004, bank="D")
 
         jobid = 100
         interval = 0  # add to job timestamps to diversify job-archive records
@@ -197,7 +227,9 @@ class TestAccountingCLI(unittest.TestCase):
 
     # passing a user not in the jobs table
     # should return no jobs
-    def test_07_by_user_failure(self):
+    @mock.patch("fluxacct.accounting.util.get_uid", side_effect=fake_get_uid)
+    @mock.patch("fluxacct.accounting.util.get_username", side_effect=fake_get_username)
+    def test_07_by_user_failure(self, *_):
         my_dict = {"user": "9999"}
         job_records = j.get_jobs(acct_conn, **my_dict)
         self.assertEqual(len(job_records), 0)
@@ -205,15 +237,19 @@ class TestAccountingCLI(unittest.TestCase):
     # view_jobs_run_by_username() interacts with a
     # passwd file; for the purpose of these tests,
     # just pass the userid
-    def test_08_by_user_success(self):
+    @mock.patch("fluxacct.accounting.util.get_uid", side_effect=fake_get_uid)
+    @mock.patch("fluxacct.accounting.util.get_username", side_effect=fake_get_username)
+    def test_08_by_user_success(self, *_):
         my_dict = {"user": "1001"}
         job_records = j.get_jobs(acct_conn, **my_dict)
         self.assertEqual(len(job_records), 2)
 
     # passing a combination of params should further
     # refine the query
+    @mock.patch("fluxacct.accounting.util.get_uid", side_effect=fake_get_uid)
+    @mock.patch("fluxacct.accounting.util.get_username", side_effect=fake_get_username)
     @mock.patch("time.time", mock.MagicMock(return_value=9000500))
-    def test_09_multiple_params(self):
+    def test_09_multiple_params(self, *_):
         my_dict = {"user": "1001", "after_start_time": time.time()}
         job_records = j.get_jobs(acct_conn, **my_dict)
         self.assertEqual(len(job_records), 1)
@@ -322,8 +358,10 @@ class TestAccountingCLI(unittest.TestCase):
 
     # re-calculating a job usage factor after the end of the last half-life
     # period should create a new usage bin
+    @mock.patch("fluxacct.accounting.util.get_uid", side_effect=fake_get_uid)
+    @mock.patch("fluxacct.accounting.util.get_username", side_effect=fake_get_username)
     @mock.patch("time.time", mock.MagicMock(return_value=(100000000 + (604800 * 2.1))))
-    def test_15_append_jobs_in_diff_half_life_period(self):
+    def test_15_append_jobs_in_diff_half_life_period(self, *_):
         user = "1001"
         bank = "C"
 
