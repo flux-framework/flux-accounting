@@ -1,3 +1,10 @@
+flux-accounting version 0.51.0 - 2025-09-03
+-------------------------------------------
+
+#### Fixes
+
+* plugin: don't initialize "queues" map when checking limits (#734)
+
 flux-accounting version 0.50.0 - 2025-09-02
 -------------------------------------------
 
