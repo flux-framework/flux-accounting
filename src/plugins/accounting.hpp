@@ -118,7 +118,10 @@ public:
     bool under_queue_max_run_jobs (const std::string &queue,
                                    std::map<std::string, Queue> queues);
     bool under_max_resources (const Job &job);
-    bool under_queue_max_resources (const Job &job, const Queue &queue);
+    bool under_queue_max_resources (
+                                  const Job &job,
+                                  const std::string &queue,
+                                  const std::map<std::string, Queue> &queues);
 };
 
 class Bank {

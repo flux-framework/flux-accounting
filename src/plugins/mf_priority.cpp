@@ -316,7 +316,7 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
         }
         // is the association under the max nodes limit for the queue the
         // held job is submitted under?
-        if (b->under_queue_max_resources (held_job, queues[held_job.queue]) &&
+        if (b->under_queue_max_resources (held_job, held_job.queue, queues) &&
             held_job.contains_dep (D_QUEUE_MRES)) {
             if (flux_jobtap_dependency_remove (p,
                                                held_job.id,
@@ -1218,7 +1218,7 @@ static int depend_cb (flux_plugin_t *p,
                 goto error;
             job.add_dep (D_QUEUE_MRJ);
         }
-        if (!b->under_queue_max_resources (job, queues[queue_str])) {
+        if (!b->under_queue_max_resources (job, queue_str, queues)) {
             // association is already at their max nodes limit across their
             // running jobs in this queue; add a dependency
             if (flux_jobtap_dependency_add (p, id, D_QUEUE_MRES) < 0)
