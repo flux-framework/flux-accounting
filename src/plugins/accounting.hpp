@@ -143,6 +143,9 @@ json_t* convert_map_to_json (std::map<int, std::map<std::string, Association>>
 void split_string_and_push_back (const char *list,
                                  std::vector<std::string> &vec);
 
+// helper to test if a C-string is non-null and non-whitespace
+bool has_text (const char *s);
+
 // validate a potentially passed-in queue by an association and return the
 // integer priority associated with the queue
 int get_queue_info (char *queue,

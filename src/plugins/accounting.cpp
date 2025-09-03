@@ -219,6 +219,13 @@ void split_string_and_push_back (const char *list,
 }
 
 
+bool has_text (const char *s) {
+    if (!s) return false;
+    while (*s && std::isspace (static_cast<unsigned char> (*s))) ++s;
+    return *s != '\0';
+};
+
+
 int get_queue_info (char *queue,
                     const std::vector<std::string> &permissible_queues,
                     const std::map<std::string, Queue> &queues)
