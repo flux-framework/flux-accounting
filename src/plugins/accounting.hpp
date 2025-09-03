@@ -118,7 +118,10 @@ public:
     bool under_queue_max_run_jobs (const std::string &queue,
                                    std::map<std::string, Queue> queues);
     bool under_max_resources (const Job &job);
-    bool under_queue_max_resources (const Job &job, const Queue &queue);
+    bool under_queue_max_resources (
+                                  const Job &job,
+                                  const std::string &queue,
+                                  const std::map<std::string, Queue> &queues);
 };
 
 class Bank {
@@ -142,6 +145,9 @@ json_t* convert_map_to_json (std::map<int, std::map<std::string, Association>>
 // split a list of items and add them to a vector in an Association object
 void split_string_and_push_back (const char *list,
                                  std::vector<std::string> &vec);
+
+// helper to test if a C-string is non-null and non-whitespace
+bool has_text (const char *s);
 
 // validate a potentially passed-in queue by an association and return the
 // integer priority associated with the queue

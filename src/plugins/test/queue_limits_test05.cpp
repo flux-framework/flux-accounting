@@ -77,7 +77,7 @@ void association_under_queue_max_nodes_limit_true ()
 
     ok (a->queue_usage["bronze"].cur_nodes == 0,
         "association has no occupied nodes under bronze queue");
-    ok (a->under_queue_max_resources (job, queues["bronze"]) == true,
+    ok (a->under_queue_max_resources (job, "bronze", queues) == true,
         "association is under queue's max_nodes limit");
 
     // assume job passes all checks and has moved to RUN state
@@ -108,7 +108,7 @@ void association_under_queue_max_nodes_limit_false ()
         "association has one held job due to per-queue max_resources limit");
     ok (job.deps.size () == 1,
         "held job has one dependency added to it");
-    ok (a->under_queue_max_resources (job, queues["bronze"]) == false,
+    ok (a->under_queue_max_resources (job, "bronze", queues) == false,
         "association is not under queue's max_nodes limit");
 }
 
@@ -126,7 +126,7 @@ void association_release_held_job_true ()
     a->queue_usage["bronze"].cur_nodes = 0;
     Job held_job = a->held_jobs.front ();
 
-    ok (a->under_queue_max_resources (held_job, queues["bronze"]) == true,
+    ok (a->under_queue_max_resources (held_job, "bronze", queues) == true,
         "association is now under queue's max_nodes limit");
     
     held_job.remove_dep (D_QUEUE_MRES);

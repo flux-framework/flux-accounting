@@ -219,6 +219,13 @@ void split_string_and_push_back (const char *list,
 }
 
 
+bool has_text (const char *s) {
+    if (!s) return false;
+    while (*s && std::isspace (static_cast<unsigned char> (*s))) ++s;
+    return *s != '\0';
+};
+
+
 int get_queue_info (char *queue,
                     const std::vector<std::string> &permissible_queues,
                     const std::map<std::string, Queue> &queues)
@@ -325,11 +332,22 @@ bool Association::under_max_resources (const Job &job)
     return under_max_resources;
 }
 
-bool Association::under_queue_max_resources (const Job &job,
-                                             const Queue &queue)
+bool Association::under_queue_max_resources (
+                                    const Job &job,
+                                    const std::string &queue,
+                                    const std::map<std::string, Queue> &queues)
 {
-    bool under_max_nodes = (queue_usage[queue.name].cur_nodes + job.nnodes)
-                           <= queue.max_nodes_per_assoc;
+    auto qit = queues.find (queue);
+    if (qit == queues.end ())
+        // queue is unknown to flux-accounting; skip check
+        return true;
+    const int queue_max_nodes_per_assoc = qit->second.max_nodes_per_assoc;
 
-    return under_max_nodes;
+    // look up current per-queue node usage for the association
+    int cur_nodes_in_queue = 0;
+    auto uit = queue_usage.find (queue);
+    if (uit != queue_usage.end ())
+        cur_nodes_in_queue = uit->second.cur_nodes;
+
+    return (cur_nodes_in_queue + job.nnodes) <= queue_max_nodes_per_assoc;
 }

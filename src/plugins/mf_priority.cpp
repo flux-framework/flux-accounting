@@ -241,8 +241,9 @@ static int increment_resources (Association *b,
     b->cur_cores = b->cur_cores + (counts.nslots * counts.slot_size);
 
     // increment cur_nodes for queue
-    b->queue_usage[queue].cur_nodes = b->queue_usage[queue].cur_nodes +
-                                      counts.nnodes;
+    if (!queue.empty ())
+        b->queue_usage[queue].cur_nodes = b->queue_usage[queue].cur_nodes +
+                                          counts.nnodes;
 
     return 0;
 }
@@ -269,8 +270,9 @@ static int decrement_resources (Association *b,
     b->cur_cores = b->cur_cores - (counts.nslots * counts.slot_size);
 
     // decrement cur_nodes for queue
-    b->queue_usage[queue].cur_nodes = b->queue_usage[queue].cur_nodes -
-                                      counts.nnodes;
+    if (!queue.empty ())
+        b->queue_usage[queue].cur_nodes = b->queue_usage[queue].cur_nodes -
+                                          counts.nnodes;
 
     return 0;
 }
@@ -314,7 +316,7 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
         }
         // is the association under the max nodes limit for the queue the
         // held job is submitted under?
-        if (b->under_queue_max_resources (held_job, queues[held_job.queue]) &&
+        if (b->under_queue_max_resources (held_job, held_job.queue, queues) &&
             held_job.contains_dep (D_QUEUE_MRES)) {
             if (flux_jobtap_dependency_remove (p,
                                                held_job.id,
@@ -535,10 +537,12 @@ static void rec_update_cb (flux_t *h,
 
         // split queues comma-delimited string and add it to b->queues vector
         b->queues.clear ();
-        split_string_and_push_back (assoc_queues, b->queues);
+        if (has_text (assoc_queues))
+            split_string_and_push_back (assoc_queues, b->queues);
         // do the same thing for the association's projects
         b->projects.clear ();
-        split_string_and_push_back (assoc_projects, b->projects);
+        if (has_text (assoc_projects))
+            split_string_and_push_back (assoc_projects, b->projects);
 
         users_def_bank[uid] = def_bank;
     }
@@ -1214,7 +1218,7 @@ static int depend_cb (flux_plugin_t *p,
                 goto error;
             job.add_dep (D_QUEUE_MRJ);
         }
-        if (!b->under_queue_max_resources (job, queues[queue_str])) {
+        if (!b->under_queue_max_resources (job, queue_str, queues)) {
             // association is already at their max nodes limit across their
             // running jobs in this queue; add a dependency
             if (flux_jobtap_dependency_add (p, id, D_QUEUE_MRES) < 0)
@@ -1603,9 +1607,11 @@ static int inactive_cb (flux_plugin_t *p,
         }
     }
 
-    if (b->queue_usage[queue_str].cur_run_jobs > 0)
-        // decrement num of running jobs the association has in queue
-        b->queue_usage[queue_str].cur_run_jobs--;
+    if (!queue_str.empty ()) {
+        if (b->queue_usage[queue_str].cur_run_jobs > 0)
+            // decrement num of running jobs the association has in queue
+            b->queue_usage[queue_str].cur_run_jobs--;
+    }
 
     if (!b->held_jobs.empty ()) {
         // the Association has at least one held Job; begin looping through
