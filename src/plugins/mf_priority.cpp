@@ -241,8 +241,9 @@ static int increment_resources (Association *b,
     b->cur_cores = b->cur_cores + (counts.nslots * counts.slot_size);
 
     // increment cur_nodes for queue
-    b->queue_usage[queue].cur_nodes = b->queue_usage[queue].cur_nodes +
-                                      counts.nnodes;
+    if (!queue.empty ())
+        b->queue_usage[queue].cur_nodes = b->queue_usage[queue].cur_nodes +
+                                          counts.nnodes;
 
     return 0;
 }
@@ -269,8 +270,9 @@ static int decrement_resources (Association *b,
     b->cur_cores = b->cur_cores - (counts.nslots * counts.slot_size);
 
     // decrement cur_nodes for queue
-    b->queue_usage[queue].cur_nodes = b->queue_usage[queue].cur_nodes -
-                                      counts.nnodes;
+    if (!queue.empty ())
+        b->queue_usage[queue].cur_nodes = b->queue_usage[queue].cur_nodes -
+                                          counts.nnodes;
 
     return 0;
 }
@@ -1605,9 +1607,11 @@ static int inactive_cb (flux_plugin_t *p,
         }
     }
 
-    if (b->queue_usage[queue_str].cur_run_jobs > 0)
-        // decrement num of running jobs the association has in queue
-        b->queue_usage[queue_str].cur_run_jobs--;
+    if (!queue_str.empty ()) {
+        if (b->queue_usage[queue_str].cur_run_jobs > 0)
+            // decrement num of running jobs the association has in queue
+            b->queue_usage[queue_str].cur_run_jobs--;
+    }
 
     if (!b->held_jobs.empty ()) {
         // the Association has at least one held Job; begin looping through
