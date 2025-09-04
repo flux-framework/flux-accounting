@@ -486,6 +486,22 @@ static int query_cb (flux_plugin_t *p,
 
     json_decref (queue_data);
 
+    json_t *project_data = convert_projects_to_json (projects);
+
+    if (!project_data)
+        return -1;
+
+    if (flux_plugin_arg_pack (args,
+                              FLUX_PLUGIN_ARG_OUT,
+                              "{s:O}",
+                              "projects",
+                              project_data) < 0)
+        flux_log_error (flux_jobtap_get_flux (p),
+                        "mf_priority: query_cb: flux_plugin_arg_pack: %s",
+                        flux_plugin_arg_strerror (args));
+
+    json_decref (project_data);
+
     return 0;
 }
 

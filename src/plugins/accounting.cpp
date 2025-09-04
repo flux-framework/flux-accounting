@@ -385,3 +385,22 @@ json_t* convert_queues_to_json (const std::map<std::string, Queue> &queues)
 
     return root;
 }
+
+json_t* convert_projects_to_json (const std::vector<std::string> projects)
+{
+    json_t *known_projects = json_array ();
+    if (!known_projects)
+        return nullptr;
+
+    json_t *temp = nullptr;
+    for (const auto &project : projects) {
+        if (!(temp = json_string (project.c_str ()))
+            || json_array_append_new (known_projects, temp) < 0) {
+            json_decref (temp);
+            json_decref (known_projects);
+            return nullptr;
+        }
+    }
+
+    return known_projects;
+}
