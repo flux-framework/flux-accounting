@@ -470,6 +470,22 @@ static int query_cb (flux_plugin_t *p,
 
     json_decref (accounting_data);
 
+    json_t *queue_data = convert_queues_to_json (queues);
+
+    if (!queue_data)
+        return -1;
+
+    if (flux_plugin_arg_pack (args,
+                              FLUX_PLUGIN_ARG_OUT,
+                              "{s:O}",
+                              "queues",
+                              queue_data) < 0)
+        flux_log_error (flux_jobtap_get_flux (p),
+                        "mf_priority: query_cb: flux_plugin_arg_pack: %s",
+                        flux_plugin_arg_strerror (args));
+
+    json_decref (queue_data);
+
     return 0;
 }
 
