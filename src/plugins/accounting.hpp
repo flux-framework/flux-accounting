@@ -142,6 +142,12 @@ Association* get_association (int userid,
 json_t* convert_map_to_json (std::map<int, std::map<std::string, Association>>
                                  &users);
 
+// convert the queues map to a JSON object to be returned in query_cb ()
+json_t* convert_queues_to_json (const std::map<std::string, Queue> &queues);
+
+// convert the projects vector to a JSON object to be returned in query_cb ()
+json_t* convert_projects_to_json (const std::vector<std::string> projects);
+
 // split a list of items and add them to a vector in an Association object
 void split_string_and_push_back (const char *list,
                                  std::vector<std::string> &vec);

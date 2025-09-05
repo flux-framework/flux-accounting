@@ -351,3 +351,56 @@ bool Association::under_queue_max_resources (
 
     return (cur_nodes_in_queue + job.nnodes) <= queue_max_nodes_per_assoc;
 }
+
+json_t* convert_queues_to_json (const std::map<std::string, Queue> &queues)
+{
+    json_t *root = json_object ();
+    if (!root)
+        return nullptr;
+
+    for (const auto &kv : queues) {
+        const std::string &key = kv.first;
+        const Queue &q = kv.second;
+
+        json_t *qobj = json_pack (
+                                "{s:s, s:i, s:i, s:i, s:i, s:i, s:i}",
+                                "name", q.name.c_str (),
+                                "min_nodes_per_job", q.min_nodes_per_job,
+                                "max_nodes_per_job", q.max_nodes_per_job,
+                                "max_time_per_job", q.max_time_per_job,
+                                "priority", q.priority,
+                                "max_running_jobs", q.max_running_jobs,
+                                "max_nodes_per_assoc", q.max_nodes_per_assoc);
+        if (!qobj) {
+            json_decref (root);
+            return nullptr;
+        }
+
+        if (json_object_set_new (root, key.c_str (), qobj) < 0) {
+            json_decref (qobj);
+            json_decref (root);
+            return nullptr;
+        }
+    }
+
+    return root;
+}
+
+json_t* convert_projects_to_json (const std::vector<std::string> projects)
+{
+    json_t *known_projects = json_array ();
+    if (!known_projects)
+        return nullptr;
+
+    json_t *temp = nullptr;
+    for (const auto &project : projects) {
+        if (!(temp = json_string (project.c_str ()))
+            || json_array_append_new (known_projects, temp) < 0) {
+            json_decref (temp);
+            json_decref (known_projects);
+            return nullptr;
+        }
+    }
+
+    return known_projects;
+}
