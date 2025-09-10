@@ -260,6 +260,59 @@ test_expect_success 'filter jobs by gold queue' '
 	grep "${job6}" no_configured_queues.out | grep 9000
 '
 
+test_expect_success 'cancel job6' '
+	flux cancel ${job6}
+'
+
+test_expect_success 'trying to filter jobs by bad state will raise an error' '
+	test_must_fail flux account jobs ${username} --filter=foo > bad_state.err 2>&1 &&
+	grep "Invalid filter specified: foo" bad_state.err
+'
+
+test_expect_success 'filter jobs by canceled state (expect 6 results)' '
+	flux account jobs ${username} --filter=canceled > canceled_jobs.out &&
+	grep ${job1} canceled_jobs.out &&
+	grep ${job2} canceled_jobs.out &&
+	grep ${job3} canceled_jobs.out &&
+	grep ${job4} canceled_jobs.out &&
+	grep ${job5} canceled_jobs.out &&
+	grep ${job6} canceled_jobs.out
+'
+
+test_expect_success 'filter jobs by running state (expect 0 results)' '
+	flux account jobs ${username} --filter=running > no_results.out &&
+	test_must_fail grep ${job1} no_results.out &&
+	test_must_fail grep ${job2} no_results.out &&
+	test_must_fail grep ${job3} no_results.out &&
+	test_must_fail grep ${job4} no_results.out &&
+	test_must_fail grep ${job5} no_results.out &&
+	test_must_fail grep ${job6} no_results.out
+'
+
+test_expect_success 'submit a job and make sure we can filter for it' '
+	job7=$(flux submit -S bank=C --queue=gold sleep 60) &&
+	flux job wait-event -vt 3 ${job7} priority &&
+	flux account jobs ${username} --filter=pending > pending_jobs.out &&
+	test_must_fail grep ${job1} pending_jobs.out &&
+	test_must_fail grep ${job2} pending_jobs.out &&
+	test_must_fail grep ${job3} pending_jobs.out &&
+	test_must_fail grep ${job4} pending_jobs.out &&
+	test_must_fail grep ${job5} pending_jobs.out &&
+	test_must_fail grep ${job6} pending_jobs.out &&
+	grep ${job7} pending_jobs.out
+'
+
+test_expect_success 'multiple filters can be passed' '
+	flux account jobs ${username} --filter=pending,canceled > multiple_filters.out &&
+	grep ${job1} multiple_filters.out &&
+	grep ${job2} multiple_filters.out &&
+	grep ${job3} multiple_filters.out &&
+	grep ${job4} multiple_filters.out &&
+	grep ${job5} multiple_filters.out &&
+	grep ${job6} multiple_filters.out &&
+	grep ${job7} multiple_filters.out
+'
+
 test_expect_success 'shut down flux-accounting service' '
 	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
