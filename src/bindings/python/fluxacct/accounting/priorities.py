@@ -304,7 +304,14 @@ def reset_factors(conn):
     return 0
 
 
-def job_priorities(conn, username, bank=None, queue=None, format_string=None):
+def job_priorities(
+    conn,
+    username,
+    bank=None,
+    queue=None,
+    format_string=None,
+    filters=None,
+):
     """
     List a breakdown for the priority calculation for every active job for a given
     username. Filter the user's jobs by bank and/or by queue.
@@ -314,6 +321,7 @@ def job_priorities(conn, username, bank=None, queue=None, format_string=None):
         bank: filter jobs by a bank.
         queue: filter jobs by a queue.
         format_string: optional format string for custom output.
+        states: filter jobs by specific states.
     """
     handle = flux.Flux()
     cur = conn.cursor()
@@ -333,6 +341,9 @@ def job_priorities(conn, username, bank=None, queue=None, format_string=None):
         if queue
         else flux.job.JobList(handle, max_entries=0, user=username)
     )
+    if filters:
+        for filt in filters.split(","):
+            joblist.add_filter(filt)
     jobs = list(joblist.jobs())
 
     row_dicts = []

@@ -664,6 +664,7 @@ class AccountingService:
                 bank=msg.payload.get("bank"),
                 queue=msg.payload.get("queue"),
                 format_string=msg.payload.get("format"),
+                filters=msg.payload.get("filter"),
             )
 
             payload = {"jobs": val}
