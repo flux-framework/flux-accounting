@@ -1173,6 +1173,13 @@ def add_jobs_arg(subparsers):
         help="list jobs with specific job state or result",
         metavar="STATES|RESULTS",
     )
+    subparser_jobs.add_argument(
+        "-c",
+        "--count",
+        default=0,
+        help="limit output to N jobs (default shows all jobs for association)",
+        metavar="N",
+    )
 
 
 def add_show_usage_arg(subparsers):

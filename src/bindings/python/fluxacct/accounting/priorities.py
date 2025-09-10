@@ -311,6 +311,7 @@ def job_priorities(
     queue=None,
     format_string=None,
     filters=None,
+    max_entries=0,
 ):
     """
     List a breakdown for the priority calculation for every active job for a given
@@ -322,6 +323,7 @@ def job_priorities(
         queue: filter jobs by a queue.
         format_string: optional format string for custom output.
         states: filter jobs by specific states.
+        max_entries: the maximum number of job records to return.
     """
     handle = flux.Flux()
     cur = conn.cursor()
@@ -337,9 +339,9 @@ def job_priorities(
     priority_weights = {item["factor"]: item["weight"] for item in json.loads(factors)}
 
     joblist = (
-        flux.job.JobList(handle, max_entries=0, user=username, queue=queue)
+        flux.job.JobList(handle, max_entries=max_entries, user=username, queue=queue)
         if queue
-        else flux.job.JobList(handle, max_entries=0, user=username)
+        else flux.job.JobList(handle, max_entries=max_entries, user=username)
     )
     if filters:
         for filt in filters.split(","):
