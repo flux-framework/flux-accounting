@@ -313,6 +313,17 @@ test_expect_success 'multiple filters can be passed' '
 	grep ${job7} multiple_filters.out
 '
 
+test_expect_success 'limit number of jobs to just two jobs' '
+	flux account jobs ${username} -c 2 > limit_jobs.out &&
+	test_must_fail grep ${job1} limit_jobs.out &&
+	test_must_fail grep ${job2} limit_jobs.out &&
+	test_must_fail grep ${job3} limit_jobs.out &&
+	test_must_fail grep ${job4} limit_jobs.out &&
+	test_must_fail grep ${job5} limit_jobs.out &&
+	grep ${job6} limit_jobs.out &&
+	grep ${job7} limit_jobs.out
+'
+
 test_expect_success 'shut down flux-accounting service' '
 	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
