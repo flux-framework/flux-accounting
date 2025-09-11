@@ -11,6 +11,8 @@
 ###############################################################
 import pwd
 
+from flux.util import parse_datetime
+
 
 def get_uid(username):
     """
@@ -35,3 +37,20 @@ def get_username(userid):
         return pwd.getpwuid(userid).pw_name
     except KeyError:
         return str(userid)
+
+
+def parse_timestamp(timestamp):
+    """
+    Parse a timestamp and convert it to a seconds-since-epoch timestamp. Try to first
+    parse it as a human-readable format (e.g. "2025-01-27 12:00:00"), or just return as a
+    seconds-since-epoch timestamp if the parsing fails.
+
+    Returns:
+        a seconds-since-epoch timestamp
+    """
+    try:
+        # try to parse as a human-readable timestamp
+        return parse_datetime(str(timestamp)).timestamp()
+    except ValueError:
+        # just return as a seconds-since-epoch timestamp
+        return timestamp
