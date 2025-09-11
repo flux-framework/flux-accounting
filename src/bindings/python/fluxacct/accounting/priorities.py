@@ -16,6 +16,7 @@ from flux.job.JobID import JobID
 import fluxacct.accounting
 from fluxacct.accounting import formatter as fmt
 from fluxacct.accounting import sql_util as sql
+from fluxacct.accounting import util
 
 ###############################################################
 #                                                             #
@@ -312,6 +313,7 @@ def job_priorities(
     format_string=None,
     filters=None,
     max_entries=0,
+    since="0.0",
 ):
     """
     List a breakdown for the priority calculation for every active job for a given
@@ -324,6 +326,7 @@ def job_priorities(
         format_string: optional format string for custom output.
         states: filter jobs by specific states.
         max_entries: the maximum number of job records to return.
+        since: filter jobs that have become inactive since a certain timestamp.
     """
     handle = flux.Flux()
     cur = conn.cursor()
@@ -338,10 +341,21 @@ def job_priorities(
     factors = list_factors(conn, json_fmt=True)
     priority_weights = {item["factor"]: item["weight"] for item in json.loads(factors)}
 
+    # convert a potential string timestamp (e.g. "2025-05-20 08:00:00") to a
+    # seconds-since-epoch timestamp
+    since = float(util.parse_timestamp(since))
+    # ensure args.since is in the past
+    if since > flux.util.parse_datetime("now").timestamp():
+        raise ValueError(f"--since appears to be in the future: {since}")
+
     joblist = (
-        flux.job.JobList(handle, max_entries=max_entries, user=username, queue=queue)
+        flux.job.JobList(
+            handle, max_entries=max_entries, user=username, queue=queue, since=since
+        )
         if queue
-        else flux.job.JobList(handle, max_entries=max_entries, user=username)
+        else flux.job.JobList(
+            handle, max_entries=max_entries, user=username, since=since
+        )
     )
     if filters:
         for filt in filters.split(","):

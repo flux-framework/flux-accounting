@@ -1180,6 +1180,13 @@ def add_jobs_arg(subparsers):
         help="limit output to N jobs (default shows all jobs for association)",
         metavar="N",
     )
+    subparser_jobs.add_argument(
+        "--since",
+        type=str,
+        default="0.0",
+        help="include jobs that have become inactive since WHEN",
+        metavar="WHEN",
+    )
 
 
 def add_show_usage_arg(subparsers):
