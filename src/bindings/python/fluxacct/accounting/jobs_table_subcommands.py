@@ -57,6 +57,10 @@ class JobRecord:
     def queued(self):
         return self.t_run - self.t_submit
 
+    @property
+    def duration_delta(self):
+        return self.requested_duration - self.actual_duration
+
 
 def convert_to_str(job_records, fmt_string=None):
     """
