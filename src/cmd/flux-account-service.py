@@ -376,6 +376,7 @@ class AccountingService:
                 bank=msg.payload.get("bank"),
                 requested_duration=msg.payload.get("requested_duration"),
                 actual_duration=msg.payload.get("actual_duration"),
+                duration_delta=msg.payload.get("duration_delta"),
             )
 
             payload = {"view_job_records": val}

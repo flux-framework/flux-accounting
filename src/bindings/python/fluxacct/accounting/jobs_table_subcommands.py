@@ -219,6 +219,7 @@ def get_jobs(conn, **kwargs):
         "bank",
         "requested_duration",
         "actual_duration",
+        "duration_delta",
     }
     params = {
         key: val
@@ -265,6 +266,13 @@ def get_jobs(conn, **kwargs):
         expressions = validate_expressions(params["actual_duration"])
         for expression in expressions:
             where_clauses.append(f"actual_duration {expression[0]} ?")
+            params_list.append(expression[1])
+    if "duration_delta" in params:
+        expressions = validate_expressions(params["duration_delta"])
+        for expression in expressions:
+            where_clauses.append(
+                f"requested_duration - actual_duration {expression[0]} ?"
+            )
             params_list.append(expression[1])
 
     if where_clauses:
