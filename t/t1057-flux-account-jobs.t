@@ -324,6 +324,34 @@ test_expect_success 'limit number of jobs to just two jobs' '
 	grep ${job7} limit_jobs.out
 '
 
+test_expect_success 'pass --since with a date absurdly far into the future' '
+	test_must_fail flux account jobs ${username} \
+		--since "3025-01-01 08:30:00" > bad_since_arg.err 2>&1 &&
+	grep "since appears to be in the future:" bad_since_arg.err
+'
+
+test_expect_success 'filter jobs by --since option' '
+	flux account jobs ${username} --since 0.0 > since_filter_1.out &&
+	grep ${job1} since_filter_1.out &&
+	grep ${job2} since_filter_1.out &&
+	grep ${job3} since_filter_1.out &&
+	grep ${job4} since_filter_1.out &&
+	grep ${job5} since_filter_1.out &&
+	grep ${job6} since_filter_1.out &&
+	grep ${job7} since_filter_1.out
+'
+
+test_expect_success 'filter jobs with different timestamp for --since' '
+	flux account jobs ${username} --since "1980-01-01 12:00:00" > since_filter_2.out &&
+	grep ${job1} since_filter_2.out &&
+	grep ${job2} since_filter_2.out &&
+	grep ${job3} since_filter_2.out &&
+	grep ${job4} since_filter_2.out &&
+	grep ${job5} since_filter_2.out &&
+	grep ${job6} since_filter_2.out &&
+	grep ${job7} since_filter_2.out
+'
+
 test_expect_success 'shut down flux-accounting service' '
 	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
