@@ -72,7 +72,8 @@ def convert_to_str(job_records, fmt_string=None):
         fmt_string = (
             "{jobid:<15} | {username:<8} | {userid:<8} | {t_submit:<15.2f} | "
             + "{t_run:<15.2f} | {t_inactive:<15.2f} | {nnodes:<8} | {project:<8} | "
-            + "{bank:<8} | {requested_duration:<18.2f} | {actual_duration:<15.2f}"
+            + "{bank:<8} | {requested_duration:<18.2f} | {actual_duration:<15.2f} "
+            + "{duration_delta:<18.2f}"
         )
     output = fmt.JobsFormatter(fmt_string)
     job_record_str = output.build_table(job_records)
