@@ -480,7 +480,7 @@ def add_view_job_records_arg(subparsers):
         nargs="+",
         help=(
             "the actual duration for a job; multiple expressions can be passed as "
-            "filters, e.g. -d '< 60' '> 120'"
+            "filters, e.g. -e '< 60' '> 120'"
         ),
         metavar="[EXPRESSIONS]",
     )

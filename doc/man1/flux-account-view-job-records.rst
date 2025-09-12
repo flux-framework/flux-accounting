@@ -59,9 +59,9 @@ job records.
 .. option:: -e/--actual-duration
 
     Return jobs that fit a certain actual duration's criteria by passing an
-    expression Multiple filters can be passed to refine the ``actual_duration``
-    column by. Expressions can be started with any of the following operators:
-    ``<``, ``<=``, ``=``, ``>=``, or ``>``.
+    expression. Multiple filters can be passed to refine the
+    ``actual_duration`` column by. Expressions can be started with any of the
+    following operators: ``<``, ``<=``, ``=``, ``>=``, or ``>``.
 
 .. option:: -D/--duration-delta
 
