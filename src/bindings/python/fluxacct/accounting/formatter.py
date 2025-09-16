@@ -353,6 +353,7 @@ class JobsFormatter(flux.util.OutputFormat):
         "bank": "bank",
         "requested_duration": "requested_duration",
         "actual_duration": "actual_duration",
+        "duration_delta": "duration_delta",
     }
 
     def __init__(self, fmt, headings=None):

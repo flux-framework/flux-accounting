@@ -71,6 +71,7 @@ TESTSCRIPTS = \
 	t1066-view-bank-concise.t \
 	t1067-mf-priority-issue733.t \
 	t1068-mf-priority-queues-projects-query.t \
+	t1069-duration-delta.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \

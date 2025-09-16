@@ -480,7 +480,18 @@ def add_view_job_records_arg(subparsers):
         nargs="+",
         help=(
             "the actual duration for a job; multiple expressions can be passed as "
-            "filters, e.g. -d '< 60' '> 120'"
+            "filters, e.g. -e '< 60' '> 120'"
+        ),
+        metavar="[EXPRESSIONS]",
+    )
+    subparser_view_job_records.add_argument(
+        "-D",
+        "--duration-delta",
+        nargs="+",
+        help=(
+            "the difference between the requested duration of a job and its actual "
+            "duration; multiple expressions can be passed as filters, e.g. -D '< 60' "
+            "'> 120'"
         ),
         metavar="[EXPRESSIONS]",
     )

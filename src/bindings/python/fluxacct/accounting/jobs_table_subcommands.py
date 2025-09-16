@@ -57,6 +57,10 @@ class JobRecord:
     def queued(self):
         return self.t_run - self.t_submit
 
+    @property
+    def duration_delta(self):
+        return self.requested_duration - self.actual_duration
+
 
 def convert_to_str(job_records, fmt_string=None):
     """
@@ -68,7 +72,8 @@ def convert_to_str(job_records, fmt_string=None):
         fmt_string = (
             "{jobid:<15} | {username:<8} | {userid:<8} | {t_submit:<15.2f} | "
             + "{t_run:<15.2f} | {t_inactive:<15.2f} | {nnodes:<8} | {project:<8} | "
-            + "{bank:<8} | {requested_duration:<18.2f} | {actual_duration:<15.2f}"
+            + "{bank:<8} | {requested_duration:<18.2f} | {actual_duration:<15.2f} "
+            + "{duration_delta:<18.2f}"
         )
     output = fmt.JobsFormatter(fmt_string)
     job_record_str = output.build_table(job_records)
@@ -214,6 +219,7 @@ def get_jobs(conn, **kwargs):
         "bank",
         "requested_duration",
         "actual_duration",
+        "duration_delta",
     }
     params = {
         key: val
@@ -260,6 +266,13 @@ def get_jobs(conn, **kwargs):
         expressions = validate_expressions(params["actual_duration"])
         for expression in expressions:
             where_clauses.append(f"actual_duration {expression[0]} ?")
+            params_list.append(expression[1])
+    if "duration_delta" in params:
+        expressions = validate_expressions(params["duration_delta"])
+        for expression in expressions:
+            where_clauses.append(
+                f"requested_duration - actual_duration {expression[0]} ?"
+            )
             params_list.append(expression[1])
 
     if where_clauses:

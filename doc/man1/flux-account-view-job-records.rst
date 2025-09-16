@@ -59,7 +59,14 @@ job records.
 .. option:: -e/--actual-duration
 
     Return jobs that fit a certain actual duration's criteria by passing an
-    expression Multiple filters can be passed to refine the ``actual_duration``
+    expression. Multiple filters can be passed to refine the
+    ``actual_duration`` column by. Expressions can be started with any of the
+    following operators: ``<``, ``<=``, ``=``, ``>=``, or ``>``.
+
+.. option:: -D/--duration-delta
+
+    Return jobs that fit a certain duration delta's criteria by passing an
+    expression. Multiple filters can be passed to refine the ``duration_delta``
     column by. Expressions can be started with any of the following operators:
     ``<``, ``<=``, ``=``, ``>=``, or ``>``.
 
@@ -123,6 +130,15 @@ certain jobs:
 .. code-block:: console
 
   $ flux account view-job-records -d "< 60" -e "> 30" "< 45"
+
+The *duration delta* can also be passed as a search criteria when filtering the
+``jobs`` table:
+
+.. code-block:: console
+
+  $ flux account view-job-records -D "< 10"
+
+This will only show jobs with a duration delta of less than 10 seconds.
 
 .. _Flux locally unique ID: https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_19.html
 
