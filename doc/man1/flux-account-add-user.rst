@@ -23,15 +23,15 @@ added under. Additional configurable fields, such as the number of allocated
 shares, a default bank, various job limits, permissible queues, etc. may also
 be defined upon user creation.
 
-.. option:: --username
+.. option:: -u/--username
 
     The username of the association.
 
-.. option:: --userid
+.. option:: -i/--userid
 
     The userid of the association.
 
-.. option:: --bank
+.. option:: -B/--bank
 
     The bank of the association. Users submitting jobs under this bank will
     contribute both to their own usage as well as the bank's total usage.
@@ -55,17 +55,22 @@ be defined upon user creation.
     The max number of both pending and running jobs the association can have at
     any given time.
 
-.. option:: --max-nodes
+.. option:: -N/--max-nodes
 
     The max number of nodes an association can have across all of their running
     jobs.
 
-.. option:: --queues
+.. option:: -c/--max-cores
+
+    The max number of cores an association can have across all of their running
+    jobs.
+
+.. option:: -q/--queues
 
     A comma-separated list of all of the queues an association can run jobs
     under.
 
-.. option:: --projects
+.. option:: -P/--projects
 
     A comma-separated list of all of the projects an association can run jobs
     under. If this option is passed, the **first** project listed will become

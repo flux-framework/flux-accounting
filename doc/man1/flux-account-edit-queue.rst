@@ -27,15 +27,15 @@ the ``queue_table`` in the flux-accounting database:
 
     The minimum number of nodes required to run jobs in this queue.
 
-.. option:: --max-nodes-per-job
+.. option:: -N/--max-nodes-per-job
 
     The maximum number of nodes a job can use in this queue.
 
-.. option:: --max-time-per-job
+.. option:: -t/--max-time-per-job
 
     The max time a job can be running in this queue.
 
-.. option:: --priority
+.. option:: -P/--priority
 
     An associated priority to be applied to jobs submitted to this queue.
 
