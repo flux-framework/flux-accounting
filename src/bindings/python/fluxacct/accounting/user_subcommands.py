@@ -281,22 +281,45 @@ def list_users(conn, cols=None, json_fmt=False, format_string="", **kwargs):
     select_stmt = f"SELECT {', '.join(cols)} FROM association_table"
     # filter by any constraints passed in
     where_clauses = []
-    filters_list = []
-    for table_filter in table_filters:
-        if table_filter in ("queues", "projects", "default_project"):
-            # we are filtering the table with a string; append wildcards ('%') to
-            # the string so we can match multiple cases (e.g the association belongs
-            # to more than one queue or project)
-            where_clauses.append(f"{table_filter} LIKE ?")
-            filters_list.append(f"%{table_filters[table_filter]}%")
+    params = []
+
+    # which columns to use LIKE with wildcards
+    like_fields = {"queues", "projects", "default_project"}
+
+    def to_list(val):
+        if isinstance(val, (list, tuple, set)):
+            return [str(x).strip() for x in val]
+        if isinstance(val, str) and "," in val:
+            return [x.strip() for x in val.split(",") if x.strip() != ""]
+        return [val]
+
+    for col, val in table_filters.items():
+        sql.validate_columns([col], fluxacct.accounting.ASSOCIATION_TABLE)
+
+        values = to_list(val)
+
+        if col in like_fields:
+            # build a grouped OR of LIKE conditions: (col LIKE ? OR col LIKE ? ...)
+            group = []
+            for value in values:
+                group.append(f"{col} LIKE ?")
+                params.append(f"%{value}%")
+            if group:
+                where_clauses.append("(" + " OR ".join(group) + ")")
         else:
-            where_clauses.append(f"{table_filter} = ?")
-            filters_list.append(table_filters[f"{table_filter}"])
+            if len(values) == 1:
+                where_clauses.append(f"{col} = ?")
+                params.append(values[0])
+            else:
+                # use IN (?, ?, ...) for exact-match multi-value filters
+                placeholders = ", ".join(["?"] * len(values))
+                where_clauses.append(f"{col} IN ({placeholders})")
+                params.extend(values)
 
     if where_clauses:
         select_stmt += " WHERE " + " AND ".join(where_clauses)
 
-    cur.execute(select_stmt, tuple(filters_list))
+    cur.execute(select_stmt, tuple(params))
 
     # initialize AccountingFormatter object
     formatter = fmt.AccountingFormatter(cur)
