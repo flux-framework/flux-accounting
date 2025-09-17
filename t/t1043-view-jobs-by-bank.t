@@ -47,26 +47,31 @@ test_expect_success 'send flux-accounting DB information to the plugin' '
 
 test_expect_success 'submit 2 jobs under bank A' '
 	job1=$(flux python ${SUBMIT_AS} 5001 hostname) &&
-	flux job wait-event -f json $job1 priority &&
+	flux job wait-event -f json ${job1} priority &&
 	job2=$(flux python ${SUBMIT_AS} 5001 hostname) &&
-	flux job wait-event -f json $job2 priority &&
-	flux cancel $job1 &&
-	flux cancel $job2
+	flux job wait-event -f json ${job2} priority &&
+	flux cancel ${job1} &&
+	flux cancel ${job2} &&
+	flux job wait-event -vt 3 ${job1} clean &&
+	flux job wait-event -vt 3 ${job2} clean
 '
 
 test_expect_success 'submit 2 jobs under bank B' '
 	job1=$(flux python ${SUBMIT_AS} 5002 hostname) &&
-	flux job wait-event -f json $job1 priority &&
+	flux job wait-event -f json ${job1} priority &&
 	job2=$(flux python ${SUBMIT_AS} 5002 hostname) &&
-	flux job wait-event -f json $job2 priority &&
-	flux cancel $job1 &&
-	flux cancel $job2
+	flux job wait-event -f json ${job2} priority &&
+	flux cancel ${job1} &&
+	flux cancel ${job2} &&
+	flux job wait-event -vt 3 ${job1} clean &&
+	flux job wait-event -vt 3 ${job2} clean
 '
 
 test_expect_success 'submit jobs under a secondary bank' '
 	job1=$(flux python ${SUBMIT_AS} 5001 --setattr=system.bank=bankB hostname) &&
-	flux job wait-event -f json $job1 priority &&
-	flux cancel $job1
+	flux job wait-event -f json ${job1} priority &&
+	flux cancel ${job1} &&
+	flux job wait-event -vt 3 ${job1} clean
 '
 
 test_expect_success 'run fetch-job-records script' '
