@@ -158,6 +158,24 @@ test_expect_success 'check that "MAX" is set for max_nodes and max_cores' '
 	grep "| MAX       | MAX       |" check_for_max_parsable.out
 '
 
+test_expect_success 'edit and reset max_nodes for an association' '
+	flux account edit-user user5201 --max-nodes=100 &&
+	flux account view-user user5201 > user5201_edited_nodes.out &&
+	grep "\"max_nodes\": 100" user5201_edited_nodes.out &&
+	flux account edit-user user5201 --max-nodes=max &&
+	flux account view-user user5201 > user5201_edited_nodes.out &&
+	grep "\"max_nodes\": \"MAX\"" user5201_edited_nodes.out
+'
+
+test_expect_success 'edit and reset max_cores for an association' '
+	flux account edit-user user5201 --max-cores=100 &&
+	flux account view-user user5201 > user5201_edited_cores.out &&
+	grep "\"max_cores\": 100" user5201_edited_cores.out &&
+	flux account edit-user user5201 --max-cores=max &&
+	flux account view-user user5201 > user5201_edited_cores.out &&
+	grep "\"max_cores\": \"MAX\"" user5201_edited_cores.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
