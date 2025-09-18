@@ -13,6 +13,7 @@ import json
 import string
 
 import flux.util
+import fluxacct.accounting.util as u
 
 
 class AccountingFormatter:
@@ -47,7 +48,7 @@ class AccountingFormatter:
         Returns:
             list: list of tuples representing rows of data.
         """
-        return self.rows
+        return [tuple(u.format_value(v) for v in row) for row in self.rows]
 
     def as_table(self):
         """
@@ -59,14 +60,20 @@ class AccountingFormatter:
         # fetch column names and determine the width of each column
         col_names = [description[0] for description in self.cursor.description]
         col_widths = [
-            max(len(str(value)) for value in [col] + [row[i] for row in self.rows])
+            max(
+                len(str(u.format_value(value)))
+                for value in [col] + [row[i] for row in self.rows]
+            )
             for i, col in enumerate(col_names)
         ]
 
         # format a row of data
         def format_row(row):
             return " | ".join(
-                [f"{str(value).ljust(col_widths[i])}" for i, value in enumerate(row)]
+                [
+                    f"{str(u.format_value(value)).ljust(col_widths[i])}"
+                    for i, value in enumerate(row)
+                ]
             )
 
         # format the header, separator, and data rows
@@ -90,7 +97,8 @@ class AccountingFormatter:
 
         # create a list of dictionaries, one for each row
         table_data = [
-            {col_names[i]: row[i] for i in range(len(col_names))} for row in self.rows
+            {col_names[i]: u.format_value(row[i]) for i in range(len(col_names))}
+            for row in self.rows
         ]
 
         # convert the list of dictionaries to a JSON string

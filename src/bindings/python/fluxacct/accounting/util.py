@@ -12,6 +12,7 @@
 import pwd
 
 from flux.util import parse_datetime
+import fluxacct.accounting
 
 
 def get_uid(username):
@@ -54,3 +55,15 @@ def parse_timestamp(timestamp):
     except ValueError:
         # just return as a seconds-since-epoch timestamp
         return timestamp
+
+
+def format_value(val):
+    """
+    Replace a max value in the database with a string.
+
+    Args:
+        val: the value being evaluated
+    """
+    if val == fluxacct.accounting.INTEGER_MAX:
+        return "unlimited"
+    return val
