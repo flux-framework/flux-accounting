@@ -82,6 +82,21 @@ test_expect_success 'call list-users with no optional args to get all associatio
 	jq -e "length == 5" all_users.json 
 '
 
+# We can also pass multiple conditions for each filter.
+test_expect_success 'list users from both bank A and B' '
+	flux account list-users --bank=A,B --json > multiple_banks.json &&
+	jq -e "length == 4" multiple_banks.json
+'
+
+test_expect_success 'list users from multiple queues' '
+	flux account list-users --queues=silver,gold --json > multiple_queues.json &&
+	jq -e "length == 4" multiple_queues.json &&
+	test_must_fail grep "user1" multiple_queues.json &&
+	grep "user2" multiple_queues.json &&
+	grep "user3" multiple_queues.json &&
+	grep "user4" multiple_queues.json
+'
+
 # In the following set of tests, we pass certain filters to only get
 # the associations which fit the criteria of the filters passed in.
 test_expect_success 'filter associations by bank' '
