@@ -54,3 +54,15 @@ def parse_timestamp(timestamp):
     except ValueError:
         # just return as a seconds-since-epoch timestamp
         return timestamp
+
+
+def format_value(val):
+    """
+    Replace a max value in the database with a string.
+
+    Args:
+        val: the value being evaluated
+    """
+    if isinstance(val, int) and val == 2147483647:
+        return "MAX"
+    return val
