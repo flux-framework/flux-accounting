@@ -149,6 +149,15 @@ test_expect_success 'remove a user with --force/make sure default bank gets upda
 	test $(grep -c "\"default_bank\": \"B\"" user5201.out) -eq 2 
 '
 
+test_expect_success 'check that "MAX" is set for max_nodes and max_cores' '
+	flux account view-user user5201 > check_for_max.out &&
+	grep "\"max_nodes\": \"MAX\"" check_for_max.out &&
+	grep "\"max_cores\": \"MAX\"" check_for_max.out &&
+	flux account view-user user5201 --parsable > check_for_max_parsable.out &&
+	grep "| max_nodes | max_cores |" check_for_max_parsable.out &&
+	grep "| MAX       | MAX       |" check_for_max_parsable.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
