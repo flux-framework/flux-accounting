@@ -180,6 +180,18 @@ test_expect_success 'pass both -J and --fields; ensure ValueError is raised' '
 	grep "argument \-J/\-\-job-usage: not allowed with argument \-\-fields" bad_args.error
 '
 
+test_expect_success 'call update-usage and look for INFO-level messages' '
+	flux account-update-usage -p ${DB_PATH} > expect_info_logs.out 2>&1 &&
+	grep "INFO: beginning job-usage update" expect_info_logs.out &&
+	grep "INFO: job-usage update for flux-accounting DB now complete" expect_info_logs.out
+'
+
+test_expect_success 'call update-usage with --quiet; expect no INFO-level messages' '
+	flux account-update-usage -p ${DB_PATH} --quiet > no_info_logs.out 2>&1 &&
+	test_must_fail grep "INFO: beginning " no_info_logs.out &&
+	test_must_fail grep "INFO: job-usage " no_info_logs.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
