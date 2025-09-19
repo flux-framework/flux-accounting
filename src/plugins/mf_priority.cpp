@@ -768,6 +768,16 @@ static void reprior_cb (flux_t *h,
         goto error;
     if (flux_respond (h, msg, NULL) < 0)
         flux_log_error (h, "flux_respond");
+
+    // iterate through map that stores associations and held job IDs; check to
+    // see if any previously-held jobs can now be released with the update
+    for (auto &entry: users) {
+        auto &banks = entry.second;
+
+        for (auto &bank_entry : banks) {
+            check_and_release_held_jobs (p, &bank_entry.second);
+        }
+    }
     return;
 error:
     flux_respond_error (h, msg, errno, flux_msg_last_error (msg));
