@@ -368,9 +368,10 @@ error:
                                  held_job_id,
                                  "mf_priority",
                                  0,
-                                 "job.state.inactive: failed to remove %s "
-                                 "dependency from job",
-                                 dependency.c_str ());
+                                 "check_and_release_held_jobs: failed to "
+                                 "remove %s dependency from job %ju",
+                                 dependency.c_str (),
+                                 held_job_id);
     return -1;
 }
 
