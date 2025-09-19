@@ -252,11 +252,12 @@ def calc_parent_bank_usage(acct_conn, cur, bank):
     return total_usage
 
 
-def update_job_usage(acct_conn, pdhl=1):
-    LOGGER.info(
-        "beginning job-usage update for flux-accounting DB; "
-        "slow response times may occur"
-    )
+def update_job_usage(acct_conn, pdhl=1, quiet=False):
+    if quiet is False:
+        LOGGER.info(
+            "beginning job-usage update for flux-accounting DB; "
+            "slow response times may occur"
+        )
     acct_conn.row_factory = sqlite3.Row
     cur = acct_conn.cursor()
 
@@ -325,7 +326,8 @@ def update_job_usage(acct_conn, pdhl=1):
 
         check_end_hl(acct_conn, pdhl)
 
-        LOGGER.info("job-usage update for flux-accounting DB now complete")
+        if quiet is False:
+            LOGGER.info("job-usage update for flux-accounting DB now complete")
 
         return 0
 

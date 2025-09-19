@@ -70,13 +70,20 @@ def main():
         help="number of weeks for a job's usage contribution to a half-life decay",
         metavar="PRIORITY_DECAY_HALF_LIFE",
     )
+    parser.add_argument(
+        "--quiet",
+        action="store_const",
+        const=True,
+        default=False,
+        help="only log errors and warnings",
+    )
     args = parser.parse_args()
 
     path = set_db_loc(args)
     conn = est_sqlite_conn(path)
 
     try:
-        job_usage.update_job_usage(conn, args.priority_decay_half_life)
+        job_usage.update_job_usage(conn, args.priority_decay_half_life, args.quiet)
     except sqlite3.OperationalError as exc:
         LOGGER.exception(
             "SQLite operational error during job-usage update; rolled back. "
