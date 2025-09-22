@@ -149,6 +149,33 @@ test_expect_success 'remove a user with --force/make sure default bank gets upda
 	test $(grep -c "\"default_bank\": \"B\"" user5201.out) -eq 2 
 '
 
+test_expect_success 'check that "unlimited" is set for max_nodes and max_cores' '
+	flux account view-user user5201 > check_for_unlimited.out &&
+	grep "\"max_nodes\": \"unlimited\"" check_for_unlimited.out &&
+	grep "\"max_cores\": \"unlimited\"" check_for_unlimited.out &&
+	flux account view-user user5201 --parsable > check_for_unlimited_parsable.out &&
+	grep "| max_nodes | max_cores |" check_for_unlimited_parsable.out &&
+	grep "| unlimited | unlimited |" check_for_unlimited_parsable.out
+'
+
+test_expect_success 'edit and reset max_nodes for an association' '
+	flux account edit-user user5201 --max-nodes=100 &&
+	flux account view-user user5201 > user5201_edited_nodes.out &&
+	grep "\"max_nodes\": 100" user5201_edited_nodes.out &&
+	flux account edit-user user5201 --max-nodes=unlimited &&
+	flux account view-user user5201 > user5201_edited_nodes.out &&
+	grep "\"max_nodes\": \"unlimited\"" user5201_edited_nodes.out
+'
+
+test_expect_success 'edit and reset max_cores for an association' '
+	flux account edit-user user5201 --max-cores=100 &&
+	flux account view-user user5201 > user5201_edited_cores.out &&
+	grep "\"max_cores\": 100" user5201_edited_cores.out &&
+	flux account edit-user user5201 --max-cores=unlimited &&
+	flux account view-user user5201 > user5201_edited_cores.out &&
+	grep "\"max_cores\": \"unlimited\"" user5201_edited_cores.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '

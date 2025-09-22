@@ -546,7 +546,7 @@ def edit_user(conn, username, bank=None, **kwargs):
 
     for field, value in updates.items():
         if value is not None:
-            if str(value) == "-1":
+            if str(value) == "-1" or str(value).lower() == "unlimited":
                 if field == "default_bank":
                     raise ValueError(
                         f"default bank cannot be reset with -1; please specify a value"
@@ -556,6 +556,19 @@ def edit_user(conn, username, bank=None, **kwargs):
                     clear_queues(conn, username, bank)
                 elif field == "projects":
                     clear_projects(conn, username, bank)
+                elif field in ("max_nodes", "max_cores"):
+                    # set value to max integer
+                    update_stmt = (
+                        f"UPDATE association_table SET "
+                        f"{field}={fluxacct.accounting.INTEGER_MAX} WHERE username=?"
+                    )
+                    tup = (username,)
+
+                    if bank is not None:
+                        update_stmt += " AND bank=?"
+                        tup = tup + (bank,)
+
+                    conn.execute(update_stmt, tup)
                 else:
                     # for the other fields, setting to NULL will reset it to its default value
                     update_stmt = (

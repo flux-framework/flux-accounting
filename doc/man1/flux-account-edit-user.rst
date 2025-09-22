@@ -79,6 +79,9 @@ All of the attributes able to be modified can be reset to their default value
 by passing ``-1`` as the value for the field. Multiple fields can be edited at
 the same time by passing them on the command line.
 
+The ``max_nodes`` and ``max_cores`` fields can also be reset to their maximum
+value (``2147483647``) by passing ``"unlimited"``.
+
 EXAMPLES
 --------
 
