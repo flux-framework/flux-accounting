@@ -221,6 +221,24 @@ configured to contribute to a job's priority calculation with a factor of
       + (F_{queue} \times 10000)
       + (F_{bank} \times 1000)
       + (1000 \times (F_{urgency} - 16))
+
+.. math::
+
+    P = (0.5 \times 100000)
+      + (1 \times 10000)
+      + (100 \times 1000)
+      + (1000 \times (16 - 16))
+
+.. math::
+
+    P = (50000)
+      + (10000)
+      + (100000)
+      + (0)
+
+.. math::
+
+    P = 160000
   
 To view a breakdown of this job's priority, simply run
 ``flux account jobs bonds``:
