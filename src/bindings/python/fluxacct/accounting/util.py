@@ -10,6 +10,7 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import pwd
+import logging
 
 from flux.util import parse_datetime
 import fluxacct.accounting
@@ -67,3 +68,21 @@ def format_value(val):
     if val == fluxacct.accounting.INTEGER_MAX:
         return "unlimited"
     return val
+
+
+def config_logging(verbosity, logger):
+    """
+    Configure the logging level for a logger.
+
+    Args:
+        verbosity: the level of verbosity to set the logger to.
+        logger: the logger object.
+    """
+    log_level = logging.WARNING
+    if verbosity > 0:
+        log_level = logging.INFO
+    if verbosity > 1:
+        log_level = logging.DEBUG
+    logger.setLevel(log_level)
+    # also set level on fluxacct package
+    logging.getLogger(fluxacct.__name__).setLevel(log_level)

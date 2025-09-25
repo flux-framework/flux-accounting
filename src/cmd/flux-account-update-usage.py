@@ -17,6 +17,7 @@ import os
 
 import fluxacct.accounting
 from fluxacct.accounting import job_usage_calculation as job_usage
+from fluxacct.accounting import util
 
 logging.basicConfig(
     level=logging.INFO,
@@ -70,7 +71,15 @@ def main():
         help="number of weeks for a job's usage contribution to a half-life decay",
         metavar="PRIORITY_DECAY_HALF_LIFE",
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="increase verbosity of output",
+    )
     args = parser.parse_args()
+    util.config_logging(args.verbose, LOGGER)
 
     path = set_db_loc(args)
     conn = est_sqlite_conn(path)
