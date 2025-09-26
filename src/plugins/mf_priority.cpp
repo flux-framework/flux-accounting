@@ -295,6 +295,7 @@ static int decrement_resources (Association *b,
 static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
 {
     std::string dependency;
+    flux_jobid_t held_job_id;
     // the Association has at least one held Job; begin looping through
     // held Jobs and see if they satisfy the requirements to be released
     auto it = b->held_jobs.begin ();
@@ -310,6 +311,7 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
                                                held_job.id,
                                                D_QUEUE_MRJ) < 0) {
                 dependency = D_QUEUE_MRJ;
+                held_job_id = held_job.id;
                 goto error;
             }
             held_job.remove_dep (D_QUEUE_MRJ);
@@ -322,6 +324,7 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
                                                held_job.id,
                                                D_QUEUE_MRES) < 0) {
                 dependency = D_QUEUE_MRES;
+                held_job_id = held_job.id;
                 goto error;
             }
             held_job.remove_dep (D_QUEUE_MRES);
@@ -344,6 +347,7 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
                                                held_job.id,
                                                D_ASSOC_MRES) < 0) {
                 dependency = D_ASSOC_MRES;
+                held_job_id = held_job.id;
                 goto error;
             }
             held_job.remove_dep (D_ASSOC_MRES);
@@ -361,12 +365,13 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
     }
 error:
     flux_jobtap_raise_exception (p,
-                                 FLUX_JOBTAP_CURRENT_JOB,
+                                 held_job_id,
                                  "mf_priority",
                                  0,
-                                 "job.state.inactive: failed to remove %s "
-                                 "dependency from job",
-                                 dependency.c_str ());
+                                 "check_and_release_held_jobs: failed to "
+                                 "remove %s dependency from job %lld",
+                                 dependency.c_str (),
+                                 held_job_id);
     return -1;
 }
 
@@ -763,6 +768,16 @@ static void reprior_cb (flux_t *h,
         goto error;
     if (flux_respond (h, msg, NULL) < 0)
         flux_log_error (h, "flux_respond");
+
+    // iterate through map that stores associations and held job IDs; check to
+    // see if any previously-held jobs can now be released with the update
+    for (auto &entry: users) {
+        auto &banks = entry.second;
+
+        for (auto &bank_entry : banks) {
+            check_and_release_held_jobs (p, &bank_entry.second);
+        }
+    }
     return;
 error:
     flux_respond_error (h, msg, errno, flux_msg_last_error (msg));
@@ -1580,11 +1595,13 @@ static int inactive_cb (flux_plugin_t *p,
     json_t *jobspec = NULL;
     char *queue = NULL;
     std::string queue_str;
+    flux_jobid_t jobid;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s:o, s{s{s{s?s}}}}",
+                                "{s:I, s:i, s:o, s{s{s{s?s}}}}",
+                                "id", &jobid,
                                 "userid", &userid,
                                 "jobspec", &jobspec,
                                 "jobspec", "attributes", "system",
@@ -1612,9 +1629,19 @@ static int inactive_cb (flux_plugin_t *p,
     queue_str = queue ? queue : "";
 
     b->cur_active_jobs--;
-    // nothing more to do if this job was never running
-    if (!flux_jobtap_job_event_posted (p, FLUX_JOBTAP_CURRENT_JOB, "alloc"))
+    if (!flux_jobtap_job_event_posted (p, FLUX_JOBTAP_CURRENT_JOB, "alloc")) {
+        // check to see if this job exists in the Association object's list of
+        // held jobs, and if so, remove it
+        b->held_jobs.erase (
+            std::remove_if (b->held_jobs.begin (),
+                            b->held_jobs.end (),
+                            [jobid] (const Job &job) {
+                                return job.id == jobid;
+                            }),
+            b->held_jobs.end ()
+        );
         return 0;
+    }
 
     // this job was running, so decrement the current running jobs count
     // and the resources count and look to see if any held jobs can be released
