@@ -1599,11 +1599,13 @@ static int inactive_cb (flux_plugin_t *p,
     json_t *jobspec = NULL;
     char *queue = NULL;
     std::string queue_str;
+    flux_jobid_t jobid;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s:o, s{s{s{s?s}}}}",
+                                "{s:I, s:i, s:o, s{s{s{s?s}}}}",
+                                "id", &jobid,
                                 "userid", &userid,
                                 "jobspec", &jobspec,
                                 "jobspec", "attributes", "system",
@@ -1631,9 +1633,20 @@ static int inactive_cb (flux_plugin_t *p,
     queue_str = queue ? queue : "";
 
     b->cur_active_jobs--;
-    // nothing more to do if this job was never running
-    if (!flux_jobtap_job_event_posted (p, FLUX_JOBTAP_CURRENT_JOB, "alloc"))
+    if (!flux_jobtap_job_event_posted (p, FLUX_JOBTAP_CURRENT_JOB, "alloc")) {
+        // check to see if this job exists in the Association object's list of
+        // held jobs, and if so, remove it
+        auto cancelled_job = [jobid] (const Job &job) {
+            return job.id == jobid;
+        };
+        b->held_jobs.erase (
+            std::remove_if (b->held_jobs.begin (),
+                            b->held_jobs.end (),
+                            cancelled_job),
+            b->held_jobs.end ()
+        );
         return 0;
+    }
 
     // this job was running, so decrement the current running jobs count
     // and the resources count and look to see if any held jobs can be released
