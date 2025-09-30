@@ -1,35 +1,8 @@
 queue_rules:
   - name: default
     batch_size: 1
-    queue_conditions:
-      - base=master
-      - label="merge-when-passing"
-      - label!="work-in-progress"
-      - or:
-          - "approved-reviews-by=@flux-framework/core"
-          - "approved-reviews-by=@flux-framework/accounting"
-      - "#approved-reviews-by>0"
-      - "#changes-requested-reviews-by=0"
-      - -title~=^\[*[Ww][Ii][Pp]
-    merge_conditions:
-      - base=master
-      - status-success="validate commits"
-      - status-success="python format"
-      - status-success="python lint"
-      - status-success="jammy - py3.6"
-      - status-success="el8 - py3.6"
-      - status-success="el8 - distcheck"
-      - status-success="coverage"
-      - label="merge-when-passing"
-      - label!="work-in-progress"
-      - or:
-          - "approved-reviews-by=@flux-framework/core"
-          - "approved-reviews-by=@flux-framework/accounting"
-      - "#approved-reviews-by>0"
-      - "#changes-requested-reviews-by=0"
-      - -title~=^\[*[Ww][Ii][Pp]
-    merge_method: merge
     update_method: rebase
+    merge_method: merge
 
 # Avoid temporary branches created by mergify for parallel checks.
 # These do not work with the pr-validator since the temporary PR
@@ -38,7 +11,27 @@ merge_queue:
   max_parallel_checks: 1
 
 pull_request_rules:
-  - name: refactored queue action rule
-    conditions: []
+  - name: rebase and merge when passing all checks\
+    conditions:
+      - base=master
+      - label="merge-when-passing"
+      - label!="work-in-progress"
+      - or:
+          - "approved-reviews-by=@flux-framework/core"
+          - "approved-reviews-by=@flux-framework/accounting"
+      - "#approved-reviews-by>0"
+      - "#changes-requested-reviews-by=0"
+      - -title~=^\[*[Ww][Ii][Pp]
     actions:
       queue:
+        name: default
+  - name: remove outdated approved reviews
+    conditions:
+      - author!=@core
+    actions:
+      dismiss_reviews:
+        approved: true
+        changes_requested: false
+        message: |
+          Approving reviews have been dismissed because this pull request
+          was updated.
