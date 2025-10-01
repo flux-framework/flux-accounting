@@ -11,6 +11,8 @@
 ###############################################################
 import pwd
 import logging
+import functools
+import contextlib
 
 from flux.util import parse_datetime
 import fluxacct.accounting
@@ -86,3 +88,19 @@ def config_logging(verbosity, logger):
     logger.setLevel(log_level)
     # also set level on fluxacct package
     logging.getLogger(fluxacct.__name__).setLevel(log_level)
+
+
+def with_cursor(func):
+    """
+    Decorator that automatically manages a Cursor object's lifecycle.
+
+    The decorated function should take the Cursor object as its first parameter
+    after the Connection object.
+    """
+
+    @functools.wraps(func)
+    def wrapper(conn, *args, **kwargs):
+        with contextlib.closing(conn.cursor()) as cur:
+            return func(conn, cur, *args, **kwargs)
+
+    return wrapper
