@@ -23,8 +23,7 @@ from fluxacct.accounting.util import with_cursor
 #                      Helper Functions                       #
 #                                                             #
 ###############################################################
-def validate_queue(conn, queues):
-    cur = conn.cursor()
+def validate_queue(cur, queues):
     queue_list = queues.split(",")
 
     for queue in queue_list:
@@ -34,8 +33,7 @@ def validate_queue(conn, queues):
             raise ValueError(queue)
 
 
-def validate_project(conn, projects):
-    cur = conn.cursor()
+def validate_project(cur, projects):
     project_list = projects.split(",")
     project_list.append("*")
 
@@ -48,8 +46,7 @@ def validate_project(conn, projects):
     return ",".join(project_list)
 
 
-def validate_bank(conn, bank):
-    cur = conn.cursor()
+def validate_bank(cur, bank):
     cur.execute("SELECT bank FROM bank_table WHERE bank=?", (bank,))
     result = cur.fetchone()
     if result is None:
@@ -364,7 +361,7 @@ def add_user(
 
     # validate the bank specified if one was passed in
     try:
-        validate_bank(conn, bank)
+        validate_bank(cur, bank)
     except ValueError as bad_bank:
         raise ValueError(f"Bank {bad_bank} does not exist in bank_table")
 
@@ -374,7 +371,7 @@ def add_user(
     # validate the queue(s) specified if any were passed in
     if queues != "":
         try:
-            validate_queue(conn, queues=queues)
+            validate_queue(cur, queues=queues)
         except ValueError as bad_queue:
             raise ValueError(f"queue {bad_queue} does not exist in queue_table")
 
@@ -383,7 +380,7 @@ def add_user(
     # any were passed in
     if projects != "*":
         try:
-            projects = validate_project(conn, projects=projects)
+            projects = validate_project(cur, projects=projects)
         except ValueError as bad_project:
             raise ValueError(f"project {bad_project} does not exist in project_table")
 
@@ -588,12 +585,12 @@ def edit_user(conn, cur, username, bank=None, **kwargs):
 
             if field == "queues":
                 try:
-                    validate_queue(conn, queues=value)
+                    validate_queue(cur, queues=value)
                 except ValueError as bad_queue:
                     raise ValueError(f"queue {bad_queue} does not exist in queue_table")
             elif field == "projects":
                 try:
-                    updates[field] = validate_project(conn, projects=value)
+                    updates[field] = validate_project(cur, projects=value)
                 except ValueError as bad_project:
                     raise ValueError(
                         f"project {bad_project} does not exist in project_table"
@@ -692,9 +689,9 @@ def edit_all_users(conn, cur, **kwargs):
                 reset_statements.append(f"{field}=NULL")
         else:
             if field == "queues":
-                validate_queue(conn, queues=value)
+                validate_queue(cur, queues=value)
             elif field == "projects":
-                updates[field] = validate_project(conn, projects=value)
+                updates[field] = validate_project(cur, projects=value)
             reset_statements.append(f"{field}=?")
             reset_values.append(updates[field])
 
