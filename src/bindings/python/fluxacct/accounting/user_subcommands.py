@@ -150,7 +150,7 @@ def update_default_bank(conn, cur, username):
         edit_user(conn, username, default_bank=new_default_bank)
 
 
-def update_mod_time(conn, username, bank):
+def update_mod_time(conn, cur, username, bank):
     mod_time_tup = (
         int(time.time()),
         username,
@@ -162,36 +162,36 @@ def update_mod_time(conn, username, bank):
     else:
         update_stmt = "UPDATE association_table SET mod_time=? WHERE username=?"
 
-    conn.execute(update_stmt, mod_time_tup)
+    cur.execute(update_stmt, mod_time_tup)
 
 
-def clear_queues(conn, username, bank=None):
+def clear_queues(conn, cur, username, bank=None):
     if bank is None:
-        conn.execute(
+        cur.execute(
             "UPDATE association_table SET queues='' WHERE username=?", (username,)
         )
     else:
-        conn.execute(
+        cur.execute(
             "UPDATE association_table SET queues='' WHERE username=? AND bank=?",
             (
                 username,
                 bank,
             ),
         )
-        update_mod_time(conn, username, bank)
+        update_mod_time(conn, cur, username, bank)
 
     conn.commit()
 
     return 0
 
 
-def clear_projects(conn, username, bank=None):
+def clear_projects(conn, cur, username, bank=None):
     update_stmt = "UPDATE association_table SET projects='*' WHERE username=?"
     if bank is None:
-        conn.execute(update_stmt, (username,))
+        cur.execute(update_stmt, (username,))
     else:
         update_stmt += " AND bank=?"
-        conn.execute(
+        cur.execute(
             update_stmt,
             (
                 username,
@@ -199,7 +199,7 @@ def clear_projects(conn, username, bank=None):
             ),
         )
 
-    update_mod_time(conn, username, bank)
+    update_mod_time(conn, cur, username, bank)
     conn.commit()
 
     return 0
@@ -396,7 +396,7 @@ def add_user(
             projects += f",{default_project}"
 
     # insert the user values into association_table
-    conn.execute(
+    cur.execute(
         """
         INSERT INTO association_table (creation_time, mod_time, username,
                                        userid, bank, default_bank, shares,
@@ -424,7 +424,7 @@ def add_user(
         ),
     )
     # insert the user values into job_usage_factor_table
-    conn.execute(
+    cur.execute(
         """
         INSERT OR IGNORE INTO job_usage_factor_table (username, userid, bank)
         VALUES (?, ?, ?)
@@ -462,7 +462,7 @@ def delete_user(conn, cur, username, bank, force=False):
     if force:
         sql_stmt = "DELETE FROM association_table WHERE username=? AND bank=?"
 
-    conn.execute(
+    cur.execute(
         sql_stmt,
         (
             username,
@@ -551,9 +551,9 @@ def edit_user(conn, cur, username, bank=None, **kwargs):
                     )
                 # clear either the queues or the projects
                 if field == "queues":
-                    clear_queues(conn, username, bank)
+                    clear_queues(conn, cur, username, bank)
                 elif field == "projects":
-                    clear_projects(conn, username, bank)
+                    clear_projects(conn, cur, username, bank)
                 elif field in ("max_nodes", "max_cores"):
                     # set value to max integer
                     update_stmt = (
@@ -566,7 +566,7 @@ def edit_user(conn, cur, username, bank=None, **kwargs):
                         update_stmt += " AND bank=?"
                         tup = tup + (bank,)
 
-                    conn.execute(update_stmt, tup)
+                    cur.execute(update_stmt, tup)
                 else:
                     # for the other fields, setting to NULL will reset it to its default value
                     update_stmt = (
@@ -578,7 +578,7 @@ def edit_user(conn, cur, username, bank=None, **kwargs):
                         update_stmt += " AND bank=?"
                         tup = tup + (bank,)
 
-                    conn.execute(update_stmt, tup)
+                    cur.execute(update_stmt, tup)
 
                 # skip the rest of the loop if reset logic was handled
                 continue
@@ -603,10 +603,10 @@ def edit_user(conn, cur, username, bank=None, **kwargs):
                 update_stmt += " AND bank=?"
                 tup = tup + (bank,)
 
-            conn.execute(update_stmt, tup)
+            cur.execute(update_stmt, tup)
 
     # update mod_time column
-    update_mod_time(conn, username, bank)
+    update_mod_time(conn, cur, username, bank)
 
     # commit changes
     conn.commit()
