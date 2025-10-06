@@ -15,6 +15,7 @@ import fluxacct.accounting
 from fluxacct.accounting import user_subcommands as u
 from fluxacct.accounting import formatter as fmt
 from fluxacct.accounting import sql_util as sql
+from fluxacct.accounting.util import with_cursor
 
 ###############################################################
 #                                                             #
@@ -84,9 +85,8 @@ def reactivate_bank(conn, cur, bank, parent_bank):
 ###############################################################
 
 
-def add_bank(conn, bank, shares, parent_bank="", priority=0.0):
-    cur = conn.cursor()
-
+@with_cursor
+def add_bank(conn, cur, bank, shares, parent_bank="", priority=0.0):
     if parent_bank == "":
         # a root bank is trying to be added; check that one does not already exist
         cur.execute("SELECT * FROM bank_table WHERE parent_bank=''")
@@ -135,8 +135,10 @@ def add_bank(conn, bank, shares, parent_bank="", priority=0.0):
         raise sqlite3.IntegrityError(f"bank {bank} already exists in bank_table")
 
 
+@with_cursor
 def view_bank(
     conn,
+    cur,
     bank,
     tree=False,
     users=False,
@@ -154,8 +156,6 @@ def view_bank(
 
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.BANK_TABLE
-
-    cur = conn.cursor()
 
     sql.validate_columns(cols, fluxacct.accounting.BANK_TABLE)
     # construct SELECT statement
@@ -176,7 +176,8 @@ def view_bank(
     return formatter.as_json()
 
 
-def delete_bank(conn, bank, force=False):
+@with_cursor
+def delete_bank(conn, cur, bank, force=False):
     """
     Deactivate a bank row in the bank_table by setting its 'active' status to 0.
     If force=True, actually remove the bank row from the bank_table. If the bank contains
@@ -189,20 +190,19 @@ def delete_bank(conn, bank, force=False):
         force: an option to actually remove the row from the bank_table instead of
             just setting the 'active' column to 0.
     """
-    cursor = conn.cursor()
     if force:
         sql_stmt = "DELETE FROM bank_table WHERE bank=?"
     else:
         sql_stmt = "UPDATE bank_table SET active=0 WHERE bank=?"
 
     try:
-        cursor.execute(sql_stmt, (bank,))
+        cur.execute(sql_stmt, (bank,))
 
         # helper function to traverse the bank table and disable all of its sub banks
         def get_sub_banks(bank):
             select_stmt = "SELECT bank FROM bank_table WHERE parent_bank=?"
-            cursor.execute(select_stmt, (bank,))
-            result = cursor.fetchall()
+            cur.execute(select_stmt, (bank,))
+            result = cur.fetchall()
 
             # we've reached a bank with no sub banks
             if len(result) == 0:
@@ -210,7 +210,7 @@ def delete_bank(conn, bank, force=False):
                     SELECT username, bank
                     FROM association_table WHERE bank=?
                     """
-                for assoc_row in cursor.execute(select_assoc_stmt, (bank,)):
+                for assoc_row in cur.execute(select_assoc_stmt, (bank,)):
                     u.delete_user(
                         conn,
                         username=assoc_row["username"],
@@ -220,7 +220,7 @@ def delete_bank(conn, bank, force=False):
             # else, disable all of its sub banks and continue traversing
             else:
                 for row in result:
-                    cursor.execute(sql_stmt, (row["bank"],))
+                    cur.execute(sql_stmt, (row["bank"],))
                     get_sub_banks(row["bank"])
 
         get_sub_banks(bank)
@@ -236,14 +236,15 @@ def delete_bank(conn, bank, force=False):
     return 0
 
 
+@with_cursor
 def edit_bank(
     conn,
+    cur,
     bank=None,
     shares=None,
     parent_bank=None,
     priority=None,
 ):
-    cur = conn.cursor()
     params = locals()
     editable_fields = [
         "shares",
@@ -280,8 +281,10 @@ def edit_bank(
     return 0
 
 
+@with_cursor
 def list_banks(
     conn,
+    cur,
     inactive=False,
     cols=None,
     json_fmt=False,
@@ -302,8 +305,6 @@ def list_banks(
     """
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.BANK_TABLE
-
-    cur = conn.cursor()
 
     sql.validate_columns(cols, fluxacct.accounting.BANK_TABLE)
     # construct SELECT statement
