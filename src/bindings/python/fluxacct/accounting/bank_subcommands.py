@@ -114,7 +114,7 @@ def add_bank(conn, cur, bank, shares, parent_bank="", priority=0.0):
 
     # insert the bank values into the database
     try:
-        conn.execute(
+        cur.execute(
             """
             INSERT INTO bank_table (
                 bank,
@@ -273,7 +273,7 @@ def edit_bank(
                 params[field],
                 bank,
             )
-            conn.execute(update_stmt, tup)
+            cur.execute(update_stmt, tup)
 
     # commit changes
     conn.commit()
