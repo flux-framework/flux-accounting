@@ -55,7 +55,7 @@ def add_queue(
                         max_nodes_per_assoc
                       ) VALUES (?, ?, ?, ?, ?, ?, ?)
                       """
-        conn.execute(
+        cur.execute(
             insert_stmt,
             (
                 queue,
@@ -145,7 +145,7 @@ def edit_queue(
                     queue,
                 )
 
-            conn.execute(update_stmt, tup)
+            cur.execute(update_stmt, tup)
 
             # commit changes
             conn.commit()
