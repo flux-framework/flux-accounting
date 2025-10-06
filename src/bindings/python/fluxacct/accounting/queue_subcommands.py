@@ -14,10 +14,11 @@ import sqlite3
 import fluxacct.accounting
 from fluxacct.accounting import formatter as fmt
 from fluxacct.accounting import sql_util as sql
+from fluxacct.accounting.util import with_cursor
 
 
-def view_queue(conn, queue, parsable=False, format_string=""):
-    cur = conn.cursor()
+@with_cursor
+def view_queue(conn, cur, queue, parsable=False, format_string=""):
     # get the information pertaining to a queue in the DB
     cur.execute("SELECT * FROM queue_table where queue=?", (queue,))
 
@@ -30,8 +31,10 @@ def view_queue(conn, queue, parsable=False, format_string=""):
     return formatter.as_json()
 
 
+@with_cursor
 def add_queue(
     conn,
+    cur,
     queue,
     min_nodes_per_job=1,
     max_nodes_per_job=1,
@@ -73,17 +76,17 @@ def add_queue(
         raise sqlite3.IntegrityError(f"queue {queue} already exists in queue_table")
 
 
-def delete_queue(conn, queue):
+@with_cursor
+def delete_queue(conn, cur, queue):
     """
     Remove a queue from the queue_table. If any associations still have permissions
     to this queue, issue a warning that the queue is still referenced elsewhere in the
     DB.
     """
-    cursor = conn.cursor()
     # look for any rows in the association_table that reference this queue
     select_stmt = "SELECT * FROM association_table WHERE queues LIKE ?"
-    cursor.execute(select_stmt, ("%" + queue + "%",))
-    result = cursor.fetchall()
+    cur.execute(select_stmt, ("%" + queue + "%",))
+    result = cur.fetchall()
     warning_stmt = (
         "WARNING: user(s) in the association_table still "
         "reference this queue. Make sure to edit user rows to "
@@ -91,7 +94,7 @@ def delete_queue(conn, queue):
     )
 
     delete_stmt = "DELETE FROM queue_table WHERE queue=?"
-    cursor.execute(delete_stmt, (queue,))
+    cur.execute(delete_stmt, (queue,))
     conn.commit()
 
     if len(result) > 0:
@@ -101,8 +104,10 @@ def delete_queue(conn, queue):
     return 0
 
 
+@with_cursor
 def edit_queue(
     conn,
+    cur,
     queue,
     min_nodes_per_job=None,
     max_nodes_per_job=None,
@@ -148,7 +153,8 @@ def edit_queue(
     return 0
 
 
-def list_queues(conn, cols=None, json_fmt=False, format_string=""):
+@with_cursor
+def list_queues(conn, cur, cols=None, json_fmt=False, format_string=""):
     """
     List all queues in queue_table.
 
@@ -162,8 +168,6 @@ def list_queues(conn, cols=None, json_fmt=False, format_string=""):
     """
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.QUEUE_TABLE
-
-    cur = conn.cursor()
 
     sql.validate_columns(cols, fluxacct.accounting.QUEUE_TABLE)
     # construct SELECT statement
