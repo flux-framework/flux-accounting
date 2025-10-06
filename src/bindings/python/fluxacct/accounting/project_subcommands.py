@@ -68,7 +68,7 @@ def add_project(conn, cur, project):
 
     try:
         insert_stmt = "INSERT INTO project_table (project) VALUES (?)"
-        conn.execute(
+        cur.execute(
             insert_stmt,
             (project,),
         )
