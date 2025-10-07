@@ -222,7 +222,8 @@ def create_db(
                 project             text,
                 bank                text,
                 requested_duration  real       DEFAULT 0.0,
-                actual_duration     real       DEFAULT 0.0
+                actual_duration     real       DEFAULT 0.0,
+                duration_delta      real       DEFAULT 0.0
             );"""
     )
     LOGGER.info("Created jobs table successfully")

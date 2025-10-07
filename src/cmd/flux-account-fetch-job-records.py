@@ -110,6 +110,10 @@ def fetch_new_jobs(last_timestamp=0.0):
                 single_record["actual_duration"] = single_job.get(
                     "t_inactive"
                 ) - single_job.get("t_run")
+                # compute duration delta
+                single_record["duration_delta"] = single_record.get(
+                    "requested_duration"
+                ) - single_record.get("actual_duration")
             except json.JSONDecodeError as exc:
                 # the job's jobspec can't be decoded; don't add any of its elements
                 # to the job dictionary
@@ -147,8 +151,8 @@ def insert_jobs_in_db(conn, cur, job_records):
                 """
                 INSERT OR IGNORE INTO jobs
                 (id, userid, t_submit, t_run, t_inactive, ranks, R, jobspec, project,
-                bank, requested_duration, actual_duration)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                bank, requested_duration, actual_duration, duration_delta)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     single_job["id"],
@@ -165,6 +169,7 @@ def insert_jobs_in_db(conn, cur, job_records):
                     single_job["bank"] if single_job.get("bank") is not None else "",
                     single_job.get("requested_duration"),
                     single_job.get("actual_duration"),
+                    single_job.get("duration_delta"),
                 ),
             )
         except KeyError:
