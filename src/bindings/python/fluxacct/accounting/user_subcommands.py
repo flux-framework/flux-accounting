@@ -16,14 +16,14 @@ import fluxacct.accounting
 from fluxacct.accounting import formatter as fmt
 from fluxacct.accounting import sql_util as sql
 from fluxacct.accounting import util
+from fluxacct.accounting.util import with_cursor
 
 ###############################################################
 #                                                             #
 #                      Helper Functions                       #
 #                                                             #
 ###############################################################
-def validate_queue(conn, queues):
-    cur = conn.cursor()
+def validate_queue(cur, queues):
     queue_list = queues.split(",")
 
     for queue in queue_list:
@@ -33,8 +33,7 @@ def validate_queue(conn, queues):
             raise ValueError(queue)
 
 
-def validate_project(conn, projects):
-    cur = conn.cursor()
+def validate_project(cur, projects):
     project_list = projects.split(",")
     project_list.append("*")
 
@@ -47,9 +46,7 @@ def validate_project(conn, projects):
     return ",".join(project_list)
 
 
-def validate_bank(conn, bank):
-    cur = conn.cursor()
-
+def validate_bank(cur, bank):
     cur.execute("SELECT bank FROM bank_table WHERE bank=?", (bank,))
     result = cur.fetchone()
     if result is None:
@@ -149,10 +146,11 @@ def update_default_bank(conn, cur, username):
     if len(result) > 0:
         # update user rows to have a new default bank (the next earliest user/bank created)
         new_default_bank = result[0][0]
+        # pylint: disable=no-value-for-parameter
         edit_user(conn, username, default_bank=new_default_bank)
 
 
-def update_mod_time(conn, username, bank):
+def update_mod_time(conn, cur, username, bank):
     mod_time_tup = (
         int(time.time()),
         username,
@@ -164,36 +162,36 @@ def update_mod_time(conn, username, bank):
     else:
         update_stmt = "UPDATE association_table SET mod_time=? WHERE username=?"
 
-    conn.execute(update_stmt, mod_time_tup)
+    cur.execute(update_stmt, mod_time_tup)
 
 
-def clear_queues(conn, username, bank=None):
+def clear_queues(conn, cur, username, bank=None):
     if bank is None:
-        conn.execute(
+        cur.execute(
             "UPDATE association_table SET queues='' WHERE username=?", (username,)
         )
     else:
-        conn.execute(
+        cur.execute(
             "UPDATE association_table SET queues='' WHERE username=? AND bank=?",
             (
                 username,
                 bank,
             ),
         )
-        update_mod_time(conn, username, bank)
+        update_mod_time(conn, cur, username, bank)
 
     conn.commit()
 
     return 0
 
 
-def clear_projects(conn, username, bank=None):
+def clear_projects(conn, cur, username, bank=None):
     update_stmt = "UPDATE association_table SET projects='*' WHERE username=?"
     if bank is None:
-        conn.execute(update_stmt, (username,))
+        cur.execute(update_stmt, (username,))
     else:
         update_stmt += " AND bank=?"
-        conn.execute(
+        cur.execute(
             update_stmt,
             (
                 username,
@@ -201,7 +199,7 @@ def clear_projects(conn, username, bank=None):
             ),
         )
 
-    update_mod_time(conn, username, bank)
+    update_mod_time(conn, cur, username, bank)
     conn.commit()
 
     return 0
@@ -212,8 +210,10 @@ def clear_projects(conn, username, bank=None):
 #                   Subcommand Functions                      #
 #                                                             #
 ###############################################################
+@with_cursor
 def view_user(
     conn,
+    cur,
     user,
     parsable=False,
     cols=None,
@@ -228,8 +228,6 @@ def view_user(
 
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.ASSOCIATION_TABLE
-
-    cur = conn.cursor()
 
     if job_usage:
         # only return a breakdown of the association's job usage factors that make up
@@ -254,7 +252,8 @@ def view_user(
     return formatter.as_json()
 
 
-def list_users(conn, cols=None, json_fmt=False, format_string="", **kwargs):
+@with_cursor
+def list_users(conn, cur, cols=None, json_fmt=False, format_string="", **kwargs):
     """
     List all associations in the association_table in the flux-accounting DB. If
     filters are passed in, limit the associations returned to the ones which fit
@@ -273,8 +272,6 @@ def list_users(conn, cols=None, json_fmt=False, format_string="", **kwargs):
 
     # if any filters are passed in, make sure they are valid columns
     table_filters = {key: val for key, val in kwargs.items() if val is not None}
-
-    cur = conn.cursor()
 
     sql.validate_columns(cols, fluxacct.accounting.ASSOCIATION_TABLE)
     # construct SELECT statement
@@ -330,8 +327,10 @@ def list_users(conn, cols=None, json_fmt=False, format_string="", **kwargs):
     return formatter.as_table()
 
 
+@with_cursor
 def add_user(
     conn,
+    cur,
     username,
     bank,
     uid=65534,
@@ -345,8 +344,6 @@ def add_user(
     projects="*",
     default_project=None,
 ):
-    cur = conn.cursor()
-
     if uid == 65534:
         uid = util.get_uid(username)
 
@@ -364,7 +361,7 @@ def add_user(
 
     # validate the bank specified if one was passed in
     try:
-        validate_bank(conn, bank)
+        validate_bank(cur, bank)
     except ValueError as bad_bank:
         raise ValueError(f"Bank {bad_bank} does not exist in bank_table")
 
@@ -374,7 +371,7 @@ def add_user(
     # validate the queue(s) specified if any were passed in
     if queues != "":
         try:
-            validate_queue(conn, queues)
+            validate_queue(cur, queues=queues)
         except ValueError as bad_queue:
             raise ValueError(f"queue {bad_queue} does not exist in queue_table")
 
@@ -383,7 +380,7 @@ def add_user(
     # any were passed in
     if projects != "*":
         try:
-            projects = validate_project(conn, projects)
+            projects = validate_project(cur, projects=projects)
         except ValueError as bad_project:
             raise ValueError(f"project {bad_project} does not exist in project_table")
 
@@ -399,7 +396,7 @@ def add_user(
             projects += f",{default_project}"
 
     # insert the user values into association_table
-    conn.execute(
+    cur.execute(
         """
         INSERT INTO association_table (creation_time, mod_time, username,
                                        userid, bank, default_bank, shares,
@@ -427,7 +424,7 @@ def add_user(
         ),
     )
     # insert the user values into job_usage_factor_table
-    conn.execute(
+    cur.execute(
         """
         INSERT OR IGNORE INTO job_usage_factor_table (username, userid, bank)
         VALUES (?, ?, ?)
@@ -444,7 +441,8 @@ def add_user(
     return 0
 
 
-def delete_user(conn, username, bank, force=False):
+@with_cursor
+def delete_user(conn, cur, username, bank, force=False):
     """
     Deactivate a user row in the association_table by setting its 'active' status to 0.
     If force=True, actually remove the user row from the association_table. If the
@@ -459,13 +457,12 @@ def delete_user(conn, username, bank, force=False):
         force: an option to actually remove the row from the association_table instead of
             just setting the 'active' column to 0.
     """
-    cur = conn.cursor()
     sql_stmt = "UPDATE association_table SET active=0 WHERE username=? AND bank=?"
 
     if force:
         sql_stmt = "DELETE FROM association_table WHERE username=? AND bank=?"
 
-    conn.execute(
+    cur.execute(
         sql_stmt,
         (
             username,
@@ -487,7 +484,8 @@ def delete_user(conn, username, bank, force=False):
     return 0
 
 
-def edit_user(conn, username, bank=None, **kwargs):
+@with_cursor
+def edit_user(conn, cur, username, bank=None, **kwargs):
     """
     Edit a field for an association in the association_table. If "bank" is not passed,
     edit the column across every row for the user in the association_table. If -1 is
@@ -553,9 +551,9 @@ def edit_user(conn, username, bank=None, **kwargs):
                     )
                 # clear either the queues or the projects
                 if field == "queues":
-                    clear_queues(conn, username, bank)
+                    clear_queues(conn, cur, username, bank)
                 elif field == "projects":
-                    clear_projects(conn, username, bank)
+                    clear_projects(conn, cur, username, bank)
                 elif field in ("max_nodes", "max_cores"):
                     # set value to max integer
                     update_stmt = (
@@ -568,7 +566,7 @@ def edit_user(conn, username, bank=None, **kwargs):
                         update_stmt += " AND bank=?"
                         tup = tup + (bank,)
 
-                    conn.execute(update_stmt, tup)
+                    cur.execute(update_stmt, tup)
                 else:
                     # for the other fields, setting to NULL will reset it to its default value
                     update_stmt = (
@@ -580,19 +578,19 @@ def edit_user(conn, username, bank=None, **kwargs):
                         update_stmt += " AND bank=?"
                         tup = tup + (bank,)
 
-                    conn.execute(update_stmt, tup)
+                    cur.execute(update_stmt, tup)
 
                 # skip the rest of the loop if reset logic was handled
                 continue
 
             if field == "queues":
                 try:
-                    validate_queue(conn, value)
+                    validate_queue(cur, queues=value)
                 except ValueError as bad_queue:
                     raise ValueError(f"queue {bad_queue} does not exist in queue_table")
             elif field == "projects":
                 try:
-                    updates[field] = validate_project(conn, value)
+                    updates[field] = validate_project(cur, projects=value)
                 except ValueError as bad_project:
                     raise ValueError(
                         f"project {bad_project} does not exist in project_table"
@@ -605,10 +603,10 @@ def edit_user(conn, username, bank=None, **kwargs):
                 update_stmt += " AND bank=?"
                 tup = tup + (bank,)
 
-            conn.execute(update_stmt, tup)
+            cur.execute(update_stmt, tup)
 
     # update mod_time column
-    update_mod_time(conn, username, bank)
+    update_mod_time(conn, cur, username, bank)
 
     # commit changes
     conn.commit()
@@ -616,7 +614,8 @@ def edit_user(conn, username, bank=None, **kwargs):
     return 0
 
 
-def edit_all_users(conn, **kwargs):
+@with_cursor
+def edit_all_users(conn, cur, **kwargs):
     """
     Edit an attribute for every row in association_table.
 
@@ -642,7 +641,6 @@ def edit_all_users(conn, **kwargs):
             under.
         default_project: The association's default project.
     """
-    cur = conn.cursor()
     editable_fields = {
         "bank",
         "default_bank",
@@ -691,9 +689,9 @@ def edit_all_users(conn, **kwargs):
                 reset_statements.append(f"{field}=NULL")
         else:
             if field == "queues":
-                validate_queue(conn, value)
+                validate_queue(cur, queues=value)
             elif field == "projects":
-                updates[field] = validate_project(conn, value)
+                updates[field] = validate_project(cur, projects=value)
             reset_statements.append(f"{field}=?")
             reset_values.append(updates[field])
 
