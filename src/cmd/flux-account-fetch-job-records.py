@@ -15,6 +15,7 @@ import sys
 import argparse
 import sqlite3
 import json
+from contextlib import closing
 
 import flux
 import flux.job
@@ -139,9 +140,7 @@ def fetch_new_jobs(last_timestamp=0.0):
 
 
 # insert newly seen jobs into the "jobs" table in the flux-accounting DB
-def insert_jobs_in_db(conn, job_records):
-    cur = conn.cursor()
-
+def insert_jobs_in_db(conn, cur, job_records):
     for single_job in job_records:
         try:
             cur.execute(
@@ -232,24 +231,28 @@ def main():
     conn = est_sqlite_conn(path)
     cur = conn.cursor()
 
-    if args.copy:
-        # copy the contents from one job-archive DB to this one
-        old_archive_conn = est_sqlite_conn(args.copy)
-        old_cur = old_archive_conn.cursor()
-        copy_db_contents(old_cur, cur, conn)
+    with closing(cur):
+        if args.copy:
+            # copy the contents from one job-archive DB to this one
+            old_archive_conn = est_sqlite_conn(args.copy)
+            old_cur = old_archive_conn.cursor()
+            with closing(old_cur):
+                copy_db_contents(old_cur, cur, conn)
 
-    # get the timestamp of the last seen job
-    timestamp = 0.0
-    cur.execute("SELECT MAX(t_inactive) FROM jobs")
-    timestamp_arr = cur.fetchall()
+        # get the timestamp of the last seen job
+        timestamp = 0.0
+        cur.execute("SELECT MAX(t_inactive) FROM jobs")
+        timestamp_arr = cur.fetchall()
 
-    if timestamp_arr[0][0]:
-        timestamp = timestamp_arr[0][0]
+        if timestamp_arr[0][0]:
+            timestamp = timestamp_arr[0][0]
 
-    job_records = []
-    job_records = fetch_new_jobs(timestamp)
+        job_records = []
+        job_records = fetch_new_jobs(timestamp)
 
-    insert_jobs_in_db(conn, job_records)
+        insert_jobs_in_db(conn, cur, job_records=job_records)
+
+    conn.close()
 
 
 if __name__ == "__main__":
