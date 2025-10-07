@@ -14,6 +14,7 @@ import sqlite3
 import fluxacct.accounting
 from fluxacct.accounting import formatter as fmt
 from fluxacct.accounting import sql_util as sql
+from fluxacct.accounting.util import with_cursor
 
 ###############################################################
 #                                                             #
@@ -44,8 +45,8 @@ def project_is_active(cur, project):
 ###############################################################
 
 
-def view_project(conn, project, parsable=False, format_string=None):
-    cur = conn.cursor()
+@with_cursor
+def view_project(conn, cur, project, parsable=False, format_string=None):
     # get the information pertaining to a project in the DB
     cur.execute("SELECT * FROM project_table where project=?", (project,))
 
@@ -58,9 +59,8 @@ def view_project(conn, project, parsable=False, format_string=None):
     return formatter.as_json()
 
 
-def add_project(conn, project):
-    cur = conn.cursor()
-
+@with_cursor
+def add_project(conn, cur, project):
     if project_is_active(cur, project):
         raise sqlite3.IntegrityError(
             f"project {project} already exists in project_table"
@@ -68,7 +68,7 @@ def add_project(conn, project):
 
     try:
         insert_stmt = "INSERT INTO project_table (project) VALUES (?)"
-        conn.execute(
+        cur.execute(
             insert_stmt,
             (project,),
         )
@@ -83,13 +83,12 @@ def add_project(conn, project):
         )
 
 
-def delete_project(conn, project):
-    cursor = conn.cursor()
-
+@with_cursor
+def delete_project(conn, cur, project):
     # look for any rows in the association_table that reference this project
     select_stmt = "SELECT * FROM association_table WHERE projects LIKE ?"
-    cursor.execute(select_stmt, ("%" + project + "%",))
-    result = cursor.fetchall()
+    cur.execute(select_stmt, ("%" + project + "%",))
+    result = cur.fetchall()
     warning_stmt = (
         "WARNING: user(s) in the association_table still "
         "reference this project. Make sure to edit user rows to "
@@ -97,7 +96,7 @@ def delete_project(conn, project):
     )
 
     delete_stmt = "DELETE FROM project_table WHERE project=?"
-    cursor.execute(delete_stmt, (project,))
+    cur.execute(delete_stmt, (project,))
 
     conn.commit()
 
@@ -110,7 +109,8 @@ def delete_project(conn, project):
     return 0
 
 
-def list_projects(conn, cols=None, json_fmt=False, format_string=None):
+@with_cursor
+def list_projects(conn, cur, cols=None, json_fmt=False, format_string=None):
     """
     List all of the available projects registered in the project_table.
 
@@ -122,9 +122,6 @@ def list_projects(conn, cols=None, json_fmt=False, format_string=None):
     """
     # use all column names if none are passed in
     cols = cols or fluxacct.accounting.PROJECT_TABLE
-
-    cur = conn.cursor()
-
     sql.validate_columns(cols, fluxacct.accounting.PROJECT_TABLE)
     # construct SELECT statement
     select_stmt = f"SELECT {', '.join(cols)} FROM project_table"
