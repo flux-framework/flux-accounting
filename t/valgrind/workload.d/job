@@ -2,10 +2,14 @@
 
 # test loading multi-factor priority plugin
 MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
+# test loading compute hours limits plugin
+COMPUTE_HOURS_LIMITS=${FLUX_BUILD_DIR}/src/plugins/.libs/compute_hours_limits.so
 
 set -x
 
 flux jobtap load -r .priority-default ${MULTI_FACTOR_PRIORITY}
+flux jobtap load ${COMPUTE_HOURS_LIMITS}
 flux jobtap list | grep mf_priority
+flux jobtap list | grep compute_hours_limits
 
 flux submit -n 1 /bin/true --wait
