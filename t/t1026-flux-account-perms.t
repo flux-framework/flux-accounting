@@ -142,8 +142,7 @@ test_expect_success 'pop-db should not be accessible by all users' '
 	( export FLUX_HANDLE_ROLEMASK=0x2 &&
 	  export FLUX_HANDLE_USERID=$newid &&
 		touch users.csv &&
-		touch banks.csv &&
-		test_must_fail flux account pop-db -u users.csv -b banks.csv > no_access_pop_db.out 2>&1 &&
+		test_must_fail flux account pop-db -c association_table.csv > no_access_pop_db.out 2>&1 &&
 		grep "Request requires owner credentials" no_access_pop_db.out
 	)
 '
