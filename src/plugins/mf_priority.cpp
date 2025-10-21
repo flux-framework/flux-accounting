@@ -777,7 +777,7 @@ static void reprior_cb (flux_t *h,
         for (auto &bank_entry : banks) {
             if (check_and_release_held_jobs (p, &bank_entry.second) < 0) {
                 flux_log_error (h,
-                                "rerior_cb: error checking and releasing "
+                                "reprior_cb: error checking and releasing "
                                 "held jobs for user(s)");
             }
         }
