@@ -103,6 +103,78 @@ database:
 
     $ flux account-priority-update
 
+How flux-accounting dependencies are removed from a job
+=======================================================
+
+When an association's currently running job finishes running and has
+transitioned to ``INACTIVE`` state, an association's set of held jobs (if any)
+are iterated through and checked one at a time to see if any or all of them
+meet the requirements to have their dependencies removed and transition to
+``RUN``. The workflow looks like the following: grab the held job, its
+attributes, and its dependencies. Ensure that the job would not:
+
+* Put the association over the max running jobs limit for the *queue* the job is submitted in.
+
+* Put the association over the max nodes limit for the *queue* the job is submitted in.
+
+* Put the association over their max running jobs limit *regardless of queue*.
+
+* Put the association over their max resources limit *regardless of queue*.
+
+The associated dependency is removed from the job **as each requirement is
+met**. In other words, a job can have a dependency removed from it while
+still possessing one or more other dependencies.
+
+FAQ
+===
+
+**My job is held with a flux-accounting dependency. How can I figure out why
+it's held?**
+
+The first thing to check is the properties associated with the dependency
+placed on the job. For example, if the job has a ``max-run-jobs-queue``
+dependency, look to see:
+
+1) how many jobs the association already has running in that queue:
+
+.. code-block:: console
+
+  $ flux jobs --queue=debug --filter=RUN --user=buster
+
+2) what the ``max_running_jobs`` limit is for that queue:
+
+.. code-block:: console
+
+  $ flux account view-queue debug --parsable
+  queue  | min_nodes_per_job | max_nodes_per_job | max_time_per_job | priority | max_running_jobs | max_nodes_per_assoc
+  -------+-------------------+-------------------+------------------+----------+------------------+--------------------
+  debug  | 1                 | 1                 | 60               | 0        | 100              | 1
+
+If more information is required, you may also want to check the limits
+configured for the association:
+
+.. code-block:: console
+
+  $ flux account view-user buster
+  username | userid | max_running_jobs | max_active_jobs | max_nodes | max_cores | queues 
+  ---------+--------+------------------+-----------------+-----------+-----------+--------
+  buster   | 28     | 5                | 7               | unlimited | unlimited | debug
+
+Administrators may also be interested in looking at what information the
+priority plugin currently has for each association, queue, and project with
+``flux jobtap query mf_priority.so``. This will return what limits and held
+jobs each association has according to the priority plugin, organized by
+user ID.
+
+**Do attribute changes to a queue or association take effect immediately?**
+
+No. If the limits configured for a particular queue or association do not seem
+to fit your needs, you can change them. However, be sure to note that these
+limits need to be pushed to the priority plugin with
+``flux account-priority-update`` in order for them to take effetc. When the
+plugin is updated with the new limits, the held jobs for every association are
+reanalyzed to see if they now fit the requirements to be released.
+
 .. _virtual states: https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_21.html#virtual-states
 
 .. _dependency: https://flux-framework.readthedocs.io/projects/flux-core/en/latest/guide/troubleshooting.html#job-dependencies
