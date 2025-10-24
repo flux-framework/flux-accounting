@@ -111,6 +111,7 @@ class AccountingService:
             "edit_factor",
             "reset_factors",
             "edit_all_users",
+            "sync_userids",
         ]
 
         for name in general_endpoints:
@@ -720,6 +721,18 @@ class AccountingService:
             )
         except Exception as exc:
             handle.respond_error(msg, 0, f"edit-all-users: {type(exc).__name__}: {exc}")
+
+    def sync_userids(self, handle, watcher, msg, arg):
+        try:
+            val = u.sync_userids(conn=self.conn)
+
+            payload = {"sync_userids": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"sync-userids: missing key in payload: {exc}")
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"sync-userids: {type(exc).__name__}: {exc}")
 
 
 LOGGER = logging.getLogger("flux-uri")

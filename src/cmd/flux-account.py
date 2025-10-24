@@ -1223,6 +1223,15 @@ def add_show_usage_arg(subparsers):
     )
 
 
+def add_synchronize_userids_arg(subparsers):
+    subparsers_sync_userids = subparsers.add_parser(
+        "sync-userids",
+        help="synchronize userids for associations across tables",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparsers_sync_userids.set_defaults(func="sync_userids")
+
+
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_view_user_arg(subparsers)
@@ -1257,6 +1266,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_jobs_arg(subparsers)
     add_show_usage_arg(subparsers)
     add_edit_all_users_arg(subparsers)
+    add_synchronize_userids_arg(subparsers)
 
 
 def set_db_location(args):
@@ -1300,6 +1310,7 @@ def select_accounting_function(args, parser):
         "jobs": "accounting.jobs",
         "show_usage": "accounting.show_usage",
         "edit_all_users": "accounting.edit_all_users",
+        "sync_userids": "accounting.sync_userids",
     }
 
     if args.func in func_map:

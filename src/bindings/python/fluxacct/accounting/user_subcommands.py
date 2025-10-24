@@ -704,3 +704,48 @@ def edit_all_users(conn, cur, **kwargs):
         conn.commit()
 
     return 0
+
+
+@with_cursor
+def sync_userids(conn, cur):
+    """
+    Synchronize potentially inconsistent userids between associations in the
+    association_table and their corresponding rows in the job_usage_factor_table.
+    """
+    select_stmt = """
+    SELECT j.username,
+           j.userid AS old_userid,
+           a.userid AS new_userid
+    FROM job_usage_factor_table j
+    JOIN association_table a
+      ON j.username = a.username
+    WHERE j.userid != a.userid
+    """
+    cur.execute(select_stmt)
+    result = cur.fetchall()
+
+    if len(result) > 0:
+        # there are userids for associations that are inconsistent between the
+        # association_table and job_usage_factor_table; make them consistent
+        # by executing a query to set them with what is defined in association_table
+        print(
+            "found inconsistent userids; updating to reflect what is in ",
+            "association_table",
+        )
+        update_stmt = """
+        UPDATE job_usage_factor_table
+        SET userid = (
+            SELECT association_table.userid
+            FROM association_table
+            WHERE association_table.username = job_usage_factor_table.username
+        )
+        WHERE EXISTS (
+            SELECT 1
+            FROM association_table
+            WHERE association_table.username = job_usage_factor_table.username
+        )
+        """
+        cur.execute(update_stmt)
+        conn.commit()
+
+    return 0
