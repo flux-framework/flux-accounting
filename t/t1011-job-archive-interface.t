@@ -81,6 +81,40 @@ test_expect_success 'check that no jobs show up under user' '
 	grep -f no_jobs.expected no_jobs.test
 '
 
+# This set of four tests ensures that a job has an R in the KVS but no "alloc"
+# event, and therefore the job did not enter the RUN state and has no t_run
+# timestamp. We put a fake R in the KVS after cancelling a job to simulate this
+# condition, which may occur in practice when a job is cancelled between after
+# the KVS commit of R is started but before it completes and the "alloc" event
+# is posted (see https://github.com/flux-framework/flux-core/issues/7172).
+test_expect_success 'submit a job and update its R to have no t_run timestamp' '
+	job=$(flux submit --urgency=0 hostname) &&
+	flux job wait-event -vt 10 ${job} priority &&
+	flux cancel ${job} &&
+	flux job wait-event -t 5 ${job} clean &&
+	flux kvs put $(flux job id --to=kvs ${job}).R="$(flux R encode)"
+'
+
+test_expect_success 'run scripts to update job usage and fair-share' '
+	flux account-fetch-job-records -p ${DB_PATH} &&
+	flux account-update-usage -p ${DB_PATH} &&
+	flux account-update-fshare -p ${DB_PATH}
+'
+
+test_expect_success 'check that usage does not get affected by canceled jobs' '
+	flux account view-user $username > user.json &&
+	test_debug "jq -S . <user.json" &&
+	jq -e ".[0].job_usage == 0.0" <user.json
+'
+
+test_expect_success 'check that no jobs show up under user' '
+	flux account -p ${DB_PATH} view-job-records --user $username > no_jobs.test2 &&
+	cat <<-EOF >no_jobs.expected2 &&
+	jobid           | username | userid   | t_submit        | t_run           | t_inactive      | nnodes   | project  | bank
+	EOF
+	grep -f no_jobs.expected2 no_jobs.test2
+'
+
 test_expect_success 'submit some jobs and wait for them to finish running' '
 	jobid1=$(flux submit -N 1 hostname) &&
 	jobid2=$(flux submit -N 1 hostname) &&
