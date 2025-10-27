@@ -57,7 +57,8 @@ test_expect_success 'add some users to the DB' '
 test_expect_success 'submit a job that does not run' '
 	job=$(flux submit --urgency=0 sleep 60) &&
 	flux job wait-event -vt 10 ${job} priority &&
-	flux cancel ${job}
+	flux cancel ${job} &&
+	flux job wait-event -t 5 ${job} clean
 '
 
 test_expect_success 'run scripts to update job usage and fair-share' '
