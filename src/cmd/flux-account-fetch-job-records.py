@@ -107,9 +107,11 @@ def fetch_new_jobs(last_timestamp=0.0):
                     "duration"
                 )
                 # compute actual job duration
-                single_record["actual_duration"] = single_job.get(
-                    "t_inactive"
-                ) - single_job.get("t_run")
+                single_record["actual_duration"] = 0.0
+                t_inactive = single_job.get("t_inactive")
+                t_run = single_job.get("t_run")
+                if t_inactive is not None and t_run is not None:
+                    single_record["actual_duration"] = t_inactive - t_run
             except json.JSONDecodeError as exc:
                 # the job's jobspec can't be decoded; don't add any of its elements
                 # to the job dictionary
