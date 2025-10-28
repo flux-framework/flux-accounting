@@ -314,6 +314,7 @@ def job_priorities(
     filters=None,
     max_entries=0,
     since="0.0",
+    jobids=None,
 ):
     """
     List a breakdown for the priority calculation for every active job for a given
@@ -350,11 +351,20 @@ def job_priorities(
 
     joblist = (
         flux.job.JobList(
-            handle, max_entries=max_entries, user=username, queue=queue, since=since
+            handle,
+            max_entries=max_entries,
+            user=username,
+            queue=queue,
+            since=since,
+            ids=jobids,
         )
         if queue
         else flux.job.JobList(
-            handle, max_entries=max_entries, user=username, since=since
+            handle,
+            max_entries=max_entries,
+            user=username,
+            since=since,
+            ids=jobids,
         )
     )
     if filters:

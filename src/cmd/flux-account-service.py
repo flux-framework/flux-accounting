@@ -669,6 +669,7 @@ class AccountingService:
                 filters=msg.payload.get("filter"),
                 max_entries=msg.payload.get("count"),
                 since=msg.payload.get("since"),
+                jobids=msg.payload.get("jobids"),
             )
 
             payload = {"jobs": val}
