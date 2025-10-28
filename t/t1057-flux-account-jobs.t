@@ -231,6 +231,28 @@ test_expect_success 'cancel jobs' '
 	flux cancel ${job5}
 '
 
+test_expect_success 'pass a specific job id to get its priority breakdown' '
+	flux account jobs ${username} -j ${job1} > result.out &&
+	grep ${job1} result.out &&
+	test_must_fail grep ${job2} result.out &&
+	test_must_fail grep ${job3} result.out &&
+	test_must_fail grep ${job4} result.out &&
+	test_must_fail grep ${job5} result.out &&
+	test_must_fail grep ${job6} result.out &&
+	test_must_fail grep ${job7} result.out
+'
+
+test_expect_success 'pass multiple job ids to get their priority breakdowns' '
+	flux account jobs ${username} -j ${job1} ${job2} > result.out &&
+	grep ${job1} result.out &&
+	grep ${job2} result.out &&
+	test_must_fail grep ${job3} result.out &&
+	test_must_fail grep ${job4} result.out &&
+	test_must_fail grep ${job5} result.out &&
+	test_must_fail grep ${job6} result.out &&
+	test_must_fail grep ${job7} result.out
+'
+
 test_expect_success 'remove queues from the flux-accounting DB' '
 	flux account edit-user ${username} --queues=-1 &&
 	flux account delete-queue bronze &&
