@@ -670,6 +670,7 @@ class AccountingService:
                 max_entries=msg.payload.get("count"),
                 since=msg.payload.get("since"),
                 jobids=msg.payload.get("jobids"),
+                verbose=msg.payload.get("verbose"),
             )
 
             payload = {"jobs": val}

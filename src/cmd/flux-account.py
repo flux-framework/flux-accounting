@@ -1206,6 +1206,13 @@ def add_jobs_arg(subparsers):
         help="see priority for a specific job or set of jobs",
         metavar="[JOBIDS]",
     )
+    subparser_jobs.add_argument(
+        "-v",
+        "--verbose",
+        action="store_const",
+        const=True,
+        help="see detailed priority calculation for a specific job or set of jobs",
+    )
 
 
 def add_show_usage_arg(subparsers):
