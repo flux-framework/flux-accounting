@@ -1198,6 +1198,21 @@ def add_jobs_arg(subparsers):
         help="include jobs that have become inactive since WHEN",
         metavar="WHEN",
     )
+    subparser_jobs.add_argument(
+        "-j",
+        "--jobids",
+        nargs="+",
+        default=None,
+        help="see priority for a specific job or set of jobs",
+        metavar="[JOBIDS]",
+    )
+    subparser_jobs.add_argument(
+        "-v",
+        "--verbose",
+        action="store_const",
+        const=True,
+        help="see detailed priority calculation for a specific job or set of jobs",
+    )
 
 
 def add_show_usage_arg(subparsers):

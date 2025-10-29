@@ -189,6 +189,46 @@ def as_format_string(column_names, rows, format_string):
         )
 
 
+def construct_priority_calculation(job, priority_weights, queues, banks):
+    """
+    Construct a string detailing how a job's priority was calculated.
+
+    Args:
+        job: The job for which priority is being calculated.
+        priority_weights: A dictionary containing the weight for each factor responsible
+            for calculating a job's priority.
+        queues: A dictionary containing queues and their associated priorities.
+        banks: A dictionary containing banks and their associated priorities.
+    """
+    # a specific job ID or set of job IDs were passed; walk through calculation
+    row = f"{JobID(job.id).f58}\n"
+    # display header
+    row += (
+        "= (FAIRSHARE * FAIRSHARE_WEIGHT) + (QUEUE_PRIORITY * QUEUE_WEIGHT) + "
+        "(BANK_PRIORITY * BANK_WEIGHT) + (URGENCY_WEIGHT * (URGENCY - 16))\n"
+    )
+    row += (
+        f"= ({job.annotations.user.fairshare} * "
+        f"{priority_weights.get('fairshare', 0)}) + "
+        f"({getattr(queues.get(job.queue), 'priority', 0)} * "
+        f"{priority_weights.get('queue', 0)}) + "
+        f"({banks[job.bank].priority} * {priority_weights.get('bank', 0)}) + "
+        f"({priority_weights.get('urgency', 0)} * ({job.urgency} - 16))\n"
+    )
+    # calculate individual factors
+    comp_fshare = job.annotations.user.fairshare * priority_weights.get("fairshare", 0)
+    comp_queue = getattr(queues.get(job.queue), "priority", 0) * priority_weights.get(
+        "queue", 0
+    )
+    comp_bank = banks[job.bank].priority * priority_weights.get("bank", 0)
+    comp_urgency = priority_weights.get("urgency", 0) * (job.urgency - 16)
+    row += f"= {comp_fshare} + {comp_queue} + {comp_bank} + {comp_urgency}\n"
+    # display final priority
+    row += f"= {job.priority}\n"
+
+    return row
+
+
 ###############################################################
 #                                                             #
 #                   Subcommand Functions                      #
@@ -314,6 +354,8 @@ def job_priorities(
     filters=None,
     max_entries=0,
     since="0.0",
+    jobids=None,
+    verbose=False,
 ):
     """
     List a breakdown for the priority calculation for every active job for a given
@@ -350,17 +392,32 @@ def job_priorities(
 
     joblist = (
         flux.job.JobList(
-            handle, max_entries=max_entries, user=username, queue=queue, since=since
+            handle,
+            max_entries=max_entries,
+            user=username,
+            queue=queue,
+            since=since,
+            ids=jobids,
         )
         if queue
         else flux.job.JobList(
-            handle, max_entries=max_entries, user=username, since=since
+            handle,
+            max_entries=max_entries,
+            user=username,
+            since=since,
+            ids=jobids,
         )
     )
     if filters:
         for filt in filters.split(","):
             joblist.add_filter(filt)
     jobs = list(joblist.jobs())
+
+    if verbose:
+        rows = ""
+        for job in jobs:
+            rows += construct_priority_calculation(job, priority_weights, queues, banks)
+        return rows
 
     row_dicts = []
     for job in jobs:

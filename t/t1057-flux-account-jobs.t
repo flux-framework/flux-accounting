@@ -231,6 +231,48 @@ test_expect_success 'cancel jobs' '
 	flux cancel ${job5}
 '
 
+test_expect_success 'pass a specific job id to get its priority breakdown' '
+	flux account jobs ${username} -j ${job1} > result.out &&
+	grep ${job1} result.out &&
+	test_must_fail grep ${job2} result.out &&
+	test_must_fail grep ${job3} result.out &&
+	test_must_fail grep ${job4} result.out &&
+	test_must_fail grep ${job5} result.out &&
+	test_must_fail grep ${job6} result.out &&
+	test_must_fail grep ${job7} result.out
+'
+
+test_expect_success 'pass multiple job ids to get their priority breakdowns' '
+	flux account jobs ${username} -j ${job1} ${job2} > result.out &&
+	grep ${job1} result.out &&
+	grep ${job2} result.out &&
+	test_must_fail grep ${job3} result.out &&
+	test_must_fail grep ${job4} result.out &&
+	test_must_fail grep ${job5} result.out &&
+	test_must_fail grep ${job6} result.out &&
+	test_must_fail grep ${job7} result.out
+'
+
+test_expect_success 'see the detailed priority calculation for a job with -v' '
+	flux account jobs ${username} -j ${job1} -v > job1.priority_breakdown &&
+	grep "${job1}" job1.priority_breakdown &&
+	grep -F "(0.99 * 100000) + (1 * 10000) + (100.0 * 1000) + (1000 * (16 - 16))" job1.priority_breakdown &&
+	grep -F "99000.0 + 10000 + 100000.0 + 0" job1.priority_breakdown &&
+	grep "209000" job1.priority_breakdown
+'
+
+test_expect_success 'passing multiple ids with --jobids works' '
+	flux account jobs ${username} -j ${job1} ${job2} -v > multiple_jobs.priority_breakdown &&
+	grep "${job1}" multiple_jobs.priority_breakdown &&
+	grep -F "(0.99 * 100000) + (1 * 10000) + (100.0 * 1000) + (1000 * (16 - 16))" multiple_jobs.priority_breakdown &&
+	grep -F "99000.0 + 10000 + 100000.0 + 0" multiple_jobs.priority_breakdown &&
+	grep "209000" multiple_jobs.priority_breakdown &&
+	grep "${job2}" multiple_jobs.priority_breakdown &&
+	grep -F "(0.5 * 100000) + (1 * 10000) + (10.0 * 1000) + (1000 * (16 - 16))" multiple_jobs.priority_breakdown &&
+	grep -F "50000.0 + 10000 + 10000.0 + 0" multiple_jobs.priority_breakdown &&
+	grep "70000" multiple_jobs.priority_breakdown
+'
+
 test_expect_success 'remove queues from the flux-accounting DB' '
 	flux account edit-user ${username} --queues=-1 &&
 	flux account delete-queue bronze &&
