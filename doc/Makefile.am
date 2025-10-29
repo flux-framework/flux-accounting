@@ -92,6 +92,7 @@ EXTRA_DIST = \
 	requirements.txt \
 	guide/accounting-guide.rst \
 	guide/sanity-checklist.rst \
+	guide/troubleshooting-guide.rst \
 	images/lgplv3-147x51.png \
 	images/flux-accounting-db.png \
 	images/flux-accounting-service.png \

@@ -13,6 +13,7 @@ Table of Contents
    guide/support
    guide/accounting-guide
    guide/sanity-checklist
+   guide/troubleshooting-guide
    components/module-structure
    components/database-administration
    components/fair-share
