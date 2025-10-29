@@ -18,15 +18,15 @@ DESCRIPTION
 :program:`flux account jobs` will output a breakdown of an association's job's
 priority calculations. Jobs can be filtered by bank or by queue.
 
-.. option:: --bank
+.. option:: --bank=BANK
 
     Filter to only output jobs that have run under a specific bank.
 
-.. option:: --queue
+.. option:: --queue=QUEUE
 
     Filter to only output jobs that have run under a specific queue.
 
-.. option:: -o/--format
+.. option:: -o/--format=FORMAT
 
     Specify output format using Python's string format syntax.
 
