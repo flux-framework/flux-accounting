@@ -1,3 +1,36 @@
+flux-accounting version 0.52.0 - 2025-11-04
+-------------------------------------------
+
+#### Fixes
+
+* plugin: remove job from `held_jobs` if cancelled (#765)
+
+* python: explicitly close `Cursor` objects after use in user commands (#768)
+
+* bindings: close `Cursor` objects when function exits (#769)
+
+* `fetch-job-records`: check if `t_run` exists (#774)
+
+#### Features
+
+* commands: add `sync-userids` command (#775)
+
+* `jobs`: add `-j/--jobids`, `-v/--verbose` optional arguments (#777)
+
+#### Documentation
+
+* doc: add more guide on limits, FAQ section (#771)
+
+* doc: update `man(1)` page with new args for `jobs` command (#778)
+
+* doc: add troubleshooting guide (#779)
+
+#### Testsuite
+
+* mergify: disable temporary PR branches (#762)
+
+* mergify: remove `queue_conditions`, `status-success` checks (#767)
+
 flux-accounting version 0.52.0 - 2025-09-30
 -------------------------------------------
 
