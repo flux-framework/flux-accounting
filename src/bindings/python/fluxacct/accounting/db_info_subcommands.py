@@ -10,9 +10,12 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import csv
+import sqlite3
+import json
 
 from fluxacct.accounting import bank_subcommands as b
 from fluxacct.accounting import user_subcommands as u
+from fluxacct.accounting.util import with_cursor
 
 
 def export_db_info(conn, users=None, banks=None):
@@ -97,3 +100,99 @@ def populate_db(conn, users=None, banks=None):
                     )
         except IOError as err:
             print(err)
+
+
+@with_cursor
+def export_as_json(conn, cursor):
+    """
+    Return a JSON object of certain tables in the flux-accounting database, which can
+    be used to initialize the multi-factor priority plugin.
+
+    Args:
+        conn: A SQLite connection object.
+        cursor: A SQLite cursor object.
+    Returns:
+        A JSON string containing flux-accounting database information.
+    """
+    conn.row_factory = sqlite3.Row
+    associations = []
+    queues = []
+    projects = []
+    banks = []
+    priority_factors = []
+    config = {}  # will store all of the above lists
+
+    # fetch all rows from association_table
+    for row in cursor.execute(
+        """SELECT userid, bank, default_bank,
+        fairshare, max_running_jobs, max_active_jobs,
+        queues, active, projects, default_project, max_nodes, max_cores
+        FROM association_table"""
+    ):
+        # create a JSON payload with the results of the query
+        association = {
+            "userid": int(row["userid"]),
+            "bank": str(row["bank"]),
+            "def_bank": str(row["default_bank"]),
+            "fairshare": float(row["fairshare"]),
+            "max_running_jobs": int(row["max_running_jobs"]),
+            "max_active_jobs": int(row["max_active_jobs"]),
+            "queues": str(row["queues"]),
+            "active": int(row["active"]),
+            "projects": str(row["projects"]),
+            "def_project": str(row["default_project"]),
+            "max_nodes": int(row["max_nodes"]),
+            "max_cores": int(row["max_cores"]),
+        }
+        associations.append(association)
+
+    config["associations"] = associations
+
+    # fetch all rows from queue_table
+    for row in cursor.execute("SELECT * FROM queue_table"):
+        # create a JSON payload with the results of the query
+        queue = {
+            "queue": str(row["queue"]),
+            "min_nodes_per_job": int(row["min_nodes_per_job"]),
+            "max_nodes_per_job": int(row["max_nodes_per_job"]),
+            "max_time_per_job": int(row["max_time_per_job"]),
+            "priority": int(row["priority"]),
+            "max_running_jobs": int(row["max_running_jobs"]),
+            "max_nodes_per_assoc": int(row["max_nodes_per_assoc"]),
+        }
+        queues.append(queue)
+
+    config["queues"] = queues
+
+    # fetch all rows from project_table
+    for row in cursor.execute("SELECT project FROM project_table"):
+        # create a JSON payload with the results of the query
+        project = {
+            "project": str(row["project"]),
+        }
+        projects.append(project)
+
+    config["projects"] = projects
+
+    # fetch rows from bank_table
+    for row in cursor.execute("SELECT bank, priority FROM bank_table"):
+        bank = {
+            "bank": str(row["bank"]),
+            "priority": float(row["priority"]),
+        }
+        banks.append(bank)
+
+    config["banks"] = banks
+
+    # fetch rows from priority_factor_weight_table
+    for row in cursor.execute("SELECT * FROM priority_factor_weight_table"):
+        factor = {
+            "factor": str(row["factor"]),
+            "weight": int(row["weight"]),
+        }
+        priority_factors.append(factor)
+
+    config["priority_factors"] = priority_factors
+
+    # return a single JSON object containing the above DB information
+    return json.dumps(config)

@@ -112,6 +112,7 @@ class AccountingService:
             "reset_factors",
             "edit_all_users",
             "sync_userids",
+            "export_json",
         ]
 
         for name in general_endpoints:
@@ -735,6 +736,18 @@ class AccountingService:
             handle.respond_error(msg, 0, f"sync-userids: missing key in payload: {exc}")
         except Exception as exc:
             handle.respond_error(msg, 0, f"sync-userids: {type(exc).__name__}: {exc}")
+
+    def export_json(self, handle, watcher, msg, arg):
+        try:
+            val = d.export_as_json(conn=self.conn)
+
+            payload = {"export_json": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"export-json: missing key in payload: {exc}")
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"export-json: {type(exc).__name__}: {exc}")
 
 
 LOGGER = logging.getLogger("flux-uri")
