@@ -1714,6 +1714,29 @@ static const struct flux_plugin_handler tab[] = {
 
 extern "C" int flux_plugin_init (flux_plugin_t *p)
 {
+
+    json_t *config_obj = NULL;
+    flux_t *h = flux_jobtap_get_flux (p);
+    std::string errmsg;
+    if (flux_plugin_conf_unpack (p, "{s?o}", "config", &config_obj) == 0
+        && config_obj) {
+        // initialize the priority plugin with a JSON object containing
+        // flux-accounting database information
+        if (initialize_plugin (config_obj,
+                               users,
+                               users_def_bank,
+                               queues,
+                               projects,
+                               banks,
+                               priority_weights,
+                               &errmsg) < 0) {
+            flux_log_error (h,
+                            "error initializing plugin with JSON object: %s",
+                            errmsg.c_str ());
+            return -1;
+        };
+    }
+
     if (flux_plugin_register (p, "mf_priority", tab) < 0
         || flux_jobtap_service_register (p, "rec_update", rec_update_cb, p) < 0
         || flux_jobtap_service_register (p, "reprioritize", reprior_cb, p) < 0
