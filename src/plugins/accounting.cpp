@@ -404,3 +404,287 @@ json_t* convert_projects_to_json (const std::vector<std::string> projects)
 
     return known_projects;
 }
+
+int load_associations (
+                    json_t *data,
+                    std::map<int, std::map<std::string, Association>> &users,
+                    std::map<int, std::string> &users_def_bank,
+                    std::string *errmsg)
+{
+    char *bank, *def_bank, *assoc_queues, *assoc_projects, *def_project = NULL;
+    int uid, max_running_jobs, max_active_jobs, max_nodes, max_cores = 0;
+    double fshare = 0.0;
+    json_error_t error;
+    int num_data = 0;
+    int active = 1;
+
+    if (!data || !json_is_array (data)) {
+        if (errmsg)
+            *errmsg = "associations data is NULL or not an array";
+        return -1;
+    }
+    num_data = json_array_size (data);
+
+    for (int i = 0; i < num_data; i++) {
+        json_t *el = json_array_get(data, i);
+
+        if (json_unpack_ex (el, &error, 0,
+                            "{s:i, s:s, s:s, s:F, s:i, s:i, s:s, s:i, s:s, "
+                            "s:s, s:i, s:i}",
+                            "userid", &uid,
+                            "bank", &bank,
+                            "def_bank", &def_bank,
+                            "fairshare", &fshare,
+                            "max_running_jobs", &max_running_jobs,
+                            "max_active_jobs", &max_active_jobs,
+                            "queues", &assoc_queues,
+                            "active", &active,
+                            "projects", &assoc_projects,
+                            "def_project", &def_project,
+                            "max_nodes", &max_nodes,
+                            "max_cores", &max_cores) < 0) {
+            if (errmsg)
+                *errmsg = error.text;
+            return -1;
+        }
+
+        Association *a;
+        a = &users[uid][bank];
+
+        a->bank_name = bank;
+        a->fairshare = fshare;
+        a->max_run_jobs = max_running_jobs;
+        a->max_active_jobs = max_active_jobs;
+        a->active = active;
+        a->def_project = def_project;
+        a->max_nodes = max_nodes;
+        a->max_cores = max_cores;
+
+        // split queues comma-delimited string and add it to b->queues vector
+        a->queues.clear ();
+        if (has_text (assoc_queues))
+            split_string_and_push_back (assoc_queues, a->queues);
+        // do the same thing for the association's projects
+        a->projects.clear ();
+        if (has_text (assoc_projects))
+            split_string_and_push_back (assoc_projects, a->projects);
+
+        users_def_bank[uid] = def_bank;
+    }
+
+    return 0;
+}
+
+
+int load_queues (json_t *data, std::map<std::string, Queue> &queues,
+                 std::string *errmsg)
+{
+    char *queue = NULL;
+    int min_nodes_per_job, max_nodes_per_job, max_time_per_job, priority = 0;
+    int max_running_jobs, max_nodes_per_assoc = 0;
+    json_error_t error;
+    int num_data = 0;
+
+    if (!data || !json_is_array (data)) {
+        if (errmsg)
+            *errmsg = "queues data is NULL or not an array";
+        return -1;
+    }
+    num_data = json_array_size (data);
+
+    // clear queues map
+    queues.clear ();
+
+    for (int i = 0; i < num_data; i++) {
+        json_t *el = json_array_get(data, i);
+
+        if (json_unpack_ex (el, &error, 0,
+                            "{s:s, s:i, s:i, s:i, s:i, s:i, s:i}",
+                            "queue", &queue,
+                            "min_nodes_per_job", &min_nodes_per_job,
+                            "max_nodes_per_job", &max_nodes_per_job,
+                            "max_time_per_job", &max_time_per_job,
+                            "priority", &priority,
+                            "max_running_jobs", &max_running_jobs,
+                            "max_nodes_per_assoc", &max_nodes_per_assoc) < 0) {
+            if (errmsg)
+                *errmsg = error.text;
+            return -1;
+        }
+
+        Queue *q;
+        q = &queues[queue];
+
+        q->name = queue;
+        q->min_nodes_per_job = min_nodes_per_job;
+        q->max_nodes_per_job = max_nodes_per_job;
+        q->max_time_per_job = max_time_per_job;
+        q->priority = priority;
+        q->max_running_jobs = max_running_jobs;
+        q->max_nodes_per_assoc = max_nodes_per_assoc;
+    }
+
+    return 0;
+}
+
+
+int load_projects (json_t *data, std::vector<std::string> &projects,
+                   std::string *errmsg)
+{
+    char *project = NULL;
+    json_error_t error;
+    size_t index;
+    json_t *el;
+
+    if (!data || !json_is_array (data)) {
+        if (errmsg)
+            *errmsg = "projects data is NULL or not an array";
+        return -1;
+    }
+
+    // clear the projects vector
+    projects.clear ();
+
+    json_array_foreach (data, index, el) {
+        if (json_unpack_ex (el, &error, 0, "{s:s}", "project", &project) < 0) {
+            if (errmsg)
+                *errmsg = error.text;
+            return -1;
+        }
+        projects.push_back (project);
+    }
+
+    return 0;
+}
+
+
+int load_banks (json_t *data, std::map<std::string, Bank> &banks,
+                std::string *errmsg)
+{
+    char *bank_name = NULL;
+    double priority = 0.0;
+    json_error_t error;
+    int num_data = 0;
+
+    if (!data || !json_is_array (data)) {
+        if (errmsg)
+            *errmsg = "banks data is NULL or not an array";
+        return -1;
+    }
+    num_data = json_array_size (data);
+
+    // clear the banks map
+    banks.clear ();
+
+    for (int i = 0; i < num_data; i++) {
+        json_t *el = json_array_get(data, i);
+
+        if (json_unpack_ex (el, &error, 0,
+                            "{s:s, s:F}",
+                            "bank", &bank_name,
+                            "priority", &priority) < 0) {
+            if (errmsg)
+                *errmsg = error.text;
+            return -1;
+        }
+
+        Bank *b;
+        b = &banks[bank_name];
+
+        b->name = bank_name;
+        b->priority = priority;
+    }
+
+    return 0;
+}
+
+
+int load_priority_factors (json_t *data,
+                           std::map<std::string, int> &priority_weights,
+                           std::string *errmsg)
+{
+    char *factor = NULL;
+    long int weight = 0;
+    json_error_t error;
+    int num_data = 0;
+
+    if (!data || !json_is_array (data)) {
+        if (errmsg)
+            *errmsg = "priority_factors data is NULL or not an array";
+        return -1;
+    }
+    num_data = json_array_size (data);
+
+    for (int i = 0; i < num_data; i++) {
+        json_t *el = json_array_get(data, i);
+
+        if (json_unpack_ex (el, &error, 0,
+                            "{s:s, s:I}",
+                            "factor", &factor,
+                            "weight", &weight) < 0) {
+            if (errmsg)
+                *errmsg = error.text;
+            return -1;
+        }
+
+        if (factor != NULL)
+            priority_weights[factor] = weight;
+    }
+
+    return 0;
+}
+
+
+int initialize_plugin (
+                    json_t *config_obj,
+                    std::map<int, std::map<std::string, Association>> &users,
+                    std::map<int, std::string> &users_def_bank,
+                    std::map<std::string, Queue> &queues,
+                    std::vector<std::string> &projects,
+                    std::map<std::string, Bank> &banks,
+                    std::map<std::string, int> &priority_weights,
+                    std::string *errmsg)
+{
+    json_error_t error;
+    json_t *db_associations = NULL;
+    json_t *db_queues = NULL;
+    json_t *db_projects = NULL;
+    json_t *db_banks = NULL;
+    json_t *db_factors = NULL;
+
+    if (json_unpack_ex (config_obj, &error, 0,
+                        "{s?o s?o s?o s?o s?o}",
+                        "associations", &db_associations,
+                        "queues", &db_queues,
+                        "projects", &db_projects,
+                        "banks", &db_banks,
+                        "priority_factors", &db_factors) < 0) {
+        if (errmsg) {
+            *errmsg = error.text;
+        }
+        return -1;
+    }
+
+    if (db_associations) {
+        if (load_associations (db_associations, users, users_def_bank, errmsg) < 0)
+            return -1;
+    }
+    if (db_queues) {
+        if (load_queues (db_queues, queues, errmsg) < 0)
+            return -1;
+    }
+    if (db_projects) {
+        if (load_projects (db_projects, projects, errmsg) < 0)
+            return -1;
+    }
+    if (db_banks) {
+        if (load_banks (db_banks, banks, errmsg) < 0)
+            return -1;
+    }
+    if (db_factors) {
+        if (load_priority_factors (db_factors, priority_weights, errmsg) < 0)
+            return -1;
+    }
+
+    return 0;
+}
