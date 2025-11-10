@@ -130,8 +130,17 @@ configure the ``job-manager`` to load this plugin.
 
 See also: :core:man5:`flux-config-job-manager`.
 
-The plugin can also be manually loaded with ``flux jobtap load``. Be sure to
-send all flux-accounting data to the plugin after it is loaded:
+The plugin can also be manually loaded with ``flux jobtap load``. The data
+required by the priority plugin to track jobs can be sent when the plugin is
+first loaded by setting a ``config`` key to the output of the ``flux account
+export json`` command:
+
+.. code-block:: console
+
+ $ flux jobtap load mf_priority.so config="$(flux account export-json)"
+
+Otherwise, be sure to send all flux-accounting data to the plugin after it is
+loaded:
 
 .. code-block:: console
 
