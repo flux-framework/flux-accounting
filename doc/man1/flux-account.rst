@@ -45,6 +45,14 @@ Export a flux-accounting database into ``.csv`` files.
 
 See :man1:`flux-account-export-db` for more details.
 
+export-json
+^^^^^^^^^^^
+
+Export certain tables from the flux-accounting database as a JSON object to
+be used when loading the multi-factor priority plugin.
+
+See :man1:`flux-account-export-json` for more details.
+
 USER ADMINISTRATION
 ===================
 
