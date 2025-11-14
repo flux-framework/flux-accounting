@@ -148,6 +148,13 @@ matrix.add_build(
     docker_tag=True,
 )
 
+# el9
+matrix.add_build(
+    name="el9 - py3.9",
+    image="el9",
+    docker_tag=True,
+)
+
 # jammy
 matrix.add_build(
     name="jammy - py3.6",
