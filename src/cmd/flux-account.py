@@ -958,69 +958,24 @@ def add_scrub_job_records_arg(subparsers):
 def add_export_db_arg(subparsers):
     subparser = subparsers.add_parser(
         "export-db",
-        help="""
-        Extract flux-accounting database information into two .csv files.
-
-        Order of columns extracted from association_table:
-
-        Username,UserID,Bank,Shares,MaxRunningJobs,MaxActiveJobs,MaxNodes,Queues
-
-        If no custom path is specified, this will create a file in the
-        current working directory called users.csv.
-
-        ----------------
-
-        Order of columns extracted from bank_table:
-
-        Bank,ParentBank,Shares
-
-        If no custom path is specified, this will create a file in the
-        current working directory called banks.csv.
-
-        Use these two files to populate a new flux-accounting DB with:
-
-        flux account pop-db -b banks.csv -u users.csv
-        """,
+        help="extract flux-accounting DB information into separate .csv files",
         formatter_class=flux.util.help_formatter(),
     )
     subparser.set_defaults(func="export_db")
-    subparser.add_argument(
-        "-u", "--users", help="path to a .csv file containing user information"
-    )
-    subparser.add_argument(
-        "-b", "--banks", help="path to a .csv file containing bank information"
-    )
 
 
 def add_pop_db_arg(subparsers):
     subparser = subparsers.add_parser(
         "pop-db",
-        help="""
-        Description: Populate a flux-accounting database with a .csv file.
-
-        Order of elements required for populating association_table:
-
-        Username,UserID,Bank,Shares,MaxRunningJobs,MaxActiveJobs,MaxNodes,Queues
-
-        [Shares], [MaxRunningJobs], [MaxActiveJobs], and [MaxNodes] can be left
-        blank ('') in the .csv file for a given row.
-
-        ----------------
-
-        Order of elements required for populating bank_table:
-
-        Bank,ParentBank,Shares
-
-        [ParentBank] can be left blank ('') in .csv file for a given row.
-        """,
+        help="populate a table in the flux-accounting DB with a .csv file",
         formatter_class=flux.util.help_formatter(),
     )
     subparser.set_defaults(func="pop_db")
     subparser.add_argument(
-        "-u", "--users", help="path to a .csv file containing user information"
+        "-c", "--csv-file", help="path to a .csv file containing table information"
     )
     subparser.add_argument(
-        "-b", "--banks", help="path to a .csv file containing bank information"
+        "-f", "--fields", help="which fields to insert into the table"
     )
 
 
