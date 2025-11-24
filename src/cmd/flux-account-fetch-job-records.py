@@ -16,10 +16,19 @@ import argparse
 import sqlite3
 import json
 from contextlib import closing
+import logging
 
 import flux
 import flux.job
 import fluxacct.accounting
+from fluxacct.accounting import util
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s: %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+LOGGER = logging.getLogger(__name__)
 
 
 def set_db_loc(args):
@@ -213,6 +222,7 @@ def copy_db_contents(old_cur, cur, conn):
         conn.commit()
 
 
+# pylint: disable=broad-except
 def main():
     parser = argparse.ArgumentParser(
         description="""
@@ -227,7 +237,15 @@ def main():
     parser.add_argument(
         "-c", "--copy", dest="copy", help="copy contents from a job-archive DB"
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="increase verbosity of output",
+    )
     args = parser.parse_args()
+    util.config_logging(args.verbose, LOGGER)
 
     path = set_db_loc(args)
     conn = est_sqlite_conn(path)
@@ -249,10 +267,15 @@ def main():
         if timestamp_arr[0][0]:
             timestamp = timestamp_arr[0][0]
 
-        job_records = []
-        job_records = fetch_new_jobs(timestamp)
+        try:
+            job_records = []
+            LOGGER.info("beginning INSERT of newly found jobs into flux-accounting DB")
+            job_records = fetch_new_jobs(timestamp)
 
-        insert_jobs_in_db(conn, cur, job_records=job_records)
+            insert_jobs_in_db(conn, cur, job_records=job_records)
+            LOGGER.info("INSERT of newly found jobs into flux-accounting DB complete")
+        except Exception as exc:
+            LOGGER.exception(exc)
 
     conn.close()
 

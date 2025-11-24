@@ -227,6 +227,12 @@ test_expect_success 'call update-usage with no --log-level; expect no INFO-level
 	test_must_fail grep "INFO: job-usage " no_info_logs.out
 '
 
+test_expect_success 'call fetch-job-records with --verbose to increase logging' '
+	flux account-fetch-job-records -v -p ${DB_PATH} > fetch_job_records_logs.out 2>&1 &&
+	grep "beginning INSERT of newly found jobs into flux-accounting DB" fetch_job_records_logs.out &&
+	grep "INSERT of newly found jobs into flux-accounting DB complete" fetch_job_records_logs.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
