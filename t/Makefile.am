@@ -75,6 +75,7 @@ TESTSCRIPTS = \
 	t1070-issue749.t \
 	t1071-issue754.t \
 	t1072-sync-uids.t \
+	t1073-mf-priority-init-basic.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \

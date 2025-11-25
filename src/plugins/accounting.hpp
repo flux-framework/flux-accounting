@@ -177,4 +177,43 @@ int get_project_info (const char *project,
 double get_bank_priority (const char *bank,
                           const std::map<std::string, Bank> &banks);
 
+// load an array of associations into a map of Association objects
+int load_associations (
+                    json_t *data,
+                    std::map<int, std::map<std::string, Association>> &users,
+                    std::map<int, std::string> &users_def_bank,
+                    std::string *errmsg);
+
+// load an array of queues into a map of Queue objects
+int load_queues (json_t *data,
+                 std::map<std::string, Queue> &queues,
+                 std::string *errmsg);
+
+// load an array of projects into a vector
+int load_projects (json_t *data,
+                   std::vector<std::string> &projects,
+                   std::string *errmsg);
+
+// load an array of banks into a map of Bank objects
+int load_banks (json_t *data,
+                std::map<std::string, Bank> &banks,
+                std::string *errmsg);
+
+// load an array of priority factor weights into a map of priority factors
+int load_priority_factors (json_t *data,
+                           std::map<std::string, int> &priority_weights,
+                           std::string *errmsg);
+
+// initialize the priority plugin with a JSON object containing flux-accounting
+// database information
+int initialize_plugin (
+                    json_t *config_obj,
+                    std::map<int, std::map<std::string, Association>> &users,
+                    std::map<int, std::string> &users_def_bank,
+                    std::map<std::string, Queue> &queues,
+                    std::vector<std::string> &projects,
+                    std::map<std::string, Bank> &banks,
+                    std::map<std::string, int> &priority_weights,
+                    std::string *errmsg);
+
 #endif // ACCOUNTING_H

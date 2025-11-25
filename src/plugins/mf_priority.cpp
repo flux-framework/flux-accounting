@@ -1105,15 +1105,20 @@ static int new_cb (flux_plugin_t *p,
     const char *project = NULL;
     int max_run_jobs, cur_active_jobs, max_active_jobs = 0;
     Association *b;
+    flux_job_state_t state;
+    json_t *jobspec = NULL;
+    std::string queue_str;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s{s{s{s?s, s?s, s?s}}}}",
+                                "{s:i, s:i, s{s{s{s?s, s?s, s?s}}}, s:o}",
                                 "userid", &userid,
+                                "state", &state,
                                 "jobspec", "attributes", "system",
                                 "bank", &bank, "queue", &queue,
-                                "project", &project) < 0) {
+                                "project", &project,
+                                "jobspec", &jobspec) < 0) {
         return flux_jobtap_reject_job (p, args, "unable to unpack bank arg");
     }
 
@@ -1194,6 +1199,34 @@ static int new_cb (flux_plugin_t *p,
 
     // increment the association's active jobs count
     b->cur_active_jobs++;
+
+    if (queue != NULL)
+        queue_str = queue;
+
+    if (state == FLUX_JOB_STATE_RUN) {
+        // this job was already running; increment the association's running
+        // jobs and resource counts
+        b->cur_run_jobs++;
+        if (queue != NULL) {
+            // a queue was passed in; increment counter of the number of
+            // queue-specific running jobs for this association
+            b->queue_usage[std::string (queue)].cur_run_jobs++;
+        }
+        if (jobspec == NULL) {
+            flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                         "mf_priority", 0,
+                                         "job.new: failed to unpack jobspec");
+            return -1;
+        } else {
+            if (increment_resources (b, queue_str, jobspec) < 0) {
+                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                             "mf_priority", 0,
+                                             "job.new: failed to increment "
+                                             "resource count");
+                return -1;
+            }
+        }
+    }
 
     return 0;
 }
@@ -1714,6 +1747,29 @@ static const struct flux_plugin_handler tab[] = {
 
 extern "C" int flux_plugin_init (flux_plugin_t *p)
 {
+
+    json_t *config_obj = NULL;
+    flux_t *h = flux_jobtap_get_flux (p);
+    std::string errmsg;
+    if (flux_plugin_conf_unpack (p, "{s?o}", "config", &config_obj) == 0
+        && config_obj) {
+        // initialize the priority plugin with a JSON object containing
+        // flux-accounting database information
+        if (initialize_plugin (config_obj,
+                               users,
+                               users_def_bank,
+                               queues,
+                               projects,
+                               banks,
+                               priority_weights,
+                               &errmsg) < 0) {
+            flux_log_error (h,
+                            "error initializing plugin with JSON object: %s",
+                            errmsg.c_str ());
+            return -1;
+        };
+    }
+
     if (flux_plugin_register (p, "mf_priority", tab) < 0
         || flux_jobtap_service_register (p, "rec_update", rec_update_cb, p) < 0
         || flux_jobtap_service_register (p, "reprioritize", reprior_cb, p) < 0
