@@ -1,3 +1,21 @@
+flux-accounting version 0.54.0 - 2025-12-02
+-------------------------------------------
+
+#### Fixes
+
+* `fetch-job-records`: add proper logging (#784)
+
+* plugin: set load order of active jobs during initialization (#785)
+
+#### Features
+
+* plugin: add ability to initialize plugin with database information on load
+(#781)
+
+#### Testsuite
+
+* test: add `el9` image to CI (#782)
+
 flux-accounting version 0.53.0 - 2025-11-04
 -------------------------------------------
 
