@@ -1,4 +1,4 @@
-flux-accounting version 0.52.0 - 2025-11-04
+flux-accounting version 0.53.0 - 2025-11-04
 -------------------------------------------
 
 #### Fixes
