@@ -1770,6 +1770,16 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
         };
     }
 
+    // load active jobs in reverse state in order to re-establish any potential
+    // flux-accounting dependencies issued on active jobs
+    if (flux_jobtap_set_load_sort_order (p, "-state") < 0) {
+        flux_log (h,
+                  LOG_ERR,
+                  "error loading sort order of active jobs: %s",
+                  flux_plugin_strerror (p));
+        return -1;
+    }
+
     if (flux_plugin_register (p, "mf_priority", tab) < 0
         || flux_jobtap_service_register (p, "rec_update", rec_update_cb, p) < 0
         || flux_jobtap_service_register (p, "reprioritize", reprior_cb, p) < 0

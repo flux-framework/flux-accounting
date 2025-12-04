@@ -234,4 +234,14 @@ man_pages = [
         [author],
         1,
     ),
+    (
+        "man1/flux-account-export-json",
+        "flux-account-export-json",
+        (
+            "extract flux-accounting tables as a JSON object to use when loading priority "
+            "plugin"
+        ),
+        [author],
+        1,
+    ),
 ]

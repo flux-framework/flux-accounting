@@ -37,7 +37,8 @@ MAN1_FILES_PRIMARY = \
 	man1/flux-account-jobs.1 \
 	man1/flux-account-view-job-records.1 \
 	man1/flux-account-show-usage.1 \
-	man1/flux-account-edit-all-users.1
+	man1/flux-account-edit-all-users.1 \
+	man1/flux-account-export-json.1
 
 RST_FILES  = \
 	$(MAN1_FILES_PRIMARY:.1=.rst)
