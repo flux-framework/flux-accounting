@@ -225,6 +225,12 @@ def add_add_user_arg(subparsers):
         default=None,
         metavar="DEFAULT_PROJECT",
     )
+    subparser_add_user.add_argument(
+        "--max-sched-jobs",
+        help="max number of jobs in SCHED state the user can have at any given time",
+        default=2147483647,
+        metavar="DEFAULT_PROJECT",
+    )
 
 
 def add_delete_user_arg(subparsers):
@@ -337,6 +343,12 @@ def add_edit_user_arg(subparsers):
         default=None,
         metavar="DEFAULT_PROJECT",
     )
+    subparser_edit_user.add_argument(
+        "--max-sched-jobs",
+        help="max number of jobs in SCHED state the user can have at any given time",
+        default=None,
+        metavar="DEFAULT_PROJECT",
+    )
 
 
 def add_edit_all_users_arg(subparsers):
@@ -412,6 +424,12 @@ def add_edit_all_users_arg(subparsers):
             "the default project the users submit jobs under when no project is "
             "specified"
         ),
+        default=None,
+        metavar="DEFAULT_PROJECT",
+    )
+    subparser_edit_all_users.add_argument(
+        "--max-sched-jobs",
+        help="max number of jobs in SCHED state the user can have at any given time",
         default=None,
         metavar="DEFAULT_PROJECT",
     )
