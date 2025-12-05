@@ -79,6 +79,7 @@ TESTSCRIPTS = \
 	t1074-mf-priority-init-depend.t \
 	t1075-custom-usage-reporting.t \
 	t1076-cmds-short-options.t \
+	t1077-max-sched-jobs-basic.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
