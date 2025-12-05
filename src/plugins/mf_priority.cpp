@@ -210,6 +210,7 @@ static void add_special_association (flux_plugin_t *p, flux_t *h, int userid)
     a->held_jobs = std::vector<Job>();
     a->max_nodes = INT16_MAX;
     a->max_cores = INT16_MAX;
+    a->max_sched_jobs = INT16_MAX;
 
     if (flux_jobtap_job_aux_set (p,
                                  FLUX_JOBTAP_CURRENT_JOB,
@@ -523,6 +524,7 @@ static void rec_update_cb (flux_t *h,
 {
     char *bank, *def_bank, *assoc_queues, *assoc_projects, *def_project = NULL;
     int uid, max_running_jobs, max_active_jobs, max_nodes, max_cores = 0;
+    int max_sched_jobs = INT16_MAX;
     double fshare = 0.0;
     json_t *data, *jtemp = NULL;
     json_error_t error;
@@ -546,7 +548,7 @@ static void rec_update_cb (flux_t *h,
 
         if (json_unpack_ex (el, &error, 0,
                             "{s:i, s:s, s:s, s:F, s:i,"
-                            " s:i, s:s, s:i, s:s, s:s, s:i, s:i}",
+                            " s:i, s:s, s:i, s:s, s:s, s:i, s:i, s:i}",
                             "userid", &uid,
                             "bank", &bank,
                             "def_bank", &def_bank,
@@ -558,7 +560,8 @@ static void rec_update_cb (flux_t *h,
                             "projects", &assoc_projects,
                             "def_project", &def_project,
                             "max_nodes", &max_nodes,
-                            "max_cores", &max_cores) < 0)
+                            "max_cores", &max_cores,
+                            "max_sched_jobs", &max_sched_jobs) < 0)
             flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
 
         Association *b;
@@ -572,6 +575,7 @@ static void rec_update_cb (flux_t *h,
         b->def_project = def_project;
         b->max_nodes = max_nodes;
         b->max_cores = max_cores;
+        b->max_sched_jobs = max_sched_jobs;
 
         // split queues comma-delimited string and add it to b->queues vector
         b->queues.clear ();
