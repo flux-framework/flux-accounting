@@ -96,6 +96,8 @@ public:
     int cur_run_jobs;                  // current number of running jobs
     int max_active_jobs;               // max number of active jobs
     int cur_active_jobs;               // current number of active jobs
+    int cur_sched_jobs;                // current number of jobs in SCHED state
+    int max_sched_jobs;                // max number of jobs in SCHED state
     std::vector<Job> held_jobs;        // vector to keep track of held Jobs
     std::vector<std::string> queues;   // list of accessible queues
     int queue_factor;                  // priority factor associated with queue
