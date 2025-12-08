@@ -354,6 +354,11 @@ bool Association::under_queue_max_resources (
     return (cur_nodes_in_queue + job.nnodes) <= queue_max_nodes_per_assoc;
 }
 
+bool Association::under_max_sched_jobs ()
+{
+    return cur_sched_jobs < max_sched_jobs;
+}
+
 json_t* convert_queues_to_json (const std::map<std::string, Queue> &queues)
 {
     json_t *root = json_object ();

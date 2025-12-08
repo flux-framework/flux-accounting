@@ -52,6 +52,7 @@ extern "C" {
 #define D_ASSOC_MRJ  "max-running-jobs-user-limit"
 #define D_ASSOC_MRES "max-resources-user-limit"
 #define D_QUEUE_MRES "max-resources-queue"
+#define D_ASSOC_MSJ  "max-sched-jobs-user-limit"
 
 // error messages for flux-accounting-specific validation messages
 #define MSG_INVALID_QUEUE \
@@ -124,6 +125,7 @@ public:
                                   const Job &job,
                                   const std::string &queue,
                                   const std::map<std::string, Queue> &queues);
+    bool under_max_sched_jobs ();
 };
 
 class Bank {
