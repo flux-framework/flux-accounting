@@ -294,8 +294,8 @@ static int decrement_resources (Association *b,
  */
 static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
 {
-    std::string dependency;
-    flux_jobid_t held_job_id;
+    std::string dependency = "";
+    flux_jobid_t held_job_id = 0;
     // the Association has at least one held Job; begin looping through
     // held Jobs and see if they satisfy the requirements to be released
     auto it = b->held_jobs.begin ();
@@ -335,6 +335,7 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
                                                held_job.id,
                                                D_ASSOC_MRJ) < 0) {
                 dependency = D_ASSOC_MRJ;
+                held_job_id = held_job.id;
                 goto error;
             }
             held_job.remove_dep (D_ASSOC_MRJ);
