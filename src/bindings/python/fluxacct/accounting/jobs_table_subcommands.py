@@ -13,6 +13,7 @@ import json
 
 from flux.resource import ResourceSet
 from flux.job.JobID import JobID
+from flux.constants import FLUX_USERID_UNKNOWN
 from fluxacct.accounting import formatter as fmt
 from fluxacct.accounting import util
 
@@ -192,6 +193,25 @@ def validate_expressions(expressions):
     return valid_expressions
 
 
+def get_userid_from_db(cursor, username):
+    """
+    Helper function to try and fetch the userid from the flux-accounting DB
+    in the case where util.get_uid() fails and returns 65534.
+
+    Args:
+        cursor: The SQLite Cursor object used to execute queries.
+        username: The name of the user.
+    """
+    cursor.execute(
+        "SELECT userid FROM association_table WHERE username=? LIMIT 1", (username,)
+    )
+    result = cursor.fetchone()
+
+    if result is not None:
+        return result["userid"]
+    return FLUX_USERID_UNKNOWN
+
+
 def get_jobs(conn, **kwargs):
     """
     A function to return jobs from the jobs table in the flux-accounting
@@ -235,8 +255,14 @@ def get_jobs(conn, **kwargs):
     params_list = []
 
     if "user" in params:
-        params["user"] = util.get_uid(params["user"])
+        if util.get_uid(params["user"]) == FLUX_USERID_UNKNOWN:
+            print("if- got triggered")
+            params["user"] = get_userid_from_db(conn.cursor(), params["user"])
+        else:
+            print("else- got triggered")
+            params["user"] = util.get_uid(params["user"])
         where_clauses.append("userid = ?")
+        print(f"userid: {params['user']}")
         params_list.append(params["user"])
     if "after_start_time" in params:
         where_clauses.append("t_run > ?")
