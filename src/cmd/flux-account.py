@@ -1260,6 +1260,68 @@ def add_export_json_arg(subparsers):
     subparsers_init_plugin.set_defaults(func="export_json")
 
 
+def view_usage_report(subparsers):
+    subparsers_view_usage_report = subparsers.add_parser(
+        "view-usage-report",
+        help="calculate usage for a user, bank, or association",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparsers_view_usage_report.set_defaults(func="view_usage_report")
+    subparsers_view_usage_report.add_argument(
+        "-s",
+        "--start",
+        help=(
+            "start time; accepts multiple formats: "
+            "seconds since epoch timestamp or human readable timestamp "
+            "(e.g. '01/01/2025', '2025-01-01 08:00:00', 'Jan 1, 2025 8am')"
+        ),
+        metavar="DATE",
+    )
+    subparsers_view_usage_report.add_argument(
+        "-e",
+        "--end",
+        help=(
+            "end time; accepts multiple formats: "
+            "seconds since epoch timestamp or human readable timestamp "
+            "(e.g. '01/01/2025', '2025-01-01 08:00:00', 'Jan 1, 2025 8am')"
+        ),
+        metavar="DATE",
+    )
+    subparsers_view_usage_report.add_argument(
+        "-u",
+        "--username",
+        help="only calculate usage for USERNAME",
+        metavar="USERNAME",
+    )
+    subparsers_view_usage_report.add_argument(
+        "-b",
+        "--bank",
+        help="only calculate usage for BANK",
+        metavar="BANK",
+    )
+    subparsers_view_usage_report.add_argument(
+        "-r",
+        "--report-type",
+        help="specify how data should be binned",
+        metavar="bybank|byuser|byassociation",
+        type=str,
+        choices=["bybank", "byuser", "byassociation"],
+    )
+    subparsers_view_usage_report.add_argument(
+        "-t",
+        "--time-unit",
+        help="specify time unit for data",
+        metavar="hour|min|sec",
+        choices=["hour", "min", "sec"],
+    )
+    subparsers_view_usage_report.add_argument(
+        "-S",
+        "--job-size-bins",
+        help="bin by job sizes",
+        metavar="NNODES,NNODES,...",
+    )
+
+
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_view_user_arg(subparsers)
@@ -1296,6 +1358,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_edit_all_users_arg(subparsers)
     add_synchronize_userids_arg(subparsers)
     add_export_json_arg(subparsers)
+    view_usage_report(subparsers)
 
 
 def set_db_location(args):
@@ -1341,6 +1404,7 @@ def select_accounting_function(args, parser):
         "edit_all_users": "accounting.edit_all_users",
         "sync_userids": "accounting.sync_userids",
         "export_json": "accounting.export_json",
+        "view_usage_report": "accounting.view_usage_report",
     }
 
     if args.func in func_map:
