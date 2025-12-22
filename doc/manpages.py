@@ -244,4 +244,11 @@ man_pages = [
         [author],
         1,
     ),
+    (
+        "man1/flux-account-view-usage-report",
+        "flux-account-view-usage-report",
+        "generate a job usage report for users, banks, or associations",
+        [author],
+        1,
+    ),
 ]
