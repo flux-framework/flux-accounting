@@ -776,10 +776,12 @@ static void reprior_cb (flux_t *h,
         auto &banks = entry.second;
 
         for (auto &bank_entry : banks) {
-            if (check_and_release_held_jobs (p, &bank_entry.second) < 0) {
-                flux_log_error (h,
-                                "reprior_cb: error checking and releasing "
-                                "held jobs for user(s)");
+            if (!bank_entry.second.held_jobs.empty ()) {
+                if (check_and_release_held_jobs (p, &bank_entry.second) < 0) {
+                    flux_log_error (h,
+                                    "reprior_cb: error checking and releasing "
+                                    "held jobs for user(s)");
+                }
             }
         }
     }
