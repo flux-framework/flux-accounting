@@ -91,13 +91,13 @@ Viewing Breakdowns of Historical Job Usage
 Since an association's historical job usage (i.e. the value reported in the
 ``job_usage`` column) is comprised of potentially multiple usage factors that
 make up an association's job usage value, it would be useful to see how this
-value is calculated. The ``view-user`` command offers a ``-j/--job-usage``
+value is calculated. The ``view-user`` command offers a ``-J/--job-usage``
 optional argument, which will return all of the association's job usage columns
 that make up their historical job usage value:
 
 .. code-block:: console
 
-    $ flux account view-user --parsable -j moussa
+    $ flux account view-user --parsable -J moussa
     username | userid | bank     | usage_factor_period_0 | usage_factor_period_1 | usage_factor_period_2 | usage_factor_period_3
     ---------+--------+----------+-----------------------+-----------------------+-----------------------+----------------------
     moussa   | 12345  | A        | 100.0                 | 243.5                 | 8.7                   | 0.0  
