@@ -13,93 +13,97 @@ import csv
 import sqlite3
 import json
 
-from fluxacct.accounting import bank_subcommands as b
-from fluxacct.accounting import user_subcommands as u
 from fluxacct.accounting.util import with_cursor
 
 
-def export_db_info(conn, users=None, banks=None):
+def export_db_info(conn):
+    """
+    Export all of the information from the tables in the flux-accounting DB into
+    separate .csv files.
+    """
+    cur = conn.cursor()
+    # get all tables from DB
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    tables = cur.fetchall()
+
+    # loop through each table and export it to a separate .csv file
+    for table_name in tables:
+        output_csv = f"{table_name['name']}.csv"
+        cur.execute(f"SELECT * FROM {table_name['name']}")
+        rows = cur.fetchall()
+        column_names = [description[0] for description in cur.description]
+
+        # write data to .csv file
+        with open(output_csv, "w", newline="") as csv_file:
+            writer = csv.writer(csv_file)
+            writer.writerow(column_names)
+            writer.writerows(rows)
+
+
+def populate_db(conn, csv_file, columns_included=None):
+    """
+    Populate an existing table from a single .csv file with an option
+    to specify columns to include. The .csv file must have the column names in
+    the first line to indicate which columns to insert into the table.
+
+    Args:
+        csv_file: Path to the .csv file. The name of the .csv file must match the
+            name of the table in the flux-accounting DB.
+
+        columns_included (list, optional): List of columns to include from the .csv
+            file. If None, it will include all columns listed in the .csv file.
+
+    Raises:
+        ValueError: If the table derived from the .csv file name does not match
+            any of the tables in the flux-accounting DB.
+    """
     try:
         cur = conn.cursor()
-        select_users_stmt = """
-            SELECT username, userid, bank, shares, max_running_jobs, max_active_jobs,
-            max_nodes, queues FROM association_table
-        """
-        cur.execute(select_users_stmt)
-        table = cur.fetchall()
 
-        # open a .csv file for writing
-        users_filepath = users if users else "users.csv"
-        users_file = open(users_filepath, "w")
-        with users_file:
-            writer = csv.writer(users_file)
+        # extract table name from .csv filename; check if it exists in DB
+        table_name = csv_file.split("/")[-1].replace(".csv", "")
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = [table[0] for table in cur.fetchall()]
 
-            for row in table:
-                writer.writerow(row)
+        if table_name not in tables:
+            raise ValueError(
+                f'pop-db: table "{table_name}" does not exist in the database'
+            )
 
-        select_banks_stmt = """
-            SELECT bank, parent_bank, shares FROM bank_table
-        """
-        cur.execute(select_banks_stmt)
-        table = cur.fetchall()
+        with open(csv_file, "r", newline="") as file:
+            reader = csv.reader(file)
+            all_columns = next(reader)  # column names
 
-        banks_filepath = banks if banks else "banks.csv"
-        banks_file = open(banks_filepath, "w")
-        with banks_file:
-            writer = csv.writer(banks_file)
+            if columns_included:
+                # filter only the columns specified
+                columns = [col for col in all_columns if col in columns_included]
+            else:
+                columns = all_columns
 
-            for row in table:
-                writer.writerow(row)
-    except IOError as err:
-        print(err)
-
-
-def populate_db(conn, users=None, banks=None):
-    if banks is not None:
-        try:
-            with open(banks) as csv_file:
-                csv_reader = csv.reader(csv_file, delimiter=",")
-
-                for row in csv_reader:
-                    b.add_bank(
-                        conn,
-                        bank=row[0],
-                        parent_bank=row[1],
-                        shares=row[2],
+            for row in reader:
+                # build a list of (column, value) pairs for columns with non-empty values
+                column_value_pairs = [
+                    (columns[i], row[i]) for i in range(len(columns)) if row[i] != ""
+                ]
+                if column_value_pairs:
+                    # separate columns and values for the SQL statement
+                    cols_to_insert = [pair[0] for pair in column_value_pairs]
+                    vals_to_insert = [pair[1] for pair in column_value_pairs]
+                    insert_sql = (
+                        f"INSERT INTO {table_name} "
+                        f"({', '.join(cols_to_insert)}) "
+                        f"VALUES ({', '.join(['?' for _ in vals_to_insert])})"
                     )
-        except IOError as err:
-            print(err)
 
-    if users is not None:
-        try:
-            with open(users) as csv_file:
-                csv_reader = csv.reader(csv_file, delimiter=",")
+                    # execute the insertion with only the non-empty values
+                    cur.execute(insert_sql, vals_to_insert)
 
-                # assign default values to fields if
-                # their slot is empty in the csv file
-                for row in csv_reader:
-                    username = row[0]
-                    uid = row[1]
-                    bank = row[2]
-                    shares = row[3] if row[3] != "" else 1
-                    max_running_jobs = row[4] if row[4] != "" else 5
-                    max_active_jobs = row[5] if row[5] != "" else 7
-                    max_nodes = row[6] if row[6] != "" else 2147483647
-                    queues = row[7]
-
-                    u.add_user(
-                        conn,
-                        username=username,
-                        bank=bank,
-                        uid=uid,
-                        shares=shares,
-                        max_running_jobs=max_running_jobs,
-                        max_active_jobs=max_active_jobs,
-                        max_nodes=max_nodes,
-                        queues=queues,
-                    )
-        except IOError as err:
-            print(err)
+        conn.commit()
+    except sqlite3.OperationalError as exc:
+        # roll back any changes made to the DB while trying to populate it before
+        # raising an exception to the flux-accounting service
+        conn.rollback()
+        raise sqlite3.OperationalError(exc)
 
 
 @with_cursor

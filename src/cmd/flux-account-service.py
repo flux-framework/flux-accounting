@@ -544,11 +544,7 @@ class AccountingService:
 
     def export_db(self, handle, watcher, msg, arg):
         try:
-            val = d.export_db_info(
-                self.conn,
-                msg.payload.get("users"),
-                msg.payload.get("banks"),
-            )
+            val = d.export_db_info(self.conn)
 
             payload = {"export_db": val}
 
@@ -562,8 +558,8 @@ class AccountingService:
         try:
             val = d.populate_db(
                 self.conn,
-                msg.payload.get("users"),
-                msg.payload.get("banks"),
+                msg.payload.get("csv_file"),
+                msg.payload.get("fields"),
             )
 
             payload = {"pop_db": val}
