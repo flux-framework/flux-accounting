@@ -21,7 +21,7 @@ jobs.
 
 The **job usage factor** table stores past job usage factors per association.
 When an association is first added to the **association** table, they are also
-added to to **job usage factor** table.
+added to **job usage factor** table.
 
 The value of **PriorityDecayHalfLife** determines the amount of time that
 represents one "usage period" of jobs. flux-accounting filters out its ``jobs``
