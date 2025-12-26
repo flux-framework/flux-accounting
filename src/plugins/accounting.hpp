@@ -52,6 +52,7 @@ extern "C" {
 #define D_ASSOC_MRJ  "max-running-jobs-user-limit"
 #define D_ASSOC_MRES "max-resources-user-limit"
 #define D_QUEUE_MRES "max-resources-queue"
+#define D_ASSOC_MSJ  "max-sched-jobs-user-limit"
 
 // error messages for flux-accounting-specific validation messages
 #define MSG_INVALID_QUEUE \
@@ -96,6 +97,8 @@ public:
     int cur_run_jobs;                  // current number of running jobs
     int max_active_jobs;               // max number of active jobs
     int cur_active_jobs;               // current number of active jobs
+    int cur_sched_jobs;                // current number of jobs in SCHED state
+    int max_sched_jobs;                // max number of jobs in SCHED state
     std::vector<Job> held_jobs;        // vector to keep track of held Jobs
     std::vector<std::string> queues;   // list of accessible queues
     int queue_factor;                  // priority factor associated with queue
@@ -122,6 +125,7 @@ public:
                                   const Job &job,
                                   const std::string &queue,
                                   const std::map<std::string, Queue> &queues);
+    bool under_max_sched_jobs ();
 };
 
 class Bank {

@@ -77,6 +77,8 @@ TESTSCRIPTS = \
 	t1072-sync-uids.t \
 	t1073-mf-priority-init-basic.t \
 	t1074-mf-priority-init-depend.t \
+	t1075-max-sched-jobs-basic.t \
+	t1076-mf-priority-sched-dependencies.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
