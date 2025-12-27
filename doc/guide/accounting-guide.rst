@@ -249,27 +249,30 @@ all possible commands that interface with the information stored in their
 respective tables in the flux-accounting database. The current database
 consists of the following tables:
 
-+--------------------------+--------------------------------------------------+
-| table name               | description                                      |
-+==========================+==================================================+
-| association_table        | stores associations                              |
-+--------------------------+--------------------------------------------------+
-| bank_table               | stores banks                                     |
-+--------------------------+--------------------------------------------------+
-| job_usage_factor_table   | stores past job usage factors for associations   |
-+--------------------------+--------------------------------------------------+
-| t_half_life_period_table | keeps track of the current half-life period for  |
-|                          | calculating job usage factors                    |
-+--------------------------+--------------------------------------------------+
-| queue_table              | stores queues, their limits properties, as well  |
-|                          | as their associated priorities                   |
-+--------------------------+--------------------------------------------------+
-| project_table            | stores projects for associations to charge their |
-|                          | jobs against                                     |
-+--------------------------+--------------------------------------------------+
-| jobs                     | stores inactive jobs for job usage and fair      |
-|                          | share calculation                                |
-+--------------------------+--------------------------------------------------+
++------------------------------+--------------------------------------------------+
+| table name                   | description                                      |
++==============================+==================================================+
+| association_table            | stores associations                              |
++------------------------------+--------------------------------------------------+
+| bank_table                   | stores banks                                     |
++------------------------------+--------------------------------------------------+
+| job_usage_factor_table       | stores past job usage factors for associations   |
++------------------------------+--------------------------------------------------+
+| t_half_life_period_table     | keeps track of the current half-life period for  |
+|                              | calculating job usage factors                    |
++------------------------------+--------------------------------------------------+
+| queue_table                  | stores queues, their limits properties, as well  |
+|                              | as their associated priorities                   |
++------------------------------+--------------------------------------------------+
+| project_table                | stores projects for associations to charge their |
+|                              | jobs against                                     |
++------------------------------+--------------------------------------------------+
+| jobs                         | stores inactive jobs for job usage and fair      |
+|                              | share calculation                                |
++------------------------------+--------------------------------------------------+
+| priority_factor_weight_table | stores the weights for each priority factor to   | 
+|                              | be used in the multi-factor priority plugin      |
++------------------------------+--------------------------------------------------+
 
 To view all associations in a flux-accounting database, the ``view-bank`` 
 command will print this DB information in a hierarchical format. An example is
