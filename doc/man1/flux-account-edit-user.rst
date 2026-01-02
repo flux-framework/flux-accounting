@@ -75,6 +75,11 @@ The list of modifiable fields for an association are as follows:
     The default project the association will submit jobs under when they do not
     specify a project.
 
+.. option:: --max-sched-jobs
+
+    The max number of jobs in SCHED state an association can have at any given
+    time.
+
 All of the attributes able to be modified can be reset to their default value
 by passing ``-1`` as the value for the field. Multiple fields can be edited at
 the same time by passing them on the command line.
