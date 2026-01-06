@@ -90,6 +90,7 @@ class AccountingService:
             "list_factors",
             "jobs",
             "show_usage",
+            "view_usage_report",
         ]
 
         privileged_endpoints = [
@@ -748,6 +749,31 @@ class AccountingService:
             handle.respond_error(msg, 0, f"export-json: missing key in payload: {exc}")
         except Exception as exc:
             handle.respond_error(msg, 0, f"export-json: {type(exc).__name__}: {exc}")
+
+    def view_usage_report(self, handle, watcher, msg, arg):
+        try:
+            val = jobs.view_usage_report(
+                conn=self.conn,
+                start=msg.payload.get("start"),
+                end=msg.payload.get("end"),
+                user=msg.payload.get("username"),
+                bank=msg.payload.get("bank"),
+                report_type=msg.payload.get("report_type"),
+                job_size_bins=msg.payload.get("job_size_bins"),
+                time_unit=msg.payload.get("time_unit"),
+            )
+
+            payload = {"view_usage_report": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(
+                msg, 0, f"view-usage-report: missing key in payload: {exc}"
+            )
+        except Exception as exc:
+            handle.respond_error(
+                msg, 0, f"view-usage-report: {type(exc).__name__}: {exc}"
+            )
 
 
 LOGGER = logging.getLogger("flux-uri")
