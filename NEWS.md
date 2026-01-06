@@ -1,3 +1,19 @@
+flux-accounting version 0.55.0 - 2026-01-06
+-------------------------------------------
+
+#### Fixes
+
+* plugin: fix valgrind "Conditional jump or move depends on uninitialized
+values" error (#791)
+
+* plugin: check `held_jobs` vector before calling `check_and_release_held_jobs ()` (#796)
+
+#### Documentation
+
+* doc: fix use of `-J` option in job usage factor example (#797)
+
+* doc: update accounting guide with new table (#798)
+
 flux-accounting version 0.54.0 - 2025-12-02
 -------------------------------------------
 
