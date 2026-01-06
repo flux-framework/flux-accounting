@@ -88,6 +88,7 @@ test_expect_success 'get all the columns of the updated table in the DB and chec
 	queues
 	projects
 	default_project
+	max_sched_jobs
 	organization
 	yrs_experience
 	EOF
