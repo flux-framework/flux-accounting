@@ -101,3 +101,65 @@ that make up their historical job usage value:
     username | userid | bank     | usage_factor_period_0 | usage_factor_period_1 | usage_factor_period_2 | usage_factor_period_3
     ---------+--------+----------+-----------------------+-----------------------+-----------------------+----------------------
     moussa   | 12345  | A        | 100.0                 | 243.5                 | 8.7                   | 0.0  
+
+
+Calculating job usage arbitrarily
+=================================
+
+flux-accounting also offers a way to report job usage different from displaying
+a historical job usage value that factors in job decay. ``view-usage-report``
+can generate a job usage report for users, banks, or associations that can be
+filtered by start/end dates, how job usage is reported (e.g. by second,
+minute, or hour) and/or how jobs are binned. Job usage reports are sent to
+stdout upon completion and is a quick way to look at job usage on a system.
+
+Examples
+----------
+
+By default, usage is grouped by association:
+
+.. code-block:: console
+
+    $ flux account view-usage-report
+    association(nodesec)              total
+    A:50001                          540.00
+    A:50002                          420.00
+    B:50003                          300.00
+    TOTAL                           1260.00
+
+But can also be grouped by user or bank:
+
+.. code-block:: console
+
+    $ flux account view-usage-report --report-type byuser
+    user(nodesec)                     total
+    50001                            540.00
+    50002                            420.00
+    50003                            300.00
+    TOTAL                           1260.00
+
+    $ flux account view-usage-report --report-type bybank
+    bank(nodesec)                     total
+    A                                960.00
+    B                                300.00
+    TOTAL                           1260.00
+
+How usage is calculated can also be customized:
+
+.. code-block:: console
+
+    $ flux account view-usage-report --time-unit hour
+    association(nodehour)             total
+    A:50001                            0.15
+    A:50002                            0.12
+    B:50003                            0.08
+    TOTAL                              0.35
+
+Job size bins can also be created to group jobs by their sizes:
+
+.. code-block:: console
+
+    $ flux account view-usage-report --job-size-bins=1,2,3,4
+    association(nodesec)                 1+             2+             3+             4+
+    A:50001                          180.00         120.00           0.00         240.00
+    TOTAL                            180.00         120.00           0.00         240.00
