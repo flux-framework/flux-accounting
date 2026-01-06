@@ -343,6 +343,7 @@ def add_user(
     queues="",
     projects="*",
     default_project=None,
+    max_sched_jobs=2147483647,
 ):
     if uid == 65534:
         uid = util.get_uid(username)
@@ -402,8 +403,8 @@ def add_user(
                                        userid, bank, default_bank, shares,
                                        fairshare, max_running_jobs, max_active_jobs,
                                        max_nodes, max_cores, queues, projects,
-                                       default_project)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                       default_project, max_sched_jobs)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             int(time.time()),
@@ -421,6 +422,7 @@ def add_user(
             queues,
             projects,
             default_project,
+            max_sched_jobs,
         ),
     )
     # insert the user values into job_usage_factor_table
@@ -513,6 +515,8 @@ def edit_user(conn, cur, username, bank=None, **kwargs):
         projects: A comma-separated list of all of the projects an association can run jobs
             under.
         default_project: The association's default project.
+        max_sched_jobs: The max number of jobs in SCHED state an association can have at
+            any given time.
 
     Raises:
         ValueError: if:
@@ -533,6 +537,7 @@ def edit_user(conn, cur, username, bank=None, **kwargs):
         "queues",
         "projects",
         "default_project",
+        "max_sched_jobs",
     }
     updates = {
         field: value for field, value in kwargs.items() if field in editable_fields
@@ -640,6 +645,8 @@ def edit_all_users(conn, cur, **kwargs):
         projects: A comma-separated list of all of the projects an association can run jobs
             under.
         default_project: The association's default project.
+        max_sched_jobs: The max number of jobs in SCHED state an association can have at
+            any given time.
     """
     editable_fields = {
         "bank",
@@ -653,6 +660,7 @@ def edit_all_users(conn, cur, **kwargs):
         "queues",
         "projects",
         "default_project",
+        "max_sched_jobs",
     }
 
     if not set(kwargs.keys()) <= editable_fields:
