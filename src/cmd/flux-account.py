@@ -13,6 +13,7 @@ import logging
 import subprocess
 
 import flux
+from flux.constants import FLUX_USERID_UNKNOWN
 import fluxacct.accounting
 
 from fluxacct.accounting import create_db as c
@@ -161,7 +162,7 @@ def add_add_user_arg(subparsers):
     subparser_add_user.add_argument(
         "--userid",
         help="userid",
-        default=65534,
+        default=FLUX_USERID_UNKNOWN,
         metavar="USERID",
     )
     subparser_add_user.add_argument(

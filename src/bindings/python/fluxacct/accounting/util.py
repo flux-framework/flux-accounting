@@ -14,6 +14,7 @@ import logging
 import functools
 import contextlib
 
+from flux.constants import FLUX_USERID_UNKNOWN
 from flux.util import parse_datetime
 import fluxacct.accounting
 
@@ -29,7 +30,7 @@ def get_uid(username):
     try:
         return pwd.getpwnam(username).pw_uid
     except KeyError:
-        return 65534
+        return FLUX_USERID_UNKNOWN
 
 
 def get_username(userid):
