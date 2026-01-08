@@ -1392,6 +1392,32 @@ def view_usage_report(subparsers):
     )
 
 
+def add_clear_usage_arg(subparsers):
+    subparsers_clear_usage = subparsers.add_parser(
+        "clear-usage",
+        help="clear the usage for one or more banks",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparsers_clear_usage.set_defaults(func="clear_usage")
+    subparsers_clear_usage.add_argument(
+        "banks",
+        help="the banks for which their usage will be cleared",
+        nargs="+",
+        metavar="BANK BANK ...",
+    )
+    subparsers_clear_usage.add_argument(
+        "--ignore-older-than",
+        help=(
+            "a timestamp to which older jobs will be ignored when calculating job "
+            "usage; accepts multiple formats: "
+            "seconds since epoch timestamp or human readable timestamp "
+            "(e.g. '01/01/2025', '2025-01-01 08:00:00', 'Jan 1, 2025 8am')"
+        ),
+        default=None,
+        metavar="TIMESTAMP",
+    )
+
+
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_view_user_arg(subparsers)
@@ -1429,6 +1455,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_synchronize_userids_arg(subparsers)
     add_export_json_arg(subparsers)
     view_usage_report(subparsers)
+    add_clear_usage_arg(subparsers)
 
 
 def set_db_location(args):
@@ -1475,6 +1502,7 @@ def select_accounting_function(args, parser):
         "sync_userids": "accounting.sync_userids",
         "export_json": "accounting.export_json",
         "view_usage_report": "accounting.view_usage_report",
+        "clear_usage": "accounting.clear_usage",
     }
 
     if args.func in func_map:

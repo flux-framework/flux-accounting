@@ -114,6 +114,7 @@ class AccountingService:
             "edit_all_users",
             "sync_userids",
             "export_json",
+            "clear_usage",
         ]
 
         for name in general_endpoints:
@@ -780,6 +781,22 @@ class AccountingService:
             handle.respond_error(
                 msg, 0, f"view-usage-report: {type(exc).__name__}: {exc}"
             )
+
+    def clear_usage(self, handle, watcher, msg, arg):
+        try:
+            val = jobs.clear_usage(
+                conn=self.conn,
+                banks=msg.payload["banks"],
+                ignore_older_than=msg.payload.get("ignore_older_than"),
+            )
+
+            payload = {"clear_usage": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"clear-usage: missing key in payload: {exc}")
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"clear-usage: {type(exc).__name__}: {exc}")
 
 
 LOGGER = logging.getLogger("flux-uri")

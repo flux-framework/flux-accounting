@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 
 from fluxacct.accounting import jobs_table_subcommands as j
 from fluxacct.accounting import util
+from fluxacct.accounting.util import with_cursor
 
 logging.basicConfig(
     level=logging.INFO,
@@ -546,3 +547,77 @@ def view_usage_report(
     result += format_line("TOTAL", total, time_unit, sizebins)
 
     return result
+
+
+def clear_usage_period_columns(cur, bank):
+    """
+    Clear the job usage for the bank's job_usage_factor_* columns.
+
+    Args:
+        cur: The SQLite Cursor object.
+        bank: The bank being cleared.
+    """
+    cur.execute("PRAGMA table_info('job_usage_factor_table')")
+    result = cur.fetchall()
+    for column in result:
+        # column[1] accesses just the column name
+        if column[1].startswith("usage_factor_period_"):
+            cur.execute(
+                f"UPDATE job_usage_factor_table SET {column[1]}=0 WHERE bank=?", (bank,)
+            )
+    # clear last_job_timestamp
+    cur.execute(
+        "UPDATE job_usage_factor_table SET last_job_timestamp=0 WHERE bank=?", (bank,)
+    )
+
+
+@with_cursor
+def clear_usage(conn, cur, banks, ignore_older_than=None):
+    """
+    Reset job usage for one or more banks in the flux-accounting database.
+
+    Args:
+        conn: The SQLite Connection object.
+        banks: One or more banks to have its usage cleared.
+        ignore_older_than: The timestamp in which all older jobs will not be considered
+            towards job usage.
+    """
+    if len(banks) > 0:
+        # one or more banks has been passed in to have their usage wiped
+        for bank in banks:
+            # first, reset the historical job usage for the bank
+            cur.execute("UPDATE bank_table SET job_usage=0 WHERE bank=?", (bank,))
+            # then reset usage/fair-share for all associations under this bank
+            cur.execute(
+                "UPDATE association_table SET job_usage=0 WHERE bank=?", (bank,)
+            )
+            cur.execute(
+                "UPDATE association_table SET fairshare=0.5 WHERE bank=?", (bank,)
+            )
+            # reset all usage periods for associations under this bank
+            clear_usage_period_columns(cur, bank)
+            # propagate new usage up parent banks to root bank
+            util.update_parent_bank_usage(conn, bank)
+            if ignore_older_than is not None:
+                # update bank_table with new ignore timestamp
+                cur.execute(
+                    "UPDATE bank_table SET ignore_older_than=? WHERE bank=?",
+                    (
+                        int(util.parse_timestamp(ignore_older_than)),
+                        bank,
+                    ),
+                )
+            else:
+                # update bank_table with the current time to no longer consider any jobs
+                # older than right now
+                cur.execute(
+                    "UPDATE bank_table SET ignore_older_than=? WHERE bank=?",
+                    (
+                        int(time.time()),
+                        bank,
+                    ),
+                )
+            # commit changes
+            conn.commit()
+
+    return 0
