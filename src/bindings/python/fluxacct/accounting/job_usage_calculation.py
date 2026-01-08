@@ -285,9 +285,12 @@ def update_job_usage(acct_conn, pdhl=1):
         # fetch new jobs for every association based on their last completed job
         s_new_jobs = """
             SELECT r.userid,r.id,r.t_submit,r.t_run,r.t_inactive,r.ranks,r.R,r.jobspec,
-            r.project,r.bank,r.requested_duration,r.actual_duration
+            r.project,r.bank,r.requested_duration,r.actual_duration,b.ignore_older_than
             FROM jobs r LEFT JOIN job_usage_factor_table j
-            ON r.userid = j.userid AND r.bank = j.bank WHERE r.t_run > j.last_job_timestamp
+            ON r.userid = j.userid AND r.bank = j.bank
+            LEFT JOIN bank_table b
+            ON r.bank = b.bank WHERE r.t_run > j.last_job_timestamp
+            AND r.t_inactive > b.ignore_older_than
         """
         cur.execute(s_new_jobs)
         new_jobs = cur.fetchall()
