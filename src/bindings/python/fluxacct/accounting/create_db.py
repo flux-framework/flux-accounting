@@ -123,13 +123,14 @@ def create_db(
     conn.execute(
         """
             CREATE TABLE IF NOT EXISTS bank_table (
-                bank_id     integer PRIMARY KEY AUTOINCREMENT,
-                bank        text                NOT NULL,
-                active      int(11) DEFAULT 1   NOT NULL,
-                parent_bank text    DEFAULT '',
-                shares      int                 NOT NULL,
-                job_usage   real    DEFAULT 0.0 NOT NULL,
-                priority    real    DEFAULT 0.0 NOT NULL    ON CONFLICT REPLACE DEFAULT 0.0
+                bank_id           integer    PRIMARY KEY AUTOINCREMENT,
+                bank              text                   NOT NULL,
+                active            int(11)    DEFAULT 1   NOT NULL,
+                parent_bank       text       DEFAULT '',
+                shares            int                    NOT NULL,
+                job_usage         real       DEFAULT 0.0 NOT NULL,
+                priority          real       DEFAULT 0.0 NOT NULL    ON CONFLICT REPLACE DEFAULT 0.0,
+                ignore_older_than bigint(20) DEFAULT 0
         );"""
     )
     LOGGER.info("Created bank_table successfully")
