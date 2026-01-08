@@ -593,6 +593,17 @@ def add_add_bank_arg(subparsers):
         help="an associated priority for jobs submitted under this bank",
         metavar="PRIORITY",
     )
+    subparser_add_bank.add_argument(
+        "--ignore-older-than",
+        help=(
+            "a timestamp to which older jobs will be ignored when calculating job "
+            "usage; accepts multiple formats: "
+            "seconds since epoch timestamp or human readable timestamp "
+            "(e.g. '01/01/2025', '2025-01-01 08:00:00', 'Jan 1, 2025 8am')"
+        ),
+        default=0,
+        metavar="TIMESTAMP",
+    )
 
 
 def add_view_bank_arg(subparsers):
@@ -704,6 +715,17 @@ def add_edit_bank_arg(subparsers):
         "--priority",
         help="an associated priority for jobs submitted under this bank",
         metavar="PRIORITY",
+    )
+    subparser_edit_bank.add_argument(
+        "--ignore-older-than",
+        help=(
+            "a timestamp to which older jobs will be ignored when calculating job "
+            "usage; accepts multiple formats: "
+            "seconds since epoch timestamp or human readable timestamp "
+            "(e.g. '01/01/2025', '2025-01-01 08:00:00', 'Jan 1, 2025 8am')"
+        ),
+        default=None,
+        metavar="TIMESTAMP",
     )
 
 

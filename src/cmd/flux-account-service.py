@@ -306,6 +306,7 @@ class AccountingService:
                 msg.payload["shares"],
                 msg.payload.get("parent_bank"),
                 msg.payload.get("priority"),
+                msg.payload.get("ignore_older_than"),
             )
 
             payload = {"add_bank": val}
@@ -338,6 +339,7 @@ class AccountingService:
                 msg.payload.get("shares"),
                 msg.payload.get("parent_bank"),
                 msg.payload.get("priority"),
+                msg.payload.get("ignore_older_than"),
             )
 
             payload = {"edit_bank": val}
