@@ -227,7 +227,6 @@ class TestAccountingCLI(unittest.TestCase):
         """
         )
         test = b.list_banks(conn)
-        print(test)
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_table_custom_one(self):
