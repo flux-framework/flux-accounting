@@ -17,6 +17,7 @@ import sys
 
 from unittest import mock
 
+from flux.constants import FLUX_USERID_UNKNOWN
 from fluxacct.accounting import user_subcommands as u
 from fluxacct.accounting import bank_subcommands as b
 from fluxacct.accounting import create_db as c
@@ -251,7 +252,7 @@ class TestAccountingCLI(unittest.TestCase):
         u.add_user(acct_conn, username="test_user5", bank="A")
 
         cur.execute("SELECT userid FROM association_table WHERE username='test_user5'")
-        self.assertEqual(cur.fetchone()[0], 65534)
+        self.assertEqual(cur.fetchone()[0], FLUX_USERID_UNKNOWN)
 
         u.edit_user(acct_conn, username="test_user5", userid="12345")
         cur.execute("SELECT userid FROM association_table WHERE username='test_user5'")

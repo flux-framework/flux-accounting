@@ -19,6 +19,7 @@ from collections import namedtuple
 
 from unittest import mock
 
+from flux.constants import FLUX_USERID_UNKNOWN
 from fluxacct.accounting import job_usage_calculation as jobs
 from fluxacct.accounting import jobs_table_subcommands as j
 from fluxacct.accounting import create_db as c
@@ -45,7 +46,7 @@ def fake_get_uid(uid):
     try:
         return FAKE_ASSOCIATIONS[int(uid)].pw_uid
     except KeyError:
-        return 65534
+        return FLUX_USERID_UNKNOWN
 
 
 def fake_get_username(name):

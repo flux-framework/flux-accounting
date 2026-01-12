@@ -12,6 +12,7 @@
 import sqlite3
 import time
 
+from flux.constants import FLUX_USERID_UNKNOWN
 import fluxacct.accounting
 from fluxacct.accounting import formatter as fmt
 from fluxacct.accounting import sql_util as sql
@@ -333,7 +334,7 @@ def add_user(
     cur,
     username,
     bank,
-    uid=65534,
+    uid=FLUX_USERID_UNKNOWN,
     shares=1,
     fairshare=0.5,
     max_running_jobs=5,
@@ -344,7 +345,7 @@ def add_user(
     projects="*",
     default_project=None,
 ):
-    if uid == 65534:
+    if uid == FLUX_USERID_UNKNOWN:
         uid = util.get_uid(username)
 
     # if true, association (user, bank) is already active
