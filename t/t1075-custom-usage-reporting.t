@@ -191,9 +191,23 @@ test_expect_success '-e: end date after all jobs shows all usage' '
 	grep "1260" usageend.test2
 '
 
+# Breakdown of jobs in this date range:
+# user u1 has 3 completed jobs:
+#   1. 2-node job that ran for 60 seconds on January 1st, 2025
+#   2. 1-node job that ran for 60 seconds on April 17th, 2025
+#   3. 1-node job that ran for 120 seconds on May 20th, 2025
+# u1 USAGE = (2 * 60) + (1 * 60) + (1 * 120) = 120 + 60 + 120 = 300
+# user u2 has 1 completed job:
+#   1. 2-node job that ran for 180 seconds on April 18th, 2025
+# u2 USAGE = (2 * 180) = 360
+# user u3 has 2 completed jobs:
+#   1. 4-node job that ran for 60 seconds on June 1st, 2025
+#   2. 2-node job that ran for 30 seconds on June 2nd, 2025
+# u3 USAGE = (4 * 60) + (2 * 30) = 240 + 60 = 300
+# TOTAL USAGE = 300 + 360 + 300 = 960
 test_expect_success '-e: end date after some jobs shows some usage' '
-	flux account view-usage-report -s 12/31/2024 -e 06/02/2025 > usageend.test3 &&
-	grep "900" usageend.test3
+	flux account view-usage-report -s 12/31/2024 -e 06/03/2025 > usageend.test3 &&
+	grep "960" usageend.test3
 '
 
 test_expect_success 'shut down flux-accounting service' '
