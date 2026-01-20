@@ -64,7 +64,7 @@ def add_view_user_arg(subparsers):
         metavar=(
             "CREATION_TIME,MOD_TIME,ACTIVE,USERNAME,USERID,BANK,DEFAULT_BANK,"
             "SHARES,JOB_USAGE,FAIRSHARE,MAX_RUNNING_JOBS,MAX_ACTIVE_JOBS,MAX_NODES,"
-            "MAX_CORES,QUEUES,PROJECTS,DEFAULT_PROJECT"
+            "MAX_CORES,QUEUES,PROJECTS,DEFAULT_PROJECT,MAX_SCHED_JOBS"
         ),
     )
     group.add_argument(
@@ -150,6 +150,10 @@ def add_list_users_arg(subparsers):
     subparser_list_users.add_argument(
         "--default-project",
         metavar="DEFAULT_PROJECT",
+    )
+    subparser_list_users.add_argument(
+        "--max-sched-jobs",
+        metavar="MAX_SCHED_JOBS",
     )
 
 
@@ -239,6 +243,12 @@ def add_add_user_arg(subparsers):
         help="the default project for the association to submit jobs under",
         default=None,
         metavar="DEFAULT_PROJECT",
+    )
+    subparser_add_user.add_argument(
+        "--max-sched-jobs",
+        help="max number of jobs in SCHED state the user can have at any given time",
+        default=2147483647,
+        metavar="NJOBS",
     )
 
 
@@ -358,6 +368,12 @@ def add_edit_user_arg(subparsers):
         default=None,
         metavar="DEFAULT_PROJECT",
     )
+    subparser_edit_user.add_argument(
+        "--max-sched-jobs",
+        help="max number of jobs in SCHED state the user can have at any given time",
+        default=None,
+        metavar="NJOBS",
+    )
 
 
 def add_edit_all_users_arg(subparsers):
@@ -435,6 +451,12 @@ def add_edit_all_users_arg(subparsers):
         ),
         default=None,
         metavar="DEFAULT_PROJECT",
+    )
+    subparser_edit_all_users.add_argument(
+        "--max-sched-jobs",
+        help="max number of jobs in SCHED state the user can have at any given time",
+        default=None,
+        metavar="NJOBS",
     )
 
 

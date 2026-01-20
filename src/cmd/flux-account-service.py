@@ -192,6 +192,7 @@ class AccountingService:
                 queues=msg.payload.get("queues"),
                 projects=msg.payload.get("projects"),
                 default_project=msg.payload.get("default_project"),
+                max_sched_jobs=msg.payload.get("max_sched_jobs"),
             )
 
             payload = {"list_users": val}
@@ -218,6 +219,7 @@ class AccountingService:
                 queues=msg.payload.get("queues"),
                 projects=msg.payload.get("projects"),
                 default_project=msg.payload.get("default_project"),
+                max_sched_jobs=msg.payload.get("max_sched_jobs"),
             )
 
             payload = {"add_user": val}
@@ -262,6 +264,7 @@ class AccountingService:
                 queues=msg.payload.get("queues"),
                 projects=msg.payload.get("projects"),
                 default_project=msg.payload.get("default_project"),
+                max_sched_jobs=msg.payload.get("max_sched_jobs"),
             )
 
             payload = {"edit_user": val}
@@ -714,6 +717,7 @@ class AccountingService:
                 queues=msg.payload.get("queues"),
                 projects=msg.payload.get("projects"),
                 default_project=msg.payload.get("default_project"),
+                max_sched_jobs=msg.payload.get("max_sched_jobs"),
             )
 
             payload = {"edit_all_users": val}

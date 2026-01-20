@@ -81,6 +81,11 @@ be defined upon user creation.
 
     The default project an association will run jobs under.
 
+.. option:: --max-sched-jobs
+
+    The max number of jobs in SCHED state an association can have at any given
+    time.
+
 EXAMPLES
 --------
 

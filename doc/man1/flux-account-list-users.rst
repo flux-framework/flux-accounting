@@ -80,3 +80,8 @@ project, or those who have certain configured limits.
 .. option:: --default-project
 
     The default project an association belongs to.
+
+.. option:: --max-sched-jobs
+
+    The max number of jobs in SCHED state an association can have at any given
+    time.
