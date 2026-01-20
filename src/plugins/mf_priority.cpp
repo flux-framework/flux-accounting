@@ -210,6 +210,7 @@ static void add_special_association (flux_plugin_t *p, flux_t *h, int userid)
     a->held_jobs = std::vector<Job>();
     a->max_nodes = INT16_MAX;
     a->max_cores = INT16_MAX;
+    a->max_sched_jobs = INT16_MAX;
 
     if (flux_jobtap_job_aux_set (p,
                                  FLUX_JOBTAP_CURRENT_JOB,
@@ -339,6 +340,17 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
                 goto error;
             }
             held_job.remove_dep (D_ASSOC_MRJ);
+        }
+        // is association under their max SCHED jobs limit?
+        if (b->under_max_sched_jobs () &&
+            held_job.contains_dep (D_ASSOC_MSJ)) {
+            if (flux_jobtap_dependency_remove (p,
+                                               held_job.id,
+                                               D_ASSOC_MSJ) < 0) {
+                dependency = D_ASSOC_MSJ;
+                goto error;
+            }
+            held_job.remove_dep (D_ASSOC_MSJ);
         }
         // will association stay under or at their overall max resources limit
         // by releasing this job?
@@ -523,6 +535,7 @@ static void rec_update_cb (flux_t *h,
 {
     char *bank, *def_bank, *assoc_queues, *assoc_projects, *def_project = NULL;
     int uid, max_running_jobs, max_active_jobs, max_nodes, max_cores = 0;
+    int max_sched_jobs = INT16_MAX;
     double fshare = 0.0;
     json_t *data, *jtemp = NULL;
     json_error_t error;
@@ -546,7 +559,7 @@ static void rec_update_cb (flux_t *h,
 
         if (json_unpack_ex (el, &error, 0,
                             "{s:i, s:s, s:s, s:F, s:i,"
-                            " s:i, s:s, s:i, s:s, s:s, s:i, s:i}",
+                            " s:i, s:s, s:i, s:s, s:s, s:i, s:i, s:i}",
                             "userid", &uid,
                             "bank", &bank,
                             "def_bank", &def_bank,
@@ -558,7 +571,8 @@ static void rec_update_cb (flux_t *h,
                             "projects", &assoc_projects,
                             "def_project", &def_project,
                             "max_nodes", &max_nodes,
-                            "max_cores", &max_cores) < 0)
+                            "max_cores", &max_cores,
+                            "max_sched_jobs", &max_sched_jobs) < 0)
             flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
 
         Association *b;
@@ -572,6 +586,7 @@ static void rec_update_cb (flux_t *h,
         b->def_project = def_project;
         b->max_nodes = max_nodes;
         b->max_cores = max_cores;
+        b->max_sched_jobs = max_sched_jobs;
 
         // split queues comma-delimited string and add it to b->queues vector
         b->queues.clear ();
@@ -1230,6 +1245,11 @@ static int new_cb (flux_plugin_t *p,
             }
         }
     }
+    if (state == FLUX_JOB_STATE_SCHED) {
+        // this job was in SCHED state; increment the association's sched
+        // jobs count
+        b->cur_sched_jobs++;
+    }
 
     return 0;
 }
@@ -1319,6 +1339,14 @@ static int depend_cb (flux_plugin_t *p,
                 goto error;
             job.add_dep (D_ASSOC_MRJ);
         }
+        if (!b->under_max_sched_jobs ()) {
+            // association is already at their max SCHED jobs count; add a
+            // dependency to hold the job until another job in SCHED
+            // transitions to RUN
+            if (flux_jobtap_dependency_add (p, id, D_ASSOC_MSJ) < 0)
+                goto error;
+            job.add_dep (D_ASSOC_MSJ);
+        }
         if (!b->under_max_resources (job)) {
             // association is already at their max resources limit or would be
             // over their max resources limit with this job; add a dependency
@@ -1346,6 +1374,34 @@ error:
                                  "dependency to job",
                                  dependency.c_str ());
     return -1;
+}
+
+
+static int sched_cb (flux_plugin_t *p,
+                     const char *topic,
+                     flux_plugin_arg_t *args,
+                     void *data)
+{
+    Association *a;
+
+    a = static_cast<Association *>
+        (flux_jobtap_job_aux_get (p,
+                                  FLUX_JOBTAP_CURRENT_JOB,
+                                  "mf_priority:bank_info"));
+    if (a == NULL) {
+        flux_jobtap_raise_exception (p,
+                                     FLUX_JOBTAP_CURRENT_JOB,
+                                     "mf_priority",
+                                     0,
+                                     "job.state.sched: bank info is " \
+                                     "missing");
+        return -1;
+    }
+
+    // increment association's current SCHED jobs count
+    a->cur_sched_jobs++;
+
+    return 0;
 }
 
 
@@ -1414,6 +1470,16 @@ static int run_cb (flux_plugin_t *p,
                                          "resource count");
             return -1;
         }
+    }
+
+    // decrement the association's current SCHED jobs count
+    b->cur_sched_jobs--;
+    // check to see if any jobs held due to max_sched_jobs limit can now
+    // have their dependency removed
+    if (check_and_release_held_jobs (p, b) < 0) {
+        flux_log_error (h,
+                        "job.state.run: error checking and releasing "
+                        "held jobs for association");
     }
 
     return 0;
@@ -1740,6 +1806,7 @@ static const struct flux_plugin_handler tab[] = {
     { "job.state.inactive", inactive_cb, NULL },
     { "job.state.depend", depend_cb, NULL },
     { "job.update", job_updated, NULL},
+    { "job.state.sched", sched_cb, NULL},
     { "job.state.run", run_cb, NULL},
     { "plugin.query", query_cb, NULL},
     { "job.update.attributes.system.queue", update_queue_cb, NULL },
