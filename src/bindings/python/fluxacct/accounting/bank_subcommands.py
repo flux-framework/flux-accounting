@@ -15,6 +15,7 @@ import fluxacct.accounting
 from fluxacct.accounting import user_subcommands as u
 from fluxacct.accounting import formatter as fmt
 from fluxacct.accounting import sql_util as sql
+from fluxacct.accounting import job_usage_calculation as jobs
 from fluxacct.accounting.util import with_cursor
 
 ###############################################################
@@ -224,6 +225,14 @@ def delete_bank(conn, cur, bank, force=False):
                     get_sub_banks(row["bank"])
 
         get_sub_banks(bank)
+        if force:
+            # we also need to update the job usage for the rest of the hierarchy as a
+            # result of the bank (which may or may not have usage) no longer being in
+            # the database hierarchy; start from the root bank and work down
+            s_root_bank = "SELECT bank FROM bank_table WHERE parent_bank=''"
+            cur.execute(s_root_bank)
+            root_bank = cur.fetchone()[0]
+            jobs.calc_parent_bank_usage(conn, cur, root_bank)
     # if an exception occurs while recursively deleting
     # the parent banks, then throw the exception and roll
     # back the changes made to the DB
