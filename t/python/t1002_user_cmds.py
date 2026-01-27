@@ -40,12 +40,14 @@ class TestAccountingCLI(unittest.TestCase):
 
     # add a valid user to association_table
     def test_01_add_valid_user(self):
-        b.add_bank(acct_conn, bank="acct", shares=10)
+        b.add_bank(acct_conn, bank="root", shares=10)
+        b.add_bank(acct_conn, bank="A", parent_bank="root", shares=10)
+        b.add_bank(acct_conn, bank="B", parent_bank="root", shares=10)
         u.add_user(
             acct_conn,
             username="fluxuser",
             uid="1234",
-            bank="acct",
+            bank="A",
             shares="10",
             queues="",
         )
@@ -65,7 +67,7 @@ class TestAccountingCLI(unittest.TestCase):
                 acct_conn,
                 username="fluxuser",
                 uid="1234",
-                bank="acct",
+                bank="A",
                 shares="10",
                 queues="",
             )
@@ -73,19 +75,18 @@ class TestAccountingCLI(unittest.TestCase):
                 acct_conn,
                 username="fluxuser",
                 uid="1234",
-                bank="acct",
+                bank="A",
                 shares="10",
                 queues="",
             )
 
     # add a user with the same username but a different bank
     def test_03_add_duplicate_user(self):
-        b.add_bank(acct_conn, bank="other_acct", parent_bank="acct", shares=10)
         u.add_user(
             acct_conn,
             username="dup_user",
             uid="5678",
-            bank="acct",
+            bank="A",
             shares="10",
             queues="",
         )
@@ -93,7 +94,7 @@ class TestAccountingCLI(unittest.TestCase):
             acct_conn,
             username="dup_user",
             uid="5678",
-            bank="other_acct",
+            bank="B",
             shares="10",
             queues="",
         )
@@ -110,7 +111,7 @@ class TestAccountingCLI(unittest.TestCase):
         u.edit_user(
             acct_conn,
             username="fluxuser",
-            bank="acct",
+            bank="A",
             shares=10000,
         )
         cursor = acct_conn.cursor()
@@ -124,7 +125,7 @@ class TestAccountingCLI(unittest.TestCase):
         u.edit_user(
             acct_conn,
             username="fluxuser",
-            bank="acct",
+            bank="A",
             shares="-1",
         )
         cursor = acct_conn.cursor()
@@ -136,16 +137,16 @@ class TestAccountingCLI(unittest.TestCase):
     def test_06_delete_user(self):
         cursor = acct_conn.cursor()
         cursor.execute(
-            "SELECT * FROM association_table WHERE username='fluxuser' AND bank='acct'"
+            "SELECT * FROM association_table WHERE username='fluxuser' AND bank='A'"
         )
         num_rows_before_delete = cursor.fetchall()
 
         self.assertEqual(len(num_rows_before_delete), 1)
 
-        u.delete_user(acct_conn, username="fluxuser", bank="acct")
+        u.delete_user(acct_conn, username="fluxuser", bank="A")
 
         cursor.execute(
-            "SELECT active FROM association_table WHERE username='fluxuser' AND bank='acct'"
+            "SELECT active FROM association_table WHERE username='fluxuser' AND bank='A'"
         )
         rows = cursor.fetchall()
 
@@ -153,7 +154,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # check for a new user's default bank
     def test_07_check_default_bank_new_user(self):
-        b.add_bank(acct_conn, bank="test_bank", parent_bank="acct", shares=10)
+        b.add_bank(acct_conn, bank="test_bank", parent_bank="root", shares=10)
         u.add_user(
             acct_conn,
             username="test_user1",
@@ -169,7 +170,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # check for an existing user's default bank
     def test_08_check_default_bank_existing_user(self):
-        b.add_bank(acct_conn, bank="other_test_bank", parent_bank="acct", shares=10)
+        b.add_bank(acct_conn, bank="other_test_bank", parent_bank="root", shares=10)
         u.add_user(
             acct_conn,
             username="test_user1",
@@ -204,23 +205,23 @@ class TestAccountingCLI(unittest.TestCase):
     # disable a user who belongs to multiple banks; make sure that the default_bank
     # is updated to the next earliest associated bank
     def test_11_disable_user_default_bank_row(self):
-        b.add_bank(acct_conn, bank="A", parent_bank="acct", shares=1)
-        b.add_bank(acct_conn, bank="B", parent_bank="acct", shares=1)
-        u.add_user(acct_conn, username="test_user2", bank="A")
-        u.add_user(acct_conn, username="test_user2", bank="B")
+        b.add_bank(acct_conn, bank="C", parent_bank="root", shares=1)
+        b.add_bank(acct_conn, bank="D", parent_bank="root", shares=1)
+        u.add_user(acct_conn, username="test_user2", bank="C")
+        u.add_user(acct_conn, username="test_user2", bank="D")
         cur = acct_conn.cursor()
         cur.execute(
             "SELECT default_bank FROM association_table WHERE username='test_user2'"
         )
 
-        self.assertEqual(cur.fetchone()[0], "A")
+        self.assertEqual(cur.fetchone()[0], "C")
 
-        u.delete_user(acct_conn, username="test_user2", bank="A")
+        u.delete_user(acct_conn, username="test_user2", bank="C")
         cur.execute(
             "SELECT default_bank FROM association_table WHERE username='test_user2'"
         )
 
-        self.assertEqual(cur.fetchone()[0], "B")
+        self.assertEqual(cur.fetchone()[0], "D")
 
     # disable a user who only belongs to one bank; make sure that the default_bank
     # stays the same after disabling
