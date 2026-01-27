@@ -59,6 +59,13 @@ there is one root bank which all other banks and associations descend from:
 Multiple levels of banks can be defined under this root bank. Users can belong
 to more than one bank and will have at most one default bank.
 
+.. warning::
+    You are not allowed to have both an association and a bank under the same
+    parent bank, as this conflicts with how fair-share and job usage are
+    calculated. Trying to add a sub-bank to a parent bank which already has
+    associations (or vice versa: trying to add an association to a bank which
+    already has at least one sub-bank) will result in an error.
+
 To add a bank to the database, you can use the ``flux account add-bank``
 command. Each ``add-bank`` call requires a bank name, their allocated shares,
 and a parent bank name (if it is not the root bank):
