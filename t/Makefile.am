@@ -81,6 +81,7 @@ TESTSCRIPTS = \
 	t1076-cmds-short-options.t \
 	t1077-max-sched-jobs-basic.t \
 	t1078-mf-priority-sched-dependencies.t \
+	t1079-issue809.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
