@@ -125,7 +125,7 @@ for db in ${SHARNESS_TEST_SRCDIR}/expected/test_dbs/*; do
 		test_expect_success 'add a bank: '$(basename $db) \
 			"flux account add-bank --parent-bank=root G 1"
 		test_expect_success 'add a user: '$(basename $db) \
-			"flux account add-user --username=fluxuser --bank=root"
+			"flux account add-user --username=fluxuser --bank=G"
 		test_expect_success 'check validity of DB: '$(basename $db) \
 			"flux python ${DB_INTEGRITY_CHECK} $tmp_db > result.out && grep 'ok' result.out"
 		test_expect_success 'shutdown flux-accounting service' \

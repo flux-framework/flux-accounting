@@ -356,6 +356,16 @@ def add_user(
             f"association {username},{bank} already active in association_table"
         )
 
+    # check that there exist no sub-banks under this bank
+    cur.execute("SELECT * FROM bank_table WHERE parent_bank=?", (bank,))
+    parent_bank = cur.fetchall()
+    if len(parent_bank) > 0:
+        # the bank that the association is trying to be added to also has at least one
+        # sub-bank in it; raise an error
+        raise ValueError(
+            "associations cannot be added to the same parent bank as a sub-bank"
+        )
+
     # if true, association already exists in table but is not
     # active, so re-activate the association and return
     if check_if_user_disabled(conn, cur, username, bank):

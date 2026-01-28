@@ -102,6 +102,15 @@ def add_bank(conn, cur, bank, shares, parent_bank="", priority=0.0):
     except ValueError as bad_parent_bank:
         raise ValueError(f"parent bank {bad_parent_bank} not found in bank table")
 
+    # check that there exist no associations currently under the parent bank
+    cur.execute("SELECT * FROM association_table WHERE bank=?", (parent_bank,))
+    associations = cur.fetchall()
+    if len(associations) > 0:
+        # there is at least one association already under the parent bank; raise an error
+        raise ValueError(
+            "banks cannot be added to a bank that currently has associations in it"
+        )
+
     # check if bank already exists and is active in bank_table; if so, raise
     # a sqlite3.IntegrityError
     if bank_is_active(cur, bank, parent_bank):
