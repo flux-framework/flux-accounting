@@ -82,6 +82,7 @@ TESTSCRIPTS = \
 	t1077-max-sched-jobs-basic.t \
 	t1078-mf-priority-sched-dependencies.t \
 	t1079-issue809.t \
+	t1080-clear-usage.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
@@ -96,7 +97,8 @@ TESTSCRIPTS = \
 	python/t1010_issue631.py \
 	python/t1011_priorities.py \
 	python/t1012_visuals.py \
-	python/t1013_issue802.py
+	python/t1013_issue802.py \
+	python/t1014_clear_usage.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
