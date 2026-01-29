@@ -6,6 +6,7 @@
     "parent_bank": "",
     "shares": 1,
     "job_usage": 0.0,
-    "priority": 0.0
+    "priority": 0.0,
+    "ignore_older_than": 0
   }
 ]

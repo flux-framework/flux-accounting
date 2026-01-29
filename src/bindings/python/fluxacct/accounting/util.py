@@ -105,3 +105,44 @@ def with_cursor(func):
             return func(conn, cur, *args, **kwargs)
 
     return wrapper
+
+
+def update_parent_bank_usage(conn, bank):
+    """
+    Recursively update the job_usage for a bank's parent banks up to the root.
+
+    This function should be called after a leaf bank's job_usage has been updated.
+    It will propagate the changes up through the hierarchy.
+
+    Args:
+        conn: The SQLite Connection object.
+        bank: The name of the bank whose parents need updating.
+    """
+    cur = conn.cursor()
+
+    cur.execute("SELECT parent_bank FROM bank_table WHERE bank=?", (bank,))
+    result = cur.fetchone()
+
+    if result is None:
+        return
+
+    parent_bank = result[0]
+
+    if parent_bank == "":
+        # reached the root bank (no parent); stop recursion
+        return
+
+    # calculate the total usage of all sub-banks under the parent
+    cur.execute(
+        "SELECT SUM(job_usage) FROM bank_table WHERE parent_bank=?", (parent_bank,)
+    )
+    total_usage = cur.fetchone()[0] or 0.0
+
+    # update the parent bank's usage
+    cur.execute(
+        "UPDATE bank_table SET job_usage=? WHERE bank=?", (total_usage, parent_bank)
+    )
+    conn.commit()
+
+    # recursively update the parent's parent
+    update_parent_bank_usage(conn, parent_bank)

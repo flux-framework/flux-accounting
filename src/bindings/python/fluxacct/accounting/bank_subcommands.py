@@ -16,6 +16,7 @@ from fluxacct.accounting import user_subcommands as u
 from fluxacct.accounting import formatter as fmt
 from fluxacct.accounting import sql_util as sql
 from fluxacct.accounting import job_usage_calculation as jobs
+from fluxacct.accounting import util
 from fluxacct.accounting.util import with_cursor
 
 ###############################################################
@@ -87,7 +88,9 @@ def reactivate_bank(conn, cur, bank, parent_bank):
 
 
 @with_cursor
-def add_bank(conn, cur, bank, shares, parent_bank="", priority=0.0):
+def add_bank(
+    conn, cur, bank, shares, parent_bank="", priority=0.0, ignore_older_than=0
+):
     if parent_bank == "":
         # a root bank is trying to be added; check that one does not already exist
         cur.execute("SELECT * FROM bank_table WHERE parent_bank=''")
@@ -122,6 +125,9 @@ def add_bank(conn, cur, bank, shares, parent_bank="", priority=0.0):
         reactivate_bank(conn, cur, bank, parent_bank)
         return 0
 
+    # convert to a timestamp
+    ignore_older_than = util.parse_timestamp(ignore_older_than)
+
     # insert the bank values into the database
     try:
         cur.execute(
@@ -130,11 +136,12 @@ def add_bank(conn, cur, bank, shares, parent_bank="", priority=0.0):
                 bank,
                 parent_bank,
                 shares,
-                priority
+                priority,
+                ignore_older_than
             )
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
             """,
-            (bank, parent_bank, shares, priority),
+            (bank, parent_bank, shares, priority, ignore_older_than),
         )
         # commit changes
         conn.commit()
@@ -262,12 +269,14 @@ def edit_bank(
     shares=None,
     parent_bank=None,
     priority=None,
+    ignore_older_than=None,
 ):
     params = locals()
     editable_fields = [
         "shares",
         "parent_bank",
         "priority",
+        "ignore_older_than",
     ]
     for field in editable_fields:
         if params[field] is not None:
