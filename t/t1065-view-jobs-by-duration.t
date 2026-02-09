@@ -12,9 +12,7 @@ DB_PATH=$(pwd)/FluxAccountingTest.db
 QUERYCMD="flux python ${SHARNESS_TEST_SRCDIR}/scripts/query.py"
 
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
-test_under_flux 16 job -o,--config-path=$(pwd)/config
-
-flux setattr log-stderr-level 1
+test_under_flux 16 job -o,--config-path=$(pwd)/config -Slog-stderr-level=1
 
 # update job records with actual duration
 update_actual_duration() {

@@ -9,9 +9,7 @@ mkdir -p config
 DB=$(pwd)/FluxAccountingTest.db
 
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
-test_under_flux 16 job -o,--config-path=$(pwd)/config
-
-flux setattr log-stderr-level 1
+test_under_flux 16 job -o,--config-path=$(pwd)/config -Slog-stderr-level=1
 
 # create a script to update and get userids from job_usage_factor_table
 cat > db_helper.py <<'PYTHON_EOF'

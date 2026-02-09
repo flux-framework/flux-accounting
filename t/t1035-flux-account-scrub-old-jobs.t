@@ -9,9 +9,7 @@ INSERT_JOBS="flux python ${SHARNESS_TEST_SRCDIR}/scripts/insert_jobs.py"
 
 export TEST_UNDER_FLUX_NO_JOB_EXEC=y
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
-test_under_flux 1 job
-
-flux setattr log-stderr-level 1
+test_under_flux 1 job -Slog-stderr-level=1
 
 # get job records from jobs table
 # arg1 - database path

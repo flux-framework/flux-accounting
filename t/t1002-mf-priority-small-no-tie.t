@@ -10,9 +10,7 @@ SMALL_NO_TIE=${SHARNESS_TEST_SRCDIR}/expected/sample_payloads/small_no_tie.json
 
 export TEST_UNDER_FLUX_NO_JOB_EXEC=y
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
-test_under_flux 1 job
-
-flux setattr log-stderr-level 1
+test_under_flux 1 job -Slog-stderr-level=1
 
 test_expect_success 'allow guest access to testexec' '
 	flux config load <<-EOF

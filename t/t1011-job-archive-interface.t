@@ -9,9 +9,7 @@ QUERYCMD="flux python ${SHARNESS_TEST_SRCDIR}/scripts/query.py"
 NO_JOBS=${SHARNESS_TEST_SRCDIR}/expected/job_usage/no_jobs.expected
 
 export FLUX_CONF_DIR=$(pwd)
-test_under_flux 4 job
-
-flux setattr log-stderr-level 1
+test_under_flux 4 job -Slog-stderr-level=1
 
 # select job records from flux-accounting DB
 select_job_records() {

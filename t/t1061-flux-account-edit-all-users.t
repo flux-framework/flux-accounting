@@ -9,9 +9,7 @@ DB_PATH=$(pwd)/FluxAccountingTest.db
 mkdir -p config
 
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
-test_under_flux 16 job -o,--config-path=$(pwd)/config
-
-flux setattr log-stderr-level 1
+test_under_flux 16 job -o,--config-path=$(pwd)/config -Slog-stderr-level=1
 
 test_expect_success 'create flux-accounting DB' '
 	flux account -p ${DB_PATH} create-db
