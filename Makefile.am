@@ -6,7 +6,9 @@ EXTRA_DIST= \
 	config/tap-driver.sh \
 	config/tap-driver.py \
 	DISCLAIMER.LLNS \
-	README.md
+	README.md \
+	LICENSE \
+	NEWS.md
 
 CODE_COVERAGE_IGNORE_PATTERN = \
     "*/common/libtap/*" \
