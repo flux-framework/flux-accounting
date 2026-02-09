@@ -8,9 +8,7 @@ UPDATE_USAGE_COL=${SHARNESS_TEST_SRCDIR}/scripts/update_usage_column.py
 
 export TEST_UNDER_FLUX_NO_JOB_EXEC=y
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
-test_under_flux 1 job
-
-flux setattr log-stderr-level 1
+test_under_flux 1 job -Slog-stderr-level=1
 
 test_expect_success 'create flux-accounting DB' '
 	flux account -p $(pwd)/FluxAccountingTest.db create-db

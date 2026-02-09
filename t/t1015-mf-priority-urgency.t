@@ -9,9 +9,7 @@ SEND_PAYLOAD=${SHARNESS_TEST_SRCDIR}/scripts/send_payload.py
 SAME_FAIRSHARE=${SHARNESS_TEST_SRCDIR}/expected/sample_payloads/same_fairshare.json
 
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
-test_under_flux 1 job
-
-flux setattr log-stderr-level 1
+test_under_flux 1 job -Slog-stderr-level=1
 
 test_expect_success 'allow guest access to testexec' '
 	flux config load <<-EOF
