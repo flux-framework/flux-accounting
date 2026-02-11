@@ -1,5 +1,5 @@
-bank_id | bank | active | parent_bank | shares | job_usage | priority
---------+------+--------+-------------+--------+-----------+---------
-7       | F    | 1      | D           | 1      | 0.0       | 0.0     
+bank_id | bank | active | parent_bank | shares | job_usage | priority | ignore_older_than
+--------+------+--------+-------------+--------+-----------+----------+------------------
+7       | F    | 1      | D           | 1      | 0.0       | 0.0      | 0                
 
 no users under F
