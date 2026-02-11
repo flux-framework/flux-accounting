@@ -103,6 +103,21 @@ that make up their historical job usage value:
     moussa   | 12345  | A        | 100.0                 | 243.5                 | 8.7                   | 0.0  
 
 
+Resetting the usage for a bank
+==============================
+
+The job usage value for a bank (and all of the users under that bank) can be
+reset with the :man1:`flux-account-clear-usage` command. This will allow you to
+quickly clear any amount of recently accrued usage, which, on a high-traffic
+system, can ultimately bump up its users' fair-share values after the entire
+hierarchy's job usage and fair-share values are updated.
+
+An optional timestamp can also be specified when running this command to tell
+flux-accounting to *only* consider jobs newer than said timestamp with the
+``--ignore-older-than`` optional argument. By default, the ``clear-usage``
+command will notify any future job usage updates to ignore jobs submitted under
+that bank older than when the command was issued.
+
 Calculating job usage arbitrarily
 =================================
 
