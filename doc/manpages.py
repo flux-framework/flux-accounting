@@ -251,4 +251,11 @@ man_pages = [
         [author],
         1,
     ),
+    (
+        "man1/flux-account-clear-usage",
+        "flux-account-clear-usage",
+        "reset the job usage for a bank back to 0",
+        [author],
+        1,
+    ),
 ]
