@@ -157,6 +157,17 @@ test_expect_success 'edit-factor should not be accessible by all users' '
 	)
 '
 
+test_expect_success 'clear-usage should not be accessible by all users' '
+	newid=$(($(id -u)+1)) &&
+	( export FLUX_HANDLE_ROLEMASK=0x2 &&
+	  export FLUX_HANDLE_USERID=$newid &&
+		touch users.csv &&
+		touch banks.csv &&
+		test_must_fail flux account clear-usage my_bank > no_access_clear_usage.out 2>&1 &&
+		grep "Request requires owner credentials" no_access_clear_usage.out
+	)
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
