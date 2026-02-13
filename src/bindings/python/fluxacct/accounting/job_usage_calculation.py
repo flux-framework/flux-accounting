@@ -10,7 +10,6 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import time
-import math
 import logging
 import sqlite3
 from collections import defaultdict
@@ -93,8 +92,8 @@ def apply_decay_factor(decay, acct_conn, user, bank, usage_factors):
     usg_past_decay = []
 
     # apply decay factor to past usage periods of a user's jobs
-    for power, usage_factor in enumerate(usage_factors, start=1):
-        usg_past_decay.append(usage_factor * math.pow(decay, power))
+    for usage_factor in usage_factors:
+        usg_past_decay.append(usage_factor * decay)
 
     # update job_usage_factor_table with new values, starting with the second usage
     # period and working back to the oldest usage period since the most recent usage
