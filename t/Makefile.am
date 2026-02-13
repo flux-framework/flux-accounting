@@ -98,7 +98,8 @@ TESTSCRIPTS = \
 	python/t1011_priorities.py \
 	python/t1012_visuals.py \
 	python/t1013_issue802.py \
-	python/t1014_clear_usage.py
+	python/t1014_clear_usage.py \
+	python/t1015_issue815.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
