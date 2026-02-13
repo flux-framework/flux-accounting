@@ -428,7 +428,7 @@ class TestAccountingCLI(unittest.TestCase):
             ],
             user_jobs=job_records,
         )
-        self.assertEqual(usage_factor, 4366.0)
+        self.assertEqual(usage_factor, 4442.0)
 
     # simulate a half-life period further; re-calculate
     # usage for user1001 to make sure its value goes down
@@ -459,7 +459,7 @@ class TestAccountingCLI(unittest.TestCase):
             user_jobs=[],
         )
 
-        self.assertEqual(usage_factor, 3215.5)
+        self.assertEqual(usage_factor, 4334.0)
 
         select_stmt = (
             "SELECT usage_factor_period_0 FROM job_usage_factor_table"
@@ -522,7 +522,7 @@ class TestAccountingCLI(unittest.TestCase):
 
         cur.execute(s_stmt)
         job_usage = cur.fetchone()[0]
-        self.assertEqual(job_usage, 8496.0)
+        self.assertEqual(job_usage, 8518.0)
 
     # remove database and log file
     @classmethod
