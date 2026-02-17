@@ -377,6 +377,7 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
             // move onto the next Job
             ++it;
     }
+    return 0;
 error:
     flux_jobtap_raise_exception (p,
                                  held_job_id,
