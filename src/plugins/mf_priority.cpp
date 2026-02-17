@@ -348,6 +348,7 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
                                                held_job.id,
                                                D_ASSOC_MSJ) < 0) {
                 dependency = D_ASSOC_MSJ;
+                held_job_id = held_job.id;
                 goto error;
             }
             held_job.remove_dep (D_ASSOC_MSJ);
