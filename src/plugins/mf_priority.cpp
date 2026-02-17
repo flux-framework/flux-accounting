@@ -1478,10 +1478,12 @@ static int run_cb (flux_plugin_t *p,
     b->cur_sched_jobs--;
     // check to see if any jobs held due to max_sched_jobs limit can now
     // have their dependency removed
-    if (check_and_release_held_jobs (p, b) < 0) {
-        flux_log_error (h,
-                        "job.state.run: error checking and releasing "
-                        "held jobs for association");
+    if (!b->held_jobs.empty ()) {
+        if (check_and_release_held_jobs (p, b) < 0) {
+            flux_log_error (h,
+                            "job.state.run: error checking and releasing held "
+                            "jobs for association");
+        }
     }
 
     return 0;
