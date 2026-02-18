@@ -33,7 +33,7 @@ class TestAccountingCLI(unittest.TestCase):
         global conn
         global cur
 
-        conn = sqlite3.connect(self.dbname)
+        conn = sqlite3.connect(self.dbname, timeout=60)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 

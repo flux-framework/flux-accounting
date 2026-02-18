@@ -33,7 +33,9 @@ class TestAccountingCLI(unittest.TestCase):
         c.create_db(self.dbname)
         global acct_conn
         try:
-            acct_conn = sqlite3.connect(f"file:{self.dbname}?mode=rw", uri=True)
+            acct_conn = sqlite3.connect(
+                f"file:{self.dbname}?mode=rw", uri=True, timeout=60
+            )
             acct_conn.row_factory = sqlite3.Row
             cur = acct_conn.cursor()
         except sqlite3.OperationalError:

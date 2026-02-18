@@ -27,7 +27,7 @@ class TestDB(unittest.TestCase):
         global conn
         global cur
         try:
-            conn = sqlite3.connect(f"file:{self.dbname}?mode=rw", uri=True)
+            conn = sqlite3.connect(f"file:{self.dbname}?mode=rw", uri=True, timeout=60)
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
         except sqlite3.OperationalError:

@@ -67,7 +67,7 @@ class TestAccountingCLI(unittest.TestCase):
         self.dbname = f"TestDB_{os.path.basename(__file__)[:5]}_{round(time.time())}.db"
         c.create_db(self.dbname)
         try:
-            conn = sqlite3.connect(f"file:{self.dbname}?mode=rw", uri=True)
+            conn = sqlite3.connect(f"file:{self.dbname}?mode=rw", uri=True, timeout=60)
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
         except sqlite3.OperationalError:
