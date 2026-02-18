@@ -348,6 +348,7 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
                                                held_job.id,
                                                D_ASSOC_MSJ) < 0) {
                 dependency = D_ASSOC_MSJ;
+                held_job_id = held_job.id;
                 goto error;
             }
             held_job.remove_dep (D_ASSOC_MSJ);
@@ -376,6 +377,7 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
             // move onto the next Job
             ++it;
     }
+    return 0;
 error:
     flux_jobtap_raise_exception (p,
                                  held_job_id,
@@ -1476,10 +1478,12 @@ static int run_cb (flux_plugin_t *p,
     b->cur_sched_jobs--;
     // check to see if any jobs held due to max_sched_jobs limit can now
     // have their dependency removed
-    if (check_and_release_held_jobs (p, b) < 0) {
-        flux_log_error (h,
-                        "job.state.run: error checking and releasing "
-                        "held jobs for association");
+    if (!b->held_jobs.empty ()) {
+        if (check_and_release_held_jobs (p, b) < 0) {
+            flux_log_error (h,
+                            "job.state.run: error checking and releasing held "
+                            "jobs for association");
+        }
     }
 
     return 0;
