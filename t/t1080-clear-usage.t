@@ -10,9 +10,7 @@ MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
 SUBMIT_AS=${SHARNESS_TEST_SRCDIR}/scripts/submit_as.py
 DB=$(pwd)/FluxAccountingTest.db
 
-test_under_flux 16 job -o,--config-path=$(pwd)/config
-
-flux setattr log-stderr-level 1
+test_under_flux 16 job -o,--config-path=$(pwd)/config -Slog-stderr-level=1
 
 test_expect_success 'allow guest access to testexec' '
 	flux config load <<-EOF
