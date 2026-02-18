@@ -65,9 +65,10 @@ class TestAccountingCLI(unittest.TestCase):
         global user_jobs
 
         # create example job-archive database, output file
-        c.create_db("FluxAccountingUsers.db")
+        self.dbname = f"TestDB_{os.path.basename(__file__)[:5]}_{round(time.time())}.db"
+        c.create_db(self.dbname)
         try:
-            acct_conn = sqlite3.connect("file:FluxAccountingUsers.db?mode=rw", uri=True)
+            acct_conn = sqlite3.connect(f"file:{self.dbname}?mode=rw", uri=True)
             acct_conn.row_factory = sqlite3.Row
             cur = acct_conn.cursor()
         except sqlite3.OperationalError:
@@ -527,7 +528,7 @@ class TestAccountingCLI(unittest.TestCase):
     # remove database and log file
     @classmethod
     def tearDownClass(self):
-        os.remove("FluxAccountingUsers.db")
+        os.remove(self.dbname)
 
 
 def suite():

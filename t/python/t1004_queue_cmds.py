@@ -12,6 +12,7 @@
 import unittest
 import os
 import sqlite3
+import time
 
 from fluxacct.accounting import create_db as c
 from fluxacct.accounting import queue_subcommands as q
@@ -21,11 +22,12 @@ class TestAccountingCLI(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         # create test accounting database
-        c.create_db("TestQueueSubcommands.db")
+        self.dbname = f"TestDB_{os.path.basename(__file__)[:5]}_{round(time.time())}.db"
+        c.create_db(self.dbname)
         global acct_conn
         global cur
 
-        acct_conn = sqlite3.connect("TestQueueSubcommands.db")
+        acct_conn = sqlite3.connect(self.dbname)
         acct_conn.row_factory = sqlite3.Row
         cur = acct_conn.cursor()
 
@@ -98,7 +100,7 @@ class TestAccountingCLI(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         acct_conn.close()
-        os.remove("TestQueueSubcommands.db")
+        os.remove(self.dbname)
 
 
 def suite():

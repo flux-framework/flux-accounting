@@ -13,6 +13,7 @@ import unittest
 import os
 import sqlite3
 import io
+import time
 import sys
 
 from unittest import mock
@@ -28,10 +29,11 @@ class TestAccountingCLI(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         # create example accounting database
-        c.create_db("TestUserSubcommands.db")
+        self.dbname = f"TestDB_{os.path.basename(__file__)[:5]}_{round(time.time())}.db"
+        c.create_db(self.dbname)
         global acct_conn
         try:
-            acct_conn = sqlite3.connect("file:TestUserSubcommands.db?mode=rw", uri=True)
+            acct_conn = sqlite3.connect(f"file:{self.dbname}?mode=rw", uri=True)
             acct_conn.row_factory = sqlite3.Row
             cur = acct_conn.cursor()
         except sqlite3.OperationalError:
@@ -361,7 +363,7 @@ class TestAccountingCLI(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         acct_conn.close()
-        os.remove("TestUserSubcommands.db")
+        os.remove(self.dbname)
 
 
 def suite():

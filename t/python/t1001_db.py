@@ -13,6 +13,7 @@ import unittest
 import os
 import sqlite3
 import sys
+import time
 
 from fluxacct.accounting import create_db as c
 
@@ -21,11 +22,12 @@ class TestDB(unittest.TestCase):
     # create database
     @classmethod
     def setUpClass(self):
-        c.create_db("FluxAccounting.db")
+        self.dbname = f"TestDB_{os.path.basename(__file__)[:5]}_{round(time.time())}.db"
+        c.create_db(self.dbname)
         global conn
         global cur
         try:
-            conn = sqlite3.connect("file:FluxAccounting.db?mode=rw", uri=True)
+            conn = sqlite3.connect(f"file:{self.dbname}?mode=rw", uri=True)
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
         except sqlite3.OperationalError:
@@ -34,7 +36,7 @@ class TestDB(unittest.TestCase):
 
     # create database and make sure it exists
     def test_00_test_create_db(self):
-        assert os.path.exists("FluxAccounting.db")
+        assert os.path.exists(self.dbname)
 
     # make sure association table exists
     def test_01_tables_exist(self):
@@ -163,7 +165,7 @@ class TestDB(unittest.TestCase):
     # remove database file
     @classmethod
     def tearDownClass(self):
-        os.remove("FluxAccounting.db")
+        os.remove(self.dbname)
         os.remove("flux_accounting_test_1.db")
         os.remove("flux_accounting_test_2.db")
 
