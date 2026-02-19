@@ -256,13 +256,10 @@ def get_jobs(conn, **kwargs):
 
     if "user" in params:
         if util.get_uid(params["user"]) == FLUX_USERID_UNKNOWN:
-            print("if- got triggered")
             params["user"] = get_userid_from_db(conn.cursor(), params["user"])
         else:
-            print("else- got triggered")
             params["user"] = util.get_uid(params["user"])
         where_clauses.append("userid = ?")
-        print(f"userid: {params['user']}")
         params_list.append(params["user"])
     if "after_start_time" in params:
         where_clauses.append("t_run > ?")
