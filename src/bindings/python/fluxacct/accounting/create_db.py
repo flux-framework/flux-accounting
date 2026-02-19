@@ -80,7 +80,7 @@ def create_db(
     try:
         # open connection to database
         LOGGER.info("Creating Flux Accounting DB")
-        conn = sqlite3.connect("file:" + filepath + "?mode:rwc", uri=True)
+        conn = sqlite3.connect("file:" + filepath + "?mode=rwc", uri=True)
         LOGGER.info("Created Flux Accounting DB successfully")
     except sqlite3.OperationalError as exception:
         LOGGER.error(exception)
