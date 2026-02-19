@@ -12,6 +12,7 @@
 import unittest
 import sys
 import os
+import time
 import sqlite3
 
 from fluxacct.accounting import bank_subcommands as b
@@ -22,11 +23,14 @@ class TestAccountingCLI(unittest.TestCase):
     # create test flux-accounting database
     @classmethod
     def setUpClass(self):
-        c.create_db("TestBankSubcommands.db")
+        self.dbname = f"TestDB_{os.path.basename(__file__)[:5]}_{round(time.time())}.db"
+        c.create_db(self.dbname)
         global acct_conn
         global cur
         try:
-            acct_conn = sqlite3.connect("file:TestBankSubcommands.db?mode=rw", uri=True)
+            acct_conn = sqlite3.connect(
+                f"file:{self.dbname}?mode=rw", uri=True, timeout=60
+            )
             acct_conn.row_factory = sqlite3.Row
             cur = acct_conn.cursor()
         except sqlite3.OperationalError:
@@ -175,7 +179,7 @@ class TestAccountingCLI(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         acct_conn.close()
-        os.remove("TestBankSubcommands.db")
+        os.remove(self.dbname)
 
 
 def suite():

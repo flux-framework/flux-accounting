@@ -12,6 +12,7 @@
 import unittest
 import os
 import sqlite3
+import time
 
 from unittest import mock
 
@@ -25,13 +26,14 @@ class TestAccountingCLI(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         # create test accounting database
-        c.create_db("FluxAccountingTestIssue631.db")
+        self.dbname = f"TestDB_{os.path.basename(__file__)[:5]}_{round(time.time())}.db"
+        c.create_db(self.dbname)
         global conn
         global cur
         global select_historical_usage
         global select_current_usage
 
-        conn = sqlite3.connect("FluxAccountingTestIssue631.db")
+        conn = sqlite3.connect(self.dbname, timeout=60)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
@@ -296,7 +298,7 @@ class TestAccountingCLI(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         conn.close()
-        os.remove("FluxAccountingTestIssue631.db")
+        os.remove(self.dbname)
 
 
 def suite():

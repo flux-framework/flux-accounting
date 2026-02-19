@@ -13,6 +13,7 @@ import unittest
 import os
 import sqlite3
 import re
+import time
 
 from fluxacct.accounting import create_db as c
 from fluxacct.accounting import user_subcommands as u
@@ -24,11 +25,12 @@ class TestAccountingCLI(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         # create test flux-accounting database
-        c.create_db("FluxAccountingVisuals.db")
+        self.dbname = f"TestDB_{os.path.basename(__file__)[:5]}_{round(time.time())}.db"
+        c.create_db(self.dbname)
         global conn
         global cur
 
-        conn = sqlite3.connect("FluxAccountingVisuals.db")
+        conn = sqlite3.connect(self.dbname, timeout=60)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
@@ -108,7 +110,7 @@ class TestAccountingCLI(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         conn.close()
-        os.remove("FluxAccountingVisuals.db")
+        os.remove(self.dbname)
 
 
 def suite():
