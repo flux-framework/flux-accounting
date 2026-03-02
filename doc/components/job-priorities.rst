@@ -173,14 +173,14 @@ different priorities:
 .. math::
     P_{job\_C} = (0.5 \times 100000)
       + (0 \times 10000)
-      + (300 \times -5)
+      + (-5 \times 10)
       + (1000 \times (16 - 16))
 
 .. math::
-    P_{job\_C} = 50000 + 0 - 1500 + 0
+    P_{job\_C} = 50000 + 0 - 50 + 0
 
 .. math::
-    P_{job\_C} = 48500
+    P_{job\_C} = 49950
 
 The same principle can be configured to queues, resulting in a multivariate
 equation that considers multiple factors when calculating the priority for a
