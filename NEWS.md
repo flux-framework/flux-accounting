@@ -1,3 +1,45 @@
+flux-accounting version 0.56.0 - 2026-03-02
+-------------------------------------------
+
+#### Fixes
+
+* bindings: use `FLUX_USERID_UNKNOWN` as default (#800)
+
+* repo: add MAINTAINERS file (#803)
+
+* `delete_bank()`: update job usage after bank is removed with `--force` (#808)
+
+* `add-bank`/`add-user`: add check for existing DB structure when trying to add
+a bank or association (#810)
+
+* repo: add `LICENSE`, `NEWS.md` to release tarball (#813)
+
+* `apply_decay_factor`: change decay application to incremental instead of
+cumulative (#816)
+
+* plugin: minor improvements to logic, variable initialization (#817)
+
+* jobs_table_subcommands: remove stray `print()` statements (#819)
+
+#### Features
+
+* commands: add new `clear-usage` command to reset a bank's job usage (#804)
+
+#### Documentation
+
+* doc: add man page for `clear-usage` command, update docs with related
+information (#814)
+
+* doc: fix bank factor job priority example (#820)
+
+#### Testsuite
+
+* t: adjust end date in `t1075-custom-usage-reporting` (#805)
+
+* testsuite: set log-stderr-level on command line (#812)
+
+* t: make Python test DB names unique (#818)
+
 flux-accounting version 0.55.0 - 2026-01-06
 -------------------------------------------
 
