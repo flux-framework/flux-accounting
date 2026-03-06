@@ -36,10 +36,11 @@ class JobRecord:
         bank,
         requested_duration,
         actual_duration,
+        jobid_format="f58",
     ):
         self.userid = userid
         self.username = util.get_username(userid)
-        self.jobid = jobid
+        self.jobid = util.JobIDFormat(jobid, jobid_format=jobid_format)
         self.t_submit = t_submit
         self.t_run = t_run
         self.t_inactive = t_inactive
@@ -82,7 +83,7 @@ def convert_to_str(job_records, fmt_string=None):
     return job_record_str
 
 
-def convert_to_obj(rows):
+def convert_to_obj(rows, jobid_format="f58"):
     """
     Convert the results of a query to the jobs table to a list of JobRecord
     objects.
@@ -110,6 +111,7 @@ def convert_to_obj(rows):
             bank=row[9] if row[9] is not None else "",
             requested_duration=row[10],
             actual_duration=row[11],
+            jobid_format=jobid_format,
         )
         job_records.append(job_record)
 
@@ -308,9 +310,9 @@ def get_jobs(conn, **kwargs):
     return job_records
 
 
-def view_jobs(conn, fields, **kwargs):
+def view_jobs(conn, fields, jobid_format="f58", **kwargs):
     # look up jobs in jobs table
-    job_records = convert_to_obj(get_jobs(conn, **kwargs))
+    job_records = convert_to_obj(get_jobs(conn, **kwargs), jobid_format=jobid_format)
     # convert query result to a readable string
     job_records_str = convert_to_str(job_records, fields)
 

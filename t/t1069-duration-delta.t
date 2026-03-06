@@ -117,7 +117,7 @@ test_expect_success 'edit actual duration of test jobs' '
 
 test_expect_success 'view jobs with duration_delta' '
 	flux account view-job-records \
-		-o "{jobid:<20} | {duration_delta:<18}" > duration_delta.out &&
+		-o "{jobid.dec:<20} | {duration_delta:<18}" > duration_delta.out &&
 	grep ${job1} duration_delta.out | grep "55.0" &&
 	grep ${job2} duration_delta.out | grep "55.0"  &&
 	grep ${job3} duration_delta.out | grep "40.0"  &&
@@ -127,7 +127,7 @@ test_expect_success 'view jobs with duration_delta' '
 
 test_expect_success 'filter for jobs with a duration_delta < 10 seconds' '
 	flux account view-job-records \
-		-D "< 10" -o "{jobid:<20}" > delta_lt_10_seconds.out &&
+		-D "< 10" -o "{jobid.dec:<20}" > delta_lt_10_seconds.out &&
 	test_must_fail grep ${job1} delta_lt_10_seconds.out &&
 	test_must_fail grep ${job2} delta_lt_10_seconds.out &&
 	test_must_fail grep ${job3} delta_lt_10_seconds.out &&
@@ -137,7 +137,7 @@ test_expect_success 'filter for jobs with a duration_delta < 10 seconds' '
 
 test_expect_success 'filter for jobs with a duration_delta >= 1 second' '
 	flux account view-job-records \
-		-D ">= 1" -o "{jobid:<20}" > delta_ge_1_seconds.out &&
+		-D ">= 1" -o "{jobid.dec:<20}" > delta_ge_1_seconds.out &&
 	grep ${job1} delta_ge_1_seconds.out &&
 	grep ${job2} delta_ge_1_seconds.out &&
 	grep ${job3} delta_ge_1_seconds.out &&
@@ -147,7 +147,7 @@ test_expect_success 'filter for jobs with a duration_delta >= 1 second' '
 
 test_expect_success 'filter for jobs with a duration_delta > 10 and < 55 seconds' '
 	flux account view-job-records \
-		-D "> 10" "< 55" -o "{jobid:<20}" > delta_multiple_filters.out &&
+		-D "> 10" "< 55" -o "{jobid.dec:<20}" > delta_multiple_filters.out &&
 	test_must_fail grep ${job1} delta_multiple_filters.out &&
 	test_must_fail grep ${job2} delta_multiple_filters.out &&
 	grep ${job3} delta_multiple_filters.out &&
