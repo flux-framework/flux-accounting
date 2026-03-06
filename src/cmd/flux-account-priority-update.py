@@ -186,6 +186,7 @@ def send_instance_owner_info():
         "def_project": "*",
         "max_nodes": 1000000,
         "max_cores": 1000000,
+        "max_sched_jobs": fluxacct.accounting.INTEGER_MAX,
     }
 
     flux.Flux().rpc(
