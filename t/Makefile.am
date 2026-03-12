@@ -83,6 +83,7 @@ TESTSCRIPTS = \
 	t1078-mf-priority-sched-dependencies.t \
 	t1079-issue809.t \
 	t1080-clear-usage.t \
+	t1081-view-job-records-jobid-formats.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \

@@ -362,6 +362,14 @@ class JobsFormatter(flux.util.OutputFormat):
         "requested_duration": "requested_duration",
         "actual_duration": "actual_duration",
         "duration_delta": "duration_delta",
+        "jobid.dec": "jobid.dec",
+        "jobid.hex": "jobid.hex",
+        "jobid.dothex": "jobid.dothex",
+        "jobid.kvs": "jobid.kvs",
+        "jobid.words": "jobid.words",
+        "jobid.emoji": "jobid.emoji",
+        "jobid.f58plain": "jobid.f58plain",
+        "jobid.f58": "jobid.f58",
     }
 
     def __init__(self, fmt, headings=None):

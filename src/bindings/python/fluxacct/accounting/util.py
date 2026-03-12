@@ -16,6 +16,7 @@ import contextlib
 
 from flux.constants import FLUX_USERID_UNKNOWN
 from flux.util import parse_datetime
+from flux.job.JobID import JobID
 import fluxacct.accounting
 
 
@@ -146,3 +147,23 @@ def update_parent_bank_usage(conn, bank):
 
     # recursively update the parent's parent
     update_parent_bank_usage(conn, parent_bank)
+
+
+class JobIDFormat:
+    """
+    Wrapper around flux.job.JobID that allows for the specification of a specific format
+    for the jobid field.
+    """
+
+    def __init__(self, jobid, jobid_format="f58"):
+        self._jobid = JobID(jobid)
+        self.jobid_format = (jobid_format or "f58").lower()
+
+    def __getattr__(self, name):
+        return getattr(self._jobid, name)
+
+    def __str__(self):
+        return getattr(self._jobid, self.jobid_format)
+
+    def __format__(self, spec):
+        return format(str(self), spec)
