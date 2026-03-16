@@ -2,7 +2,7 @@ DB_DIR = "@X_LOCALSTATEDIR@/lib/flux/"
 DB_PATH = "@X_LOCALSTATEDIR@/lib/flux/FluxAccounting.db"
 DB_SCHEMA_VERSION = 32
 
-PRIORITY_FACTORS = ["fairshare", "queue", "bank"]
+PRIORITY_FACTORS = ["fairshare", "queue", "bank", "urgency"]
 FSHARE_WEIGHT_DEFAULT = 100000
 QUEUE_WEIGHT_DEFAULT = 10000
 BANK_WEIGHT_DEFAULT = 0

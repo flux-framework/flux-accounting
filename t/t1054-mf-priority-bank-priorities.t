@@ -65,6 +65,7 @@ test_expect_success 'make "bank" the only factor in priority calculation' '
 	flux account edit-factor --factor=fairshare --weight=0 &&
 	flux account edit-factor --factor=queue --weight=0 &&
 	flux account edit-factor --factor=bank --weight=100 &&
+	flux account edit-factor --factor=urgency --weight=0 &&
 	flux account-priority-update -p ${DB_PATH}
 '
 
