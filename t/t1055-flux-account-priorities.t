@@ -71,7 +71,8 @@ test_expect_success 'list all of the priority factors' '
 	flux account list-factors > list_factors.default &&
 	grep "fairshare | 999" list_factors.default &&
 	grep "queue     | 10000" list_factors.default &&
-	grep "bank      | 0" list_factors.default
+	grep "bank      | 0" list_factors.default &&
+	grep "urgency   | 1000" list_factors.default
 '
 
 test_expect_success 'list all of the priority factors in JSON format' '
@@ -82,14 +83,18 @@ test_expect_success 'list all of the priority factors in JSON format' '
 	grep "\"weight\": 10000" list_factors.json &&
 	grep "\"factor\": \"bank\"" list_factors.json &&
 	grep "\"weight\": 0" list_factors.json
+	grep "\"factor\": \"urgency\"" list_factors.json &&
+	grep "\"weight\": 1000" list_factors.json
 '
 
-test_expect_success 'edit the other two factors to have non-default weights' '
+test_expect_success 'edit the other three factors to have non-default weights' '
 	flux account edit-factor --factor=queue --weight=50 &&
 	flux account edit-factor --factor=bank --weight=1 &&
+	flux account edit-factor --factor=urgency --weight=250 &&
 	flux account list-factors --json > list_factors_edited.json &&
 	grep "\"weight\": 50" list_factors_edited.json &&
-	grep "\"weight\": 1" list_factors_edited.json
+	grep "\"weight\": 1" list_factors_edited.json &&
+	grep "\"weight\": 250" list_factors_edited.json
 '
 
 test_expect_success 'reset the priority factors and their weights' '
@@ -97,7 +102,8 @@ test_expect_success 'reset the priority factors and their weights' '
 	flux account list-factors > list_factors.reset &&
 	grep "fairshare | 100000" list_factors.reset &&
 	grep "queue     | 10000" list_factors.reset &&
-	grep "bank      | 0" list_factors.reset
+	grep "bank      | 0" list_factors.reset &&
+	grep "urgency   | 1000" list_factors.reset
 '
 
 test_expect_success 'shut down flux-accounting service' '
