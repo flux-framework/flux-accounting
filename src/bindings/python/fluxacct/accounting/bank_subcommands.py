@@ -291,7 +291,7 @@ def edit_bank(
                     raise sqlite3.OperationalError(exc)
             if field == "shares":
                 if int(shares) <= 0:
-                    raise ValueError("new shares amount must be >= 0")
+                    raise ValueError("new shares amount must be > 0")
 
             update_stmt = "UPDATE bank_table SET " + field
 
