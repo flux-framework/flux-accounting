@@ -147,8 +147,8 @@
    Memcheck:Leak
    match-leak-kinds: definite
    fun:*alloc
-   obj:/usr/lib/x86_64-linux-gnu/libhwloc.so.15.5.2
-   obj:/usr/lib/x86_64-linux-gnu/libhwloc.so.15.5.2
+   obj:*libhwloc.so.15.*
+   obj:*libhwloc.so.15.*
    fun:hwloc_topology_load
    fun:init_topo_from_xml
    fun:rhwloc_xml_topology_load
