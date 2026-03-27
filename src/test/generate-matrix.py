@@ -162,6 +162,13 @@ matrix.add_build(
     docker_tag=True,
 )
 
+# noble
+matrix.add_build(
+    name="noble",
+    image="noble",
+    docker_tag=True,
+)
+
 # Ubuntu: gcc-8, distcheck
 matrix.add_build(
     name="el8 - distcheck",
