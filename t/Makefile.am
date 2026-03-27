@@ -119,53 +119,7 @@ EXTRA_DIST= \
 	sharness.sh \
 	sharness.d \
 	rc \
-	expected/print_hierarchy/custom_small_tie_parsable.txt \
-	expected/print_hierarchy/help_message.txt \
-	expected/print_hierarchy/out_of_insert_order.txt \
-	expected/print_hierarchy/small_no_tie_parsable.txt \
-	expected/print_hierarchy/small_no_tie.txt \
-	expected/print_hierarchy/small_tie_all_parsable.txt \
-	expected/print_hierarchy/small_tie_all.txt \
-	expected/print_hierarchy/small_tie_parsable.txt \
-	expected/print_hierarchy/small_tie.txt \
-	expected/print_hierarchy/before_delete.expected \
-	expected/print_hierarchy/after_delete.expected \
-	expected/print_hierarchy/after_bank_delete.expected \
-	expected/print_hierarchy/before_parent_bank_change.expected \
-	expected/print_hierarchy/after_parent_bank_change.expected \
-	expected/update_fshare/post_fshare_update.expected \
-	expected/update_fshare/pre_fshare_update.expected \
-	expected/test_dbs/out_of_insert_order.db \
-	expected/test_dbs/small_no_tie.db \
-	expected/test_dbs/small_tie_all.db \
-	expected/test_dbs/small_tie_zero_shares.db \
-	expected/test_dbs/small_tie.db \
-	expected/test_dbs/FluxAccountingv0-10-0.db \
-	expected/test_dbs/FluxAccountingv0-11-0.db \
-	expected/test_dbs/FluxAccountingv0-12-0.db \
-	expected/test_dbs/FluxAccountingv0-13-0.db \
-	expected/test_dbs/FluxAccountingv0-14-0.db \
-	expected/test_dbs/FluxAccountingv0-15-0.db \
-	expected/test_dbs/FluxAccountingv0-16-0.db \
-	expected/test_dbs/FluxAccountingv0-17-0.db \
-	expected/test_dbs/FluxAccountingv0-18-0.db \
-	expected/test_dbs/FluxAccountingv0-19-0.db \
-	expected/test_dbs/FluxAccountingv0-25-0.db \
-	expected/flux_account/A_bank.expected \
-	expected/flux_account/D_bank.expected \
-	expected/flux_account/E_bank.expected \
-	expected/flux_account/full_hierarchy.expected \
-	expected/flux_account/root_bank.expected \
-	expected/flux_account/deleted_user.expected \
-	expected/flux_account/deleted_bank.expected \
-	expected/flux_account/F_bank_tree.expected \
-	expected/flux_account/F_bank_users.expected \
-	expected/pop_db/db_hierarchy_base.expected \
-	expected/pop_db/db_hierarchy_new_users.expected \
-	expected/sample_payloads/same_fairshare.json \
-	expected/sample_payloads/small_no_tie.json \
-	expected/sample_payloads/small_tie_all.json \
-	expected/sample_payloads/small_tie.json
+	expected
 
 clean-local:
 	rm -fr trash-directory.* test-results .prove *.broker.log */*.broker.log *.output
