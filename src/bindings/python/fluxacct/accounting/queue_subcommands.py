@@ -42,6 +42,7 @@ def add_queue(
     priority=0,
     max_running_jobs=100,
     max_nodes_per_assoc=2147483647,
+    max_sched_jobs=2147483647,
 ):
     try:
         insert_stmt = """
@@ -52,8 +53,9 @@ def add_queue(
                         max_time_per_job,
                         priority,
                         max_running_jobs,
-                        max_nodes_per_assoc
-                      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        max_nodes_per_assoc,
+                        max_sched_jobs
+                      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                       """
         cur.execute(
             insert_stmt,
@@ -65,6 +67,7 @@ def add_queue(
                 priority,
                 max_running_jobs,
                 max_nodes_per_assoc,
+                max_sched_jobs,
             ),
         )
 
@@ -115,6 +118,7 @@ def edit_queue(
     priority=None,
     max_running_jobs=None,
     max_nodes_per_assoc=None,
+    max_sched_jobs=None,
 ):
     params = locals()
     editable_fields = [
@@ -124,6 +128,7 @@ def edit_queue(
         "priority",
         "max_running_jobs",
         "max_nodes_per_assoc",
+        "max_sched_jobs",
     ]
 
     for field in editable_fields:
