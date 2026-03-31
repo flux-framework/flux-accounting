@@ -619,8 +619,8 @@ static void rec_q_cb (flux_t *h,
                       void *arg)
 {
     char *queue = NULL;
-    int min_nodes_per_job, max_nodes_per_job, max_time_per_job, priority = 0;
-    int max_running_jobs, max_nodes_per_assoc = 0;
+    int min_nodes_per_job, max_nodes_per_job, max_time_per_job, priority;
+    int max_running_jobs, max_nodes_per_assoc, max_sched_jobs;
     json_t *data, *jtemp = NULL;
     json_error_t error;
     int num_data = 0;
@@ -643,14 +643,15 @@ static void rec_q_cb (flux_t *h,
         json_t *el = json_array_get(data, i);
 
         if (json_unpack_ex (el, &error, 0,
-                            "{s:s, s:i, s:i, s:i, s:i, s:i, s:i}",
+                            "{s:s, s:i, s:i, s:i, s:i, s:i, s:i, s:i}",
                             "queue", &queue,
                             "min_nodes_per_job", &min_nodes_per_job,
                             "max_nodes_per_job", &max_nodes_per_job,
                             "max_time_per_job", &max_time_per_job,
                             "priority", &priority,
                             "max_running_jobs", &max_running_jobs,
-                            "max_nodes_per_assoc", &max_nodes_per_assoc) < 0)
+                            "max_nodes_per_assoc", &max_nodes_per_assoc,
+                            "max_sched_jobs", &max_sched_jobs) < 0)
             flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
 
         Queue *q;
@@ -663,6 +664,7 @@ static void rec_q_cb (flux_t *h,
         q->priority = priority;
         q->max_running_jobs = max_running_jobs;
         q->max_nodes_per_assoc = max_nodes_per_assoc;
+        q->max_sched_jobs = max_sched_jobs;
     }
 
     if (flux_respond (h, msg, NULL) < 0)

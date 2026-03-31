@@ -78,6 +78,7 @@ public:
     int priority = 0;
     int max_running_jobs = std::numeric_limits<int>::max ();
     int max_nodes_per_assoc = 2147483647;
+    int max_sched_jobs = 2147483647;
 };
 
 // a class to track an association's usage in a particular queue

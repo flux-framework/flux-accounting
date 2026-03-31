@@ -76,9 +76,10 @@ json_t* Association::to_json () const
         goto error;
     for (const auto &entry : queue_usage) {
         const QueueUsage &usage = entry.second;
-        usage_object = json_pack ("{s:i, s:i}",
+        usage_object = json_pack ("{s:i, s:i, s:i}",
                                   "cur_run_jobs", usage.cur_run_jobs,
-                                  "cur_nodes", usage.cur_nodes);
+                                  "cur_nodes", usage.cur_nodes,
+                                  "cur_sched_jobs", usage.cur_sched_jobs);
         if (!usage_object)
             goto error;
 
@@ -370,14 +371,15 @@ json_t* convert_queues_to_json (const std::map<std::string, Queue> &queues)
         const Queue &q = kv.second;
 
         json_t *qobj = json_pack (
-                                "{s:s, s:i, s:i, s:i, s:i, s:i, s:i}",
+                                "{s:s, s:i, s:i, s:i, s:i, s:i, s:i, s:i}",
                                 "name", q.name.c_str (),
                                 "min_nodes_per_job", q.min_nodes_per_job,
                                 "max_nodes_per_job", q.max_nodes_per_job,
                                 "max_time_per_job", q.max_time_per_job,
                                 "priority", q.priority,
                                 "max_running_jobs", q.max_running_jobs,
-                                "max_nodes_per_assoc", q.max_nodes_per_assoc);
+                                "max_nodes_per_assoc", q.max_nodes_per_assoc,
+                                "max_sched_jobs", q.max_sched_jobs);
         if (!qobj) {
             json_decref (root);
             return nullptr;
@@ -490,8 +492,8 @@ int load_queues (json_t *data, std::map<std::string, Queue> &queues,
                  std::string *errmsg)
 {
     char *queue = NULL;
-    int min_nodes_per_job, max_nodes_per_job, max_time_per_job, priority = 0;
-    int max_running_jobs, max_nodes_per_assoc = 0;
+    int min_nodes_per_job, max_nodes_per_job, max_time_per_job, priority;
+    int max_running_jobs, max_nodes_per_assoc, max_sched_jobs;
     json_error_t error;
     int num_data = 0;
 
@@ -509,14 +511,15 @@ int load_queues (json_t *data, std::map<std::string, Queue> &queues,
         json_t *el = json_array_get(data, i);
 
         if (json_unpack_ex (el, &error, 0,
-                            "{s:s, s:i, s:i, s:i, s:i, s:i, s:i}",
+                            "{s:s, s:i, s:i, s:i, s:i, s:i, s:i, s:i}",
                             "queue", &queue,
                             "min_nodes_per_job", &min_nodes_per_job,
                             "max_nodes_per_job", &max_nodes_per_job,
                             "max_time_per_job", &max_time_per_job,
                             "priority", &priority,
                             "max_running_jobs", &max_running_jobs,
-                            "max_nodes_per_assoc", &max_nodes_per_assoc) < 0) {
+                            "max_nodes_per_assoc", &max_nodes_per_assoc,
+                            "max_sched_jobs", &max_sched_jobs) < 0) {
             if (errmsg)
                 *errmsg = error.text;
             return -1;
@@ -532,6 +535,7 @@ int load_queues (json_t *data, std::map<std::string, Queue> &queues,
         q->priority = priority;
         q->max_running_jobs = max_running_jobs;
         q->max_nodes_per_assoc = max_nodes_per_assoc;
+        q->max_sched_jobs = max_sched_jobs;
     }
 
     return 0;
