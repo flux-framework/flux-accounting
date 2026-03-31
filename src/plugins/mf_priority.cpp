@@ -317,6 +317,19 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
             }
             held_job.remove_dep (D_QUEUE_MRJ);
         }
+        // is association under the max SCHED jobs limit for the queue the
+        // held job is submitted under?
+        if (b->under_queue_max_sched_jobs (held_job.queue, queues) &&
+            held_job.contains_dep (D_QUEUE_MSJ)) {
+            if (flux_jobtap_dependency_remove (p,
+                                               held_job.id,
+                                               D_QUEUE_MSJ) < 0) {
+                dependency = D_QUEUE_MSJ;
+                held_job_id = held_job.id;
+                goto error;
+            }
+            held_job.remove_dep (D_QUEUE_MSJ);
+        }
         // is the association under the max nodes limit for the queue the
         // held job is submitted under?
         if (b->under_queue_max_resources (held_job, held_job.queue, queues) &&
@@ -1253,6 +1266,7 @@ static int new_cb (flux_plugin_t *p,
         // this job was in SCHED state; increment the association's sched
         // jobs count
         b->cur_sched_jobs++;
+        b->queue_usage[queue_str].cur_sched_jobs++;
     }
 
     return 0;
@@ -1329,6 +1343,13 @@ static int depend_cb (flux_plugin_t *p,
                 goto error;
             job.add_dep (D_QUEUE_MRJ);
         }
+        if (!b->under_queue_max_sched_jobs (queue_str, queues)) {
+            // association is already at their max sched jobs limit in
+            // this queue; add a dependency
+            if (flux_jobtap_dependency_add (p, id, D_QUEUE_MSJ) < 0)
+                goto error;
+            job.add_dep (D_QUEUE_MSJ);
+        }
         if (!b->under_queue_max_resources (job, queue_str, queues)) {
             // association is already at their max nodes limit across their
             // running jobs in this queue; add a dependency
@@ -1387,6 +1408,22 @@ static int sched_cb (flux_plugin_t *p,
                      void *data)
 {
     Association *a;
+    char *queue = NULL;
+
+    flux_t *h = flux_jobtap_get_flux (p);
+    if (flux_plugin_arg_unpack (args,
+                                FLUX_PLUGIN_ARG_IN,
+                                "{s{s{s{s?s}}}}",
+                                "jobspec", "attributes", "system",
+                                "queue", &queue) < 0) {
+        flux_jobtap_raise_exception (p,
+                                     FLUX_JOBTAP_CURRENT_JOB,
+                                     "mf_priority",
+                                     0,
+                                     "job.state.sched: Association object " \
+                                     "is missing");
+        return -1;
+    }
 
     a = static_cast<Association *>
         (flux_jobtap_job_aux_get (p,
@@ -1404,6 +1441,8 @@ static int sched_cb (flux_plugin_t *p,
 
     // increment association's current SCHED jobs count
     a->cur_sched_jobs++;
+    std::string queue_str = queue ? queue : "";
+    a->queue_usage[queue_str].cur_sched_jobs++;
 
     return 0;
 }
@@ -1478,6 +1517,8 @@ static int run_cb (flux_plugin_t *p,
 
     // decrement the association's current SCHED jobs count
     b->cur_sched_jobs--;
+    queue_str = queue ? queue : "";
+    b->queue_usage[queue_str].cur_sched_jobs--;
     // check to see if any jobs held due to max_sched_jobs limit can now
     // have their dependency removed
     if (!b->held_jobs.empty ()) {

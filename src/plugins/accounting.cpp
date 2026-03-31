@@ -360,6 +360,13 @@ bool Association::under_max_sched_jobs ()
     return cur_sched_jobs < max_sched_jobs;
 }
 
+bool Association::under_queue_max_sched_jobs (
+                                const std::string &queue,
+                                std::map<std::string, Queue> queues)
+{
+    return queue_usage[queue].cur_sched_jobs < queues[queue].max_sched_jobs;
+}
+
 json_t* convert_queues_to_json (const std::map<std::string, Queue> &queues)
 {
     json_t *root = json_object ();
