@@ -77,27 +77,54 @@ test_expect_success 'run fetch-job-records script' '
 '
 
 test_expect_success 'look at all jobs (will show 5 records in total)' '
-	flux account view-job-records > all_jobs.out &&
-	test $(grep -c "bankA" all_jobs.out) -eq 2 &&
-	test $(grep -c "bankB" all_jobs.out) -eq 3
+	flux account view-job-records -o "{username:<8} | {bank:<8}" > all_jobs.test &&
+	cat <<-EOF >all_jobs.expected &&
+	username | bank
+	5001     | bankB
+	5002     | bankB
+	5002     | bankB
+	5001     | bankA
+	5001     | bankA
+	EOF
+	grep -f all_jobs.expected all_jobs.test
 '
 
 test_expect_success 'filter jobs by bankA (will show 2 records in total)' '
-	flux account view-job-records --bank=bankA > bankA_jobs.out &&
-	test $(grep -c "5001" bankA_jobs.out) -eq 2 &&
-	test $(grep -c "5002" bankA_jobs.out) -eq 0
+	flux account view-job-records \
+		--bank=bankA \
+		-o "{username:<8} | {bank:<8}" > bankA_jobs.test &&
+	cat <<-EOF >bankA_jobs.expected &&
+	username | bank
+	5001     | bankA
+	5001     | bankA
+	EOF
+	grep -f bankA_jobs.expected bankA_jobs.test
 '
 
 test_expect_success 'filter jobs by bankB (will show 3 records in total)' '
-	flux account view-job-records --bank=bankB > bankB_jobs.out &&
-	test $(grep -c "5001" bankB_jobs.out) -eq 1 &&
-	test $(grep -c "5002" bankB_jobs.out) -eq 2 
+	flux account view-job-records \
+		--bank=bankB \
+		-o "{username:<8} | {bank:<8}" > bankB_jobs.test &&
+	cat <<-EOF >bankB_jobs.expected &&
+	username | bank
+	5001     | bankB
+	5002     | bankB
+	5002     | bankB
+	EOF
+	grep -f bankB_jobs.expected bankB_jobs.test
 '
 
 test_expect_success 'filter jobs by bankB with short option' '
-	flux account view-job-records -B bankB > bankB_jobs.out &&
-	test $(grep -c "5001" bankB_jobs.out) -eq 1 &&
-	test $(grep -c "5002" bankB_jobs.out) -eq 2 
+	flux account view-job-records \
+		-B bankB \
+		-o "{username:<8} | {bank:<8}" > bankB_jobs2.test &&
+	cat <<-EOF >bankB_jobs2.expected &&
+	username | bank
+	5001     | bankB
+	5002     | bankB
+	5002     | bankB
+	EOF
+	grep -f bankB_jobs2.expected bankB_jobs2.test
 '
 
 test_expect_success 'shut down flux-accounting service' '
