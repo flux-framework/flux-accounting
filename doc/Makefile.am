@@ -108,6 +108,7 @@ EXTRA_DIST = \
 	components/limits.rst \
 	components/job-priorities.rst \
 	components/module-structure.rst \
+	presentations/hpsf.rst \
 	$(RST_FILES) \
 	man1/index.rst
 

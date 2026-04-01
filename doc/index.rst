@@ -21,4 +21,5 @@ Table of Contents
    components/projects
    components/limits
    components/job-priorities
+   presentations/hpsf
    index_man
