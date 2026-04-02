@@ -830,6 +830,16 @@ def add_add_queue_arg(subparsers):
         default=2147483647,
         metavar="MAX_NODES_PER_ASSOC",
     )
+    subparser_add_queue.add_argument(
+        "--max-sched-jobs",
+        type=int,
+        help=(
+            "max number of jobs in SCHED state an association can have in this queue "
+            "at any given time"
+        ),
+        default=2147483647,
+        metavar="NJOBS",
+    )
 
 
 def add_view_queue_arg(subparsers):
@@ -914,6 +924,16 @@ def add_edit_queue_arg(subparsers):
         ),
         default=None,
         metavar="MAX_NODES_PER_ASSOC",
+    )
+    subparser_edit_queue.add_argument(
+        "--max-sched-jobs",
+        type=int,
+        help=(
+            "max number of jobs in SCHED state an association can have in this queue "
+            "at any given time"
+        ),
+        default=2147483647,
+        metavar="NJOBS",
     )
 
 
@@ -1062,7 +1082,10 @@ def add_list_queues_arg(subparsers):
         type=str,
         help="list of fields to include in JSON output",
         default=None,
-        metavar="QUEUE,MIN_NODES_PER_JOB,MAX_NODES_PER_JOB,MAX_TIME_PER_JOB,PRIORITY",
+        metavar=(
+            "QUEUE,MIN_NODES_PER_JOB,MAX_NODES_PER_JOB,MAX_TIME_PER_JOB,PRIORITY,"
+            "MAX_SCHED_JOBS"
+        ),
     )
     subparser_list_queues.add_argument(
         "--json",
