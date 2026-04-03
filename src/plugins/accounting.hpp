@@ -53,6 +53,7 @@ extern "C" {
 #define D_ASSOC_MRES "max-resources-user-limit"
 #define D_QUEUE_MRES "max-resources-queue"
 #define D_ASSOC_MSJ  "max-sched-jobs-user-limit"
+#define D_QUEUE_MSJ  "max-sched-jobs-queue-limit"
 
 // error messages for flux-accounting-specific validation messages
 #define MSG_INVALID_QUEUE \
@@ -78,13 +79,15 @@ public:
     int priority = 0;
     int max_running_jobs = std::numeric_limits<int>::max ();
     int max_nodes_per_assoc = 2147483647;
+    int max_sched_jobs = 2147483647;
 };
 
 // a class to track an association's usage in a particular queue
 class QueueUsage {
 public:
-    int cur_run_jobs = 0; // number of running jobs in queue
-    int cur_nodes = 0;    // number of nodes across all running jobs in queue
+    int cur_run_jobs = 0;   // number of running jobs in queue
+    int cur_nodes = 0;      // number of nodes across all running jobs in queue
+    int cur_sched_jobs = 0; // number of jobs in SCHED state in queue
 };
 
 // all attributes are per-user/bank
@@ -126,6 +129,8 @@ public:
                                   const std::string &queue,
                                   const std::map<std::string, Queue> &queues);
     bool under_max_sched_jobs ();
+    bool under_queue_max_sched_jobs (const std::string &queue,
+                                     std::map<std::string, Queue> queues);
 };
 
 class Bank {

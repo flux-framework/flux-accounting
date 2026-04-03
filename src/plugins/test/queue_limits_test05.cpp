@@ -139,6 +139,60 @@ void association_release_held_job_true ()
         "association has no more held jobs");
 }
 
+/*
+ * A Queue object's max_sched_jobs property can be set and configured.
+ */
+void set_queue_max_sched_jobs_limit ()
+{
+    queues["bronze"].max_sched_jobs = 1;
+    ok (queues["bronze"].max_sched_jobs == 1,
+        "bronze queue has a max_sched_jobs limit of 1");
+}
+
+/*
+ * If the queue being specified cannot be found, it will be initialized in the
+ * queues map with default properties, including max_sched_jobs.
+ */
+void association_under_queue_max_sched_jobs_default ()
+{
+    Association *a = &users[50001]["bank_A"];
+    ok (a->under_queue_max_sched_jobs ("foo", queues) == true,
+        "check returns true when queue cannot be found");
+
+    ok (queues["foo"].max_sched_jobs == 2147483647,
+        "queue initialized in queues map with max max_sched_jobs value");
+}
+
+/*
+ * If an association is under the queue's max_sched_jobs limit,
+ * under_queue_max_sched_jobs () will return true.
+ */
+void association_under_queue_max_sched_jobs_limit_true ()
+{
+    Association *a = &users[50001]["bank_A"];
+    a->cur_active_jobs = 0;
+    a->cur_sched_jobs = 0;
+    a->queue_usage["bronze"].cur_sched_jobs = 0;
+
+    ok (a->under_queue_max_sched_jobs ("bronze", queues) == true,
+        "association is under max_sched_jobs limit");
+}
+
+/*
+ * If an association is *not* under the queue's max_sched_jobs limit,
+ * under_queue_max_sched_jobs () will return false.
+ */
+void association_under_queue_max_sched_jobs_limit_false ()
+{
+    Association *a = &users[50001]["bank_A"];
+    a->cur_active_jobs = 2;
+    a->cur_sched_jobs = 1;
+    a->queue_usage["bronze"].cur_sched_jobs = 1;
+
+    ok (a->under_queue_max_sched_jobs ("bronze", queues) == false,
+        "association is not under max_sched_jobs limit");
+}
+
 int main (int argc, char* argv[])
 {
     // add an association
@@ -150,6 +204,10 @@ int main (int argc, char* argv[])
     association_under_queue_max_nodes_limit_true ();
     association_under_queue_max_nodes_limit_false ();
     association_release_held_job_true ();
+    set_queue_max_sched_jobs_limit ();
+    association_under_queue_max_sched_jobs_limit_true ();
+    association_under_queue_max_sched_jobs_limit_false ();
+    association_under_queue_max_sched_jobs_default ();
 
     // indicate we are done testing
     done_testing ();
