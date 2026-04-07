@@ -619,8 +619,8 @@ static void rec_q_cb (flux_t *h,
                       void *arg)
 {
     char *queue = NULL;
-    int min_nodes_per_job, max_nodes_per_job, max_time_per_job, priority = 0;
-    int max_running_jobs, max_nodes_per_assoc, max_sched_jobs = 0;
+    int min_nodes_per_job, max_nodes_per_job, max_time_per_job, priority;
+    int max_running_jobs, max_nodes_per_assoc, max_sched_jobs;
     json_t *data, *jtemp = NULL;
     json_error_t error;
     int num_data = 0;
