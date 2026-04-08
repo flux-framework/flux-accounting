@@ -148,11 +148,15 @@ matrix.add_build(
     docker_tag=True,
 )
 
-# el9
+# el9, distcheck
 matrix.add_build(
-    name="el9 - py3.9",
+    name="el9 - py3.9,distcheck",
     image="el9",
     docker_tag=True,
+    args=" --localstatedir=/var",
+    env=dict(
+        DISTCHECK="t",
+    ),
 )
 
 # jammy
@@ -169,14 +173,11 @@ matrix.add_build(
     docker_tag=True,
 )
 
-# Ubuntu: gcc-8, distcheck
+# Ubuntu: gcc-8
 matrix.add_build(
-    name="el8 - distcheck",
+    name="el8",
     image="el8",
-    args=" --localstatedir=/var",
-    env=dict(
-        DISTCHECK="t",
-    ),
+    docker_tag=True,
 )
 
 print(matrix)
