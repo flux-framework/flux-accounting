@@ -1,3 +1,10 @@
+flux-accounting version 0.57.1 - 2026-04-08
+-------------------------------------------
+
+#### Testsuite
+
+* generate-matrix: change release builder from RHEL8 to RHEL9 (#844)
+
 flux-accounting version 0.57.0 - 2026-04-07
 -------------------------------------------
 
