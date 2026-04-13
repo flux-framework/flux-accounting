@@ -161,7 +161,7 @@ void max_run_jobs_per_queue_and_per_association ()
     a->held_jobs.emplace_back (job);
 
     ok (a->held_jobs.size () == 1,
-        "asociation has one held job due to max-run-jobs per-association and "
+        "association has one held job due to max-run-jobs per-association and "
         "per-queue limits");
     ok (job.deps.size () == 2,
         "held job has max-run-jobs per-association and per-queue dependencies "
