@@ -180,4 +180,11 @@ matrix.add_build(
     docker_tag=True,
 )
 
+# el10
+matrix.add_build(
+    name="el10",
+    image="el10",
+    docker_tag=True,
+)
+
 print(matrix)
