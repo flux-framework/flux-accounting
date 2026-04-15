@@ -1864,6 +1864,13 @@ static const struct flux_plugin_handler tab[] = {
 
 extern "C" int flux_plugin_init (flux_plugin_t *p)
 {
+    // explicitly reset all global state of internal data structures
+    users.clear ();
+    queues.clear ();
+    banks.clear ();
+    users_def_bank.clear ();
+    projects.clear ();
+    priority_weights.clear ();
 
     json_t *config_obj = NULL;
     flux_t *h = flux_jobtap_get_flux (p);
