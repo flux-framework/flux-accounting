@@ -289,7 +289,7 @@ def update_job_usage(acct_conn, pdhl=1):
             FROM jobs r LEFT JOIN job_usage_factor_table j
             ON r.userid = j.userid AND r.bank = j.bank
             LEFT JOIN bank_table b
-            ON r.bank = b.bank WHERE r.t_run > j.last_job_timestamp
+            ON r.bank = b.bank WHERE r.t_inactive > j.last_job_timestamp
             AND r.t_inactive > b.ignore_older_than
         """
         cur.execute(s_new_jobs)
