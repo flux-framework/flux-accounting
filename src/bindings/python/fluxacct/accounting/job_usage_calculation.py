@@ -487,7 +487,7 @@ def view_usage_report(
 
     result = j.view_jobs(
         conn,
-        fields="{username} {bank} {project} {nnodes} {t_run} {t_inactive}",
+        fields="{username} {bank} {nnodes} {t_run} {t_inactive}",
         after_start_time=(start - 7 * 24 * 60 * 60),
         before_end_time=end,
         user=user,
