@@ -87,6 +87,7 @@ TESTSCRIPTS = \
 	t1082-max-sched-jobs-queue-basic.t \
 	t1083-mf-priority-queue-sched-dependency.t \
 	t1084-issue849.t \
+	t1085-issue850.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
