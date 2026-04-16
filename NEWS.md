@@ -1,3 +1,24 @@
+flux-accounting version 0.57.2 - 2026-04-16
+-------------------------------------------
+
+#### Fixes
+
+* spelling: fix mistake, exclude `INSTALL` file from spellcheck (#848)
+
+* plugin: clear internal data structures during initialization (#851)
+
+* `update-usage`: change `t_run` filter to `t_inactive` (#854)
+
+* `view-usage-report`: remove "project" field (#855)
+
+#### Testsuite
+
+* github: add dependabot support (#846)
+
+* github: bump the github-actions group with 3 updates (#847)
+
+* ci: add `el10` builder (#852)
+
 flux-accounting version 0.57.1 - 2026-04-08
 -------------------------------------------
 
