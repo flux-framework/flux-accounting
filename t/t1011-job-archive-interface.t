@@ -74,7 +74,7 @@ test_expect_success 'check that usage does not get affected by canceled jobs' '
 test_expect_success 'check that no jobs show up under user' '
 	flux account -p ${DB_PATH} view-job-records --user $username > no_jobs.test &&
 	cat <<-EOF >no_jobs.expected &&
-	jobid           | username | userid   | t_submit        | t_run           | t_inactive      | nnodes   | project  | bank
+	jobid | username | userid | t_submit | t_run | t_inactive | nnodes | project | bank | requested_duration | actual_duration | duration_delta
 	EOF
 	grep -f no_jobs.expected no_jobs.test
 '
@@ -108,7 +108,7 @@ test_expect_success 'check that usage does not get affected by canceled jobs' '
 test_expect_success 'check that no jobs show up under user' '
 	flux account -p ${DB_PATH} view-job-records --user $username > no_jobs.test2 &&
 	cat <<-EOF >no_jobs.expected2 &&
-	jobid           | username | userid   | t_submit        | t_run           | t_inactive      | nnodes   | project  | bank
+	jobid | username | userid | t_submit | t_run | t_inactive | nnodes | project | bank | requested_duration | actual_duration | duration_delta
 	EOF
 	grep -f no_jobs.expected2 no_jobs.test2
 '
