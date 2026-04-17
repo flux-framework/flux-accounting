@@ -16,6 +16,7 @@ from flux.job.JobID import JobID
 from flux.constants import FLUX_USERID_UNKNOWN
 from fluxacct.accounting import formatter as fmt
 from fluxacct.accounting import util
+from fluxacct.accounting import JOB_RECORD_FIELDS, JOB_RECORD_FLOAT_FIELDS
 
 
 class JobRecord:
@@ -69,18 +70,35 @@ def convert_to_str(job_records, fmt_string=None):
     Convert the results of a query to the jobs table to a readable string
     that can either be output to stdout or written to a file.
     """
-    # default format string
-    if not fmt_string:
-        fmt_string = (
-            "{jobid:<15} | {username:<8} | {userid:<8} | {t_submit:<15.2f} | "
-            + "{t_run:<15.2f} | {t_inactive:<15.2f} | {nnodes:<8} | {project:<8} | "
-            + "{bank:<8} | {requested_duration:<18.2f} | {actual_duration:<15.2f} | "
-            + "{duration_delta:<18.2f}"
-        )
-    output = fmt.JobsFormatter(fmt_string)
-    job_record_str = output.build_table(job_records)
+    if fmt_string:
+        output = fmt.JobsFormatter(fmt_string)
+        return output.build_table(job_records)
 
-    return job_record_str
+    def field_str(record, field):
+        val = getattr(record, field)
+        if field in JOB_RECORD_FLOAT_FIELDS:
+            return f"{val:.2f}"
+        return str(val)
+
+    col_widths = {field: len(field) for field in JOB_RECORD_FIELDS}
+    for record in job_records:
+        for field in JOB_RECORD_FIELDS:
+            # make sure length of the field itself doesn't truncate header length
+            col_widths[field] = max(col_widths[field], len(field_str(record, field)))
+
+    # build a format string using the computed widths
+    parts = []
+    for field in JOB_RECORD_FIELDS:
+        width = col_widths[field]
+        if field in JOB_RECORD_FLOAT_FIELDS:
+            parts.append(f"{{{field}:<{width}.2f}}")
+        else:
+            parts.append(f"{{{field}:<{width}}}")
+
+    fmt_string = " | ".join(parts)
+
+    output = fmt.JobsFormatter(fmt_string)
+    return output.build_table(job_records)
 
 
 def convert_to_obj(rows, jobid_format="f58"):
