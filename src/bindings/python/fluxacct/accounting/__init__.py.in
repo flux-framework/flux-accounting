@@ -66,6 +66,28 @@ JOBS_TABLE = [
     "actual_duration",
 ]
 PRIORITY_FACTOR_WEIGHTS_TABLE = ["factor", "weight"]
+JOB_RECORD_FIELDS = [
+    "jobid",
+    "username",
+    "userid",
+    "t_submit",
+    "t_run",
+    "t_inactive",
+    "nnodes",
+    "project",
+    "bank",
+    "requested_duration",
+    "actual_duration",
+    "duration_delta",
+]
+JOB_RECORD_FLOAT_FIELDS = {
+    "t_submit",
+    "t_run",
+    "t_inactive",
+    "requested_duration",
+    "actual_duration",
+    "duration_delta",
+}
 
 __all__ = [
     "DB_DIR",
