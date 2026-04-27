@@ -563,13 +563,19 @@ def add_create_db_arg(subparsers):
     subparser_create_db.set_defaults(func="create_db")
     subparser_create_db.add_argument(
         "--priority-usage-reset-period",
-        help="the number of weeks at which usage information gets reset to 0",
-        metavar=("PRIORITY USAGE RESET PERIOD"),
+        help=(
+            "the amount of time (in Flux Standard Duration or in seconds) in which job "
+            " usage gets reset to 0"
+        ),
+        metavar=("DURATION"),
     )
     subparser_create_db.add_argument(
         "--priority-decay-half-life",
-        help="contribution of historical usage in weeks on the composite usage value",
-        metavar=("PRIORITY DECAY HALF LIFE"),
+        help=(
+            "contribution of historical usage in the amount of time (in Flux Standard"
+            " Duration or in seconds) on the composite usage value"
+        ),
+        metavar=("DURATION"),
     )
 
 

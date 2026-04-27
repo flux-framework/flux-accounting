@@ -60,6 +60,7 @@ class TestDB(unittest.TestCase):
             "project_table",
             "jobs",
             "priority_factor_weight_table",
+            "config_table",
         ]
         self.assertEqual(list_of_tables, expected)
 
@@ -117,7 +118,11 @@ class TestDB(unittest.TestCase):
     # are not specified, the job_usage_factor_table will have
     # 4 bins, each representing 1 week's worth of jobs
     def test_06_job_usage_factor_table_default(self):
-        c.create_db("flux_accounting_test_1.db")
+        c.create_db(
+            "flux_accounting_test_1.db",
+            priority_usage_reset_period="30d",
+            priority_decay_half_life="7d",
+        )
         columns_query = "PRAGMA table_info(job_usage_factor_table)"
         test_conn = sqlite3.connect("flux_accounting_test_1.db")
         expected = [
@@ -138,8 +143,8 @@ class TestDB(unittest.TestCase):
     def test_07_job_usage_factor_table_configurable(self):
         c.create_db(
             "flux_accounting_test_2.db",
-            priority_usage_reset_period=10,
-            priority_decay_half_life=1,
+            priority_usage_reset_period="70d",
+            priority_decay_half_life="7d",
         )
         columns_query = "PRAGMA table_info(job_usage_factor_table)"
         test_conn = sqlite3.connect("flux_accounting_test_2.db")
