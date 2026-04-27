@@ -10,7 +10,7 @@
 PROJECT=flux-accounting
 BASE_DOCKER_REPO=fluxrm/flux-core
 
-IMAGE=el8
+IMAGE=el10
 JOBS=2
 MOUNT_HOME_ARGS="--volume=$HOME:/home/$USER -e HOME"
 
