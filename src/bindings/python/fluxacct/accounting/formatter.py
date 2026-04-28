@@ -506,3 +506,23 @@ class PriorityFactorFormatter(AccountingFormatter):
             cursor,
             error_msg=f"factor {self.factor} not found in priority_factor_weight_table",
         )
+
+
+class KeyValueFormatter(AccountingFormatter):
+    """
+    Subclass of AccountingFormatter that includes a custom error message in the
+    case where a key-value pair does not exist in config_table.
+    """
+
+    def __init__(self, cursor, key):
+        """
+        Initialize a KeyValueFormatter object with a SQLite cursor.
+        Args:
+            cursor: a SQLite Cursor object that has the results of a SQL query.
+            key: the key of the key-value pair.
+        """
+        self.key = key
+        super().__init__(
+            cursor,
+            error_msg=f"key {self.key} not found in config_table",
+        )
