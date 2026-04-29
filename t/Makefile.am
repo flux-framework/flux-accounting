@@ -95,6 +95,7 @@ TESTSCRIPTS = \
 	t1090-mf-priority-assoc-partial-release.t \
 	t1091-mf-priority-queue-partial-release.t \
 	t1092-mf-priority-afterany-partial-release.t \
+	t1093-config-table-commands.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
