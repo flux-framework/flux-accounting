@@ -274,6 +274,52 @@ def init_config_table(cur):
     )
 
 
+def migrate_job_usage_to_per_assoc(cur):
+    """
+    Migrate existing usage bin columns from job_usage_factor_table into the
+    new row-per-period job_usage_per_association table. Each usage_factor_period_N
+    column becomes a row with period=N. Skips migration if the new table
+    already has data, so this is safe to call multiple times.
+
+    Args:
+        cur: the Cursor object used to interact with the database.
+    """
+    cur.execute("SELECT COUNT(*) FROM job_usage_per_association_table")
+    if cur.fetchone()[0] > 0:
+        # migration has already been done; just return
+        return
+
+    # find all usage bin columns from job_usage_factor_table
+    cur.execute("PRAGMA table_info('job_usage_factor_table')")
+    columns = cur.fetchall()
+    bin_columns = [
+        col[1] for col in columns if col[1].startswith("usage_factor_period_")
+    ]
+
+    if not bin_columns:
+        return
+
+    # fetch all rows from the old table
+    cur.execute(
+        f"SELECT username, userid, bank, {', '.join(bin_columns)} FROM job_usage_factor_table"
+    )
+    rows = cur.fetchall()
+
+    for row in rows:
+        username, userid, bank = row[0], row[1], row[2]
+        period_values = row[3:]
+
+        for period, value in enumerate(period_values):
+            cur.execute(
+                """
+                INSERT OR IGNORE INTO job_usage_per_association_table
+                    (username, userid, bank, period, value)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (username, userid, bank, period, value),
+            )
+
+
 def update_db(path, new_db):
     old_conn = est_sqlite_conn(path)
     old_cur = old_conn.cursor()
@@ -299,6 +345,8 @@ def update_db(path, new_db):
 
             init_priority_factor_table(old_cur)
             init_config_table(old_cur)
+
+            migrate_job_usage_to_per_assoc(old_cur)
 
             # update user_version for DB
             old_cur.execute(
