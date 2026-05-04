@@ -324,4 +324,22 @@ def create_db(
     conn.commit()
     LOGGER.info("Created config_table successfully")
 
+    # Job Usage Per-Association Table
+    # stores periodic job usage values per-association based on how many periods there
+    # are (configured via PriorityDecayHalfLife and PriorityUsageResetPeriod parameters
+    # in config_table)
+    LOGGER.info("Creating job_usage_per_association table in DB...")
+    conn.execute(
+        """
+            CREATE TABLE IF NOT EXISTS job_usage_per_association_table (
+                username tinytext              NOT NULL,
+                userid   int(11)               NOT NULL,
+                bank     tinytext              NOT NULL,
+                period   int(11)               NOT NULL,
+                value    real     DEFAULT 0.0,
+                PRIMARY KEY (username, bank, period)
+            );"""
+    )
+    LOGGER.info("Created job_usage_per_association table successfully")
+
     conn.close()

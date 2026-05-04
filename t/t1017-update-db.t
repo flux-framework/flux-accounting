@@ -60,6 +60,7 @@ test_expect_success 'get all the tables of the old DB and check that new table w
 	jobs
 	priority_factor_weight_table
 	config_table
+	job_usage_per_association_table
 	organization
 	queue_table
 	EOF
