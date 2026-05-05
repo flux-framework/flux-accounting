@@ -275,7 +275,9 @@ def view_user(
     if job_usage:
         # only return a breakdown of the association's job usage factors that make up
         # their historical usage
-        cur.execute("SELECT * FROM job_usage_factor_table WHERE username=?", (user,))
+        cur.execute(
+            "SELECT * FROM job_usage_per_association_table WHERE username=?", (user,)
+        )
         formatter = fmt.AccountingFormatter(cur)
     else:
         sql.validate_columns(cols, fluxacct.accounting.ASSOCIATION_TABLE)
