@@ -588,15 +588,9 @@ def clear_usage_period_columns(cur, bank):
         cur: The SQLite Cursor object.
         bank: The bank being cleared.
     """
-    cur.execute("PRAGMA table_info('job_usage_factor_table')")
-    result = cur.fetchall()
-    for column in result:
-        # column[1] accesses just the column name
-        if column[1].startswith("usage_factor_period_"):
-            cur.execute(
-                f"UPDATE job_usage_factor_table SET {column[1]}=0 WHERE bank=?", (bank,)
-            )
-    # clear last_job_timestamp
+    cur.execute(
+        "UPDATE job_usage_per_association_table SET value=0.0 WHERE bank=?", (bank,)
+    )
     cur.execute(
         "UPDATE job_usage_factor_table SET last_job_timestamp=0 WHERE bank=?", (bank,)
     )
