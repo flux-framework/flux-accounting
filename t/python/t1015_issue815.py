@@ -54,7 +54,8 @@ class TestAccountingCLI(unittest.TestCase):
         cur.execute("UPDATE association_table SET job_usage=100 WHERE username='user1'")
         # manually set current job usage factor all associations in the DB
         cur.execute(
-            "UPDATE job_usage_factor_table SET usage_factor_period_0=100 WHERE username='user1'"
+            "UPDATE job_usage_per_association_table SET value=100 "
+            "WHERE username='user1' AND userid=50001 AND bank='A' AND period=0"
         )
 
         conn.commit()
@@ -90,28 +91,32 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(historical_usage, 100.0)
 
         cur.execute(
-            "SELECT usage_factor_period_0 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND bank='A' AND period=0"
         )
         usage_period_0 = cur.fetchone()[0]
         self.assertEqual(usage_period_0, 100.0)
 
         cur.execute(
-            "SELECT usage_factor_period_1 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND bank='A' AND period=1"
         )
-        usage_period_1 = cur.fetchone()[0]
-        self.assertEqual(usage_period_1, 0)
+        usage_period_0 = cur.fetchone()[0]
+        self.assertEqual(usage_period_0, 0)
 
         cur.execute(
-            "SELECT usage_factor_period_2 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND bank='A' AND period=2"
         )
-        usage_period_2 = cur.fetchone()[0]
-        self.assertEqual(usage_period_2, 0)
+        usage_period_0 = cur.fetchone()[0]
+        self.assertEqual(usage_period_0, 0)
 
         cur.execute(
-            "SELECT usage_factor_period_3 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND bank='A' AND period=3"
         )
-        usage_period_3 = cur.fetchone()[0]
-        self.assertEqual(usage_period_3, 0)
+        usage_period_0 = cur.fetchone()[0]
+        self.assertEqual(usage_period_0, 0)
 
     # simulate a half-period further; ensure that the half-life decay is applied properly
     # across all usage period columns
@@ -130,25 +135,29 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(historical_usage, 50.0)
 
         cur.execute(
-            "SELECT usage_factor_period_0 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND bank='A' AND period=0"
         )
         usage_period_0 = cur.fetchone()[0]
         self.assertEqual(usage_period_0, 0)
 
         cur.execute(
-            "SELECT usage_factor_period_1 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND bank='A' AND period=1"
         )
         usage_period_1 = cur.fetchone()[0]
         self.assertEqual(usage_period_1, 50.0)
 
         cur.execute(
-            "SELECT usage_factor_period_2 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND bank='A' AND period=2"
         )
         usage_period_2 = cur.fetchone()[0]
-        self.assertEqual(usage_period_2, 0)
+        self.assertEqual(usage_period_2, 0.0)
 
         cur.execute(
-            "SELECT usage_factor_period_3 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND bank='A' AND period=3"
         )
         usage_period_3 = cur.fetchone()[0]
         self.assertEqual(usage_period_3, 0)
@@ -169,25 +178,29 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(historical_usage, 25.0)
 
         cur.execute(
-            "SELECT usage_factor_period_0 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND bank='A' AND period=0"
         )
         usage_period_0 = cur.fetchone()[0]
         self.assertEqual(usage_period_0, 0)
 
         cur.execute(
-            "SELECT usage_factor_period_1 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND bank='A' AND period=1"
         )
         usage_period_1 = cur.fetchone()[0]
         self.assertEqual(usage_period_1, 0)
 
         cur.execute(
-            "SELECT usage_factor_period_2 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND bank='A' AND period=2"
         )
         usage_period_2 = cur.fetchone()[0]
         self.assertEqual(usage_period_2, 25.0)
 
         cur.execute(
-            "SELECT usage_factor_period_3 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND bank='A' AND period=3"
         )
         usage_period_3 = cur.fetchone()[0]
         self.assertEqual(usage_period_3, 0)
@@ -208,25 +221,29 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(historical_usage, 12.5)
 
         cur.execute(
-            "SELECT usage_factor_period_0 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND bank='A' AND period=0"
         )
         usage_period_0 = cur.fetchone()[0]
         self.assertEqual(usage_period_0, 0)
 
         cur.execute(
-            "SELECT usage_factor_period_1 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND bank='A' AND period=1"
         )
         usage_period_1 = cur.fetchone()[0]
         self.assertEqual(usage_period_1, 0)
 
         cur.execute(
-            "SELECT usage_factor_period_2 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND bank='A' AND period=2"
         )
         usage_period_2 = cur.fetchone()[0]
         self.assertEqual(usage_period_2, 0)
 
         cur.execute(
-            "SELECT usage_factor_period_3 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND bank='A' AND period=3"
         )
         usage_period_3 = cur.fetchone()[0]
         self.assertEqual(usage_period_3, 12.5)

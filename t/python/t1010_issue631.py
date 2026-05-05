@@ -77,25 +77,32 @@ class TestAccountingCLI(unittest.TestCase):
 
         # manually set current job usage factor all associations in the DB
         cur.execute(
-            "UPDATE job_usage_factor_table SET usage_factor_period_0=20 WHERE username='user1'"
+            "UPDATE job_usage_per_association_table "
+            "SET value=20 WHERE username='user1' AND period=0"
         )
         cur.execute(
-            "UPDATE job_usage_factor_table SET usage_factor_period_0=20 WHERE username='user2'"
+            "UPDATE job_usage_per_association_table "
+            "SET value=20 WHERE username='user2' AND period=0"
         )
         cur.execute(
-            "UPDATE job_usage_factor_table SET usage_factor_period_0=10 WHERE username='user3'"
+            "UPDATE job_usage_per_association_table "
+            "SET value=10 WHERE username='user3' AND period=0"
         )
         cur.execute(
-            "UPDATE job_usage_factor_table SET usage_factor_period_0=13 WHERE username='user4'"
+            "UPDATE job_usage_per_association_table "
+            "SET value=13 WHERE username='user4' AND period=0"
         )
         cur.execute(
-            "UPDATE job_usage_factor_table SET usage_factor_period_0=12 WHERE username='user5'"
+            "UPDATE job_usage_per_association_table "
+            "SET value=12 WHERE username='user5' AND period=0"
         )
         cur.execute(
-            "UPDATE job_usage_factor_table SET usage_factor_period_0=25 WHERE username='user6'"
+            "UPDATE job_usage_per_association_table "
+            "SET value=25 WHERE username='user6' AND period=0"
         )
         cur.execute(
-            "UPDATE job_usage_factor_table SET usage_factor_period_0=10 WHERE username='user7'"
+            "UPDATE job_usage_per_association_table "
+            "SET value=10 WHERE username='user7' AND period=0"
         )
 
         conn.commit()
@@ -159,7 +166,8 @@ class TestAccountingCLI(unittest.TestCase):
         # since no new jobs were submitted in this new half-life period, the current
         # usage should be 0
         cur.execute(
-            "SELECT usage_factor_period_0 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND period=0"
         )
         current_usage = cur.fetchone()[0]
         self.assertEqual(current_usage, 0.0)
@@ -167,7 +175,8 @@ class TestAccountingCLI(unittest.TestCase):
         # the current usage from the previous half-life period should now be written to
         # the second slot in job_usage_factor_table
         cur.execute(
-            "SELECT usage_factor_period_1 FROM job_usage_factor_table WHERE username='user1'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user1' AND period=1"
         )
         usage_last_half_life = cur.fetchone()[0]
         self.assertEqual(usage_last_half_life, 10.0)
@@ -178,13 +187,15 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(historical_usage, 10.0)
 
         cur.execute(
-            "SELECT usage_factor_period_0 FROM job_usage_factor_table WHERE username='user2'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user2' AND period=0"
         )
         current_usage = cur.fetchone()[0]
         self.assertEqual(current_usage, 0.0)
 
         cur.execute(
-            "SELECT usage_factor_period_1 FROM job_usage_factor_table WHERE username='user2'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user2' AND period=1"
         )
         usage_last_half_life = cur.fetchone()[0]
         self.assertEqual(usage_last_half_life, 10.0)
@@ -195,13 +206,15 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(historical_usage, 5.0)
 
         cur.execute(
-            "SELECT usage_factor_period_0 FROM job_usage_factor_table WHERE username='user3'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user3' AND period=0"
         )
         current_usage = cur.fetchone()[0]
         self.assertEqual(current_usage, 0.0)
 
         cur.execute(
-            "SELECT usage_factor_period_1 FROM job_usage_factor_table WHERE username='user3'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user3' AND period=1"
         )
         usage_last_half_life = cur.fetchone()[0]
         self.assertEqual(usage_last_half_life, 5.0)
@@ -212,13 +225,15 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(historical_usage, 6.5)
 
         cur.execute(
-            "SELECT usage_factor_period_0 FROM job_usage_factor_table WHERE username='user4'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user4' AND period=0"
         )
         current_usage = cur.fetchone()[0]
         self.assertEqual(current_usage, 0.0)
 
         cur.execute(
-            "SELECT usage_factor_period_1 FROM job_usage_factor_table WHERE username='user4'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user4' AND period=1"
         )
         usage_last_half_life = cur.fetchone()[0]
         self.assertEqual(usage_last_half_life, 6.5)
@@ -229,13 +244,15 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(historical_usage, 6.0)
 
         cur.execute(
-            "SELECT usage_factor_period_0 FROM job_usage_factor_table WHERE username='user5'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user5' AND period=0"
         )
         current_usage = cur.fetchone()[0]
         self.assertEqual(current_usage, 0.0)
 
         cur.execute(
-            "SELECT usage_factor_period_1 FROM job_usage_factor_table WHERE username='user5'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user5' AND period=1"
         )
         usage_last_half_life = cur.fetchone()[0]
         self.assertEqual(usage_last_half_life, 6.0)
@@ -246,13 +263,15 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(historical_usage, 12.5)
 
         cur.execute(
-            "SELECT usage_factor_period_0 FROM job_usage_factor_table WHERE username='user6'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user6' AND period=0"
         )
         current_usage = cur.fetchone()[0]
         self.assertEqual(current_usage, 0.0)
 
         cur.execute(
-            "SELECT usage_factor_period_1 FROM job_usage_factor_table WHERE username='user6'"
+            "SELECT value FROM job_usage_per_association_table "
+            "WHERE username='user6' AND period=1"
         )
         usage_last_half_life = cur.fetchone()[0]
         self.assertEqual(usage_last_half_life, 12.5)

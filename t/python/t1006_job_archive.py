@@ -270,13 +270,26 @@ class TestAccountingCLI(unittest.TestCase):
     def test_11_calc_usage_factor_many_jobs(self):
         user = "1002"
         bank = "C"
-        update_stmt = "UPDATE job_usage_factor_table SET usage_factor_period_0=256 WHERE username='1002' AND bank='C'"
+        userid = 1002
+        update_stmt = (
+            "UPDATE job_usage_per_association_table SET value=256 "
+            "WHERE username='1002' AND userid=1002 AND bank='C' AND period=0"
+        )
         acct_conn.execute(update_stmt)
-        update_stmt = "UPDATE job_usage_factor_table SET usage_factor_period_1=64 WHERE username='1002' AND bank='C'"
+        update_stmt = (
+            "UPDATE job_usage_per_association_table SET value=64 "
+            "WHERE username='1002' AND userid=1002 AND bank='C' AND period=1"
+        )
         acct_conn.execute(update_stmt)
-        update_stmt = "UPDATE job_usage_factor_table SET usage_factor_period_2=16 WHERE username='1002' AND bank='C'"
+        update_stmt = (
+            "UPDATE job_usage_per_association_table SET value=16 "
+            "WHERE username='1002' AND userid=1002 AND bank='C' AND period=2"
+        )
         acct_conn.execute(update_stmt)
-        update_stmt = "UPDATE job_usage_factor_table SET usage_factor_period_3=8 WHERE username='1002' AND bank='C'"
+        update_stmt = (
+            "UPDATE job_usage_per_association_table SET value=8 "
+            "WHERE username='1002' AND userid=1002 AND bank='C' AND period=3"
+        )
         acct_conn.execute(update_stmt)
         acct_conn.commit()
 
@@ -285,8 +298,8 @@ class TestAccountingCLI(unittest.TestCase):
             pdhl=1,
             user=user,
             bank=bank,
+            userid=userid,
             end_hl=9900000,
-            usage_factors=[256, 64, 16, 8],
             user_jobs=user_jobs[(1002, "C")],
         )
         self.assertEqual(usage_factor, 17044.0)
@@ -297,13 +310,26 @@ class TestAccountingCLI(unittest.TestCase):
     def test_12_calc_usage_factor_few_jobs(self):
         user = "1001"
         bank = "C"
-        update_stmt = "UPDATE job_usage_factor_table SET usage_factor_period_0=4096 WHERE username='1001' AND bank='C'"
+        userid = 1001
+        update_stmt = (
+            "UPDATE job_usage_per_association_table SET value=4096 "
+            "WHERE username='1001' AND userid=1001 AND bank='C' AND period=0"
+        )
         acct_conn.execute(update_stmt)
-        update_stmt = "UPDATE job_usage_factor_table SET usage_factor_period_1=256 WHERE username='1001' AND bank='C'"
+        update_stmt = (
+            "UPDATE job_usage_per_association_table SET value=256 "
+            "WHERE username='1001' AND userid=1001 AND bank='C' AND period=1"
+        )
         acct_conn.execute(update_stmt)
-        update_stmt = "UPDATE job_usage_factor_table SET usage_factor_period_2=32 WHERE username='1001' AND bank='C'"
+        update_stmt = (
+            "UPDATE job_usage_per_association_table SET value=32 "
+            "WHERE username='1001' AND userid=1001 AND bank='C' AND period=2"
+        )
         acct_conn.execute(update_stmt)
-        update_stmt = "UPDATE job_usage_factor_table SET usage_factor_period_3=16 WHERE username='1001' AND bank='C'"
+        update_stmt = (
+            "UPDATE job_usage_per_association_table SET value=16 "
+            "WHERE username='1001' AND userid=1001 AND bank='C' AND period=3"
+        )
         acct_conn.execute(update_stmt)
         acct_conn.commit()
 
@@ -312,8 +338,8 @@ class TestAccountingCLI(unittest.TestCase):
             pdhl=1,
             user=user,
             bank=bank,
+            userid=userid,
             end_hl=9900000,
-            usage_factors=[4096, 256, 32, 16],
             user_jobs=user_jobs[(1001, "C")],
         )
         self.assertEqual(usage_factor, 8500.0)
@@ -321,7 +347,7 @@ class TestAccountingCLI(unittest.TestCase):
     # make sure update_t_inactive() updates the last seen job timestamp
     def test_13_update_t_inactive_success(self):
         s_ts = (
-            "SELECT last_job_timestamp,usage_factor_period_0 FROM "
+            "SELECT last_job_timestamp FROM "
             "job_usage_factor_table WHERE username='1003' AND bank='D'"
         )
         cur.execute(s_ts)
@@ -335,8 +361,8 @@ class TestAccountingCLI(unittest.TestCase):
             pdhl=1,
             user="1003",
             bank="D",
+            userid=1003,
             end_hl=0,
-            usage_factors=[result[0]["usage_factor_period_0"], 0.0, 0.0, 0.0],
             user_jobs=user_jobs[(1003, "D")],
         )
 
@@ -348,7 +374,7 @@ class TestAccountingCLI(unittest.TestCase):
     # make sure current usage factor was written to job_usage_factor_table, but
     # historical usage factor was written to association_table
     def test_14_check_usage_factor_in_tables(self):
-        select_stmt = "SELECT usage_factor_period_0 FROM job_usage_factor_table WHERE username='1002' AND bank='C'"
+        select_stmt = "SELECT value FROM job_usage_per_association_table WHERE username='1002' AND bank='C' AND period=0"
         cur.execute(select_stmt)
         usage_factor = cur.fetchone()[0]
         self.assertEqual(usage_factor, 16956.0)
@@ -368,6 +394,7 @@ class TestAccountingCLI(unittest.TestCase):
     def test_15_append_jobs_in_diff_half_life_period(self, *_):
         user = "1001"
         bank = "C"
+        userid = 1001
 
         try:
             acct_conn.execute(
@@ -409,26 +436,13 @@ class TestAccountingCLI(unittest.TestCase):
             j.get_jobs(acct_conn, user="1001", bank="C", after_start_time=time.time())
         )
 
-        # re-calculate usage factor for user1001
-        cur.execute(
-            "SELECT last_job_timestamp,usage_factor_period_0,usage_factor_period_1, "
-            "usage_factor_period_2,usage_factor_period_3 FROM job_usage_factor_table "
-            "WHERE username='1001' AND bank='C'"
-        )
-        result = cur.fetchall()
-        ts = result[0]["last_job_timestamp"]
         usage_factor = jobs.calc_usage_factor(
             acct_conn,
             pdhl=1,
             user=user,
             bank=bank,
+            userid=userid,
             end_hl=0,
-            usage_factors=[
-                result[0]["usage_factor_period_0"],
-                result[0]["usage_factor_period_1"],
-                result[0]["usage_factor_period_2"],
-                result[0]["usage_factor_period_3"],
-            ],
             user_jobs=job_records,
         )
         self.assertEqual(usage_factor, 4442.0)
@@ -439,35 +453,21 @@ class TestAccountingCLI(unittest.TestCase):
     def test_16_recalculate_usage_after_half_life_period(self):
         user = "1001"
         bank = "C"
-        cur.execute(
-            "SELECT last_job_timestamp,usage_factor_period_0,usage_factor_period_1, "
-            "usage_factor_period_2,usage_factor_period_3 FROM job_usage_factor_table "
-            "WHERE username='1001' AND bank='C'"
-        )
-        result = cur.fetchall()
-        ts = result[0]["last_job_timestamp"]
+        userid = 1001
 
         usage_factor = jobs.calc_usage_factor(
             acct_conn,
             pdhl=1,
             user=user,
             bank=bank,
+            userid=userid,
             end_hl=0,
-            usage_factors=[
-                result[0]["usage_factor_period_0"],
-                result[0]["usage_factor_period_1"],
-                result[0]["usage_factor_period_2"],
-                result[0]["usage_factor_period_3"],
-            ],
             user_jobs=[],
         )
 
         self.assertEqual(usage_factor, 4334.0)
 
-        select_stmt = (
-            "SELECT usage_factor_period_0 FROM job_usage_factor_table"
-            " WHERE username='1001'"
-        )
+        select_stmt = "SELECT value FROM job_usage_per_association_table WHERE username='1001' AND bank='C' AND period=0"
         cur.execute(select_stmt)
         curr_job_usage = cur.fetchone()[0]
         self.assertEqual(curr_job_usage, 0.0)
