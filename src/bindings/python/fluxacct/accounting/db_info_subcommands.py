@@ -255,6 +255,8 @@ def export_as_json(conn, cursor):
             "max_running_jobs": int(row["max_running_jobs"]),
             "max_nodes_per_assoc": int(row["max_nodes_per_assoc"]),
             "max_sched_jobs": int(row["max_sched_jobs"]),
+            "max_sched_nodes_per_assoc": int(row["max_sched_nodes_per_assoc"]),
+            "max_sched_cores_per_assoc": int(row["max_sched_cores_per_assoc"]),
         }
         queues.append(queue)
 
