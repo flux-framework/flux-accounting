@@ -76,10 +76,12 @@ json_t* Association::to_json () const
         goto error;
     for (const auto &entry : queue_usage) {
         const QueueUsage &usage = entry.second;
-        usage_object = json_pack ("{s:i, s:i, s:i}",
+        usage_object = json_pack ("{s:i, s:i, s:i, s:i, s:i}",
                                   "cur_run_jobs", usage.cur_run_jobs,
                                   "cur_nodes", usage.cur_nodes,
-                                  "cur_sched_jobs", usage.cur_sched_jobs);
+                                  "cur_sched_jobs", usage.cur_sched_jobs,
+                                  "cur_sched_nodes", usage.cur_sched_nodes,
+                                  "cur_sched_cores", usage.cur_sched_cores);
         if (!usage_object)
             goto error;
 
@@ -407,6 +409,94 @@ bool Association::under_queue_max_sched_jobs (
     return (queue_usage[queue].cur_sched_jobs + pending)
            < queues[queue].max_sched_jobs;
 }
+
+
+bool Association::under_queue_max_sched_nodes (
+                                        const Job &job,
+                                        const std::string &queue,
+                                        std::map<std::string, Queue> &queues)
+{
+    auto qit = queues.find (queue);
+    if (qit == queues.end ())
+        // queue is unknown to flux-accounting; skip check
+        return true;
+    const int max_sched_nodes = qit->second.max_sched_nodes_per_assoc;
+
+    // look up current per-queue sched node usage for the association
+    int cur_sched_nodes_in_queue = 0;
+    auto uit = queue_usage.find (queue);
+    if (uit != queue_usage.end ())
+        cur_sched_nodes_in_queue = uit->second.cur_sched_nodes;
+
+    return (cur_sched_nodes_in_queue + job.nnodes) <= max_sched_nodes;
+}
+
+
+bool Association::under_queue_max_sched_nodes (
+                                        const Job &job,
+                                        const std::string &queue,
+                                        std::map<std::string, Queue> &queues,
+                                        int pending)
+{
+    auto qit = queues.find (queue);
+    if (qit == queues.end ())
+        // queue is unknown to flux-accounting; skip check
+        return true;
+    const int max_sched_nodes = qit->second.max_sched_nodes_per_assoc;
+
+    // look up current per-queue sched node usage for the association
+    int cur_sched_nodes_in_queue = 0;
+    auto uit = queue_usage.find (queue);
+    if (uit != queue_usage.end ())
+        cur_sched_nodes_in_queue = uit->second.cur_sched_nodes;
+
+    return (cur_sched_nodes_in_queue + job.nnodes + pending)
+            <= max_sched_nodes;
+}
+
+
+bool Association::under_queue_max_sched_cores (
+                                        const Job &job,
+                                        const std::string &queue,
+                                        std::map<std::string, Queue> &queues)
+{
+    auto qit = queues.find (queue);
+    if (qit == queues.end ())
+        // queue is unknown to flux-accounting; skip check
+        return true;
+    const int max_sched_cores = qit->second.max_sched_cores_per_assoc;
+
+    // look up current per-queue sched core usage for the association
+    int cur_sched_cores_in_queue = 0;
+    auto uit = queue_usage.find (queue);
+    if (uit != queue_usage.end ())
+        cur_sched_cores_in_queue = uit->second.cur_sched_cores;
+
+    return (cur_sched_cores_in_queue + job.ncores) <= max_sched_cores;
+}
+
+bool Association::under_queue_max_sched_cores (
+                                        const Job &job,
+                                        const std::string &queue,
+                                        std::map<std::string, Queue> &queues,
+                                        int pending)
+{
+    auto qit = queues.find (queue);
+    if (qit == queues.end ())
+        // queue is unknown to flux-accounting; skip check
+        return true;
+    const int max_sched_cores = qit->second.max_sched_cores_per_assoc;
+
+    // look up current per-queue sched core usage for the association
+    int cur_sched_cores_in_queue = 0;
+    auto uit = queue_usage.find (queue);
+    if (uit != queue_usage.end ())
+        cur_sched_cores_in_queue = uit->second.cur_sched_cores;
+
+    return (cur_sched_cores_in_queue + job.ncores + pending)
+            <= max_sched_cores;
+}
+
 
 json_t* convert_queues_to_json (const std::map<std::string, Queue> &queues)
 {

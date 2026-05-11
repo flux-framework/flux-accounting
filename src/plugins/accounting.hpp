@@ -54,6 +54,8 @@ extern "C" {
 #define D_QUEUE_MRES "max-resources-queue"
 #define D_ASSOC_MSJ  "max-sched-jobs-user-limit"
 #define D_QUEUE_MSJ  "max-sched-jobs-queue-limit"
+#define D_QUEUE_MSN  "max-sched-nodes-queue-limit"
+#define D_QUEUE_MSC  "max-sched-cores-queue-limit"
 
 // error messages for flux-accounting-specific validation messages
 #define MSG_INVALID_QUEUE \
@@ -90,6 +92,8 @@ public:
     int cur_run_jobs = 0;   // number of running jobs in queue
     int cur_nodes = 0;      // number of nodes across all running jobs in queue
     int cur_sched_jobs = 0; // number of jobs in SCHED state in queue
+    int cur_sched_nodes = 0;// number of nodes in SCHED state in queue
+    int cur_sched_cores = 0;// number of cores in SCHED state in queue
 };
 
 // all attributes are per-user/bank
@@ -148,6 +152,20 @@ public:
     bool under_queue_max_sched_jobs (const std::string &queue,
                                      std::map<std::string, Queue> &queues,
                                      int pending);
+    bool under_queue_max_sched_nodes (const Job &job,
+                                      const std::string &queue,
+                                      std::map<std::string, Queue> &queues);
+    bool under_queue_max_sched_cores (const Job &job,
+                                      const std::string &queue,
+                                      std::map<std::string, Queue> &queues);
+    bool under_queue_max_sched_nodes (const Job &job,
+                                      const std::string &queue,
+                                      std::map<std::string, Queue> &queues,
+                                      int pending);
+    bool under_queue_max_sched_cores (const Job &job,
+                                      const std::string &queue,
+                                      std::map<std::string, Queue> &queues,
+                                      int pending);
 };
 
 class Bank {
