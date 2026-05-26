@@ -16,4 +16,10 @@ prepend_colon_separated FLUX_PYTHONPATH_PREPEND ${SRC_DIR}/src/bindings/python
 
 export FLUX_EXEC_PATH_PREPEND FLUX_PYTHONPATH_PREPEND
 
+TEST_UID1=$(($(id -u)+1))
+TEST_UID2=$(($(id -u)+2))
+TEST_UID3=$(($(id -u)+3))
+TEST_UID4=$(($(id -u)+4))
+TEST_UID5=$(($(id -u)+5))
+
 # vi: ts=4 sw=4 expandtab
