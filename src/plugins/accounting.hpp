@@ -120,17 +120,32 @@ public:
     json_t* to_json () const;    // convert object to JSON string
     // check to see if a job can be released from all flux-accounting
     // dependencies
+    //
+    // the "pending" parameter in the overloaded functions is used to account
+    // for jobs that have been released in the current pass of the held jobs
+    // loop but have not yet been reflected in the association's persistent
+    // counters; by passing in the number of released jobs against a particular
+    // limit, we ensure that subsequent jobs in the held jobs vector are
+    // evaluated against the correct headroom for that limit
     bool under_max_run_jobs ();
+    bool under_max_run_jobs (int pending);
     bool under_queue_max_run_jobs (const std::string &queue,
                                    std::map<std::string, Queue> queues);
+    bool under_queue_max_run_jobs (const std::string &queue,
+                                   std::map<std::string, Queue> queues,
+                                   int pending);
     bool under_max_resources (const Job &job);
     bool under_queue_max_resources (
                                   const Job &job,
                                   const std::string &queue,
                                   const std::map<std::string, Queue> &queues);
     bool under_max_sched_jobs ();
+    bool under_max_sched_jobs (int pending);
     bool under_queue_max_sched_jobs (const std::string &queue,
                                      std::map<std::string, Queue> &queues);
+    bool under_queue_max_sched_jobs (const std::string &queue,
+                                     std::map<std::string, Queue> &queues,
+                                     int pending);
 };
 
 class Bank {
