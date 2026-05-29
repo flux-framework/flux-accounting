@@ -90,6 +90,7 @@ TESTSCRIPTS = \
 	t1085-issue850.t \
 	t1086-view-job-records-dynamic-width.t \
 	t1087-max-sched-resources-queue-basic.t \
+	t1088-issue874.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
