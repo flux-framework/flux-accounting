@@ -684,8 +684,10 @@ static void rec_q_cb (flux_t *h,
                             "priority", &priority,
                             "max_running_jobs", &max_running_jobs,
                             "max_nodes_per_assoc", &max_nodes_per_assoc,
-                            "max_sched_jobs", &max_sched_jobs) < 0)
+                            "max_sched_jobs", &max_sched_jobs) < 0) {
             flux_log (h, LOG_ERR, "mf_priority unpack: %s", error.text);
+            goto error;
+        }
 
         Queue *q;
         q = &queues[queue];

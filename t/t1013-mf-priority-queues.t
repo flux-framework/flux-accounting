@@ -43,6 +43,24 @@ test_expect_success 'add some banks to the DB' '
 	flux account add-bank --parent-bank=root account2 1
 '
 
+test_expect_success 'sending malformed queue information raises error' '
+	cat <<-EOF >fake_payload.py
+	import flux
+	import json
+
+	bulk_queue_data = {
+		"data" : [
+			{
+				"queue": "bad"
+			}
+		]
+	}
+	flux.Flux().rpc("job-manager.mf_priority.rec_q_update", json.dumps(bulk_queue_data)).get()
+	EOF
+	test_must_fail flux python fake_payload.py > bad_queue_data.err 2>&1 &&
+	flux dmesg | grep "mf_priority unpack:"
+'
+
 test_expect_success 'add some queues to the DB' '
 	flux account add-queue standby --priority=0 &&
 	flux account add-queue expedite --priority=10000 &&
