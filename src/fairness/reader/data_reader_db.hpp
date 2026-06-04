@@ -45,7 +45,7 @@ private:
                    std::shared_ptr<weighted_tree_node_t> &node);
 
     void aggregate_job_usage (std::shared_ptr<weighted_tree_node_t> node,
-                              int bank_usage);
+                              double bank_usage);
 
     int reset_and_clear_bindings (sqlite3 *DB,
                                   sqlite3_stmt *c_assoc,

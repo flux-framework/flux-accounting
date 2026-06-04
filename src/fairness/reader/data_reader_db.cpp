@@ -88,7 +88,7 @@ up to the root bank.
 */
 void data_reader_db_t::aggregate_job_usage (
                                     std::shared_ptr<weighted_tree_node_t> node,
-                                    int bank_usage)
+                                    double bank_usage)
 {
     // aggregate usage from user nodes up to their respective banks
     // and up to the root bank

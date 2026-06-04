@@ -91,6 +91,7 @@ TESTSCRIPTS = \
 	t1086-view-job-records-dynamic-width.t \
 	t1087-max-sched-resources-queue-basic.t \
 	t1088-issue874.t \
+	t1089-update-fshare-large-usage.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
