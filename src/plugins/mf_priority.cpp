@@ -326,7 +326,9 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
         // per-job pending contributions, which are only committed to the
         // pass-wide counters if this job ends up fully released
         int job_assoc_run = 0;
+        int job_assoc_sched = 0;
         int job_queue_run = 0;
+        int job_queue_sched = 0;
 
         // is the association under the max running jobs limit for the
         // queue the held job is submitted under?
@@ -347,9 +349,10 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
         // is association under the max SCHED jobs limit for the queue the
         // held job is submitted under, accounting for jobs already released
         // in this pass?
-        if (b->under_queue_max_sched_jobs (held_job.queue,
-                                           queues,
-                                           released_queue_sched[held_job.queue])
+        if (b->under_queue_max_sched_jobs (
+                                        held_job.queue,
+                                        queues,
+                                        released_queue_sched[held_job.queue])
             && held_job.contains_dep (D_QUEUE_MSJ)) {
             if (flux_jobtap_dependency_remove (p,
                                                held_job.id,
@@ -359,7 +362,7 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
                 goto error;
             }
             held_job.remove_dep (D_QUEUE_MSJ);
-            released_queue_sched[held_job.queue]++;
+            job_queue_sched++;
         }
         // is the association under the max nodes limit for the queue the
         // held job is submitted under?
@@ -399,7 +402,7 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
                 goto error;
             }
             held_job.remove_dep (D_ASSOC_MSJ);
-            released_assoc_sched++;
+            job_assoc_sched++;
         }
         // will association stay under or at their overall max resources limit
         // by releasing this job?
@@ -416,6 +419,20 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
         }
 
         if (held_job.deps.empty ()) {
+            // the job no longer has any flux-accounting dependencies on it;
+            // check the state to see if it has any other dependencies, and if
+            // so, use a speculative counter as to not wrongly release more
+            // jobs than are eligible
+            flux_plugin_arg_t *job_info = flux_jobtap_job_lookup (p, held_job.id);
+            int state;
+            flux_plugin_arg_unpack (job_info, FLUX_PLUGIN_ARG_IN,
+                                    "{s:i}", "state", &state);
+            if (state != FLUX_JOB_STATE_SCHED) {
+                // the job is not actually in SCHED state, so use a speculative
+                // counter
+                released_assoc_sched += job_assoc_sched;
+                released_queue_sched[held_job.queue] += job_queue_sched;
+            }
             // the Job no longer has any flux-accounting dependencies on it and
             // is now actually being released to SCHED state; commit this job's
             // pending contributions to the pass-wide counters so subsequent
