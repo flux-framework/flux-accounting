@@ -1816,6 +1816,23 @@ static int inactive_cb (flux_plugin_t *p,
                             cancelled_job),
             b->held_jobs.end ()
         );
+        if (flux_jobtap_job_event_posted (p, FLUX_JOBTAP_CURRENT_JOB, "priority")) {
+            // this job was actually in SCHED state, so we need to decrement
+            // the SCHED counts for the association that this job is
+            // contributing to since it never ran
+            b->cur_sched_jobs--;
+            b->queue_usage[queue_str].cur_sched_jobs--;
+            // check to see if any jobs held due to the limits above can now
+            // have their dependency removed
+            if (!b->held_jobs.empty ()) {
+                if (check_and_release_held_jobs (p, b) < 0) {
+                    flux_log_error (h,
+                                    "%s: error checking and releasing held "
+                                    "jobs for association",
+                                    topic);
+                }
+            }
+        }
         return 0;
     }
 
