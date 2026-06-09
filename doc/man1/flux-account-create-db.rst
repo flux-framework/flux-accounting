@@ -21,10 +21,16 @@ projects, and job records.
 
 .. option:: --priority-usage-reset-period
 
-   The number of weeks at which job usage information gets reset to 0. By
-   default, the usage reset period is set at 4 weeks.
+   The amount of time (in Flux Standard Duration or in seconds) in which job
+   usage gets reset to 0. By default, this is set at 4 weeks.
 
 .. option:: --priority-decay-half-life
 
-    The contribution of historical usage in weeks on the composite job usage
-    value. By default, this is set at 1 week.
+   The contribution of historical usage in the amount of time (in Flux
+   Standard Duration or in seconds) on the composite usage value. By default,
+   this is set at 1 week.
+
+.. option:: --decay-factor
+
+   The amount of decay to apply to historical usage. By default, this is set at
+   0.5.
