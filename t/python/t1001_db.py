@@ -167,12 +167,42 @@ class TestDB(unittest.TestCase):
                 test.append(row[1])
         self.assertEqual(test, expected)
 
+    def test_08_configure_decay_factor(self):
+        c.create_db(
+            "flux_accounting_test_3.db",
+            priority_usage_reset_period="70d",
+            priority_decay_half_life="7d",
+            decay_factor=0.25,
+        )
+        select_stmt = "SELECT value FROM config_table WHERE key='decay_factor';"
+        test_conn = sqlite3.connect("flux_accounting_test_3.db")
+        cursor = test_conn.cursor()
+        self.assertEqual(cursor.execute(select_stmt).fetchone()[0], "0.25")
+
+    def test_09_configure_decay_factor_bad_value(self):
+        with self.assertRaises(ValueError):
+            c.create_db(
+                "flux_accounting_test_4.db",
+                priority_usage_reset_period="70d",
+                priority_decay_half_life="7d",
+                decay_factor=-0.5,
+            )
+
+        with self.assertRaises(ValueError):
+            c.create_db(
+                "flux_accounting_test_5.db",
+                priority_usage_reset_period="70d",
+                priority_decay_half_life="7d",
+                decay_factor=1.5,
+            )
+
     # remove database file
     @classmethod
     def tearDownClass(self):
         os.remove(self.dbname)
         os.remove("flux_accounting_test_1.db")
         os.remove("flux_accounting_test_2.db")
+        os.remove("flux_accounting_test_3.db")
 
 
 def suite():
