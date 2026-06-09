@@ -577,6 +577,13 @@ def add_create_db_arg(subparsers):
         ),
         metavar=("DURATION"),
     )
+    subparser_create_db.add_argument(
+        "--decay-factor",
+        help="the amount of decay to apply to historical usage",
+        type=float,
+        default=0.5,
+        metavar="DECAY_FACTOR",
+    )
 
 
 def add_add_bank_arg(subparsers):
@@ -1576,7 +1583,10 @@ def main():
     # to ONLY create the DB and then exit out successfully
     if args.func == "create_db":
         c.create_db(
-            path, args.priority_usage_reset_period, args.priority_decay_half_life
+            path,
+            args.priority_usage_reset_period,
+            args.priority_decay_half_life,
+            args.decay_factor,
         )
         sys.exit(0)
 

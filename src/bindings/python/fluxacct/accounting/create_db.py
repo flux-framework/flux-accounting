@@ -72,8 +72,14 @@ def set_half_life_period_end(conn, priority_decay_half_life=None):
 
 # pylint: disable=too-many-statements
 def create_db(
-    filepath, priority_usage_reset_period=None, priority_decay_half_life=None
+    filepath,
+    priority_usage_reset_period=None,
+    priority_decay_half_life=None,
+    decay_factor=0.5,
 ):
+    if not 0.0 < decay_factor < 1.0:
+        raise ValueError(f"Value must be between 0.0 and 1.0, but got {decay_factor}")
+
     db_dir = pathlib.PosixPath(filepath).parent
     db_dir.mkdir(parents=True, exist_ok=True)
     try:
@@ -308,7 +314,13 @@ def create_db(
             priority_decay_half_life,
         ),
     )
-    conn.execute(f"INSERT INTO config_table VALUES " f"('decay_factor', '0.5')")
+    conn.execute(
+        f"INSERT INTO config_table VALUES (?, ?)",
+        (
+            "decay_factor",
+            decay_factor,
+        ),
+    )
     conn.commit()
     LOGGER.info("Created config_table successfully")
 
