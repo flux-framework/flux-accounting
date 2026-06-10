@@ -13,10 +13,10 @@ import sqlite3
 import logging
 import sys
 import pathlib
-import math
 import time
 
 import fluxacct.accounting
+from flux.util import parse_fsd
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,9 +34,7 @@ def add_usage_columns_to_table(
     # calculating a usage factor
     column_name = "usage_factor_period_0"
     if priority_decay_half_life is not None and priority_usage_reset_period is not None:
-        num_columns = math.ceil(
-            int(priority_usage_reset_period) / int(priority_decay_half_life)
-        )
+        num_columns = int(priority_usage_reset_period / priority_decay_half_life)
     else:
         num_columns = 4
     for i in range(num_columns):
@@ -57,7 +55,7 @@ def set_half_life_period_end(conn, priority_decay_half_life=None):
         # convert number of weeks to seconds; this will be appended
         # to the current time to represent one 'half-life' period
         # for the first usage bin
-        half_life_period = int(priority_decay_half_life) * 604800
+        half_life_period = int(priority_decay_half_life)
         half_life_period_end = time.time() + half_life_period
     else:
         half_life_period = 604800
@@ -72,9 +70,16 @@ def set_half_life_period_end(conn, priority_decay_half_life=None):
     conn.commit()
 
 
+# pylint: disable=too-many-statements
 def create_db(
-    filepath, priority_usage_reset_period=None, priority_decay_half_life=None
+    filepath,
+    priority_usage_reset_period=None,
+    priority_decay_half_life=None,
+    decay_factor=0.5,
 ):
+    if not 0.0 < decay_factor < 1.0:
+        raise ValueError(f"Value must be between 0.0 and 1.0, but got {decay_factor}")
+
     db_dir = pathlib.PosixPath(filepath).parent
     db_dir.mkdir(parents=True, exist_ok=True)
     try:
@@ -151,8 +156,12 @@ def create_db(
     add_usage_columns_to_table(
         conn,
         "job_usage_factor_table",
-        priority_usage_reset_period,
-        priority_decay_half_life,
+        parse_fsd(str(priority_usage_reset_period))
+        if priority_usage_reset_period is not None
+        else (4 * 604800),
+        parse_fsd(str(priority_decay_half_life))
+        if priority_decay_half_life is not None
+        else 604800,
     )
     LOGGER.info("Created job_usage_factor_table successfully")
 
@@ -173,7 +182,12 @@ def create_db(
             VALUES ('cluster', 0.0);
         """
     )
-    set_half_life_period_end(conn, priority_decay_half_life)
+    set_half_life_period_end(
+        conn,
+        parse_fsd(str(priority_decay_half_life))
+        if priority_decay_half_life is not None
+        else 604800,
+    )
     LOGGER.info("Created t_half_life_period_table successfully")
 
     # Queue Table
@@ -261,5 +275,53 @@ def create_db(
         f"VALUES ('urgency', {fluxacct.accounting.URGENCY_WEIGHT_DEFAULT});"
     )
     conn.commit()
+
+    # Config Table
+    # stores information like the configuration parameters for job usage decay
+    # and any potentially other relevant database information
+    LOGGER.info("Creating config_table in DB...")
+    conn.execute(
+        """
+            CREATE TABLE IF NOT EXISTS config_table (
+                key     TEXT PRIMARY KEY NOT NULL,
+                value   TEXT             NOT NULL
+            );"""
+    )
+    # convert a Flux Standard Duration to a number of seconds before INSERT-ing it
+    # to config_table
+    priority_usage_reset_period = (
+        parse_fsd(str(priority_usage_reset_period))
+        if priority_usage_reset_period is not None
+        else 4 * 604800
+    )
+    priority_decay_half_life = (
+        parse_fsd(str(priority_decay_half_life))
+        if priority_decay_half_life is not None
+        else 1 * 604800
+    )
+
+    conn.execute(
+        f"INSERT INTO config_table VALUES (?, ?)",
+        (
+            "priority_usage_reset_period",
+            priority_usage_reset_period,
+        ),
+    )
+    conn.execute(
+        f"INSERT INTO config_table VALUES (?, ?)",
+        (
+            "priority_decay_half_life",
+            priority_decay_half_life,
+        ),
+    )
+    conn.execute(
+        f"INSERT INTO config_table VALUES (?, ?)",
+        (
+            "decay_factor",
+            decay_factor,
+        ),
+    )
+    conn.commit()
+    LOGGER.info("Created config_table successfully")
 
     conn.close()

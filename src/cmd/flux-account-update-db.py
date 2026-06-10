@@ -239,6 +239,41 @@ def init_priority_factor_table(cur):
     )
 
 
+def init_config_table(cur):
+    """
+    Initialize the config_table with the metadata key-value pairs that are INSERT-ed
+    when setting up the database for the first time. Since some of these values cannot be
+    calculated by looking at an existing database, initialize them to what their defaults
+    *would* be if the database was created with default parameters (where
+    PriorityDecayHalfLife is set to 1 week and PriorityUsageResetPeriod is set to 4
+    weeks).
+
+    Args:
+        cur: the Cursor object used to interact with the database.
+    """
+    cur.execute(
+        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
+        (
+            "priority_decay_half_life",
+            (1 * 604800),
+        ),
+    )
+    cur.execute(
+        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
+        (
+            "priority_usage_reset_period",
+            (4 * 604800),
+        ),
+    )
+    cur.execute(
+        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
+        (
+            "decay_factor",
+            "0.5",
+        ),
+    )
+
+
 def update_db(path, new_db):
     old_conn = est_sqlite_conn(path)
     old_cur = old_conn.cursor()
@@ -263,6 +298,7 @@ def update_db(path, new_db):
             update_columns(old_cur, new_cur)
 
             init_priority_factor_table(old_cur)
+            init_config_table(old_cur)
 
             # update user_version for DB
             old_cur.execute(
