@@ -95,6 +95,7 @@ TESTSCRIPTS = \
 	t1090-mf-priority-assoc-partial-release.t \
 	t1091-mf-priority-queue-partial-release.t \
 	t1092-mf-priority-afterany-partial-release.t \
+	t1093-config-table-commands.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
@@ -112,7 +113,8 @@ TESTSCRIPTS = \
 	python/t1013_issue802.py \
 	python/t1014_clear_usage.py \
 	python/t1015_issue815.py \
-	python/t1016_issue853.py
+	python/t1016_issue853.py \
+	python/t1017_config_cmds.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \

@@ -93,6 +93,8 @@ class AccountingService:
             "jobs",
             "show_usage",
             "view_usage_report",
+            "view_config",
+            "list_configs",
         ]
 
         privileged_endpoints = [
@@ -117,6 +119,9 @@ class AccountingService:
             "sync_userids",
             "export_json",
             "clear_usage",
+            "add_config",
+            "edit_config",
+            "delete_config",
         ]
 
         for name in general_endpoints:
@@ -802,6 +807,84 @@ class AccountingService:
             handle.respond_error(msg, 0, f"clear-usage: missing key in payload: {exc}")
         except Exception as exc:
             handle.respond_error(msg, 0, f"clear-usage: {type(exc).__name__}: {exc}")
+
+    def add_config(self, handle, watcher, msg, arg):
+        try:
+            val = d.add_config(
+                conn=self.conn, key_value_string=msg.payload["key_value_string"]
+            )
+
+            payload = {"add_config": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"add-config: missing key in payload: {exc}")
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"add-config: {type(exc).__name__}: {exc}")
+
+    def view_config(self, handle, watcher, msg, arg):
+        try:
+            val = d.view_config(
+                conn=self.conn,
+                key=msg.payload["key"],
+                json_fmt=msg.payload.get("json"),
+                format_string=msg.payload.get("format"),
+            )
+
+            payload = {"view_config": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"view-config: missing key in payload: {exc}")
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"view-config: {type(exc).__name__}: {exc}")
+
+    def edit_config(self, handle, watcher, msg, arg):
+        try:
+            val = d.edit_config(
+                conn=self.conn, key_value_strings=msg.payload["key_value_strings"]
+            )
+
+            payload = {"edit_config": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"edit-config: missing key in payload: {exc}")
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"edit-config: {type(exc).__name__}: {exc}")
+
+    def delete_config(self, handle, watcher, msg, arg):
+        try:
+            val = d.delete_config(conn=self.conn, key=msg.payload["key"])
+
+            payload = {"delete_config": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(
+                msg, 0, f"delete-config: missing key in payload: {exc}"
+            )
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"delete-config: {type(exc).__name__}: {exc}")
+
+    def list_configs(self, handle, watcher, msg, arg):
+        try:
+            val = d.list_configs(
+                conn=self.conn,
+                cols=msg.payload["fields"].split(",")
+                if msg.payload.get("fields")
+                else None,
+                json_fmt=msg.payload.get("json"),
+                format_string=msg.payload.get("format"),
+            )
+
+            payload = {"list_configs": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"list-configs: missing key in payload: {exc}")
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"list-configs: {type(exc).__name__}: {exc}")
 
 
 LOGGER = logging.getLogger("flux-uri")

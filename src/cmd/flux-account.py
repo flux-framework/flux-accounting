@@ -1462,6 +1462,105 @@ def add_clear_usage_arg(subparsers):
     )
 
 
+def add_add_config_arg(subparsers):
+    subparsers_add_config = subparsers.add_parser(
+        "add-config",
+        help="add a key-value pair to config_table",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparsers_add_config.set_defaults(func="add_config")
+    subparsers_add_config.add_argument(
+        "key_value_string",
+        help="the key-value string to be added to config_table",
+        metavar="KEY=VALUE",
+    )
+
+
+def add_view_config_arg(subparsers):
+    subparsers_view_config = subparsers.add_parser(
+        "view-config",
+        help="view a key-value pair from config_table",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparsers_view_config.set_defaults(func="view_config")
+    subparsers_view_config.add_argument(
+        "key",
+        help="the key of the key-value pair in config_table",
+        metavar="KEY",
+    )
+    subparsers_view_config.add_argument(
+        "--json",
+        action="store_true",
+        help="print output in JSON format",
+    )
+    subparsers_view_config.add_argument(
+        "-o",
+        "--format",
+        type=str,
+        default="",
+        help="specify output format using Python's string format syntax",
+        metavar="FORMAT",
+    )
+
+
+def add_edit_config_arg(subparsers):
+    subparsers_edit_config = subparsers.add_parser(
+        "edit-config",
+        help="edit one or more key-value pairs in config_table",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparsers_edit_config.set_defaults(func="edit_config")
+    subparsers_edit_config.add_argument(
+        "key_value_strings",
+        help="the key-value strings to be edited in config_table",
+        metavar="KEY1=VALUE1 KEY2=VALUE2 ...",
+        nargs="+",
+    )
+
+
+def add_delete_config_arg(subparsers):
+    subparsers_delete_config = subparsers.add_parser(
+        "delete-config",
+        help="delete a key-value pair from config_table",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparsers_delete_config.set_defaults(func="delete_config")
+    subparsers_delete_config.add_argument(
+        "key",
+        help="the key-value string to be removed from config_table",
+        metavar="KEY",
+    )
+
+
+def add_list_configs(subparsers):
+    subparser_list_configs = subparsers.add_parser(
+        "list-configs",
+        help="list all priority configs in the flux-accounting DB",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparser_list_configs.set_defaults(func="list_configs")
+    subparser_list_configs.add_argument(
+        "--fields",
+        type=str,
+        help="list of fields to include in output",
+        default=None,
+        metavar="KEY,VALUE",
+    )
+    subparser_list_configs.add_argument(
+        "--json",
+        action="store_true",
+        help="print output in JSON format",
+    )
+    subparser_list_configs.add_argument(
+        "-o",
+        "--format",
+        type=str,
+        default="",
+        help="specify output format using Python's string format syntax",
+        metavar="FORMAT",
+    )
+
+
 def add_arguments_to_parser(parser, subparsers):
     add_path_arg(parser)
     add_view_user_arg(subparsers)
@@ -1500,6 +1599,11 @@ def add_arguments_to_parser(parser, subparsers):
     add_export_json_arg(subparsers)
     view_usage_report(subparsers)
     add_clear_usage_arg(subparsers)
+    add_add_config_arg(subparsers)
+    add_view_config_arg(subparsers)
+    add_edit_config_arg(subparsers)
+    add_delete_config_arg(subparsers)
+    add_list_configs(subparsers)
 
 
 def set_db_location(args):
@@ -1547,6 +1651,11 @@ def select_accounting_function(args, parser):
         "export_json": "accounting.export_json",
         "view_usage_report": "accounting.view_usage_report",
         "clear_usage": "accounting.clear_usage",
+        "add_config": "accounting.add_config",
+        "view_config": "accounting.view_config",
+        "edit_config": "accounting.edit_config",
+        "delete_config": "accounting.delete_config",
+        "list_configs": "accounting.list_configs",
     }
 
     if args.func in func_map:

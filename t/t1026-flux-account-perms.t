@@ -167,6 +167,33 @@ test_expect_success 'clear-usage should not be accessible by all users' '
 	)
 '
 
+test_expect_success 'add-config should not be accessible by all users' '
+	newid=$(($(id -u)+1)) &&
+	( export FLUX_HANDLE_ROLEMASK=0x2 &&
+	  export FLUX_HANDLE_USERID=$newid &&
+		test_must_fail flux account add-config foo=bar > no_access_add_config.out 2>&1 &&
+		grep "Request requires owner credentials" no_access_add_config.out
+	)
+'
+
+test_expect_success 'edit-config should not be accessible by all users' '
+	newid=$(($(id -u)+1)) &&
+	( export FLUX_HANDLE_ROLEMASK=0x2 &&
+	  export FLUX_HANDLE_USERID=$newid &&
+		test_must_fail flux account edit-config decay_factor=0.75 > no_access_edit_config.out 2>&1 &&
+		grep "Request requires owner credentials" no_access_edit_config.out
+	)
+'
+
+test_expect_success 'delete-config should not be accessible by all users' '
+	newid=$(($(id -u)+1)) &&
+	( export FLUX_HANDLE_ROLEMASK=0x2 &&
+	  export FLUX_HANDLE_USERID=$newid &&
+		test_must_fail flux account delete-config decay_factor > no_access_delete_config.out 2>&1 &&
+		grep "Request requires owner credentials" no_access_delete_config.out
+	)
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '

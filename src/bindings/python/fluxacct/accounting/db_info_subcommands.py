@@ -13,7 +13,11 @@ import csv
 import sqlite3
 import json
 
+import fluxacct
 from fluxacct.accounting.util import with_cursor
+from fluxacct.accounting import formatter as fmt
+from fluxacct.accounting import sql_util as sql
+from flux.util import parse_fsd
 
 
 def export_db_info(conn):
@@ -202,3 +206,115 @@ def export_as_json(conn, cursor):
 
     # return a single JSON object containing the above DB information
     return json.dumps(config)
+
+
+@with_cursor
+def add_config(conn, cursor, key_value_string):
+    """
+    Add a key-value pair to config_table.
+
+    Args:
+        conn: The SQLite Connection object.
+        cursor: The SQLite Cursor object.
+        key_value_string: A key=value string to add to config_table.
+    """
+    if key_value_string.count("=") != 1:
+        raise ValueError('key-value string must contain exactly one "="')
+    key, value = key_value_string.split("=")
+    cursor.execute(
+        "INSERT INTO config_table (key, value) VALUES (?, ?)",
+        (
+            key,
+            value,
+        ),
+    )
+
+    return 0
+
+
+@with_cursor
+def edit_config(conn, cursor, key_value_strings):
+    """
+    Edit one or more key-value pairs in config_table.
+
+    Args:
+        conn: The SQLite Connection object.
+        cursor: The SQLite Cursor object.
+        key_value_strings: A list of key=value strings to update in config_table.
+    """
+    bin_config_keys = {"priority_usage_reset_period", "priority_decay_half_life"}
+
+    for key_value_string in key_value_strings:
+        key, value = key_value_string.split("=")
+
+        if key in bin_config_keys:
+            # parse value as Flux Standard Duration (FSD)
+            value = parse_fsd(str(value))
+        if key == "decay_factor":
+            if (float(value) < 0) or (float(value) > 1):
+                raise ValueError(
+                    "decay_factor must be a floating-point value between 0 and 1"
+                )
+        cursor.execute(
+            "UPDATE config_table SET value=? WHERE key=?",
+            (value, key),
+        )
+        if cursor.rowcount == 0:
+            raise ValueError(f"key {key} not found in config_table")
+
+    return 0
+
+
+@with_cursor
+def delete_config(conn, cursor, key):
+    """
+    Delete a key-value pair from config_table.
+    """
+    if key in [
+        "priority_usage_reset_period",
+        "priority_decay_half_life",
+        "decay_factor",
+    ]:
+        raise ValueError(
+            "key-value pair is not allowed to be removed from config_table"
+        )
+
+    cursor.execute("DELETE FROM config_table WHERE key=?", (key,))
+
+    return 0
+
+
+@with_cursor
+def view_config(conn, cursor, key, json_fmt=False, format_string=""):
+    """
+    View a key-value pair from config_table.
+    """
+    cursor.execute("SELECT * FROM config_table WHERE key=?", (key,))
+    formatter = fmt.KeyValueFormatter(cursor, key)
+    if format_string != "":
+        return formatter.as_format_string(format_string)
+    if json_fmt:
+        return formatter.as_json()
+    return formatter.as_table()
+
+
+@with_cursor
+def list_configs(conn, cursor, cols=None, json_fmt=False, format_string=""):
+    """
+    List all of the key-value pairs in config_table.
+    """
+    # use all column names if none are passed in
+    cols = cols or fluxacct.accounting.CONFIG_TABLE
+
+    sql.validate_columns(cols, fluxacct.accounting.CONFIG_TABLE)
+    # construct SELECT statement
+    select_stmt = f"SELECT {', '.join(cols)} FROM config_table"
+    cursor.execute(select_stmt)
+
+    # initialize AccountingFormatter object
+    formatter = fmt.AccountingFormatter(cursor)
+    if format_string != "":
+        return formatter.as_format_string(format_string)
+    if json_fmt:
+        return formatter.as_json()
+    return formatter.as_table()
