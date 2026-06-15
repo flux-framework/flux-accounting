@@ -61,6 +61,7 @@ class TestDB(unittest.TestCase):
             "jobs",
             "priority_factor_weight_table",
             "config_table",
+            "job_usage_per_association_table",
         ]
         self.assertEqual(list_of_tables, expected)
 

@@ -11,6 +11,7 @@
 ###############################################################
 import sqlite3
 import time
+import math
 
 from flux.constants import FLUX_USERID_UNKNOWN
 import fluxacct.accounting
@@ -205,6 +206,47 @@ def clear_projects(conn, cur, username, bank=None):
     conn.commit()
 
     return 0
+
+
+def insert_per_assoc_usage_rows(conn, cur, username, uid, bank):
+    """
+    Insert a row for each job usage period into job_usage_per_association_table for a
+    newly added association. The number of periods is determined by the
+    PriorityUsageResetPeriod and PriorityDecayHalfLife values in config_table.
+
+    Args:
+        conn: The SQLite Connection object.
+        cur: The SQLite Cursor object.
+        username: The username of the association.
+        uid: The userid of the association.
+        bank: The bank the association belongs to.
+    """
+    cur.execute(
+        "SELECT value FROM config_table WHERE key='priority_usage_reset_period'"
+    )
+    reset_period = cur.fetchone()
+
+    cur.execute("SELECT value FROM config_table WHERE key='priority_decay_half_life'")
+    half_life = cur.fetchone()
+
+    if reset_period and half_life:
+        num_periods = math.ceil(float(reset_period[0]) / float(half_life[0]))
+        if num_periods <= 0:
+            # if the number of periods is not > 0, fall back to default behavior
+            num_periods = 4
+    else:
+        # fall back to default behavior, which is just 4 1-week long periods
+        num_periods = 4
+
+    for period in range(num_periods):
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO job_usage_per_association_table
+            (username, userid, bank, period, value)
+            VALUES (?, ?, ?, ?, 0.0)
+            """,
+            (username, uid, bank, period),
+        )
 
 
 ###############################################################
@@ -449,6 +491,9 @@ def add_user(
             bank,
         ),
     )
+    # insert per-period usage rows into job_usage_per_association_table
+    insert_per_assoc_usage_rows(conn, cur, username, uid, bank)
+
     # commit changes
     conn.commit()
 
