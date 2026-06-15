@@ -361,6 +361,37 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertIn("1.23", result)
         self.assertIn("4.56", result)
 
+    # make sure that when a new association is added, the job_usage_per_association_table
+    # is also populated with the new association
+    def test_22_add_user_check_job_usage_per_assoc_table(self):
+        u.add_user(acct_conn, username="test_user7", bank="A")
+        cur = acct_conn.cursor()
+        result = cur.execute(
+            "SELECT * FROM job_usage_per_association_table "
+            "WHERE username='test_user7' AND bank='A'"
+        ).fetchall()
+        self.assertEqual(len(result), 4)
+
+    # a failure during add_user should roll back *all* of its INSERT statements,
+    # leaving no orphaned rows in the table
+    def test_23_add_user_is_atomic_on_failure(self):
+        cur = acct_conn.cursor()
+        before = cur.execute(
+            "SELECT COUNT(*) FROM job_usage_per_association_table"
+        ).fetchone()[0]
+
+        # force a failure partway through by pointing at a nonexistent bank,
+        # which raises after the table has been validated but is caught as ValueError
+        with self.assertRaises(ValueError):
+            u.add_user(acct_conn, username="baduser", uid="9999", bank="dne")
+
+        self.assertFalse(u.association_is_active(cur, "baduser", "dne"))
+        after = cur.execute(
+            "SELECT COUNT(*) FROM job_usage_per_association_table"
+        ).fetchone()[0]
+        self.assertEqual(before, after)
+        self.assertFalse(acct_conn.in_transaction)
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):
