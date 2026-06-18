@@ -114,7 +114,8 @@ TESTSCRIPTS = \
 	python/t1014_clear_usage.py \
 	python/t1015_issue815.py \
 	python/t1016_issue853.py \
-	python/t1017_config_cmds.py
+	python/t1017_config_cmds.py \
+	python/t1018_job_usage_custom_bins.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
