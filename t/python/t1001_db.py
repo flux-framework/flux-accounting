@@ -16,6 +16,8 @@ import sys
 import time
 
 from fluxacct.accounting import create_db as c
+from fluxacct.accounting import user_subcommands as u
+from fluxacct.accounting import bank_subcommands as b
 
 
 class TestDB(unittest.TestCase):
@@ -119,25 +121,26 @@ class TestDB(unittest.TestCase):
     # are not specified, the job_usage_factor_table will have
     # 4 bins, each representing 1 week's worth of jobs
     def test_06_job_usage_factor_table_default(self):
+        # for each association, 4 periods will be inserted into
+        # job_usage_per_association_table since int(30d / 7d) = 4
         c.create_db(
             "flux_accounting_test_1.db",
             priority_usage_reset_period="30d",
             priority_decay_half_life="7d",
         )
-        columns_query = "PRAGMA table_info(job_usage_factor_table)"
-        test_conn = sqlite3.connect("flux_accounting_test_1.db")
-        expected = [
-            "usage_factor_period_0",
-            "usage_factor_period_1",
-            "usage_factor_period_2",
-            "usage_factor_period_3",
-        ]
-        test = []
-        cursor = test_conn.cursor()
-        for row in cursor.execute(columns_query):
-            if "usage_factor" in row[1]:
-                test.append(row[1])
-        self.assertEqual(test, expected)
+        test_conn = sqlite3.connect(
+            f"file:flux_accounting_test_1.db?mode=rw", uri=True, timeout=60
+        )
+        test_conn.row_factory = sqlite3.Row
+        cur = test_conn.cursor()
+        # add association to automatically populate job_usage_per_association_table
+        b.add_bank(test_conn, bank="root", shares=1)
+        b.add_bank(test_conn, parent_bank="root", bank="A", shares=1)
+        u.add_user(test_conn, username="user1", uid=50001, bank="A")
+        test = cur.execute(
+            "SELECT * FROM job_usage_per_association_table WHERE username='user1'"
+        ).fetchall()
+        self.assertEqual(len(test), 4)
 
     # PriorityDecayHalfLife and PriorityUsageResetPeriod should be configurable
     # to create a custom table spanning a customizable period of time
@@ -147,26 +150,19 @@ class TestDB(unittest.TestCase):
             priority_usage_reset_period="70d",
             priority_decay_half_life="7d",
         )
-        columns_query = "PRAGMA table_info(job_usage_factor_table)"
-        test_conn = sqlite3.connect("flux_accounting_test_2.db")
-        expected = [
-            "usage_factor_period_0",
-            "usage_factor_period_1",
-            "usage_factor_period_2",
-            "usage_factor_period_3",
-            "usage_factor_period_4",
-            "usage_factor_period_5",
-            "usage_factor_period_6",
-            "usage_factor_period_7",
-            "usage_factor_period_8",
-            "usage_factor_period_9",
-        ]
-        test = []
-        cursor = test_conn.cursor()
-        for row in cursor.execute(columns_query):
-            if "usage_factor" in row[1]:
-                test.append(row[1])
-        self.assertEqual(test, expected)
+        test_conn = sqlite3.connect(
+            f"file:flux_accounting_test_2.db?mode=rw", uri=True, timeout=60
+        )
+        test_conn.row_factory = sqlite3.Row
+        cur = test_conn.cursor()
+        # add association to automatically populate job_usage_per_association_table
+        b.add_bank(test_conn, bank="root", shares=1)
+        b.add_bank(test_conn, parent_bank="root", bank="A", shares=1)
+        u.add_user(test_conn, username="user1", uid=50001, bank="A")
+        test = cur.execute(
+            "SELECT * FROM job_usage_per_association_table WHERE username='user1'"
+        ).fetchall()
+        self.assertEqual(len(test), 10)
 
     def test_08_configure_decay_factor(self):
         c.create_db(

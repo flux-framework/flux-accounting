@@ -11,7 +11,6 @@
 ###############################################################
 import sqlite3
 import time
-import math
 
 from flux.constants import FLUX_USERID_UNKNOWN
 import fluxacct.accounting
@@ -230,7 +229,7 @@ def insert_per_assoc_usage_rows(conn, cur, username, uid, bank):
     half_life = cur.fetchone()
 
     if reset_period and half_life:
-        num_periods = math.ceil(float(reset_period[0]) / float(half_life[0]))
+        num_periods = int(float(reset_period[0]) / float(half_life[0]))
         if num_periods <= 0:
             # if the number of periods is not > 0, fall back to default behavior
             num_periods = 4
@@ -276,7 +275,9 @@ def view_user(
     if job_usage:
         # only return a breakdown of the association's job usage factors that make up
         # their historical usage
-        cur.execute("SELECT * FROM job_usage_factor_table WHERE username=?", (user,))
+        cur.execute(
+            "SELECT * FROM job_usage_per_association_table WHERE username=?", (user,)
+        )
         formatter = fmt.AccountingFormatter(cur)
     else:
         sql.validate_columns(cols, fluxacct.accounting.ASSOCIATION_TABLE)

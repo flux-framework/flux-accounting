@@ -109,8 +109,8 @@ class TestAccountingCLI(unittest.TestCase):
         cur.execute("SELECT job_usage FROM association_table WHERE username='user1'")
         usage_assoc_user1 = cur.fetchone()[0]
         cur.execute(
-            "SELECT usage_factor_period_0 FROM job_usage_factor_table "
-            "WHERE username='user1'"
+            "SELECT VALUE FROM job_usage_per_association_table "
+            "WHERE username='user1' AND period=0"
         )
         usage_factor_period_0 = cur.fetchone()[0]
         cur.execute(

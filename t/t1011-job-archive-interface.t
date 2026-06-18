@@ -204,8 +204,8 @@ test_expect_success 'call view-job-records -o with an invalid field' '
 test_expect_success 'call view-user -J/--job-usage' '
 	flux account view-user -J ${username} > job_usage_breakdown.json &&
 	test_debug "jq -S . <job_usage_breakdown.json" &&
-	jq -e ".[0].usage_factor_period_0 >= 4" job_usage_breakdown.json &&
-	jq -e ".[1].usage_factor_period_0 >= 4" job_usage_breakdown.json
+	jq -e ".[0].value >= 4" job_usage_breakdown.json &&
+	jq -e ".[4].value >= 4" job_usage_breakdown.json
 '
 
 test_expect_success 'pass both -J and --fields; ensure ValueError is raised' '

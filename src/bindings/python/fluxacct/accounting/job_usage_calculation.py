@@ -59,65 +59,83 @@ def update_hist_usg_col(acct_conn, usg_h, user, bank):
     )
 
 
-def update_curr_usg_col(acct_conn, usg_h, user, bank):
+def update_curr_usg_col(acct_conn, usg_h, user, bank, userid):
     """
     Write the current job usage factor for the association to the
     job_usage_factor_table.
     """
-    u_usg_factor = """
-        UPDATE job_usage_factor_table SET usage_factor_period_0=? WHERE username=? AND bank=?
-        """
     acct_conn.execute(
-        u_usg_factor,
-        (
-            usg_h,
-            user,
-            bank,
-        ),
+        """
+        INSERT INTO job_usage_per_association_table (username, userid, bank, period, value)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT (username, bank, period) DO UPDATE SET value=excluded.value
+        """,
+        (user, userid, bank, 0, usg_h),
     )
 
 
-def apply_decay_factor(decay, acct_conn, user, bank, usage_factors):
+def apply_decay_factor(acct_conn, user, bank, userid):
     """
     Apply a decay factor to an association's job usage period values. Since this helper
     issues a write to the flux-accounting DB and does not have a .commit() call after the
     update, this function should be called inside of a SQLite TRANSACTION.
 
     Args:
-        decay: The decay factor to be applied to every job usage period.
         acct_conn: The SQLite Connection object.
         user: The username of the association.
         bank: The bank name of the association.
+        userid: The userid of the association.
     """
-    usg_past_decay = []
+    cur = acct_conn.cursor()
+    cur.execute("SELECT value FROM config_table WHERE key='decay_factor'")
+    row = cur.fetchone()
+    # if decay_factor is not configured, fall back to 0.5
+    decay = float(row[0]) if row else 0.5
 
-    # apply decay factor to past usage periods of a user's jobs
-    for usage_factor in usage_factors:
-        usg_past_decay.append(usage_factor * decay)
+    # fetch all periods ordered from oldest to most recent so we can shift
+    # values forward without overwriting anything we haven't read yet
+    cur.execute(
+        """
+        SELECT period, value FROM job_usage_per_association_table
+        WHERE username=? AND bank=?
+        ORDER BY period DESC
+        """,
+        (user, bank),
+    )
+    periods = cur.fetchall()
 
-    # update job_usage_factor_table with new values, starting with the second usage
-    # period and working back to the oldest usage period since the most recent usage
-    # period is updated separately
-    period = 1
-    for usage_factor in usg_past_decay[0:-1]:
-        update_stmt = (
-            "UPDATE job_usage_factor_table SET usage_factor_period_"
-            + str(period)
-            + "=? WHERE username=? AND bank=?"
+    for period, value in periods:
+        # the oldest period just gets dropped off the end since it no longer affects
+        # historical usage
+        next_period = period + 1
+        cur.execute(
+            """
+            UPDATE job_usage_per_association_table SET value=?
+            WHERE username=? AND userid=? AND bank=? AND period=?
+            """,
+            (value * decay, user, userid, bank, next_period),
         )
-        acct_conn.execute(
-            update_stmt,
-            (
-                str(usage_factor),
-                user,
-                bank,
-            ),
-        )
-        period += 1
 
-    # only return the usage factors up to but not including the oldest one
-    # since it no longer affects a user's historical usage factor
-    return sum(usg_past_decay[:-1])
+    # period 0 will be written with the current period's usage
+    cur.execute(
+        """
+        UPDATE job_usage_per_association_table SET value=0.0
+        WHERE username=? AND userid=? AND bank=? AND period=0
+        """,
+        (user, userid, bank),
+    )
+
+    # return the sum of all periods excluding period 0 since that will be
+    # written separately
+    cur.execute(
+        """
+        SELECT SUM(value) FROM job_usage_per_association_table
+        WHERE username=? AND userid=? AND bank=? AND period > 0
+        """,
+        (user, userid, bank),
+    )
+    result = cur.fetchone()
+    return result[0] if result[0] is not None else 0.0
 
 
 def calc_usage_factor(
@@ -125,10 +143,23 @@ def calc_usage_factor(
     pdhl,
     user,
     bank,
+    userid,
     end_hl,
-    usage_factors,
     user_jobs,
 ):
+    cur = conn.cursor()
+
+    # fetch all current period values for this association
+    cur.execute(
+        """
+        SELECT period, value FROM job_usage_per_association_table
+        WHERE username=? AND bank=?
+        ORDER BY period ASC
+        """,
+        (user, bank),
+    )
+    period_rows = cur.fetchall()
+    usage_factors = [row[1] for row in period_rows]
 
     # hl_period represents the number of seconds that represent one usage bin
     hl_period = pdhl * 604800
@@ -155,9 +186,15 @@ def calc_usage_factor(
     elif len(user_jobs) == 0 and (float(end_hl) < (time.time() - hl_period)):
         # no new jobs in the new half-life period; previous job usage periods need
         # to have a half-life decay applied to them
-        usg_historical = apply_decay_factor(0.5, conn, user, bank, usage_factors)
+        usg_historical = apply_decay_factor(conn, user, bank, userid)
 
-        update_curr_usg_col(conn, usg_current, user, bank)
+        update_curr_usg_col(
+            conn,
+            usg_current,
+            user,
+            bank,
+            userid,
+        )
         update_hist_usg_col(conn, usg_historical, user, bank)
     elif (last_t_inactive - float(end_hl)) < hl_period:
         # found new jobs in the current half-life period; we need to 1) add the
@@ -166,15 +203,15 @@ def calc_usage_factor(
         usg_current += usage_factors[0]
         usg_historical = usg_current + sum(usage_factors[1:])
 
-        update_curr_usg_col(conn, usg_current, user, bank)
+        update_curr_usg_col(conn, usg_current, user, bank, userid)
         update_hist_usg_col(conn, usg_historical, user, bank)
     else:
         # found new jobs in the new half-life period
         # apply decay factor to past usage periods of a user's jobs
-        usg_past = apply_decay_factor(0.5, conn, user, bank, usage_factors)
+        usg_past = apply_decay_factor(conn, user, bank, userid)
         usg_historical = usg_current + usg_past
 
-        update_curr_usg_col(conn, usg_historical, user, bank)
+        update_curr_usg_col(conn, usg_historical, user, bank, userid)
         update_hist_usg_col(conn, usg_historical, user, bank)
 
     return usg_historical
@@ -274,7 +311,7 @@ def update_job_usage(acct_conn, pdhl=1):
         # begin transaction for all of the updates in the DB
         acct_conn.execute("BEGIN TRANSACTION")
         s_assoc = """
-            SELECT a.username, a.bank, a.default_bank, j.*
+            SELECT a.username, a.userid, a.bank, a.default_bank, j.last_job_timestamp
             FROM association_table a
             LEFT JOIN job_usage_factor_table j
             ON a.username = j.username AND a.bank = j.bank
@@ -304,18 +341,13 @@ def update_job_usage(acct_conn, pdhl=1):
 
         # update the job usage for every user in the association_table
         for row in result:
-            # add all of the job_usage_factor_period_* columns to dictionary
-            usage_factors = []
-            for key in row.keys():
-                if key.startswith("usage_factor_period_"):
-                    usage_factors.append(row[key])
             calc_usage_factor(
                 conn=acct_conn,
                 pdhl=pdhl,
                 user=row["username"],
                 bank=row["bank"],
+                userid=row["userid"],
                 end_hl=end_hl,
-                usage_factors=usage_factors,
                 user_jobs=association_jobs[(row["userid"], row["bank"])],
             )
 
@@ -556,15 +588,9 @@ def clear_usage_period_columns(cur, bank):
         cur: The SQLite Cursor object.
         bank: The bank being cleared.
     """
-    cur.execute("PRAGMA table_info('job_usage_factor_table')")
-    result = cur.fetchall()
-    for column in result:
-        # column[1] accesses just the column name
-        if column[1].startswith("usage_factor_period_"):
-            cur.execute(
-                f"UPDATE job_usage_factor_table SET {column[1]}=0 WHERE bank=?", (bank,)
-            )
-    # clear last_job_timestamp
+    cur.execute(
+        "UPDATE job_usage_per_association_table SET value=0.0 WHERE bank=?", (bank,)
+    )
     cur.execute(
         "UPDATE job_usage_factor_table SET last_job_timestamp=0 WHERE bank=?", (bank,)
     )
