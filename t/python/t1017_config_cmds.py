@@ -13,6 +13,7 @@ import unittest
 import os
 import sqlite3
 import time
+from unittest.mock import patch
 
 from fluxacct.accounting import create_db as c
 from fluxacct.accounting import db_info_subcommands as d
@@ -55,7 +56,8 @@ class TestAccountingCLI(unittest.TestCase):
             d.edit_config(conn, key_value_strings=["priority_usage_reset_period=foo"])
 
     # successfully edit PriorityUsageResetPeriod
-    def test_05_edit_priority_usage_reset_period_success(self):
+    @patch("builtins.input", return_value="y")
+    def test_05_edit_priority_usage_reset_period_success(self, mock_input):
         d.edit_config(conn, key_value_strings=["priority_usage_reset_period=1234"])
         test = cur.execute(
             "SELECT value FROM config_table WHERE key='priority_usage_reset_period'"
@@ -63,7 +65,8 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(test["value"], "1234.0")
 
     # edit PriorityUsageResetPeriod using a Flux Standard Duration value
-    def test_06_edit_priority_usage_reset_period_fsd_success(self):
+    @patch("builtins.input", return_value="y")
+    def test_06_edit_priority_usage_reset_period_fsd_success(self, mock_input):
         d.edit_config(conn, key_value_strings=["priority_usage_reset_period=1d"])
         test = cur.execute(
             "SELECT value FROM config_table WHERE key='priority_usage_reset_period'"
@@ -76,7 +79,8 @@ class TestAccountingCLI(unittest.TestCase):
             d.edit_config(conn, key_value_strings=["priority_decay_half_life=foo"])
 
     # successfully edit PriorityDecayHalfLife
-    def test_08_edit_priority_decay_half_life_success(self):
+    @patch("builtins.input", return_value="y")
+    def test_08_edit_priority_decay_half_life_success(self, mock_input):
         d.edit_config(conn, key_value_strings=["priority_decay_half_life=1234"])
         test = cur.execute(
             "SELECT value FROM config_table WHERE key='priority_decay_half_life'"
@@ -84,7 +88,8 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(test["value"], "1234.0")
 
     # edit PriorityDecayHalfLife using a Flux Standard Duration value
-    def test_09_edit_priority_decay_half_life_fsd_success(self):
+    @patch("builtins.input", return_value="y")
+    def test_09_edit_priority_decay_half_life_fsd_success(self, mock_input):
         d.edit_config(conn, key_value_strings=["priority_decay_half_life=1h"])
         test = cur.execute(
             "SELECT value FROM config_table WHERE key='priority_decay_half_life'"
@@ -104,7 +109,8 @@ class TestAccountingCLI(unittest.TestCase):
             d.edit_config(conn, key_value_strings=["decay_factor=1.1"])
 
     # successfully edit decay_factor
-    def test_12_edit_decay_factor_success(self):
+    @patch("builtins.input", return_value="y")
+    def test_12_edit_decay_factor_success(self, mock_input):
         d.edit_config(conn, key_value_strings=["decay_factor=0.9"])
         test = cur.execute(
             "SELECT value FROM config_table WHERE key='decay_factor'"
