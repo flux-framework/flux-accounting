@@ -319,6 +319,15 @@ def update_job_usage(acct_conn):
         cur.execute(s_assoc)
         result = cur.fetchall()
 
+        # fetch the last time the job_usage_per_association_table was reconfigured
+        # (if at all)
+        last_reconfigured = cur.execute(
+            "SELECT value FROM config_table WHERE key='reconfigure_time'"
+        ).fetchone()
+        last_reconfigured = (
+            last_reconfigured[0] if last_reconfigured is not None else 0.0
+        )
+
         # fetch new jobs for every association based on their last completed job
         s_new_jobs = """
             SELECT r.userid,r.id,r.t_submit,r.t_run,r.t_inactive,r.ranks,r.R,r.jobspec,
@@ -328,8 +337,9 @@ def update_job_usage(acct_conn):
             LEFT JOIN bank_table b
             ON r.bank = b.bank WHERE r.t_inactive > j.last_job_timestamp
             AND r.t_inactive > b.ignore_older_than
+            AND r.t_inactive > ?
         """
-        cur.execute(s_new_jobs)
+        cur.execute(s_new_jobs, (last_reconfigured,))
         new_jobs = cur.fetchall()
         new_job_records = j.convert_to_obj(new_jobs)
         # convert new jobs to a dictionary where they key is a tuple of the user ID and bank
