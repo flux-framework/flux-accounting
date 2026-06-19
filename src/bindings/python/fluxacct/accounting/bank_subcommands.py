@@ -10,6 +10,8 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import sqlite3
+import os
+import pwd
 
 import fluxacct.accounting
 from fluxacct.accounting import user_subcommands as u
@@ -85,6 +87,115 @@ def reactivate_bank(conn, cur, bank, parent_bank):
 #                   Subcommand Functions                      #
 #                                                             #
 ###############################################################
+
+
+def _build_sharetree(cur):
+    """Build hierarchical sharetree with normalized shares and usage."""
+    sharetree = {}
+
+    # get root bank
+    cur.execute("SELECT bank, shares, job_usage FROM bank_table WHERE parent_bank=''")
+    root = cur.fetchone()
+    if not root:
+        raise ValueError("No root bank found in bank_table")
+
+    root_bank_name, root_shares, root_usage = root
+    fqname = f"/{root_bank_name}/"
+    sharetree[fqname] = {
+        "name": fqname,
+        "shortname": root_bank_name,
+        "parent": "",
+        "children": [],
+        "shares": root_shares,
+        "nshares": 1.0,
+        "usage": root_usage,
+        "nusage": 1.0,
+        "priority": float("nan"),
+        "fshare": float("inf"),
+        "depth": 0,
+        "isuser": False,
+    }
+
+    # recursively build tree
+    def build_tree(parent_name, parent_fqname, depth):
+        # get sub-banks
+        cur.execute(
+            "SELECT bank, shares, job_usage FROM bank_table "
+            "WHERE parent_bank=? ORDER BY bank",
+            (parent_name,),
+        )
+        for row in cur.fetchall():
+            bank_name, shares, usage = row
+            child_fqname = f"{parent_fqname}{bank_name}/"
+            sharetree[parent_fqname]["children"].append(bank_name)
+            sharetree[child_fqname] = {
+                "name": child_fqname,
+                "shortname": bank_name,
+                "parent": parent_fqname,
+                "children": [],
+                "shares": shares,
+                "nshares": 0.0,
+                "usage": usage,
+                "nusage": 0.0,
+                "priority": float("nan"),
+                "fshare": float("nan"),
+                "depth": depth,
+                "isuser": False,
+            }
+            build_tree(bank_name, child_fqname, depth + 1)
+
+        # get users under this bank
+        cur.execute(
+            """SELECT username, shares, job_usage, fairshare
+               FROM association_table WHERE bank=? ORDER BY username""",
+            (parent_name,),
+        )
+        for row in cur.fetchall():
+            username, shares, usage, fshare = row
+            user_fqname = f"{parent_fqname}{username}/"
+            sharetree[parent_fqname]["children"].append(username)
+            sharetree[user_fqname] = {
+                "name": user_fqname,
+                "shortname": username,
+                "parent": parent_fqname,
+                "children": [],
+                "shares": shares,
+                "nshares": 0.0,
+                "usage": usage,
+                "nusage": 0.0,
+                "priority": float("nan"),
+                "fshare": fshare,
+                "depth": depth,
+                "isuser": True,
+            }
+
+    build_tree(root_bank_name, fqname, 1)
+
+    # calculate normalized shares and usage
+    root_node = sharetree[f"/{root_bank_name}/"]
+
+    # calculate normalized shares
+    nodes_by_depth = sorted(sharetree.values(), key=lambda n: n["depth"])
+    for node in nodes_by_depth:
+        if node["shortname"] == root_bank_name or not node["parent"]:
+            continue
+
+        parent = sharetree[node["parent"]]
+        sibling_shares = sum(
+            sharetree[f"{node['parent']}{child}/"]["shares"]
+            for child in parent["children"]
+            if sharetree[f"{node['parent']}{child}/"]["isuser"] == node["isuser"]
+        )
+        if sibling_shares > 0:
+            fraction = node["shares"] / sibling_shares
+            node["nshares"] = fraction * parent["nshares"]
+
+    # calculate normalized usage
+    if root_node["usage"] > 0:
+        for node in sharetree.values():
+            node["nusage"] = node["usage"] / root_node["usage"]
+
+    return sharetree
 
 
 @with_cursor
@@ -348,3 +459,110 @@ def list_banks(
     if json_fmt:
         return formatter.as_json()
     return formatter.as_table()
+
+
+@with_cursor
+def bank_info(
+    conn,
+    cur,
+    tree=None,
+    tree_no_users=None,
+    to_root=None,
+    user=None,
+    verbose=False,
+    parsable=False,
+    noheader=False,
+    exclude=None,
+):
+    """
+    Display fairshare and priority information for banks and users.
+
+    Args:
+        tree: bank name to display all children of, including users
+        tree_no_users: bank name to display all children of, excluding users
+        to_root: bank name to display all parents for up to root
+        user: username to query
+        verbose: display detailed usage info
+        parsable: output "|" delimited columns for easy parsing
+        noheader: do not display headers
+        exclude: do not display this bank in output
+    """
+    # determine which bank/user we're querying
+    bank = tree or tree_no_users or to_root
+
+    # get current user if no user or bank specified
+    if bank is None and user is None:
+        user = pwd.getpwuid(os.getuid()).pw_name
+
+    # if querying a user, get their default bank
+    default_bank = None
+    if user:
+        result = cur.execute(
+            "SELECT default_bank FROM association_table WHERE username=? LIMIT 1",
+            (user,),
+        ).fetchone()
+        if result:
+            default_bank = result["default_bank"]
+
+    # build the tree structure from the database
+    sharetree = _build_sharetree(cur)
+
+    # find the target node(s)
+    target_name = user if user else bank
+    target_nodes = [
+        node for node in sharetree.values() if node["shortname"] == target_name
+    ]
+
+    if not target_nodes:
+        raise ValueError(f'Could not find "{target_name}"')
+
+    output_lines = []
+    if not noheader:
+        output_lines.append(fmt.format_bank_info_header(verbose, parsable))
+
+    # display based on mode
+    if to_root is not None or (
+        user is not None and tree is None and tree_no_users is None
+    ):
+        # display from target up to root (for banks with -r or users with -u)
+        for target in target_nodes:
+            node = target
+            path = []
+            skip_path = False
+            while node["depth"] > 0:
+                if exclude and node["shortname"] == exclude:
+                    skip_path = True
+                path.append(
+                    fmt.format_bank_info_node(node, default_bank, verbose, parsable)
+                )
+                node = sharetree[node["parent"]]
+            if skip_path:
+                continue
+            path.append(
+                fmt.format_bank_info_node(node, default_bank, verbose, parsable)
+            )
+            path.reverse()
+            output_lines.extend(path)
+    elif tree is not None or tree_no_users is not None:
+        # display from target down to leaves
+        def traverse_down(node, include_users):
+            lines = [fmt.format_bank_info_node(node, default_bank, verbose, parsable)]
+            for child_name in sorted(node["children"]):
+                child = sharetree[f"{node['name']}{child_name}/"]
+                if exclude and child["shortname"] == exclude:
+                    continue
+                if child["isuser"]:
+                    if include_users:
+                        lines.append(
+                            fmt.format_bank_info_node(
+                                child, default_bank, verbose, parsable
+                            )
+                        )
+                else:
+                    lines.extend(traverse_down(child, include_users))
+            return lines
+
+        for target in target_nodes:
+            output_lines.extend(traverse_down(target, tree is not None))
+
+    return "\n".join(output_lines)
