@@ -95,6 +95,7 @@ class AccountingService:
             "view_usage_report",
             "view_config",
             "list_configs",
+            "bank_info",
         ]
 
         privileged_endpoints = [
@@ -887,6 +888,28 @@ class AccountingService:
             handle.respond_error(msg, 0, f"list-configs: missing key in payload: {exc}")
         except Exception as exc:
             handle.respond_error(msg, 0, f"list-configs: {type(exc).__name__}: {exc}")
+
+    def bank_info(self, handle, watcher, msg, arg):
+        try:
+            val = b.bank_info(
+                conn=self.conn,
+                tree=msg.payload.get("tree"),
+                tree_no_users=msg.payload.get("tree_no_users"),
+                to_root=msg.payload.get("to_root"),
+                user=msg.payload.get("user"),
+                verbose=msg.payload.get("verbose"),
+                parsable=msg.payload.get("parsable"),
+                noheader=msg.payload.get("noheader"),
+                exclude=msg.payload.get("exclude"),
+            )
+
+            payload = {"bank_info": val}
+
+            handle.respond(msg, payload)
+        except KeyError as exc:
+            handle.respond_error(msg, 0, f"bank-info: missing key in payload: {exc}")
+        except Exception as exc:
+            handle.respond_error(msg, 0, f"bank-info: {type(exc).__name__}: {exc}")
 
 
 LOGGER = logging.getLogger("flux-uri")
