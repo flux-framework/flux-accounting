@@ -118,7 +118,8 @@ TESTSCRIPTS = \
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
-	pycotap \
+	python/__init__.py \
+	python/tap \
 	scripts \
 	valgrind/valgrind-workload.sh \
 	valgrind/workload.d/job
@@ -139,9 +140,10 @@ clean-local:
 	rm -fr trash-directory.* test-results .prove *.broker.log */*.broker.log *.output
 
 AM_TESTS_ENVIRONMENT = \
-	export PYTHONPATH="$(abs_top_srcdir)/src/bindings/python/:$(abs_top_srcdir)/t/pycotap:$(PYTHON_SITE_PKG):$$PYTHONPATH";\
+	export PYTHONPATH="$(abs_top_builddir)/src/bindings/python:$(abs_top_srcdir)/src/bindings/python:$(top_srcdir)/t/python/tap:$(PYTHON_SITE_PKG):$$PYTHONPATH";\
 	export PYTHON="${PYTHON}";
 
-TEST_EXTENSIONS = .t
+TEST_EXTENSIONS = .t .py
 T_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
         $(top_srcdir)/config/tap-driver.sh
+PY_LOG_DRIVER = $(PYTHON) $(top_srcdir)/config/tap-driver.py
