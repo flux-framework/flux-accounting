@@ -119,7 +119,8 @@ TESTSCRIPTS = \
 	python/t1017_config_cmds.py \
 	python/t1018_job_usage_custom_bins.py \
 	python/t1019_recalculate_usage.py \
-	python/t1020_edit_user_properties.py
+	python/t1020_edit_user_properties.py \
+	python/t1021_bank_info.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
