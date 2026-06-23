@@ -149,9 +149,13 @@ test_expect_success 'run update-usage and update-fshare commands' '
 	flux account-update-fshare -p ${DB_PATH}
 '
 
+# Since all of the jobs above were submitted under the user's default bank, all
+# of the usage should be reflected in the default bank, which is why we check
+# for the first entry in the array > 0
 test_expect_success 'check that job usage and fairshare values get updated' '
-	flux account view-bank account1 -t > post_update1.test &&
-	grep "account1" post_update1.test | grep "4" | grep "0.25"
+	flux account view-user ${username} > query1.json &&
+	test_debug "jq -S . <query1.json" &&
+	jq -e ".[0].job_usage >= 4" <query1.json
 '
 
 test_expect_success 'submit some sleep 1 jobs under the secondary bank of the same user ' '
@@ -172,10 +176,13 @@ test_expect_success 'run update-usage and update-fshare commands' '
 	flux account-update-fshare -p ${DB_PATH}
 '
 
+# The association has now submitted jobs under their secondary bank, so we
+# check that the job usage value in the second bank (at index 1 in the array)
+# is > 0
 test_expect_success 'check that job usage and fairshare values get updated' '
-	flux account -p ${DB_PATH} view-user $username > query1.json &&
-	test_debug "jq -S . <query1.json" &&
-	jq -e ".[1].job_usage >= 4" <query1.json
+	flux account view-user ${username} > query2.json &&
+	test_debug "jq -S . <query2.json" &&
+	jq -e ".[1].job_usage >= 4" <query2.json
 '
 
 # if update-usage is called in the same half-life period when no jobs are found
@@ -184,9 +191,9 @@ test_expect_success 'check that job usage and fairshare values get updated' '
 test_expect_success 'call update-usage in the same half-life period where no jobs are run' '
 	flux account-update-usage -p ${DB_PATH} &&
 	flux account-update-fshare -p ${DB_PATH} &&
-	flux account -p ${DB_PATH} view-user $username > query2.json &&
-	test_debug "jq -S . <query2.json" &&
-	jq -e ".[1].job_usage >= 4" <query2.json
+	flux account view-user ${username} > query3.json &&
+	test_debug "jq -S . <query3.json" &&
+	jq -e ".[1].job_usage >= 4" <query3.json
 '
 
 test_expect_success 'call view-job-records with custom format string' '
