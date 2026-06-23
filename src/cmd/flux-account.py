@@ -794,13 +794,6 @@ def add_update_usage_arg(subparsers):
         formatter_class=flux.util.help_formatter(),
     )
     subparser_update_usage.set_defaults(func="update_usage")
-    subparser_update_usage.add_argument(
-        "--priority-decay-half-life",
-        default=1,
-        type=int,
-        help="number of weeks for a job's usage contribution to a half-life decay",
-        metavar="PRIORITY DECAY HALF LIFE",
-    )
 
 
 def add_add_queue_arg(subparsers):
@@ -1719,8 +1712,6 @@ def main():
                     "account-update-usage",
                     "-p",
                     path,
-                    "--priority-decay-half-life",
-                    str(args.priority_decay_half_life),
                 ],
                 check=True,
             )

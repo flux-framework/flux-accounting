@@ -291,7 +291,7 @@ def calc_parent_bank_usage(acct_conn, cur, bank):
     return total_usage
 
 
-def update_job_usage(acct_conn, pdhl=1):
+def update_job_usage(acct_conn):
     LOGGER.info(
         "beginning job-usage update for flux-accounting DB; "
         "slow response times may occur"
@@ -338,6 +338,13 @@ def update_job_usage(acct_conn, pdhl=1):
         for job in new_job_records:
             key = (job.userid, job.bank)
             association_jobs[key].append(job)
+
+        # get PriorityDecayHalfLife
+        pdhl = float(
+            cur.execute(
+                "SELECT value FROM config_table WHERE key='priority_decay_half_life'"
+            ).fetchone()[0]
+        )
 
         # update the job usage for every user in the association_table
         for row in result:
