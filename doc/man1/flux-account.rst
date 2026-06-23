@@ -129,6 +129,13 @@ List all of the banks in the ``bank_table``.
 
 See :man1:`flux-account-list-banks` for more details.
 
+bank-info
+^^^^^^^^^
+
+Display fairshare and priority information for banks and users.
+
+See :man1:`flux-account-bank-info` for more details.
+
 QUEUE ADMINISTRATION
 ====================
 

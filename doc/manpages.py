@@ -258,4 +258,11 @@ man_pages = [
         [author],
         1,
     ),
+    (
+        "man1/flux-account-bank-info",
+        "flux-account-bank-info",
+        "view shares and fair-share information in the flux-accounting database",
+        [author],
+        1,
+    ),
 ]
