@@ -521,7 +521,7 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(job_usage, 17044.0)
 
-        jobs.update_job_usage(acct_conn, pdhl=1)
+        jobs.update_job_usage(acct_conn)
 
         cur.execute(s_stmt)
         job_usage = cur.fetchone()[0]

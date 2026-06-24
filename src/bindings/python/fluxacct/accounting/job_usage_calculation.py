@@ -162,7 +162,7 @@ def calc_usage_factor(
     usage_factors = [row[1] for row in period_rows]
 
     # hl_period represents the number of seconds that represent one usage bin
-    hl_period = pdhl * 604800
+    hl_period = pdhl
 
     last_t_inactive = 0.0
     usg_current = 0.0
@@ -218,7 +218,7 @@ def calc_usage_factor(
 
 
 def check_end_hl(acct_conn, pdhl):
-    hl_period = pdhl * 604800
+    hl_period = pdhl
 
     cur = acct_conn.cursor()
 
@@ -291,7 +291,7 @@ def calc_parent_bank_usage(acct_conn, cur, bank):
     return total_usage
 
 
-def update_job_usage(acct_conn, pdhl=1):
+def update_job_usage(acct_conn):
     LOGGER.info(
         "beginning job-usage update for flux-accounting DB; "
         "slow response times may occur"
@@ -319,6 +319,15 @@ def update_job_usage(acct_conn, pdhl=1):
         cur.execute(s_assoc)
         result = cur.fetchall()
 
+        # fetch the last time the job_usage_per_association_table was reconfigured
+        # (if at all)
+        last_reconfigured = cur.execute(
+            "SELECT value FROM config_table WHERE key='reconfigure_time'"
+        ).fetchone()
+        last_reconfigured = (
+            last_reconfigured[0] if last_reconfigured is not None else 0.0
+        )
+
         # fetch new jobs for every association based on their last completed job
         s_new_jobs = """
             SELECT r.userid,r.id,r.t_submit,r.t_run,r.t_inactive,r.ranks,r.R,r.jobspec,
@@ -328,8 +337,9 @@ def update_job_usage(acct_conn, pdhl=1):
             LEFT JOIN bank_table b
             ON r.bank = b.bank WHERE r.t_inactive > j.last_job_timestamp
             AND r.t_inactive > b.ignore_older_than
+            AND r.t_inactive > ?
         """
-        cur.execute(s_new_jobs)
+        cur.execute(s_new_jobs, (last_reconfigured,))
         new_jobs = cur.fetchall()
         new_job_records = j.convert_to_obj(new_jobs)
         # convert new jobs to a dictionary where they key is a tuple of the user ID and bank
@@ -338,6 +348,13 @@ def update_job_usage(acct_conn, pdhl=1):
         for job in new_job_records:
             key = (job.userid, job.bank)
             association_jobs[key].append(job)
+
+        # get PriorityDecayHalfLife
+        pdhl = float(
+            cur.execute(
+                "SELECT value FROM config_table WHERE key='priority_decay_half_life'"
+            ).fetchone()[0]
+        )
 
         # update the job usage for every user in the association_table
         for row in result:

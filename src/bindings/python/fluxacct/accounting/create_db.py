@@ -21,35 +21,6 @@ from flux.util import parse_fsd
 LOGGER = logging.getLogger(__name__)
 
 
-def add_usage_columns_to_table(
-    conn, table_name, priority_usage_reset_period=None, priority_decay_half_life=None
-):
-    # the number of columns (or 'bins') holding usage factors is determined by
-    # the following:
-    #
-    # PriorityUsageResetPeriod / PriorityDecayHalfLife
-    #
-    # each parameter represents a number of weeks by which to hold usage
-    # factors up to the time period where jobs no longer play a factor in
-    # calculating a usage factor
-    column_name = "usage_factor_period_0"
-    if priority_decay_half_life is not None and priority_usage_reset_period is not None:
-        num_columns = int(priority_usage_reset_period / priority_decay_half_life)
-    else:
-        num_columns = 4
-    for i in range(num_columns):
-        alter_stmt = (
-            "ALTER TABLE "
-            + table_name
-            + " ADD COLUMN "
-            + column_name
-            + " REAL DEFAULT 0.0"
-        )
-        conn.execute(alter_stmt)
-        conn.commit()
-        column_name = "usage_factor_period_" + str(i + 1)
-
-
 def set_half_life_period_end(conn, priority_decay_half_life=None):
     if priority_decay_half_life is not None:
         # convert number of weeks to seconds; this will be appended
@@ -152,16 +123,6 @@ def create_db(
                 last_job_timestamp  real        DEFAULT 0.0,
                 PRIMARY KEY (username, bank)
         );"""
-    )
-    add_usage_columns_to_table(
-        conn,
-        "job_usage_factor_table",
-        parse_fsd(str(priority_usage_reset_period))
-        if priority_usage_reset_period is not None
-        else (4 * 604800),
-        parse_fsd(str(priority_decay_half_life))
-        if priority_decay_half_life is not None
-        else 604800,
     )
     LOGGER.info("Created job_usage_factor_table successfully")
 

@@ -65,11 +65,13 @@ test_expect_success 'editing a key-value pair that does not exist raises error' 
 	grep "edit-config: ValueError: key i_dont_exist not found in config_table" edit_config_bad_2.out
 '
 
-test_expect_success 'edit both job usage parameters at the same time' '
-	flux account edit-config priority_decay_half_life=15m priority_usage_reset_period=1h &&
+test_expect_success 'edit multiple key-value pairs at the same time' '
+	flux account add-config key1=value1 &&
+	flux account add-config key2=value2 &&
+	flux account edit-config key1=foo1 key2=foo2 &&
 	flux account list-configs > edited_configs.out &&
-	grep "priority_usage_reset_period | 3600.0" edited_configs.out &&
-	grep "priority_decay_half_life    | 900.0" edited_configs.out
+	grep "key1                        | foo1" edited_configs.out &&
+	grep "key2                        | foo2" edited_configs.out
 '
 
 test_expect_success 'delete a key from config_table' '
@@ -99,11 +101,13 @@ test_expect_success 'trying to delete decay_factor does not work' '
 test_expect_success 'list all configs in config_table' '
 	flux account list-configs > list_configs.test &&
 	cat <<-EOF >list_configs.expected &&
-	key                         | value 
-	----------------------------+-------
-	priority_usage_reset_period | 3600.0
-	priority_decay_half_life    | 900.0 
-	decay_factor                | 0.5   
+	key                         | value  
+	----------------------------+--------
+	priority_usage_reset_period | 2419200
+	priority_decay_half_life    | 604800 
+	decay_factor                | 0.5    
+	key1                        | foo1   
+	key2                        | foo2   
 	EOF
 	test_cmp list_configs.test list_configs.expected
 '
@@ -111,9 +115,9 @@ test_expect_success 'list all configs in config_table' '
 test_expect_success 'list all configs in config_table in JSON format' '
 	flux account list-configs --json > list_configs_json.test &&
 	grep "\"key\": \"priority_usage_reset_period\"" list_configs_json.test &&
-	grep "\"value\": \"3600.0\"" list_configs_json.test &&
+	grep "\"value\": \"2419200\"" list_configs_json.test &&
 	grep "\"key\": \"priority_decay_half_life\"" list_configs_json.test &&
-	grep "\"value\": \"900.0\"" list_configs_json.test &&
+	grep "\"value\": \"604800\"" list_configs_json.test &&
 	grep "\"key\": \"decay_factor\"" list_configs_json.test &&
 	grep "\"value\": \"0.5\"" list_configs_json.test
 '
@@ -125,6 +129,8 @@ test_expect_success 'list all configs with --fields' '
 	key                        
 	---------------------------
 	decay_factor               
+	key1                       
+	key2                       
 	priority_decay_half_life   
 	priority_usage_reset_period
 	EOF
@@ -136,9 +142,11 @@ test_expect_success 'list all configs with format string' '
 	cat list_configs_format.test &&
 	cat <<-EOF >list_configs_format.expected &&
 	key->value
-	priority_usage_reset_period->3600.0
-	priority_decay_half_life->900.0
+	priority_usage_reset_period->2419200
+	priority_decay_half_life->604800
 	decay_factor->0.5
+	key1->foo1
+	key2->foo2
 	EOF
 	test_cmp list_configs_format.test list_configs_format.expected
 '

@@ -12,12 +12,98 @@
 import csv
 import sqlite3
 import json
+import math
+import time
 
 import fluxacct
 from fluxacct.accounting.util import with_cursor
 from fluxacct.accounting import formatter as fmt
 from fluxacct.accounting import sql_util as sql
 from flux.util import parse_fsd
+
+
+@with_cursor
+def reconfigure_usage_bins(conn, cursor):
+    """
+    Update the usage bin configuration for all associations from scratch. This function
+    should be called *after* the admin has updated priority_decay_half_life,
+    priority_usage_reset_period, and/or decay_factor in config_table.
+
+    Args:
+        conn: The SQLite Connection object.
+        cursor: The SQLite Cursor object.
+    """
+    # read the new configuration from config_table
+    cursor.execute(
+        "SELECT value FROM config_table WHERE key='priority_decay_half_life'"
+    )
+    half_life = cursor.fetchone()
+
+    cursor.execute(
+        "SELECT value FROM config_table WHERE key='priority_usage_reset_period'"
+    )
+    reset_period = cursor.fetchone()
+
+    if half_life is None or reset_period is None:
+        raise ValueError(
+            "priority_decay_half_life and priority_usage_reset_period must be set in "
+            "config_table before reconfiguring usage bins"
+        )
+
+    new_half_life = float(half_life[0])
+    new_reset_period = float(reset_period[0])
+    new_num_periods = math.ceil(new_reset_period / new_half_life)
+
+    # fetch all associations
+    cursor.execute(
+        "SELECT DISTINCT username, userid, bank FROM job_usage_per_association_table"
+    )
+    associations = cursor.fetchall()
+
+    try:
+        # delete all existing period rows for every association
+        cursor.execute("DELETE FROM job_usage_per_association_table")
+
+        # re-insert the correct number of period rows for every association
+        # initialized to 0.0 under the new configuration
+        for username, userid, bank in associations:
+            for period in range(new_num_periods):
+                cursor.execute(
+                    """
+                    INSERT INTO job_usage_per_association_table
+                    (username, userid, bank, period, value)
+                    VALUES (?, ?, ?, ?, 0.0)
+                    """,
+                    (username, userid, bank, period),
+                )
+
+        # reset last_job_timestamp for all associations so that update_job_usage()
+        # replays all jobs from scratch
+        cursor.execute("UPDATE job_usage_factor_table SET last_job_timestamp=0")
+
+        # reset the half-life period end timestamp so that update_job_usage() starts
+        # a fresh half-life window
+        cursor.execute(
+            """
+            UPDATE t_half_life_period_table
+            SET end_half_life_period=?
+            WHERE cluster='cluster'
+            """,
+            (str(time.time() + new_half_life),),
+        )
+        cursor.execute(
+            "INSERT INTO config_table (key, value) "
+            "VALUES ('reconfigure_time', ?) ON CONFLICT(key)"
+            "DO UPDATE SET value = excluded.value",
+            (time.time(),),
+        )
+
+        conn.commit()
+    except Exception as exc:
+        conn.rollback()
+        raise RuntimeError(
+            f"failed to reconfigure usage bins, rolled back all changes: {exc}"
+        )
 
 
 def export_db_info(conn):
@@ -243,6 +329,7 @@ def edit_config(conn, cursor, key_value_strings):
         key_value_strings: A list of key=value strings to update in config_table.
     """
     bin_config_keys = {"priority_usage_reset_period", "priority_decay_half_life"}
+    requires_rebin = False
 
     for key_value_string in key_value_strings:
         key, value = key_value_string.split("=")
@@ -250,11 +337,13 @@ def edit_config(conn, cursor, key_value_strings):
         if key in bin_config_keys:
             # parse value as Flux Standard Duration (FSD)
             value = parse_fsd(str(value))
+            requires_rebin = True
         if key == "decay_factor":
             if (float(value) < 0) or (float(value) > 1):
                 raise ValueError(
                     "decay_factor must be a floating-point value between 0 and 1"
                 )
+            requires_rebin = True
         cursor.execute(
             "UPDATE config_table SET value=? WHERE key=?",
             (value, key),
@@ -262,6 +351,26 @@ def edit_config(conn, cursor, key_value_strings):
         if cursor.rowcount == 0:
             raise ValueError(f"key {key} not found in config_table")
 
+    if requires_rebin:
+        choice = (
+            input(
+                "WARNING: changing one or more of priority_usage_reset_period, "
+                "priority_decay_half_life, or decay_factor requires re-binning all "
+                "of the job usage bins for every association in the flux-accounting "
+                "database and will reset the usage for every association to 0.0; are "
+                "you sure you want to continue? [y/n] "
+            )
+            .strip()
+            .lower()
+        )
+        if choice != "y":
+            # roll back the config_table updates
+            conn.rollback()
+            return 0
+        # pylint: disable=no-value-for-parameter
+        reconfigure_usage_bins(conn)
+
+    conn.commit()
     return 0
 
 

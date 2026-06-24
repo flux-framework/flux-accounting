@@ -65,13 +65,6 @@ def main():
         "-p", "--path", dest="path", help="specify location of database file"
     )
     parser.add_argument(
-        "--priority-decay-half-life",
-        default=1,
-        type=int,
-        help="number of weeks for a job's usage contribution to a half-life decay",
-        metavar="PRIORITY_DECAY_HALF_LIFE",
-    )
-    parser.add_argument(
         "-v",
         "--verbose",
         action="count",
@@ -85,7 +78,7 @@ def main():
     conn = est_sqlite_conn(path)
 
     try:
-        job_usage.update_job_usage(conn, args.priority_decay_half_life)
+        job_usage.update_job_usage(conn)
     except sqlite3.OperationalError as exc:
         LOGGER.exception(
             "SQLite operational error during job-usage update; rolled back. "
