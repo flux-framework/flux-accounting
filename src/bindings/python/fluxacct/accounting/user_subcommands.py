@@ -586,6 +586,7 @@ def delete_user(conn, cur, username, bank, force=False):
     return 0
 
 
+# pylint: disable=too-many-statements
 @with_cursor
 def edit_user(conn, cur, username, bank=None, **kwargs):
     """
@@ -612,6 +613,8 @@ def edit_user(conn, cur, username, bank=None, **kwargs):
             running jobs.
         queues: A comma-separated list of all of the queues an association can run jobs
             under.
+        add_queue: A single queue to add to the user's existing queues.
+        delete_queue: A single queue to remove from the user's existing queues.
         projects: A comma-separated list of all of the projects an association can run jobs
             under.
         default_project: The association's default project.
@@ -624,6 +627,7 @@ def edit_user(conn, cur, username, bank=None, **kwargs):
             * the default bank for an association is attempted to be reset with -1
             * a queue being passed-in cannot be found in queue_table.
             * a project being passed-in cannot be found in project_table.
+            * both queues and add_queue/delete_queue are specified simultaneously.
     """
     editable_fields = {
         "userid",
@@ -643,9 +647,23 @@ def edit_user(conn, cur, username, bank=None, **kwargs):
         field: value for field, value in kwargs.items() if field in editable_fields
     }
 
-    if not updates:
+    add_queue = kwargs.get("add_queue")
+    delete_queue = kwargs.get("delete_queue")
+
+    if not updates and not add_queue and not delete_queue:
         # no editable fields were provided; raise an exception
         raise ValueError("no fields provided for update")
+
+    # validate that queues and add_queue/delete_queue are not used together
+    if updates.get("queues") is not None and (add_queue or delete_queue):
+        raise ValueError(
+            "cannot specify --queues with --add-queue or --delete-queue; "
+            "use either full replacement (--queues) or incremental operations "
+            "(--add-queue/--delete-queue)"
+        )
+
+    if add_queue or delete_queue:
+        modify_queues(conn, cur, username, bank, add_queue, delete_queue)
 
     for field, value in updates.items():
         if value is not None:

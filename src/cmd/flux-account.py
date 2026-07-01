@@ -359,6 +359,18 @@ def add_edit_user_arg(subparsers):
         metavar="QUEUES",
     )
     subparser_edit_user.add_argument(
+        "--add-queue",
+        help="add a queue to the user's existing queues",
+        default=None,
+        metavar="QUEUE",
+    )
+    subparser_edit_user.add_argument(
+        "--delete-queue",
+        help="remove a queue from the user's existing queues",
+        default=None,
+        metavar="QUEUE",
+    )
+    subparser_edit_user.add_argument(
         "-P",
         "--projects",
         help="projects the user is allowed to submit jobs under",

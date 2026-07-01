@@ -270,6 +270,8 @@ class AccountingService:
                 max_nodes=msg.payload.get("max_nodes"),
                 max_cores=msg.payload.get("max_cores"),
                 queues=msg.payload.get("queues"),
+                add_queue=msg.payload.get("add_queue"),
+                delete_queue=msg.payload.get("delete_queue"),
                 projects=msg.payload.get("projects"),
                 default_project=msg.payload.get("default_project"),
                 max_sched_jobs=msg.payload.get("max_sched_jobs"),
