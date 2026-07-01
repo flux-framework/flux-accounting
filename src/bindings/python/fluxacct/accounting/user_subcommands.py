@@ -207,6 +207,54 @@ def clear_projects(conn, cur, username, bank=None):
     return 0
 
 
+def modify_queues(conn, cur, username, bank, add_queue=None, delete_queue=None):
+    """
+    Incrementally add or remove a queue from a user's existing queues.
+
+    Args:
+        conn: The SQLite Connection object.
+        cur: The SQLite Cursor object.
+        username: The username of the association.
+        bank: The bank the association belongs to (if None, will apply to all banks).
+        add_queue: A queue to add to the user's existing queues.
+        delete_queue: A queue to remove from the user's existing queues.
+    """
+    select_stmt = "SELECT queues, bank FROM association_table WHERE username=?"
+    params = [username]
+    if bank is not None:
+        select_stmt += " AND bank=?"
+        params.append(bank)
+
+    cur.execute(select_stmt, tuple(params))
+    rows = cur.fetchall()
+
+    if not rows:
+        raise ValueError(f"user {username} not found in association_table")
+
+    for row in rows:
+        current_queues = row["queues"] if row["queues"] else ""
+        row_bank = row["bank"]
+        queue_list = [q.strip() for q in current_queues.split(",") if q.strip()]
+
+        if add_queue:
+            validate_queue(cur, queues=add_queue)
+            if add_queue not in queue_list:
+                queue_list.append(add_queue)
+        if delete_queue:
+            if delete_queue in queue_list:
+                queue_list.remove(delete_queue)
+
+        # update the "queues" property for the row
+        new_queues = ",".join(queue_list)
+        update_stmt = (
+            "UPDATE association_table SET queues=? WHERE username=? AND bank=?"
+        )
+        update_params = [new_queues, username, row_bank]
+        cur.execute(update_stmt, tuple(update_params))
+
+    return 0
+
+
 def insert_per_assoc_usage_rows(conn, cur, username, uid, bank):
     """
     Insert a row for each job usage period into job_usage_per_association_table for a
