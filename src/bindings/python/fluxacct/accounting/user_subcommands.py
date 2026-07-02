@@ -43,7 +43,7 @@ def validate_project(cur, projects):
         cur.execute("SELECT project FROM project_table WHERE project=?", (project,))
         result = cur.fetchone()
         if result is None:
-            raise ValueError(project)
+            raise ValueError(f"project {project} does not exist in project_table")
 
     return ",".join(project_list)
 
@@ -432,10 +432,7 @@ def add_user(
     # add default project name ('*') to project(s) specified if
     # any were passed in
     if projects != "*":
-        try:
-            projects = validate_project(cur, projects=projects)
-        except ValueError as bad_project:
-            raise ValueError(f"project {bad_project} does not exist in project_table")
+        projects = validate_project(cur, projects=projects)
 
     # Determine the default project for user. If no projects were specified, use '*' as
     # the default. If projects were specified and a default project name was not passed,
@@ -646,12 +643,7 @@ def edit_user(conn, cur, username, bank=None, **kwargs):
             if field == "queues":
                 validate_queue(cur, queues=value)
             elif field == "projects":
-                try:
-                    updates[field] = validate_project(cur, projects=value)
-                except ValueError as bad_project:
-                    raise ValueError(
-                        f"project {bad_project} does not exist in project_table"
-                    )
+                updates[field] = validate_project(cur, projects=value)
 
             update_stmt = f"UPDATE association_table SET {field}=? WHERE username=?"
             tup = (updates[field], username)
