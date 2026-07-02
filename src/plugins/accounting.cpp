@@ -76,10 +76,12 @@ json_t* Association::to_json () const
         goto error;
     for (const auto &entry : queue_usage) {
         const QueueUsage &usage = entry.second;
-        usage_object = json_pack ("{s:i, s:i, s:i}",
+        usage_object = json_pack ("{s:i, s:i, s:i, s:i, s:i}",
                                   "cur_run_jobs", usage.cur_run_jobs,
                                   "cur_nodes", usage.cur_nodes,
-                                  "cur_sched_jobs", usage.cur_sched_jobs);
+                                  "cur_sched_jobs", usage.cur_sched_jobs,
+                                  "cur_sched_nodes", usage.cur_sched_nodes,
+                                  "cur_sched_cores", usage.cur_sched_cores);
         if (!usage_object)
             goto error;
 
@@ -408,6 +410,94 @@ bool Association::under_queue_max_sched_jobs (
            < queues[queue].max_sched_jobs;
 }
 
+
+bool Association::under_queue_max_sched_nodes (
+                                        const Job &job,
+                                        const std::string &queue,
+                                        std::map<std::string, Queue> &queues)
+{
+    auto qit = queues.find (queue);
+    if (qit == queues.end ())
+        // queue is unknown to flux-accounting; skip check
+        return true;
+    const int max_sched_nodes = qit->second.max_sched_nodes_per_assoc;
+
+    // look up current per-queue sched node usage for the association
+    int cur_sched_nodes_in_queue = 0;
+    auto uit = queue_usage.find (queue);
+    if (uit != queue_usage.end ())
+        cur_sched_nodes_in_queue = uit->second.cur_sched_nodes;
+
+    return (cur_sched_nodes_in_queue + job.nnodes) <= max_sched_nodes;
+}
+
+
+bool Association::under_queue_max_sched_nodes (
+                                        const Job &job,
+                                        const std::string &queue,
+                                        std::map<std::string, Queue> &queues,
+                                        int pending)
+{
+    auto qit = queues.find (queue);
+    if (qit == queues.end ())
+        // queue is unknown to flux-accounting; skip check
+        return true;
+    const int max_sched_nodes = qit->second.max_sched_nodes_per_assoc;
+
+    // look up current per-queue sched node usage for the association
+    int cur_sched_nodes_in_queue = 0;
+    auto uit = queue_usage.find (queue);
+    if (uit != queue_usage.end ())
+        cur_sched_nodes_in_queue = uit->second.cur_sched_nodes;
+
+    return (cur_sched_nodes_in_queue + job.nnodes + pending)
+            <= max_sched_nodes;
+}
+
+
+bool Association::under_queue_max_sched_cores (
+                                        const Job &job,
+                                        const std::string &queue,
+                                        std::map<std::string, Queue> &queues)
+{
+    auto qit = queues.find (queue);
+    if (qit == queues.end ())
+        // queue is unknown to flux-accounting; skip check
+        return true;
+    const int max_sched_cores = qit->second.max_sched_cores_per_assoc;
+
+    // look up current per-queue sched core usage for the association
+    int cur_sched_cores_in_queue = 0;
+    auto uit = queue_usage.find (queue);
+    if (uit != queue_usage.end ())
+        cur_sched_cores_in_queue = uit->second.cur_sched_cores;
+
+    return (cur_sched_cores_in_queue + job.ncores) <= max_sched_cores;
+}
+
+bool Association::under_queue_max_sched_cores (
+                                        const Job &job,
+                                        const std::string &queue,
+                                        std::map<std::string, Queue> &queues,
+                                        int pending)
+{
+    auto qit = queues.find (queue);
+    if (qit == queues.end ())
+        // queue is unknown to flux-accounting; skip check
+        return true;
+    const int max_sched_cores = qit->second.max_sched_cores_per_assoc;
+
+    // look up current per-queue sched core usage for the association
+    int cur_sched_cores_in_queue = 0;
+    auto uit = queue_usage.find (queue);
+    if (uit != queue_usage.end ())
+        cur_sched_cores_in_queue = uit->second.cur_sched_cores;
+
+    return (cur_sched_cores_in_queue + job.ncores + pending)
+            <= max_sched_cores;
+}
+
+
 json_t* convert_queues_to_json (const std::map<std::string, Queue> &queues)
 {
     json_t *root = json_object ();
@@ -419,7 +509,8 @@ json_t* convert_queues_to_json (const std::map<std::string, Queue> &queues)
         const Queue &q = kv.second;
 
         json_t *qobj = json_pack (
-                                "{s:s, s:i, s:i, s:i, s:i, s:i, s:i, s:i}",
+                                "{s:s, s:i, s:i, s:i, s:i, s:i, s:i, s:i, "
+                                "s:i, s:i}",
                                 "name", q.name.c_str (),
                                 "min_nodes_per_job", q.min_nodes_per_job,
                                 "max_nodes_per_job", q.max_nodes_per_job,
@@ -427,7 +518,9 @@ json_t* convert_queues_to_json (const std::map<std::string, Queue> &queues)
                                 "priority", q.priority,
                                 "max_running_jobs", q.max_running_jobs,
                                 "max_nodes_per_assoc", q.max_nodes_per_assoc,
-                                "max_sched_jobs", q.max_sched_jobs);
+                                "max_sched_jobs", q.max_sched_jobs,
+                                "max_sched_nodes_per_assoc", q.max_sched_nodes_per_assoc,
+                                "max_sched_cores_per_assoc", q.max_sched_cores_per_assoc);
         if (!qobj) {
             json_decref (root);
             return nullptr;
@@ -542,6 +635,7 @@ int load_queues (json_t *data, std::map<std::string, Queue> &queues,
     char *queue = NULL;
     int min_nodes_per_job, max_nodes_per_job, max_time_per_job, priority;
     int max_running_jobs, max_nodes_per_assoc, max_sched_jobs;
+    int max_sched_nodes_per_assoc, max_sched_cores_per_assoc;
     json_error_t error;
     int num_data = 0;
 
@@ -559,7 +653,8 @@ int load_queues (json_t *data, std::map<std::string, Queue> &queues,
         json_t *el = json_array_get(data, i);
 
         if (json_unpack_ex (el, &error, 0,
-                            "{s:s, s:i, s:i, s:i, s:i, s:i, s:i, s:i}",
+                            "{s:s, s:i, s:i, s:i, s:i, s:i, s:i, s:i, "
+                            "s:i, s:i}",
                             "queue", &queue,
                             "min_nodes_per_job", &min_nodes_per_job,
                             "max_nodes_per_job", &max_nodes_per_job,
@@ -567,7 +662,9 @@ int load_queues (json_t *data, std::map<std::string, Queue> &queues,
                             "priority", &priority,
                             "max_running_jobs", &max_running_jobs,
                             "max_nodes_per_assoc", &max_nodes_per_assoc,
-                            "max_sched_jobs", &max_sched_jobs) < 0) {
+                            "max_sched_jobs", &max_sched_jobs,
+                            "max_sched_nodes_per_assoc", &max_sched_nodes_per_assoc,
+                            "max_sched_cores_per_assoc", &max_sched_cores_per_assoc) < 0) {
             if (errmsg)
                 *errmsg = error.text;
             return -1;
@@ -584,6 +681,8 @@ int load_queues (json_t *data, std::map<std::string, Queue> &queues,
         q->max_running_jobs = max_running_jobs;
         q->max_nodes_per_assoc = max_nodes_per_assoc;
         q->max_sched_jobs = max_sched_jobs;
+        q->max_sched_nodes_per_assoc = max_sched_nodes_per_assoc;
+        q->max_sched_cores_per_assoc = max_sched_cores_per_assoc;
     }
 
     return 0;
