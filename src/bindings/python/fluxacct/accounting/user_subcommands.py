@@ -32,7 +32,7 @@ def validate_queue(cur, queues):
         cur.execute("SELECT queue FROM queue_table WHERE queue=?", (queue,))
         result = cur.fetchone()
         if result is None:
-            raise ValueError(queue)
+            raise ValueError(f"queue {queue} does not exist in queue_table")
 
 
 def validate_project(cur, projects):
@@ -43,7 +43,7 @@ def validate_project(cur, projects):
         cur.execute("SELECT project FROM project_table WHERE project=?", (project,))
         result = cur.fetchone()
         if result is None:
-            raise ValueError(project)
+            raise ValueError(f"project {project} does not exist in project_table")
 
     return ",".join(project_list)
 
@@ -426,19 +426,13 @@ def add_user(
 
     # validate the queue(s) specified if any were passed in
     if queues != "":
-        try:
-            validate_queue(cur, queues=queues)
-        except ValueError as bad_queue:
-            raise ValueError(f"queue {bad_queue} does not exist in queue_table")
+        validate_queue(cur, queues=queues)
 
     # validate the project(s) specified if any were passed in;
     # add default project name ('*') to project(s) specified if
     # any were passed in
     if projects != "*":
-        try:
-            projects = validate_project(cur, projects=projects)
-        except ValueError as bad_project:
-            raise ValueError(f"project {bad_project} does not exist in project_table")
+        projects = validate_project(cur, projects=projects)
 
     # Determine the default project for user. If no projects were specified, use '*' as
     # the default. If projects were specified and a default project name was not passed,
@@ -647,17 +641,9 @@ def edit_user(conn, cur, username, bank=None, **kwargs):
                 continue
 
             if field == "queues":
-                try:
-                    validate_queue(cur, queues=value)
-                except ValueError as bad_queue:
-                    raise ValueError(f"queue {bad_queue} does not exist in queue_table")
+                validate_queue(cur, queues=value)
             elif field == "projects":
-                try:
-                    updates[field] = validate_project(cur, projects=value)
-                except ValueError as bad_project:
-                    raise ValueError(
-                        f"project {bad_project} does not exist in project_table"
-                    )
+                updates[field] = validate_project(cur, projects=value)
 
             update_stmt = f"UPDATE association_table SET {field}=? WHERE username=?"
             tup = (updates[field], username)
