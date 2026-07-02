@@ -80,6 +80,14 @@ The list of modifiable fields for an association are as follows:
     The max number of jobs in SCHED state an association can have at any given
     time.
 
+.. option:: --add-queue
+
+    Add a single queue to the association's list of permissible queues.
+
+.. option:: --delete-queue
+
+    Remove a single queue from the association's list of permissible queues.
+
 All of the attributes able to be modified can be reset to their default value
 by passing ``-1`` as the value for the field. Multiple fields can be edited at
 the same time by passing them on the command line.
