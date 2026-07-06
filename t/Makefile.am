@@ -96,6 +96,7 @@ TESTSCRIPTS = \
 	t1091-mf-priority-queue-partial-release.t \
 	t1092-mf-priority-afterany-partial-release.t \
 	t1093-config-table-commands.t \
+	t1094-edit-user-properties.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
@@ -116,7 +117,8 @@ TESTSCRIPTS = \
 	python/t1016_issue853.py \
 	python/t1017_config_cmds.py \
 	python/t1018_job_usage_custom_bins.py \
-	python/t1019_recalculate_usage.py
+	python/t1019_recalculate_usage.py \
+	python/t1020_edit_user_properties.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
