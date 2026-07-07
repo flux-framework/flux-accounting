@@ -41,7 +41,12 @@ MAN1_FILES_PRIMARY = \
 	man1/flux-account-edit-all-users.1 \
 	man1/flux-account-export-json.1 \
 	man1/flux-account-view-usage-report.1 \
-	man1/flux-account-clear-usage.1
+	man1/flux-account-clear-usage.1 \
+	man1/flux-account-add-config.1 \
+	man1/flux-account-view-config.1 \
+	man1/flux-account-edit-config.1 \
+	man1/flux-account-delete-config.1 \
+	man1/flux-account-list-configs.1
 
 RST_FILES  = \
 	$(MAN1_FILES_PRIMARY:.1=.rst)
