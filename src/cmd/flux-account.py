@@ -799,6 +799,65 @@ def add_list_banks_arg(subparsers):
     )
 
 
+def add_bank_info_arg(subparsers):
+    subparser_bank_info = subparsers.add_parser(
+        "bank-info",
+        help="display fairshare and priority information for banks and users",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparser_bank_info.set_defaults(func="bank_info")
+    subparser_bank_info.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="display detailed usage info",
+    )
+    subparser_bank_info.add_argument(
+        "-P",
+        "--parsable",
+        action="store_true",
+        help='output "|" delimited columns for easy parsing',
+    )
+    subparser_bank_info.add_argument(
+        "-n",
+        "--noheader",
+        action="store_true",
+        help="do not display headers",
+    )
+    subparser_bank_info.add_argument(
+        "-x",
+        "--exclude",
+        metavar="<bank>",
+        default=None,
+        help="do not display <bank> (defaults to 'expired')",
+    )
+    agroup = subparser_bank_info.add_mutually_exclusive_group(required=False)
+    agroup.add_argument(
+        "-t",
+        "--tree",
+        metavar="<bank>",
+        help="display all children of <bank>, including users",
+    )
+    agroup.add_argument(
+        "-T",
+        "--tree-no-users",
+        metavar="<bank>",
+        help="display all children of <bank>, except users",
+    )
+    agroup.add_argument(
+        "-r",
+        "--to-root",
+        metavar="<bank>",
+        help="display all parents for <bank>",
+    )
+    agroup.add_argument(
+        "-u",
+        "--user",
+        metavar="<user>",
+        help="display all banks for <user>",
+    )
+
+
 def add_update_usage_arg(subparsers):
     subparser_update_usage = subparsers.add_parser(
         "update-usage",
@@ -1580,6 +1639,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_delete_bank_arg(subparsers)
     add_edit_bank_arg(subparsers)
     add_list_banks_arg(subparsers)
+    add_bank_info_arg(subparsers)
     add_update_usage_arg(subparsers)
     add_add_queue_arg(subparsers)
     add_view_queue_arg(subparsers)
@@ -1633,6 +1693,7 @@ def select_accounting_function(args, parser):
         "delete_bank": "accounting.delete_bank",
         "edit_bank": "accounting.edit_bank",
         "list_banks": "accounting.list_banks",
+        "bank_info": "accounting.bank_info",
         "add_queue": "accounting.add_queue",
         "view_queue": "accounting.view_queue",
         "delete_queue": "accounting.delete_queue",

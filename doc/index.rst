@@ -21,5 +21,6 @@ Table of Contents
    components/projects
    components/limits
    components/job-priorities
+   components/bank-info
    presentations/hpsf
    index_man

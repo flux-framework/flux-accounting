@@ -10,6 +10,7 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import json
+import math
 import string
 
 import flux.util
@@ -526,3 +527,52 @@ class KeyValueFormatter(AccountingFormatter):
             cursor,
             error_msg=f"key {self.key} not found in config_table",
         )
+
+
+# general helper functions for displaying rows in the bank-info command
+def format_bank_info_header(verbose, parsable):
+    """Format the header line for bank_info output."""
+    if verbose:
+        if parsable:
+            return "Name|Shares|Norm_Shares|Usage|Norm_Usage|Norm_FS|Type"
+        return (
+            f"{'Name':20s} {'Shares':>10s} {'Norm Shares':>12s} "
+            f"{'Usage':>13s} {'Norm Usage':>12s} {'Level FS':>10s} {'Type':>5s}"
+        )
+    if parsable:
+        return "Name|Shares|Norm_Shares|Norm_Usage|Norm_FS"
+    return (
+        f"{'Name':20s} {'Shares':>10s} {'Norm Shares':>12s} "
+        f"{'Norm Usage':>12s} {'Level FS':>10s}"
+    )
+
+
+def format_bank_info_node(node, default_bank, verbose, parsable):
+    """Format a single node for bank_info output."""
+    dname = " " * node["depth"] + node["shortname"]
+    if node["isuser"]:
+        dname = " " + dname
+        typestr = "User"
+    else:
+        typestr = "Bank"
+        if default_bank == node["shortname"]:
+            dname += "*"
+
+    fsstr = "--" if math.isnan(node["fshare"]) else f"{node['fshare']:.3f}"
+
+    if verbose:
+        if parsable:
+            return (
+                f"{dname}|{node['shares']}|{node['nshares']:.6f}|{node['usage']:.1f}|"
+                f"{node['nusage']:.6f}|{node['fshare']:.6f}|{typestr}"
+            )
+        return (
+            f"{dname:20s} {node['shares']:10d} {node['nshares']:12.6f} "
+            f"{node['usage']:13.1f} {node['nusage']:12.6f} {fsstr:>10s} {typestr:>5s}"
+        )
+    if parsable:
+        return f"{dname}|{node['shares']}|{node['nshares']:.6f}|{node['nusage']:.6f}|{fsstr}"
+    return (
+        f"{dname:20s} {node['shares']:10d} {node['nshares']:12.6f} "
+        f"{node['nusage']:12.6f} {fsstr:>10s}"
+    )
