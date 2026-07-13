@@ -113,7 +113,7 @@ def convert_to_obj(rows, jobid_format="f58"):
             # attempt to create a ResourceSet from R
             rset = ResourceSet(row[6])
             job_nnodes = rset.nnodes
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, KeyError):
             # can't convert R to a ResourceSet object; skip it
             continue
 
