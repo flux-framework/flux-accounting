@@ -37,6 +37,8 @@ class JobRecord:
         bank,
         requested_duration,
         actual_duration,
+        ncores,
+        ngpus,
         jobid_format="f58",
     ):
         self.userid = userid
@@ -51,6 +53,8 @@ class JobRecord:
         self.bank = bank
         self.requested_duration = requested_duration
         self.actual_duration = actual_duration
+        self.ncores = ncores
+        self.ngpus = ngpus
 
     @property
     def elapsed(self):
@@ -113,7 +117,9 @@ def convert_to_obj(rows, jobid_format="f58"):
             # attempt to create a ResourceSet from R
             rset = ResourceSet(row[6])
             job_nnodes = rset.nnodes
-        except (ValueError, TypeError):
+            job_ncores = rset.ncores
+            job_ngpus = rset.ngpus
+        except (ValueError, TypeError, KeyError):
             # can't convert R to a ResourceSet object; skip it
             continue
 
@@ -129,6 +135,8 @@ def convert_to_obj(rows, jobid_format="f58"):
             bank=row[9] if row[9] is not None else "",
             requested_duration=row[10],
             actual_duration=row[11],
+            ncores=job_ncores,
+            ngpus=job_ngpus,
             jobid_format=jobid_format,
         )
         job_records.append(job_record)
