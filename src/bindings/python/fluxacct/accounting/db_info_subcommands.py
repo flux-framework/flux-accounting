@@ -331,11 +331,15 @@ def edit_config(conn, cursor, key_value_strings):
         key_value_strings: A list of key=value strings to update in config_table.
     """
     bin_config_keys = {"priority_usage_reset_period", "priority_decay_half_life"}
+    usage_config_keys = {"node_weight", "core_weight", "gpu_weight"}
     requires_rebin = False
 
     for key_value_string in key_value_strings:
         key, value = key_value_string.split("=")
 
+        if key in usage_config_keys:
+            # ensure that weight is a floating-point value
+            float(value)
         if key in bin_config_keys:
             # parse value as Flux Standard Duration (FSD)
             value = parse_fsd(str(value))
@@ -385,6 +389,9 @@ def delete_config(conn, cursor, key):
         "priority_usage_reset_period",
         "priority_decay_half_life",
         "decay_factor",
+        "node_weight",
+        "core_weight",
+        "gpu_weight",
     ]:
         raise ValueError(
             "key-value pair is not allowed to be removed from config_table"

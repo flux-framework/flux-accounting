@@ -282,6 +282,27 @@ def create_db(
             decay_factor,
         ),
     )
+    conn.execute(
+        f"INSERT INTO config_table VALUES (?, ?)",
+        (
+            "node_weight",
+            "1.0",
+        ),
+    )
+    conn.execute(
+        f"INSERT INTO config_table VALUES (?, ?)",
+        (
+            "core_weight",
+            "0.0",
+        ),
+    )
+    conn.execute(
+        f"INSERT INTO config_table VALUES (?, ?)",
+        (
+            "gpu_weight",
+            "0.0",
+        ),
+    )
     conn.commit()
     LOGGER.info("Created config_table successfully")
 
