@@ -122,7 +122,8 @@ TESTSCRIPTS = \
 	python/t1019_recalculate_usage.py \
 	python/t1020_edit_user_properties.py \
 	python/t1021_bank_info.py \
-	python/t1022_job_record_ncores_ngpus.py
+	python/t1022_job_record_ncores_ngpus.py \
+	python/t1023_weighted_usage.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
