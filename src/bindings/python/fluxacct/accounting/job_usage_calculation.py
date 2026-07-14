@@ -74,6 +74,30 @@ def update_curr_usg_col(acct_conn, usg_h, user, bank, userid):
     )
 
 
+def get_usage_weights(cur):
+    """
+    Fetch usage weight config values with fallback defaults.
+
+    Args:
+        cur: The SQLite Cursor object.
+
+    Returns:
+        tuple: (node_weight, core_weight, gpu_weight) as floats.
+    """
+    cur.execute(
+        """
+        SELECT key, value FROM config_table
+        WHERE key IN ('node_weight', 'core_weight', 'gpu_weight')
+        """
+    )
+    weights = {row[0]: float(row[1]) for row in cur.fetchall()}
+    return (
+        weights.get("node_weight", 1.0),
+        weights.get("core_weight", 0.0),
+        weights.get("gpu_weight", 0.0),
+    )
+
+
 def apply_decay_factor(acct_conn, user, bank, userid):
     """
     Apply a decay factor to an association's job usage period values. Since this helper
@@ -146,6 +170,9 @@ def calc_usage_factor(
     userid,
     end_hl,
     user_jobs,
+    node_weight,
+    core_weight,
+    gpu_weight,
 ):
     cur = conn.cursor()
 
@@ -172,7 +199,12 @@ def calc_usage_factor(
 
         per_job_factors = []
         for job in user_jobs:
-            per_job_factors.append(round((job.nnodes * job.elapsed), 5))
+            weighted_usage = (
+                (job.nnodes * node_weight)
+                + (job.ncores * core_weight)
+                + (job.ngpus * gpu_weight)
+            ) * job.elapsed
+            per_job_factors.append(round(weighted_usage, 5))
 
         last_t_inactive = user_jobs[-1].t_inactive
         usg_current = sum(per_job_factors)
@@ -308,6 +340,9 @@ def update_job_usage(acct_conn):
         row = cur.fetchone()
         end_hl = row[0]
 
+        # fetch usage weights with fallback defaults
+        node_weight, core_weight, gpu_weight = get_usage_weights(cur)
+
         # begin transaction for all of the updates in the DB
         acct_conn.execute("BEGIN TRANSACTION")
         s_assoc = """
@@ -366,6 +401,9 @@ def update_job_usage(acct_conn):
                 userid=row["userid"],
                 end_hl=end_hl,
                 user_jobs=association_jobs[(row["userid"], row["bank"])],
+                node_weight=node_weight,
+                core_weight=core_weight,
+                gpu_weight=gpu_weight,
             )
 
         # find the root bank in the flux-accounting database

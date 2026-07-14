@@ -301,6 +301,9 @@ class TestAccountingCLI(unittest.TestCase):
             userid=userid,
             end_hl=9900000,
             user_jobs=user_jobs[(1002, "C")],
+            node_weight=1.0,
+            core_weight=0.0,
+            gpu_weight=0.0,
         )
         self.assertEqual(usage_factor, 17044.0)
 
@@ -341,6 +344,9 @@ class TestAccountingCLI(unittest.TestCase):
             userid=userid,
             end_hl=9900000,
             user_jobs=user_jobs[(1001, "C")],
+            node_weight=1.0,
+            core_weight=0.0,
+            gpu_weight=0.0,
         )
         self.assertEqual(usage_factor, 8500.0)
 
@@ -364,6 +370,9 @@ class TestAccountingCLI(unittest.TestCase):
             userid=1003,
             end_hl=0,
             user_jobs=user_jobs[(1003, "D")],
+            node_weight=1.0,
+            core_weight=0.0,
+            gpu_weight=0.0,
         )
 
         cur.execute(s_ts)
@@ -444,6 +453,9 @@ class TestAccountingCLI(unittest.TestCase):
             userid=userid,
             end_hl=0,
             user_jobs=job_records,
+            node_weight=1.0,
+            core_weight=0.0,
+            gpu_weight=0.0,
         )
         self.assertEqual(usage_factor, 4442.0)
 
@@ -463,6 +475,9 @@ class TestAccountingCLI(unittest.TestCase):
             userid=userid,
             end_hl=0,
             user_jobs=[],
+            node_weight=1.0,
+            core_weight=0.0,
+            gpu_weight=0.0,
         )
 
         self.assertEqual(usage_factor, 4334.0)
