@@ -106,6 +106,9 @@ test_expect_success 'list all configs in config_table' '
 	priority_usage_reset_period | 2419200
 	priority_decay_half_life    | 604800 
 	decay_factor                | 0.5    
+	node_weight                 | 1.0    
+	core_weight                 | 0.0    
+	gpu_weight                  | 0.0    
 	key1                        | foo1   
 	key2                        | foo2   
 	EOF
@@ -128,9 +131,12 @@ test_expect_success 'list all configs with --fields' '
 	cat <<-EOF >keys.expected &&
 	key                        
 	---------------------------
+	core_weight                
 	decay_factor               
+	gpu_weight                 
 	key1                       
 	key2                       
+	node_weight                
 	priority_decay_half_life   
 	priority_usage_reset_period
 	EOF
@@ -145,6 +151,9 @@ test_expect_success 'list all configs with format string' '
 	priority_usage_reset_period->2419200
 	priority_decay_half_life->604800
 	decay_factor->0.5
+	node_weight->1.0
+	core_weight->0.0
+	gpu_weight->0.0
 	key1->foo1
 	key2->foo2
 	EOF

@@ -193,6 +193,17 @@ class TestDB(unittest.TestCase):
                 decay_factor=1.5,
             )
 
+    def test_10_usage_weight_config_keys(self):
+        cursor = conn.cursor()
+        cursor.execute("SELECT value FROM config_table WHERE key='node_weight'")
+        self.assertEqual(float(cursor.fetchone()[0]), 1.0)
+
+        cursor.execute("SELECT value FROM config_table WHERE key='core_weight'")
+        self.assertEqual(float(cursor.fetchone()[0]), 0.0)
+
+        cursor.execute("SELECT value FROM config_table WHERE key='gpu_weight'")
+        self.assertEqual(float(cursor.fetchone()[0]), 0.0)
+
     # remove database file
     @classmethod
     def tearDownClass(self):

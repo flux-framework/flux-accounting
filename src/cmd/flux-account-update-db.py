@@ -272,6 +272,27 @@ def init_config_table(cur):
             "0.5",
         ),
     )
+    cur.execute(
+        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
+        (
+            "node_weight",
+            "1.0",
+        ),
+    )
+    cur.execute(
+        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
+        (
+            "core_weight",
+            "0.0",
+        ),
+    )
+    cur.execute(
+        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
+        (
+            "gpu_weight",
+            "0.0",
+        ),
+    )
 
 
 def migrate_job_usage_to_per_assoc(cur):
