@@ -305,6 +305,7 @@ def migrate_job_usage_to_per_assoc(cur):
     Args:
         cur: the Cursor object used to interact with the database.
     """
+    print("migrating job usage data to per-association table...")
     # find all usage bin columns from job_usage_factor_table
     cur.execute("PRAGMA table_info('job_usage_factor_table')")
     columns = cur.fetchall()
@@ -313,13 +314,16 @@ def migrate_job_usage_to_per_assoc(cur):
     ]
 
     if not bin_columns:
+        print("no usage_factor_period_* columns found, skipping migration")
         return
 
+    print(f"found {len(bin_columns)} usage period columns to migrate")
     # fetch all rows from the old table
     cur.execute(
         f"SELECT username, userid, bank, {', '.join(bin_columns)} FROM job_usage_factor_table"
     )
     rows = cur.fetchall()
+    print(f"migrating {len(rows)} associations...")
 
     for row in rows:
         username, userid, bank = row[0], row[1], row[2]
@@ -334,6 +338,7 @@ def migrate_job_usage_to_per_assoc(cur):
                 """,
                 (username, userid, bank, period, value),
             )
+    print("migration complete")
 
 
 def update_db(path, new_db):
