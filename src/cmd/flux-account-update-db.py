@@ -299,17 +299,12 @@ def migrate_job_usage_to_per_assoc(cur):
     """
     Migrate existing usage bin columns from job_usage_factor_table into the
     new row-per-period job_usage_per_association table. Each usage_factor_period_N
-    column becomes a row with period=N. Skips migration if the new table
-    already has data, so this is safe to call multiple times.
+    column becomes a row with period=N. Uses INSERT OR IGNORE to skip users
+    who already have entries, so this is safe to call multiple times.
 
     Args:
         cur: the Cursor object used to interact with the database.
     """
-    cur.execute("SELECT COUNT(*) FROM job_usage_per_association_table")
-    if cur.fetchone()[0] > 0:
-        # migration has already been done; just return
-        return
-
     # find all usage bin columns from job_usage_factor_table
     cur.execute("PRAGMA table_info('job_usage_factor_table')")
     columns = cur.fetchall()
@@ -361,13 +356,12 @@ def update_db(path, new_db):
             new_cur = new_conn.cursor()
 
             update_tables(old_cur, new_cur)
+            migrate_job_usage_to_per_assoc(old_cur)
 
             update_columns(old_cur, new_cur)
 
             init_priority_factor_table(old_cur)
             init_config_table(old_cur)
-
-            migrate_job_usage_to_per_assoc(old_cur)
 
             # update user_version for DB
             old_cur.execute(
