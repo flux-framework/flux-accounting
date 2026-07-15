@@ -166,9 +166,9 @@ def update_tables(old_cur, new_cur):
                     add_stmt += ", "
 
             # look for primary key in new table to add
-            for column in new_columns:
-                if column[5] == 1:
-                    add_stmt += ", PRIMARY KEY (" + column[1] + ")"
+            primary_keys = [column[1] for column in new_columns if column[5] > 0]
+            if primary_keys:
+                add_stmt += ", PRIMARY KEY (" + ", ".join(primary_keys) + ")"
 
             add_stmt += ");"
 
