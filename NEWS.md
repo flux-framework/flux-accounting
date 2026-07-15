@@ -1,3 +1,20 @@
+flux-accounting version 0.59.1 - 2026-07-16
+-------------------------------------------
+
+#### Features
+
+* add new `bank-info` command for viewing normalized shares, usage on a cluster
+(#896)
+
+* `JobRecord`: add ncores, ngpus properties (#901)
+
+* job usage: extend usage calculation to consider cores, GPUs (#902)
+
+#### Fixes
+
+* update-db: miscellaneous fixes to improve migration to new job usage table
+(#904)
+
 flux-accounting version 0.59.0 - 2026-07-06
 -------------------------------------------
 
