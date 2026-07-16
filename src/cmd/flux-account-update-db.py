@@ -166,9 +166,9 @@ def update_tables(old_cur, new_cur):
                     add_stmt += ", "
 
             # look for primary key in new table to add
-            for column in new_columns:
-                if column[5] == 1:
-                    add_stmt += ", PRIMARY KEY (" + column[1] + ")"
+            primary_keys = [column[1] for column in new_columns if column[5] > 0]
+            if primary_keys:
+                add_stmt += ", PRIMARY KEY (" + ", ".join(primary_keys) + ")"
 
             add_stmt += ");"
 
@@ -299,17 +299,13 @@ def migrate_job_usage_to_per_assoc(cur):
     """
     Migrate existing usage bin columns from job_usage_factor_table into the
     new row-per-period job_usage_per_association table. Each usage_factor_period_N
-    column becomes a row with period=N. Skips migration if the new table
-    already has data, so this is safe to call multiple times.
+    column becomes a row with period=N. Uses INSERT OR IGNORE to skip users
+    who already have entries, so this is safe to call multiple times.
 
     Args:
         cur: the Cursor object used to interact with the database.
     """
-    cur.execute("SELECT COUNT(*) FROM job_usage_per_association_table")
-    if cur.fetchone()[0] > 0:
-        # migration has already been done; just return
-        return
-
+    print("migrating job usage data to per-association table...")
     # find all usage bin columns from job_usage_factor_table
     cur.execute("PRAGMA table_info('job_usage_factor_table')")
     columns = cur.fetchall()
@@ -318,13 +314,16 @@ def migrate_job_usage_to_per_assoc(cur):
     ]
 
     if not bin_columns:
+        print("no usage_factor_period_* columns found, skipping migration")
         return
 
+    print(f"found {len(bin_columns)} usage period columns to migrate")
     # fetch all rows from the old table
     cur.execute(
         f"SELECT username, userid, bank, {', '.join(bin_columns)} FROM job_usage_factor_table"
     )
     rows = cur.fetchall()
+    print(f"migrating {len(rows)} associations...")
 
     for row in rows:
         username, userid, bank = row[0], row[1], row[2]
@@ -339,6 +338,7 @@ def migrate_job_usage_to_per_assoc(cur):
                 """,
                 (username, userid, bank, period, value),
             )
+    print("migration complete")
 
 
 def update_db(path, new_db):
@@ -361,13 +361,12 @@ def update_db(path, new_db):
             new_cur = new_conn.cursor()
 
             update_tables(old_cur, new_cur)
+            migrate_job_usage_to_per_assoc(old_cur)
 
             update_columns(old_cur, new_cur)
 
             init_priority_factor_table(old_cur)
             init_config_table(old_cur)
-
-            migrate_job_usage_to_per_assoc(old_cur)
 
             # update user_version for DB
             old_cur.execute(
