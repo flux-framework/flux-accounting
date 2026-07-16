@@ -13,10 +13,10 @@ calculate the raw usage for a given association *U*:
 
 flux-accounting keeps track of job usage in a table according to two properties
 that are set when the database is first created: **PriorityDecayHalfLife** and
-**PriorityUsageResetPeriod**. Each of these parameters represent a number of
-weeks by which to hold usage factors up to the time period where jobs no longer
-play a factor in calculating a usage factor. If these options aren't specified,
-the table defaults to 4 usage columns, each which represent one week's worth of
+**PriorityUsageResetPeriod**. Each of these parameters represent a duration by
+which to hold usage factors up to the time period where jobs no longer play a
+factor in calculating a usage factor. If these options aren't specified, the
+table defaults to 4 usage columns, each which represent one week's worth of
 jobs.
 
 The **job usage factor** table stores past job usage factors per association.
