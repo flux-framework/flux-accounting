@@ -19,9 +19,9 @@ factor in calculating a usage factor. If these options aren't specified, the
 table defaults to 4 usage columns, each which represent one week's worth of
 jobs.
 
-The **job usage factor** table stores past job usage factors per association.
-When an association is first added to the **association** table, they are also
-added to **job usage factor** table.
+The **job_usage_per_association** table stores past job usage factors per
+association. When an association is first added to the **association** table,
+they are also added to **job_usage_per_association** table.
 
 The value of **PriorityDecayHalfLife** determines the amount of time that
 represents one "usage period" of jobs. flux-accounting filters out its ``jobs``
@@ -35,8 +35,9 @@ current raw usage factor.
 :math:`U_{past} = (D \times U_{last\_period}) + (D \times D \times U_{period-2}) + ...`
 
 After the current usage factor is calculated, it is written to the first usage
-bin in the **job usage factor** table along with the other, older factors. The
-oldest factor then gets removed from the table since it is no longer needed.
+bin in the **job_usage_per_association** table along with the other, older
+factors. The oldest factor then gets removed from the table since it is no
+longer needed.
 
 An example
 ==========
