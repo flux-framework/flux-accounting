@@ -310,6 +310,12 @@ value is defined as the sum of products of the number of nodes used
 
   RawUsage = sum(nnodes * t_elapsed)
 
+Resource weights for cores and GPUs can be configured to customize how
+usage is calculated. By default, only nodes are weighted, but weights can be
+adjusted to account for certain resource configurations or other cost-based
+accounting models. See :doc:`../components/job-usage-calculation` for details
+on configuring resource weights.
+
 This job usage factor per association has a half-life decay applied to it as
 time passes. By default, this half-life decay is applied to jobs every week
 for four weeks; jobs older than four weeks no longer play a role in determining

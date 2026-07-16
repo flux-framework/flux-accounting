@@ -178,3 +178,51 @@ Job size bins can also be created to group jobs by their sizes:
     association(nodesec)                 1+             2+             3+             4+
     A:50001                          180.00         120.00           0.00         240.00
     TOTAL                            180.00         120.00           0.00         240.00
+
+Configuring Resource Weights
+=============================
+
+The raw job usage formula can be configured to weight different
+resource types. By default, usage is calculated as
+:math:`sum(nnodes \times t\_elapsed)`, but flux-accounting supports
+configurable weights for nodes, cores, and GPUs:
+
+:math:`U = sum((nnodes \times w_{node} + ncores \times w_{core} +`
+:math:`ngpus \times w_{gpu}) \times t\_elapsed)`
+
+Three configuration keys control these weights:
+
+* ``node_weight`` (default: 1.0)
+* ``core_weight`` (default: 0.0)
+* ``gpu_weight`` (default: 0.0)
+
+Each of the resource weights can be changed and viewed with the ``edit-config``
+and ``view-config`` commands, respectively.
+
+.. warning::
+
+    Consider clearing all current job usage from banks and associations
+    *before* changing the weights for resource types to ensure consistency with
+    how job usage (and subsequently, fair-share) is calculated throughout the
+    database hierarchy.
+
+Example Usage Calculations
+---------------------------
+
+Consider a job using 1 node, 8 cores, 2 GPUs for 100 seconds. Using
+flux-accounting's default resource weights, the usage for this job
+becomes:
+
+:math:`U = (1 \times 1.0 + 8 \times 0.0 + 2 \times 0.0) \times 100 = 100.0`
+
+If we were to add weights for core usage, the usage now becomes:
+
+:math:`U = (1 \times 1.0 + 8 \times 1.0 + 2 \times 0.0) \times 100 = 900.0`
+
+or adding significant more weight to GPU usage, the usage now is calculated as:
+
+:math:`U = (1 \times 1.0 + 8 \times 0.0 + 2 \times 10.0) \times 100 = 2100.0`
+
+Configuring resources to have different weights can be useful for certain kinds
+of cost-based accounting depending on how your system is built and how you want
+to consider usage of your system.
