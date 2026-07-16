@@ -302,9 +302,9 @@ Job Usage Factor Calculation
 ****************************
 
 An association's job usage represents their usage on a cluster in relation to
-the size of their jobs and how long they ran. The raw job usage value is
-defined as the sum of products of the number of nodes used (``nnodes``) and
-time elapsed (``t_elapsed``):
+the size of their jobs and how long they ran. By default, the raw job usage
+value is defined as the sum of products of the number of nodes used
+(``nnodes``) and time elapsed (``t_elapsed``):
 
 .. code-block:: console
 

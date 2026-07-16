@@ -4,10 +4,9 @@
 Job Usage Calculation
 #####################
 
-The raw job usage factor for an association is defined as the sum of products
-of number of nodes used (``nnodes``) and time elapsed (``t_elapsed``). To
-calculate the raw usage for a given association *U*:
-
+By default, the raw job usage factor for an association is defined as the sum
+of products of number of nodes used (``nnodes``) and time elapsed
+(``t_elapsed``). To calculate the raw usage for a given association *U*:
 
 :math:`U = sum(nnodes \times t\_elapsed)`
 
@@ -29,8 +28,8 @@ table and retrieves an association's jobs that have completed in the usage
 period.
 
 As time goes on and usage periods get older, their raw usage value has a decay
-factor :math:`D` (0.5) applied to them before they are added to the user's
-current raw usage factor.
+factor :math:`D` (by default, 0.5) applied to them before they are added to the
+user's current raw usage factor.
 
 :math:`U_{past} = (D \times U_{last\_period}) + (D \times D \times U_{period-2}) + ...`
 
