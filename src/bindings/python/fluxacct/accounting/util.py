@@ -82,6 +82,11 @@ def config_logging(verbosity, logger):
         verbosity: the level of verbosity to set the logger to.
         logger: the logger object.
     """
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s: %(levelname)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
     log_level = logging.WARNING
     if verbosity > 0:
         log_level = logging.INFO

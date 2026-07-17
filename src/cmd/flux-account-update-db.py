@@ -10,6 +10,7 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import argparse
+import logging
 import os
 import sqlite3
 import sys
@@ -20,6 +21,9 @@ from argparse import RawDescriptionHelpFormatter
 
 import fluxacct.accounting
 from fluxacct.accounting import create_db as c
+from fluxacct.accounting import util
+
+LOGGER = logging.getLogger(__name__)
 
 
 def set_db_loc(args):
@@ -31,7 +35,7 @@ def set_db_loc(args):
 def est_sqlite_conn(path):
     # try to open database file; will exit with -1 if database file not found
     if not os.path.isfile(path):
-        print(f"Database file does not exist: {path}", file=sys.stderr)
+        LOGGER.exception("Database file does not exist: %s", path)
         sys.exit(1)
 
     db_uri = "file:" + path + "?mode=rw"
@@ -40,8 +44,8 @@ def est_sqlite_conn(path):
         # set foreign keys constraint
         conn.execute("PRAGMA foreign_keys = 1")
     except sqlite3.OperationalError as exc:
-        print(f"Unable to open database file: {db_uri}", file=sys.stderr)
-        print(f"Exception: {exc}")
+        LOGGER.exception("Unable to open database file: %s", db_uri)
+        LOGGER.exception("Exception: %s", exc)
         sys.exit(1)
 
     return conn
@@ -130,7 +134,7 @@ def rename_tmp_table(old_cur, table):
 # that doesn't yet exist and create a "CREATE TABLE ..." statement to add to the
 # old flux-accounting DB
 def update_tables(old_cur, new_cur):
-    print("checking for new tables...")
+    LOGGER.info("checking for new tables...")
 
     # get all tables from old database
     old_cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
@@ -143,7 +147,7 @@ def update_tables(old_cur, new_cur):
     for table in new_tables:
         if table not in old_tables:
             # we need to add this table to the DB
-            print("new table found: %s" % table[0])
+            LOGGER.info("new table found: %s", table[0])
 
             # get schema information about new table to add
             new_cur.execute("PRAGMA table_info(%s)" % table)
@@ -182,7 +186,7 @@ def update_tables(old_cur, new_cur):
 # columns from a newer version of flux-accounting, copy any and all existing rows
 # from the old table, and DROP the old table to be replaced with the new table
 def update_columns(old_cur, new_cur):
-    print("checking for new columns to add in tables...")
+    LOGGER.info("checking for new columns to add in tables...")
 
     # get all table names from the temporary new database
     new_cur.execute(
@@ -305,7 +309,7 @@ def migrate_job_usage_to_per_assoc(cur):
     Args:
         cur: the Cursor object used to interact with the database.
     """
-    print("migrating job usage data to per-association table...")
+    LOGGER.info("migrating job usage data to per-association table...")
     # find all usage bin columns from job_usage_factor_table
     cur.execute("PRAGMA table_info('job_usage_factor_table')")
     columns = cur.fetchall()
@@ -314,16 +318,16 @@ def migrate_job_usage_to_per_assoc(cur):
     ]
 
     if not bin_columns:
-        print("no usage_factor_period_* columns found, skipping migration")
+        LOGGER.info("no usage_factor_period_* columns found, skipping migration")
         return
 
-    print(f"found {len(bin_columns)} usage period columns to migrate")
+    LOGGER.info("found %d usage period columns to migrate", len(bin_columns))
     # fetch all rows from the old table
     cur.execute(
         f"SELECT username, userid, bank, {', '.join(bin_columns)} FROM job_usage_factor_table"
     )
     rows = cur.fetchall()
-    print(f"migrating {len(rows)} associations...")
+    LOGGER.info("migrating %d associations...", len(rows))
 
     for row in rows:
         username, userid, bank = row[0], row[1], row[2]
@@ -338,7 +342,7 @@ def migrate_job_usage_to_per_assoc(cur):
                 """,
                 (username, userid, bank, period, value),
             )
-    print("migration complete")
+    LOGGER.info("migration complete")
 
 
 def update_db(path, new_db):
@@ -380,12 +384,15 @@ def update_db(path, new_db):
             old_conn.close()
             new_conn.close()
     except sqlite3.OperationalError as exc:
-        print(f"Unable to open temporary database file: {new_db}")
-        print(f"Exception: {exc}")
+        LOGGER.exception(
+            "Unable to open temporary database file: %s. Exception: %s",
+            new_db,
+            exc,
+        )
         shutil.rmtree(tmp_dir_name)
         sys.exit(1)
     except sqlite3.IntegrityError as exc:
-        print(f"Exception: {exc}")
+        LOGGER.exception("SQLite integrity error: %s", exc)
         shutil.rmtree(tmp_dir_name)
         sys.exit(1)
 
@@ -408,8 +415,16 @@ def main():
         dest="new_db",
         help="(testing only) specify location of new template database file",
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="increase verbosity of output",
+    )
 
     args = parser.parse_args()
+    util.config_logging(args.verbose, LOGGER)
 
     old_db = set_db_loc(args)
 
