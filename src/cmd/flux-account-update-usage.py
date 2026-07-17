@@ -19,11 +19,6 @@ import fluxacct.accounting
 from fluxacct.accounting import job_usage_calculation as job_usage
 from fluxacct.accounting import util
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s: %(levelname)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
 LOGGER = logging.getLogger(__name__)
 
 
