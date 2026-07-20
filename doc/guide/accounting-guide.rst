@@ -390,11 +390,13 @@ To enforce these kinds of permissions, ensure that both flux-accounting's
 ``queue_table`` is configured with the queues you want to restrict access to as
 well as the associations' ``queues`` attributes.
 
-.. note::
+.. warning::
 
-  If an association submits a job under a queue which flux-accounting does not
-  know about (i.e it is not in flux-accounting's ``queue_table``), it will
-  **still allow** the job to run.
+  If queues are dynamically added to Flux but are not configured in
+  flux-accounting (i.e it is not in flux-accounting's ``queue_table``), *all*
+  users are allowed to submit jobs under this queue by default (see `RFC 33`_
+  for more details on queue access policy) unless restricted by another
+  validator mechanism.
 
 example
 -------
@@ -526,3 +528,5 @@ fair-share
 .. _jobtap: https://flux-framework.readthedocs.io/projects/flux-core/en/latest/man7/flux-jobtap-plugins.html#flux-jobtap-plugins-7
 
 .. _states: https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_21.html
+
+.. _RFC 33: https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_33.html#access-policy
