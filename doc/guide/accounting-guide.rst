@@ -302,13 +302,19 @@ Job Usage Factor Calculation
 ****************************
 
 An association's job usage represents their usage on a cluster in relation to
-the size of their jobs and how long they ran. The raw job usage value is
-defined as the sum of products of the number of nodes used (``nnodes``) and
-time elapsed (``t_elapsed``):
+the size of their jobs and how long they ran. By default, the raw job usage
+value is defined as the sum of products of the number of nodes used
+(``nnodes``) and time elapsed (``t_elapsed``):
 
 .. code-block:: console
 
   RawUsage = sum(nnodes * t_elapsed)
+
+Resource weights for cores and GPUs can be configured to customize how
+usage is calculated. By default, only nodes are weighted, but weights can be
+adjusted to account for certain resource configurations or other cost-based
+accounting models. See :doc:`../components/job-usage-calculation` for details
+on configuring resource weights.
 
 This job usage factor per association has a half-life decay applied to it as
 time passes. By default, this half-life decay is applied to jobs every week

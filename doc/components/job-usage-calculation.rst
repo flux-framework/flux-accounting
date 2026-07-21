@@ -4,24 +4,23 @@
 Job Usage Calculation
 #####################
 
-The raw job usage factor for an association is defined as the sum of products
-of number of nodes used (``nnodes``) and time elapsed (``t_elapsed``). To
-calculate the raw usage for a given association *U*:
-
+By default, the raw job usage factor for an association is defined as the sum
+of products of number of nodes used (``nnodes``) and time elapsed
+(``t_elapsed``). To calculate the raw usage for a given association *U*:
 
 :math:`U = sum(nnodes \times t\_elapsed)`
 
 flux-accounting keeps track of job usage in a table according to two properties
 that are set when the database is first created: **PriorityDecayHalfLife** and
-**PriorityUsageResetPeriod**. Each of these parameters represent a number of
-weeks by which to hold usage factors up to the time period where jobs no longer
-play a factor in calculating a usage factor. If these options aren't specified,
-the table defaults to 4 usage columns, each which represent one week's worth of
+**PriorityUsageResetPeriod**. Each of these parameters represent a duration by
+which to hold usage factors up to the time period where jobs no longer play a
+factor in calculating a usage factor. If these options aren't specified, the
+table defaults to 4 usage columns, each which represent one week's worth of
 jobs.
 
-The **job usage factor** table stores past job usage factors per association.
-When an association is first added to the **association** table, they are also
-added to **job usage factor** table.
+The **job_usage_per_association** table stores past job usage factors per
+association. When an association is first added to the **association** table,
+they are also added to **job_usage_per_association** table.
 
 The value of **PriorityDecayHalfLife** determines the amount of time that
 represents one "usage period" of jobs. flux-accounting filters out its ``jobs``
@@ -29,14 +28,15 @@ table and retrieves an association's jobs that have completed in the usage
 period.
 
 As time goes on and usage periods get older, their raw usage value has a decay
-factor :math:`D` (0.5) applied to them before they are added to the user's
-current raw usage factor.
+factor :math:`D` (by default, 0.5) applied to them before they are added to the
+user's current raw usage factor.
 
 :math:`U_{past} = (D \times U_{last\_period}) + (D \times D \times U_{period-2}) + ...`
 
 After the current usage factor is calculated, it is written to the first usage
-bin in the **job usage factor** table along with the other, older factors. The
-oldest factor then gets removed from the table since it is no longer needed.
+bin in the **job_usage_per_association** table along with the other, older
+factors. The oldest factor then gets removed from the table since it is no
+longer needed.
 
 An example
 ==========
@@ -178,3 +178,51 @@ Job size bins can also be created to group jobs by their sizes:
     association(nodesec)                 1+             2+             3+             4+
     A:50001                          180.00         120.00           0.00         240.00
     TOTAL                            180.00         120.00           0.00         240.00
+
+Configuring Resource Weights
+=============================
+
+The raw job usage formula can be configured to weight different
+resource types. By default, usage is calculated as
+:math:`sum(nnodes \times t\_elapsed)`, but flux-accounting supports
+configurable weights for nodes, cores, and GPUs:
+
+:math:`U = sum((nnodes \times w_{node} + ncores \times w_{core} +`
+:math:`ngpus \times w_{gpu}) \times t\_elapsed)`
+
+Three configuration keys control these weights:
+
+* ``node_weight`` (default: 1.0)
+* ``core_weight`` (default: 0.0)
+* ``gpu_weight`` (default: 0.0)
+
+Each of the resource weights can be changed and viewed with the ``edit-config``
+and ``view-config`` commands, respectively.
+
+.. warning::
+
+    Consider clearing all current job usage from banks and associations
+    *before* changing the weights for resource types to ensure consistency with
+    how job usage (and subsequently, fair-share) is calculated throughout the
+    database hierarchy.
+
+Example Usage Calculations
+---------------------------
+
+Consider a job using 1 node, 8 cores, 2 GPUs for 100 seconds. Using
+flux-accounting's default resource weights, the usage for this job
+becomes:
+
+:math:`U = (1 \times 1.0 + 8 \times 0.0 + 2 \times 0.0) \times 100 = 100.0`
+
+If we were to add weights for core usage, the usage now becomes:
+
+:math:`U = (1 \times 1.0 + 8 \times 1.0 + 2 \times 0.0) \times 100 = 900.0`
+
+or adding significant more weight to GPU usage, the usage now is calculated as:
+
+:math:`U = (1 \times 1.0 + 8 \times 0.0 + 2 \times 10.0) \times 100 = 2100.0`
+
+Configuring resources to have different weights can be useful for certain kinds
+of cost-based accounting depending on how your system is built and how you want
+to consider usage of your system.
