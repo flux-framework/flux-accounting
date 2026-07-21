@@ -160,6 +160,17 @@ test_expect_success 'list all configs with format string' '
 	test_cmp list_configs_format.test list_configs_format.expected
 '
 
+test_expect_success 'edit the usage parameters successfully' '
+	flux account edit-config \
+		priority_decay_half_life=15m \
+		priority_usage_reset_period=1h \
+		decay_factor=0.2 &&
+	flux account list-configs -o "{key}->{value}" > edit_usage_configs.test &&
+	grep "priority_decay_half_life->900" edit_usage_configs.test &&
+	grep "priority_usage_reset_period->3600" edit_usage_configs.test &&
+	grep "decay_factor->0.2" edit_usage_configs.test
+'
+
 test_expect_success 'shut down flux-accounting service' '
 	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
