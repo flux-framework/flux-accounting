@@ -192,6 +192,46 @@ class TestAccountingCLI(unittest.TestCase):
         with self.assertRaises(ValueError):
             d.edit_config(conn, key_value_strings=["i_dont_exist=foo"])
 
+    # trying to remove deny_unknown_queues option will raise a ValueError
+    def test_27_delete_deny_unknown_queues(self):
+        with self.assertRaises(ValueError):
+            d.delete_config(conn, key="deny_unknown_queues")
+
+    def test_28_edit_deny_unknown_queues_true(self):
+        d.edit_config(conn, key_value_strings=["deny_unknown_queues=true"])
+        test = cur.execute(
+            "SELECT value FROM config_table WHERE key='deny_unknown_queues'"
+        ).fetchone()
+        self.assertEqual(test["value"], "true")
+
+    def test_29_edit_deny_unknown_queues_false(self):
+        d.edit_config(conn, key_value_strings=["deny_unknown_queues=false"])
+        test = cur.execute(
+            "SELECT value FROM config_table WHERE key='deny_unknown_queues'"
+        ).fetchone()
+        self.assertEqual(test["value"], "false")
+
+    def test_30_edit_deny_unknown_queues_case_insensitive(self):
+        d.edit_config(conn, key_value_strings=["deny_unknown_queues=True"])
+        test = cur.execute(
+            "SELECT value FROM config_table WHERE key='deny_unknown_queues'"
+        ).fetchone()
+        self.assertEqual(test["value"], "True")
+
+    # trying to set deny_unknown_queues to invalid value will raise a ValueError
+    def test_31_edit_deny_unknown_queues_bad_1(self):
+        with self.assertRaisesRegex(
+            ValueError, "deny_unknown_queues must be 'true' or 'false'"
+        ):
+            d.edit_config(conn, key_value_strings=["deny_unknown_queues=yes"])
+
+    # trying to set deny_unknown_queues to invalid value will raise a ValueError
+    def test_32_edit_deny_unknown_queues_bad_2(self):
+        with self.assertRaisesRegex(
+            ValueError, "deny_unknown_queues must be 'true' or 'false'"
+        ):
+            d.edit_config(conn, key_value_strings=["deny_unknown_queues=1"])
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):
