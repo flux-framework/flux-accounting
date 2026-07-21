@@ -109,6 +109,7 @@ test_expect_success 'list all configs in config_table' '
 	node_weight                 | 1.0    
 	core_weight                 | 0.0    
 	gpu_weight                  | 0.0    
+	deny_unknown_queues         | false  
 	key1                        | foo1   
 	key2                        | foo2   
 	EOF
@@ -133,6 +134,7 @@ test_expect_success 'list all configs with --fields' '
 	---------------------------
 	core_weight                
 	decay_factor               
+	deny_unknown_queues        
 	gpu_weight                 
 	key1                       
 	key2                       
@@ -154,6 +156,7 @@ test_expect_success 'list all configs with format string' '
 	node_weight->1.0
 	core_weight->0.0
 	gpu_weight->0.0
+	deny_unknown_queues->false
 	key1->foo1
 	key2->foo2
 	EOF

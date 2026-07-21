@@ -303,6 +303,13 @@ def create_db(
             "0.0",
         ),
     )
+    conn.execute(
+        f"INSERT INTO config_table VALUES (?, ?)",
+        (
+            "deny_unknown_queues",
+            "false",
+        ),
+    )
     conn.commit()
     LOGGER.info("Created config_table successfully")
 
