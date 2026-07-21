@@ -82,6 +82,89 @@ test_expect_success 'cancel job' '
 	flux cancel ${job2}
 '
 
+test_expect_success 'enable deny_unknown_queues config option' '
+	flux account edit-config deny_unknown_queues=true
+'
+
+test_expect_success 'reload plugin with deny_unknown_queues enabled' '
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load \
+		${MULTI_FACTOR_PRIORITY} "config=$(flux account export-json)" &&
+	flux jobtap query mf_priority.so > query.json &&
+	cat query.json | jq
+'
+
+test_expect_success 'job to known queue (pdebug) still works' '
+	job3=$(flux python ${SUBMIT_AS} 50001 -N1 --queue=pdebug sleep inf) &&
+	flux job wait-event -t 5 ${job3} alloc &&
+	flux cancel ${job3}
+'
+
+test_expect_success 'job to unknown queue (foo) now rejected' '
+	test_must_fail flux python ${SUBMIT_AS} 50001 -N1 --queue=foo sleep inf 2>err &&
+	grep "queue.*foo.*unknown.*flux-accounting.*deny-unknown-queues" err
+'
+
+test_expect_success 'disable deny_unknown_queues and reload plugin' '
+	flux account edit-config deny_unknown_queues=false &&
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load \
+		${MULTI_FACTOR_PRIORITY} "config=$(flux account export-json)"
+'
+
+test_expect_success 'job to unknown queue (foo) accepted again' '
+	job4=$(flux python ${SUBMIT_AS} 50001 -N1 --queue=foo sleep inf) &&
+	flux job wait-event -t 5 ${job4} alloc &&
+	flux cancel ${job4}
+'
+
+test_expect_success 'enable deny_unknown_queues via priority-update' '
+	flux account edit-config deny_unknown_queues=true &&
+	flux account-priority-update -p ${DB}
+'
+
+test_expect_success 'job to known queue (pdebug) still works after priority-update' '
+	job5=$(flux python ${SUBMIT_AS} 50001 -N1 --queue=pdebug sleep inf) &&
+	flux job wait-event -t 5 ${job5} alloc &&
+	flux cancel ${job5}
+'
+
+test_expect_success 'job to unknown queue (foo) rejected after priority-update' '
+	test_must_fail flux python ${SUBMIT_AS} 50001 -N1 --queue=foo sleep inf 2>err2 &&
+	grep "queue.*foo.*unknown.*flux-accounting.*deny-unknown-queues" err2
+'
+
+test_expect_success 'disable deny_unknown_queues via priority-update' '
+	flux account edit-config deny_unknown_queues=false &&
+	flux account-priority-update -p ${DB}
+'
+
+test_expect_success 'job to unknown queue (foo) accepted after priority-update disable' '
+	job6=$(flux python ${SUBMIT_AS} 50001 -N1 --queue=foo sleep inf) &&
+	flux job wait-event -t 5 ${job6} alloc &&
+	flux cancel ${job6}
+'
+
+test_expect_success 'reject invalid value for deny_unknown_queues (yes)' '
+	test_must_fail flux account edit-config deny_unknown_queues=yes 2>invalid_err1 &&
+	grep "must be.*true.*false" invalid_err1
+'
+
+test_expect_success 'reject invalid value for deny_unknown_queues (1)' '
+	test_must_fail flux account edit-config deny_unknown_queues=1 2>invalid_err2 &&
+	grep "must be.*true.*false" invalid_err2
+'
+
+test_expect_success 'reject invalid value for deny_unknown_queues (enabled)' '
+	test_must_fail flux account edit-config deny_unknown_queues=enabled 2>invalid_err3 &&
+	grep "must be.*true.*false" invalid_err3
+'
+
+test_expect_success 'verify deny_unknown_queues still set to false after invalid attempts' '
+	flux account view-config deny_unknown_queues > view_output &&
+	grep "false" view_output
+'
+
 test_expect_success 'shut down flux-accounting service' '
 	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
