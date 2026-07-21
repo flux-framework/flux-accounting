@@ -282,6 +282,18 @@ def export_as_json(conn, cursor):
 
     config["banks"] = banks
 
+    # fetch options for plugin
+    plugin_config = {}
+    cursor.execute("SELECT value FROM config_table WHERE key='deny_unknown_queues'")
+    row = cursor.fetchone()
+    if row:
+        plugin_config["deny_unknown_queues"] = row["value"].lower() == "true"
+    else:
+        # if key is missing, default to False
+        plugin_config["deny_unknown_queues"] = False
+
+    config["config"] = plugin_config
+
     # fetch rows from priority_factor_weight_table
     for row in cursor.execute("SELECT * FROM priority_factor_weight_table"):
         factor = {

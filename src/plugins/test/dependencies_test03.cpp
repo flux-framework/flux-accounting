@@ -28,6 +28,7 @@ extern "C" {
 std::map<int, std::map<std::string, Association>> users;
 // define a test queues map
 std::map<std::string, Queue> queues;
+bool deny_unknown_queues = false;
 
 
 /*

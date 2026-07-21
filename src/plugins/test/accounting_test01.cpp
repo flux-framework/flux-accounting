@@ -30,6 +30,7 @@ std::map<int, std::string> users_def_bank;
 std::map<std::string, Queue> queues;
 // define a vector of chargeable projects
 std::vector<std::string> projects;
+bool deny_unknown_queues = false;
 
 
 /*
