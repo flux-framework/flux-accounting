@@ -118,6 +118,113 @@ flux-accounting to *only* consider jobs newer than said timestamp with the
 command will notify any future job usage updates to ignore jobs submitted under
 that bank older than when the command was issued.
 
+Reconfiguring Job Usage Parameters After Deployment
+===================================================
+
+As system workloads and scheduling policies evolve, administrators may need to
+adjust how job usage is tracked and weighted. For example, a system
+transitioning from long-running batch jobs to shorter, interactive workloads
+may benefit from shorter usage periods and more frequent bin rotations.
+Similarly, administrators may want to tune the decay factor to give more or
+less weight to historical usage when calculating fair-share values. These
+adjustments can help ensure that job usage calculations remain aligned with the
+current usage patterns and scheduling priorities of the system.
+
+The job usage calculation parameters (``priority_decay_half_life``,
+``priority_usage_reset_period``, and ``decay_factor``) can be changed after the
+database has been deployed using the :man1:`flux-account-edit-config` command.
+This allows administrators to adjust how job usage is tracked and decayed
+without recreating the database.
+
+Using the ``edit-config`` command
+---------------------------------
+
+The ``edit-config`` command accepts one or more key-value pairs to update in
+the configuration table. The following configuration keys control job usage
+calculation:
+
+- ``priority_decay_half_life``: The time period representing one "usage period"
+  of jobs. This determines how often usage bins are rotated.
+
+- ``priority_usage_reset_period``: The total time span over which historical
+  job usage is tracked. This determines the total number of usage bins.
+
+- ``decay_factor``: The multiplier applied to older usage periods when
+  calculating historical usage. The default value is 0.5, meaning each older
+  period contributes half as much as the previous one.
+
+Values for ``priority_decay_half_life`` and ``priority_usage_reset_period`` can
+be specified using `Flux Standard Duration (FSD)`_ format or in seconds. FSD
+supports units such as ``m`` (minutes), ``h`` (hours), and ``d`` (days).
+
+The Reconfiguration Process
+----------------------------
+
+When you modify any of the three job usage parameters listed above, the
+``edit-config`` will:
+
+1. Calculate the new number of usage bins based on the updated parameters
+2. Delete all existing usage bin data for every association
+3. Re-create the correct number of usage bins for each association (initialized to 0.0)
+4. Reset all associations' job history timestamps so that the next usage update
+   recalculates usage from scratch with the new configuration
+
+.. note::
+
+    Reconfiguring the above parameters does **not** clear job records from the
+    flux-accounting database. These records can still be viewed with ``flux
+    account view-job-records``.
+
+You can also view the current configuration values at any time:
+
+.. code-block:: console
+
+    $ flux account list-configs
+    key                         | value
+    ----------------------------+--------
+    priority_usage_reset_period | 2419200
+    priority_decay_half_life    | 604800
+    decay_factor                | 0.5
+
+Important Considerations
+------------------------
+
+.. warning::
+
+    Reconfiguring job usage parameters resets all job usage values to 0.0 for
+    every association in the database. This has several important implications:
+
+    - **fair-share values will be affected**: Since fair-share calculations
+      depend on job usage, all fair-share values will also see changes based on
+      the new usage data.
+
+    - **historical usage is rebuilt**: The system will reconstruct historical
+      usage bins from scratch for *every* association using the new
+      configuration. Depending on the size of your ``association_table``, this
+      may take some time (on the order of minutes) during the reconfiguration.
+
+    - **historical usage is no longer considered**: flux-accounting will **no
+      longer** consider past jobs towards an association's job usage value;
+      every association's and bank's job usage will be reset to 0.0.
+
+    - **timing matters**: Since flux-accounting will be re-calculating job
+      usage bins per-association, many rows in the database will be affected.
+      Consider performing reconfigurations during maintenance windows or
+      periods of low activity to other concurrent operations on the database.
+
+    - **changes cannot be undone**: Once the reconfiguration is confirmed and
+      committed, you cannot restore the previous usage values. Plan your
+      configuration changes carefully.
+
+The number of usage bins :math:`N` created for each association is calculated
+as:
+
+:math:`N = priority\_usage\_reset\_period / priority\_decay\_half\_life`
+
+For example, with the default values of a 4-week reset period and 1-week
+half-life, each association has 4 usage bins. Changing to an 8-hour half-life
+and 24-hour reset period would result in 3 usage bins per association.
+
 Calculating job usage arbitrarily
 =================================
 
@@ -226,3 +333,5 @@ or adding significant more weight to GPU usage, the usage now is calculated as:
 Configuring resources to have different weights can be useful for certain kinds
 of cost-based accounting depending on how your system is built and how you want
 to consider usage of your system.
+
+.. _Flux Standard Duration (FSD): https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_23.html
