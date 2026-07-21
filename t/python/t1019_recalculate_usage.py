@@ -171,31 +171,18 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(job_usage_breakdown[1]["value"], 0.0)
         self.assertEqual(job_usage_breakdown[2]["value"], 0.0)
 
-    # If "n" is input after editing some of the configuration parameters, the changes are
-    # not committed and rolled back
-    @mock.patch("builtins.input", return_value="n")
-    @mock.patch("time.time", mock.MagicMock(return_value=1600))
-    def test_04_reconfigure_bins_deny_confirm(self, mock_input):
-        d.edit_config(
-            conn, ["priority_usage_reset_period=6h", "priority_decay_half_life=1h"]
-        )
-        # make sure parameters remain the same as before the above edit_config() call
-        result = d.list_configs(conn)
-        self.assertIn("priority_usage_reset_period | 1200", result)
-        self.assertIn("priority_decay_half_life    | 400", result)
-
     # decay_factor can be changed and the amount of decay applied to past jobs will be
     # different
     @mock.patch("builtins.input", return_value="y")
     @mock.patch("time.time", mock.MagicMock(return_value=2600))
-    def test_05_edit_decay_factor(self, mock_input):
+    def test_04_edit_decay_factor(self, mock_input):
         d.edit_config(conn, ["decay_factor=0.1"])
         result = d.list_configs(conn)
         print(result)
         self.assertIn("decay_factor                | 0.1", result)
 
     @mock.patch("time.time", mock.MagicMock(return_value=3200))
-    def test_06_insert_new_job(self):
+    def test_05_insert_new_job(self):
         # insert another 1-node, 1000-second-long job
         self.insert_job(3, 50001, "A", 100, 2100, 3100)
         jobs.update_job_usage(conn)
@@ -211,7 +198,7 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(job_usage_breakdown[2]["value"], 0.0)
 
     @mock.patch("time.time", mock.MagicMock(return_value=3600))
-    def test_07_update_usage_new_decay_factor(self):
+    def test_06_update_usage_new_decay_factor(self):
         jobs.update_job_usage(conn)
         total_usage = u.view_user(conn, user="user1", format_string="{job_usage}")
         self.assertIn("100.0", total_usage)

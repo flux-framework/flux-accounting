@@ -358,21 +358,6 @@ def edit_config(conn, cursor, key_value_strings):
             raise ValueError(f"key {key} not found in config_table")
 
     if requires_rebin:
-        choice = (
-            input(
-                "WARNING: changing one or more of priority_usage_reset_period, "
-                "priority_decay_half_life, or decay_factor requires re-binning all "
-                "of the job usage bins for every association in the flux-accounting "
-                "database and will reset the usage for every association to 0.0; are "
-                "you sure you want to continue? [y/n] "
-            )
-            .strip()
-            .lower()
-        )
-        if choice != "y":
-            # roll back the config_table updates
-            conn.rollback()
-            return 0
         # pylint: disable=no-value-for-parameter
         reconfigure_usage_bins(conn)
 
