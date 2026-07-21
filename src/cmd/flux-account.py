@@ -1572,6 +1572,9 @@ def add_edit_config_arg(subparsers):
         "edit-config",
         help="edit one or more key-value pairs in config_table",
         formatter_class=flux.util.help_formatter(),
+        description="Edit configuration values. WARNING: changing "
+        "priority_usage_reset_period, priority_decay_half_life, or decay_factor "
+        "will re-bin all job usage bins and reset usage for every association to 0.0.",
     )
     subparsers_edit_config.set_defaults(func="edit_config")
     subparsers_edit_config.add_argument(
