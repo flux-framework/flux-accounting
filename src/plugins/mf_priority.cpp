@@ -1249,6 +1249,17 @@ static int validate_cb (flux_plugin_t *p,
         return flux_jobtap_reject_job (p, args, "user/bank entry has been "
                                        "disabled from flux-accounting DB");
 
+    // check if deny_unknown_queues is enabled and queue is unknown to
+    // flux-accounting (not in the global queues map)
+    if (deny_unknown_queues && queue != NULL &&
+        queues.find (std::string (queue)) == queues.end ()) {
+        return flux_jobtap_reject_job (p,
+                                       args,
+                                       "queue \"%s\" is unknown to "
+                                       "flux-accounting and deny-unknown-queues "
+                                       "is enabled",
+                                       queue);
+    }
     if (get_queue_info (queue, a->queues, queues) == INVALID_QUEUE) {
         // the association specified a queue that they do not belong to; reject
         // the job and return which queues they belong to
