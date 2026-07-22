@@ -43,6 +43,7 @@ def est_sqlite_conn(path):
         conn = sqlite3.connect(db_uri, uri=True)
         # set foreign keys constraint
         conn.execute("PRAGMA foreign_keys = 1")
+        LOGGER.info("successfully opened database: %s", path)
     except sqlite3.OperationalError as exc:
         LOGGER.exception("Unable to open database file: %s", db_uri)
         LOGGER.exception("Exception: %s", exc)
@@ -127,6 +128,7 @@ def rename_tmp_table(old_cur, table):
     # rename table to match old table
     alter_stmt = "ALTER TABLE " + table[0] + "_tmp" + " RENAME TO " + table[0]
     old_cur.execute(alter_stmt)
+    LOGGER.info("replaced table %s with updated schema", table[0])
 
 
 # update_tables() is responsible for adding any new tables that don't yet exist
@@ -144,6 +146,7 @@ def update_tables(old_cur, new_cur):
     new_cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
     new_tables = new_cur.fetchall()
 
+    new_tables_added = 0
     for table in new_tables:
         if table not in old_tables:
             # we need to add this table to the DB
@@ -178,6 +181,12 @@ def update_tables(old_cur, new_cur):
 
             # add table to old DB
             old_cur.execute(add_stmt)
+            new_tables_added += 1
+
+    if new_tables_added == 0:
+        LOGGER.info("no new tables found")
+    else:
+        LOGGER.info("added %d new table(s)", new_tables_added)
 
 
 # update_columns() looks that the existing tables in the old flux-accounting DB
@@ -333,6 +342,7 @@ def migrate_job_usage_to_per_assoc(cur):
 
 
 def update_db(path, new_db):
+    LOGGER.info("starting database update for %s", path)
     old_conn = est_sqlite_conn(path)
     old_cur = old_conn.cursor()
 
@@ -363,9 +373,14 @@ def update_db(path, new_db):
             old_cur.execute(
                 "PRAGMA user_version = %d" % (fluxacct.accounting.DB_SCHEMA_VERSION)
             )
+            LOGGER.info(
+                "updated database schema version to %d",
+                fluxacct.accounting.DB_SCHEMA_VERSION,
+            )
 
             # commit changes
             old_conn.commit()
+            LOGGER.info("database update complete")
 
             # close connections to DB's and remove temporary database
             old_conn.close()
