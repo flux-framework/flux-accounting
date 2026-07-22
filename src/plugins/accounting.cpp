@@ -847,5 +847,15 @@ int initialize_plugin (
             return -1;
     }
 
+    // unpack optional configuration parameters and options
+    json_t *db_config = NULL;
+    if (json_unpack_ex (config_obj, &error, 0, "{s?o}", "config", &db_config) == 0
+        && db_config) {
+        int deny_unknown_queues_int = 0;
+        json_unpack (db_config, "{s?b}", "deny_unknown_queues", &deny_unknown_queues_int);
+        extern bool deny_unknown_queues;
+        deny_unknown_queues = (deny_unknown_queues_int != 0);
+    }
+
     return 0;
 }

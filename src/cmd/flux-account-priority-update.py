@@ -157,6 +157,19 @@ def bulk_update(path):
     data = {"data": bulk_factor_data}
     flux.Flux().rpc("job-manager.mf_priority.rec_fac_update", data).get()
 
+    # fetch config values for plugin
+    plugin_config = {}
+    cur.execute("SELECT value FROM config_table WHERE key='deny_unknown_queues'")
+    row = cur.fetchone()
+    if row:
+        plugin_config["deny_unknown_queues"] = row["value"].lower() == "true"
+    else:
+        # if key is missing, default to False
+        plugin_config["deny_unknown_queues"] = False
+
+    data = {"data": plugin_config}
+    flux.Flux().rpc("job-manager.mf_priority.rec_config_update", data).get()
+
     flux.Flux().rpc("job-manager.mf_priority.reprioritize")
 
     # close DB connection

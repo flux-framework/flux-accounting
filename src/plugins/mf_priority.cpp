@@ -55,6 +55,7 @@ std::map<std::string, Bank> banks;
 std::map<int, std::string> users_def_bank;
 std::vector<std::string> projects;
 std::map<std::string, int> priority_weights;
+bool deny_unknown_queues = false;
 
 /******************************************************************************
  *                                                                            *
@@ -911,6 +912,46 @@ error:
 }
 
 
+/*
+ * Unpack a payload from an external bulk update service and update the
+ * deny_unknown_queues config option.
+ */
+static void rec_config_cb (flux_t *h,
+                           flux_msg_handler_t *mh,
+                           const flux_msg_t *msg,
+                           void *arg)
+{
+    json_t *data = NULL;
+    json_error_t error;
+    int deny_unknown_queues_int = 0;
+
+    if (flux_request_unpack (msg, NULL, "{s:o}", "data", &data) < 0) {
+        flux_log_error (h, "failed to unpack config update msg");
+        goto error;
+    }
+
+    if (!data || !json_is_object (data)) {
+        flux_log (h, LOG_ERR, "mf_priority: invalid config payload");
+        goto error;
+    }
+
+    if (json_unpack_ex (data, &error, 0,
+                        "{s?b}",
+                        "deny_unknown_queues", &deny_unknown_queues_int) < 0) {
+        flux_log (h, LOG_ERR, "mf_priority config unpack: %s", error.text);
+        goto error;
+    }
+
+    deny_unknown_queues = (deny_unknown_queues_int != 0);
+
+    if (flux_respond (h, msg, NULL) < 0)
+        flux_log_error (h, "flux_respond");
+    return;
+error:
+    flux_respond_error (h, msg, errno, flux_msg_last_error (msg));
+}
+
+
 static void reprior_cb (flux_t *h,
                         flux_msg_handler_t *mh,
                         const flux_msg_t *msg,
@@ -1208,6 +1249,17 @@ static int validate_cb (flux_plugin_t *p,
         return flux_jobtap_reject_job (p, args, "user/bank entry has been "
                                        "disabled from flux-accounting DB");
 
+    // check if deny_unknown_queues is enabled and queue is unknown to
+    // flux-accounting (not in the global queues map)
+    if (deny_unknown_queues && queue != NULL &&
+        queues.find (std::string (queue)) == queues.end ()) {
+        return flux_jobtap_reject_job (p,
+                                       args,
+                                       "queue \"%s\" is unknown to "
+                                       "flux-accounting and deny-unknown-queues "
+                                       "is enabled",
+                                       queue);
+    }
     if (get_queue_info (queue, a->queues, queues) == INVALID_QUEUE) {
         // the association specified a queue that they do not belong to; reject
         // the job and return which queues they belong to
@@ -2163,6 +2215,7 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
     users_def_bank.clear ();
     projects.clear ();
     priority_weights.clear ();
+    deny_unknown_queues = false;
 
     json_t *config_obj = NULL;
     flux_t *h = flux_jobtap_get_flux (p);
@@ -2205,6 +2258,8 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
         || flux_jobtap_service_register (p, "rec_bank_update", rec_bank_cb, p)
         < 0
         || flux_jobtap_service_register (p, "rec_fac_update", rec_factor_cb, p)
+        < 0
+        || flux_jobtap_service_register (p, "rec_config_update", rec_config_cb, p)
         < 0)
         return -1;
 

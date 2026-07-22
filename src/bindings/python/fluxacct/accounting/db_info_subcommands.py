@@ -282,6 +282,18 @@ def export_as_json(conn, cursor):
 
     config["banks"] = banks
 
+    # fetch options for plugin
+    plugin_config = {}
+    cursor.execute("SELECT value FROM config_table WHERE key='deny_unknown_queues'")
+    row = cursor.fetchone()
+    if row:
+        plugin_config["deny_unknown_queues"] = row["value"].lower() == "true"
+    else:
+        # if key is missing, default to False
+        plugin_config["deny_unknown_queues"] = False
+
+    config["config"] = plugin_config
+
     # fetch rows from priority_factor_weight_table
     for row in cursor.execute("SELECT * FROM priority_factor_weight_table"):
         factor = {
@@ -350,6 +362,10 @@ def edit_config(conn, cursor, key_value_strings):
                     "decay_factor must be a floating-point value between 0 and 1"
                 )
             requires_rebin = True
+        if key == "deny_unknown_queues":
+            # ensure value is exactly "true" or "false" (case-insensitive)
+            if value.lower() not in ["true", "false"]:
+                raise ValueError("deny_unknown_queues must be 'true' or 'false'")
         cursor.execute(
             "UPDATE config_table SET value=? WHERE key=?",
             (value, key),
@@ -377,6 +393,7 @@ def delete_config(conn, cursor, key):
         "node_weight",
         "core_weight",
         "gpu_weight",
+        "deny_unknown_queues",
     ]:
         raise ValueError(
             "key-value pair is not allowed to be removed from config_table"

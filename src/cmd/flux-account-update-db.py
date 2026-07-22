@@ -297,6 +297,13 @@ def init_config_table(cur):
             "0.0",
         ),
     )
+    cur.execute(
+        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
+        (
+            "deny_unknown_queues",
+            "false",
+        ),
+    )
 
 
 def migrate_job_usage_to_per_assoc(cur):

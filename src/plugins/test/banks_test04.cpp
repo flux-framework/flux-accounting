@@ -26,6 +26,7 @@ extern "C" {
 
 // define a test banks map
 std::map<std::string, Bank> banks;
+bool deny_unknown_queues = false;
 
 
 /*
