@@ -396,14 +396,6 @@ To enforce these kinds of permissions, ensure that both flux-accounting's
 ``queue_table`` is configured with the queues you want to restrict access to as
 well as the associations' ``queues`` attributes.
 
-.. warning::
-
-  If queues are dynamically added to Flux but are not configured in
-  flux-accounting (i.e it is not in flux-accounting's ``queue_table``), *all*
-  users are allowed to submit jobs under this queue by default (see `RFC 33`_
-  for more details on queue access policy) unless restricted by another
-  validator mechanism.
-
 example
 -------
 
@@ -493,6 +485,100 @@ The above example will set a max running jobs limit of 3 running jobs
 per-association. Any subsequently submitted jobs will be held with a
 queue-specific dependency until one of the association's currently running jobs
 in that queue completes.
+
+Unknown Queue Handling
+======================
+
+By default, flux-accounting uses a permissive approach when handling jobs
+submitted to queues: if a queue is configured in Flux but not registered in
+flux-accounting's ``queue_table``, jobs to that queue are still accepted.
+Administrators can enable strict validation to reject such jobs.
+
+When ``deny_unknown_queues`` is set to ``false`` (the default), jobs may be
+submitted to any queue configured in Flux, even if that queue is not
+registered in flux-accounting's ``queue_table``. This allows for flexible
+queue configuration where Flux and flux-accounting queue lists may differ.
+
+However, this means that dynamically added queues bypass flux-accounting's
+queue permission controls, and *all* users can submit to them (see `RFC 33`_
+for more details on queue access policy).
+
+When ``deny_unknown_queues`` is set to ``true``, the multi-factor priority
+plugin will reject any job submitted to a queue that is not present in
+flux-accounting's ``queue_table``. This ensures that all queue access is
+governed by flux-accounting's permission system.
+
+Jobs submitted to unknown queues will be rejected with an error message:
+
+.. code-block:: console
+
+  queue 'X' is unknown to flux-accounting and deny-unknown-queues is enabled
+
+Configuration
+~~~~~~~~~~~~~
+
+To view the current setting:
+
+::
+
+  $ flux account view-config deny_unknown_queues
+
+To enable strict validation:
+
+::
+
+  $ flux account edit-config deny_unknown_queues=true
+  $ flux account-priority-update -p /path/to/FluxAccounting.db
+
+To disable and return to permissive mode:
+
+::
+
+  $ flux account edit-config deny_unknown_queues=false
+  $ flux account-priority-update -p /path/to/FluxAccounting.db
+
+See :man1:`flux-account-edit-config` and
+:man1:`flux-account-view-config` for more details.
+
+Example
+~~~~~~~
+
+Consider a scenario where:
+
+- flux-accounting knows about queue ``debug``
+- Flux is configured with queues ``debug`` and ``batch``
+- A user has permission to submit to ``debug``
+
+**With permissive mode (default):**
+
+::
+
+  $ flux account view-config deny_unknown_queues
+  key                 | value
+  --------------------+------
+  deny_unknown_queues | false
+  $ flux submit --queue=debug sleep 60
+  f12345
+  $ flux submit --queue=batch sleep 60
+  f67890
+
+**With strict validation enabled:**
+
+::
+
+  $ flux account edit-config deny_unknown_queues=true
+  $ flux account-priority-update -p /path/to/FluxAccounting.db
+  $ flux submit --queue=debug sleep 60
+  f12345
+  $ flux submit --queue=batch sleep 60
+  flux-job: queue "foo" is unknown to flux-accounting and deny-unknown-queues
+  is enabled
+
+.. note::
+
+  The ``deny_unknown_queues`` configuration key is protected and cannot be
+  deleted. Changes to this setting require updating the plugin configuration
+  via ``flux account-priority-update`` to take effect.
 
 .. _glossary-section:
 
