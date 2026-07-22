@@ -207,14 +207,28 @@ def update_columns(old_cur, new_cur):
         # in a newer version or removed from an older version
         cols = get_cols_list(old_columns, new_columns)
 
-        # create a new version of table with the updated column list
-        add_tmp_table_to_db(old_cur, table, cols)
+        old_col_names = {col[1] for col in old_columns}
+        new_col_names = {col[1] for col in cols}
+        added_cols = new_col_names - old_col_names
+        removed_cols = old_col_names - new_col_names
 
-        # move elements from the old table to new version of the table
-        move_existing_rows(old_cur, cols, old_columns, table)
+        if added_cols or removed_cols:
+            LOGGER.info(
+                "updating schema for table %s (%d new column(s), %d removed column(s))",
+                table[0],
+                len(added_cols),
+                len(removed_cols),
+            )
+            # create a new version of table with the updated column list
+            add_tmp_table_to_db(old_cur, table, cols)
 
-        # rename the new table to match the name of the old table
-        rename_tmp_table(old_cur, table)
+            # move elements from the old table to new version of the table
+            move_existing_rows(old_cur, cols, old_columns, table)
+
+            # rename the new table to match the name of the old table
+            rename_tmp_table(old_cur, table)
+        else:
+            LOGGER.info("no schema changes needed for table %s", table[0])
 
 
 def init_priority_factor_table(cur):
