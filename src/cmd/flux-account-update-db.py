@@ -225,22 +225,20 @@ def init_priority_factor_table(cur):
     Args:
         cur: the Cursor object used to interact with the database.
     """
-    cur.execute(
-        f"INSERT OR IGNORE INTO priority_factor_weight_table (factor, weight) "
-        f"VALUES ('fairshare', {fluxacct.accounting.FSHARE_WEIGHT_DEFAULT});"
-    )
-    cur.execute(
-        f"INSERT OR IGNORE INTO priority_factor_weight_table (factor, weight) "
-        f"VALUES ('queue', {fluxacct.accounting.QUEUE_WEIGHT_DEFAULT});"
-    )
-    cur.execute(
-        f"INSERT OR IGNORE INTO priority_factor_weight_table (factor, weight) "
-        f"VALUES ('bank', {fluxacct.accounting.BANK_WEIGHT_DEFAULT});"
-    )
-    cur.execute(
-        f"INSERT OR IGNORE INTO priority_factor_weight_table (factor, weight) "
-        f"VALUES ('urgency', {fluxacct.accounting.URGENCY_WEIGHT_DEFAULT});"
-    )
+    factors = [
+        ("fairshare", fluxacct.accounting.FSHARE_WEIGHT_DEFAULT),
+        ("queue", fluxacct.accounting.QUEUE_WEIGHT_DEFAULT),
+        ("bank", fluxacct.accounting.BANK_WEIGHT_DEFAULT),
+        ("urgency", fluxacct.accounting.URGENCY_WEIGHT_DEFAULT),
+    ]
+
+    for factor, weight in factors:
+        cur.execute(
+            f"INSERT OR IGNORE INTO priority_factor_weight_table (factor, weight) "
+            f"VALUES ('{factor}', {weight});"
+        )
+        if cur.rowcount > 0:
+            LOGGER.info("adding %s into priority_factor_weight_table", factor)
 
 
 def init_config_table(cur):
@@ -255,55 +253,23 @@ def init_config_table(cur):
     Args:
         cur: the Cursor object used to interact with the database.
     """
-    cur.execute(
-        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
-        (
-            "priority_decay_half_life",
-            (1 * 604800),
-        ),
-    )
-    cur.execute(
-        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
-        (
-            "priority_usage_reset_period",
-            (4 * 604800),
-        ),
-    )
-    cur.execute(
-        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
-        (
-            "decay_factor",
-            "0.5",
-        ),
-    )
-    cur.execute(
-        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
-        (
-            "node_weight",
-            "1.0",
-        ),
-    )
-    cur.execute(
-        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
-        (
-            "core_weight",
-            "0.0",
-        ),
-    )
-    cur.execute(
-        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
-        (
-            "gpu_weight",
-            "0.0",
-        ),
-    )
-    cur.execute(
-        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
-        (
-            "deny_unknown_queues",
-            "false",
-        ),
-    )
+    config_entries = [
+        ("priority_decay_half_life", 1 * 604800),
+        ("priority_usage_reset_period", 4 * 604800),
+        ("decay_factor", "0.5"),
+        ("node_weight", "1.0"),
+        ("core_weight", "0.0"),
+        ("gpu_weight", "0.0"),
+        ("deny_unknown_queues", "false"),
+    ]
+
+    for key, value in config_entries:
+        cur.execute(
+            "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
+            (key, value),
+        )
+        if cur.rowcount > 0:
+            LOGGER.info("adding %s into config_table", key)
 
 
 def migrate_job_usage_to_per_assoc(cur):
