@@ -49,8 +49,8 @@ test_expect_success 'run flux account-update-db' '
 '
 
 test_expect_success 'get all the tables of the old DB and check that new table was added' '
-	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -t > tables.test &&
-	cat <<-EOF >tables.expected
+	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -t | sort > tables.test &&
+	cat <<-EOF | sort >tables.expected
 	sqlite_sequence
 	association_table
 	bank_table
