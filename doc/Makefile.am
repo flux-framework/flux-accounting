@@ -114,6 +114,7 @@ EXTRA_DIST = \
 	components/limits.rst \
 	components/job-priorities.rst \
 	components/module-structure.rst \
+	components/multi-factor-priority-plugin.rst \
 	presentations/hpsf.rst \
 	$(RST_FILES) \
 	man1/index.rst
