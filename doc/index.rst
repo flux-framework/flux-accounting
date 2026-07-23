@@ -15,6 +15,7 @@ Table of Contents
    guide/sanity-checklist
    guide/troubleshooting-guide
    components/module-structure
+   components/multi-factor-priority-plugin
    components/database-administration
    components/fair-share
    components/job-usage-calculation
