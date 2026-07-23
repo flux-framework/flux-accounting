@@ -49,8 +49,8 @@ test_expect_success 'run flux account-update-db' '
 '
 
 test_expect_success 'get all the tables of the old DB and check that new table was added' '
-	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -t > tables.test &&
-	cat <<-EOF >tables.expected
+	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -t | sort > tables.test &&
+	cat <<-EOF | sort >tables.expected
 	sqlite_sequence
 	association_table
 	bank_table
@@ -121,7 +121,10 @@ for db in ${SHARNESS_TEST_SRCDIR}/expected/test_dbs/*; do
 		test_expect_success 'update old DB: '$(basename $db) \
 			"flux account-update-db -v -p $tmp_db > update.test 2>&1"
 		test_expect_success 'verify INFO logs appear: '$(basename $db) \
-			"grep -E '(checking for new tables|checking for new columns|migration complete)' update.test"
+			"grep -E '(checking for new tables|\
+checking for new columns|\
+migration complete|\
+updated database schema version to)' update.test"
 		test_expect_success 'start flux-accounting service' \
 			"flux account-service -p $tmp_db -t"
 		test_expect_success 'add a bank: '$(basename $db) \

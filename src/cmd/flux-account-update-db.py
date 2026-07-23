@@ -43,6 +43,7 @@ def est_sqlite_conn(path):
         conn = sqlite3.connect(db_uri, uri=True)
         # set foreign keys constraint
         conn.execute("PRAGMA foreign_keys = 1")
+        LOGGER.info("successfully opened database: %s", path)
     except sqlite3.OperationalError as exc:
         LOGGER.exception("Unable to open database file: %s", db_uri)
         LOGGER.exception("Exception: %s", exc)
@@ -127,6 +128,7 @@ def rename_tmp_table(old_cur, table):
     # rename table to match old table
     alter_stmt = "ALTER TABLE " + table[0] + "_tmp" + " RENAME TO " + table[0]
     old_cur.execute(alter_stmt)
+    LOGGER.info("replaced table %s with updated schema", table[0])
 
 
 # update_tables() is responsible for adding any new tables that don't yet exist
@@ -144,6 +146,7 @@ def update_tables(old_cur, new_cur):
     new_cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
     new_tables = new_cur.fetchall()
 
+    new_tables_added = 0
     for table in new_tables:
         if table not in old_tables:
             # we need to add this table to the DB
@@ -178,6 +181,12 @@ def update_tables(old_cur, new_cur):
 
             # add table to old DB
             old_cur.execute(add_stmt)
+            new_tables_added += 1
+
+    if new_tables_added == 0:
+        LOGGER.info("no new tables found")
+    else:
+        LOGGER.info("added %d new table(s)", new_tables_added)
 
 
 # update_columns() looks that the existing tables in the old flux-accounting DB
@@ -207,14 +216,28 @@ def update_columns(old_cur, new_cur):
         # in a newer version or removed from an older version
         cols = get_cols_list(old_columns, new_columns)
 
-        # create a new version of table with the updated column list
-        add_tmp_table_to_db(old_cur, table, cols)
+        old_col_names = {col[1] for col in old_columns}
+        new_col_names = {col[1] for col in cols}
+        added_cols = new_col_names - old_col_names
+        removed_cols = old_col_names - new_col_names
 
-        # move elements from the old table to new version of the table
-        move_existing_rows(old_cur, cols, old_columns, table)
+        if added_cols or removed_cols:
+            LOGGER.info(
+                "updating schema for table %s (%d new column(s), %d removed column(s))",
+                table[0],
+                len(added_cols),
+                len(removed_cols),
+            )
+            # create a new version of table with the updated column list
+            add_tmp_table_to_db(old_cur, table, cols)
 
-        # rename the new table to match the name of the old table
-        rename_tmp_table(old_cur, table)
+            # move elements from the old table to new version of the table
+            move_existing_rows(old_cur, cols, old_columns, table)
+
+            # rename the new table to match the name of the old table
+            rename_tmp_table(old_cur, table)
+        else:
+            LOGGER.info("no schema changes needed for table %s", table[0])
 
 
 def init_priority_factor_table(cur):
@@ -225,22 +248,20 @@ def init_priority_factor_table(cur):
     Args:
         cur: the Cursor object used to interact with the database.
     """
-    cur.execute(
-        f"INSERT OR IGNORE INTO priority_factor_weight_table (factor, weight) "
-        f"VALUES ('fairshare', {fluxacct.accounting.FSHARE_WEIGHT_DEFAULT});"
-    )
-    cur.execute(
-        f"INSERT OR IGNORE INTO priority_factor_weight_table (factor, weight) "
-        f"VALUES ('queue', {fluxacct.accounting.QUEUE_WEIGHT_DEFAULT});"
-    )
-    cur.execute(
-        f"INSERT OR IGNORE INTO priority_factor_weight_table (factor, weight) "
-        f"VALUES ('bank', {fluxacct.accounting.BANK_WEIGHT_DEFAULT});"
-    )
-    cur.execute(
-        f"INSERT OR IGNORE INTO priority_factor_weight_table (factor, weight) "
-        f"VALUES ('urgency', {fluxacct.accounting.URGENCY_WEIGHT_DEFAULT});"
-    )
+    factors = [
+        ("fairshare", fluxacct.accounting.FSHARE_WEIGHT_DEFAULT),
+        ("queue", fluxacct.accounting.QUEUE_WEIGHT_DEFAULT),
+        ("bank", fluxacct.accounting.BANK_WEIGHT_DEFAULT),
+        ("urgency", fluxacct.accounting.URGENCY_WEIGHT_DEFAULT),
+    ]
+
+    for factor, weight in factors:
+        cur.execute(
+            f"INSERT OR IGNORE INTO priority_factor_weight_table (factor, weight) "
+            f"VALUES ('{factor}', {weight});"
+        )
+        if cur.rowcount > 0:
+            LOGGER.info("adding %s into priority_factor_weight_table", factor)
 
 
 def init_config_table(cur):
@@ -255,55 +276,23 @@ def init_config_table(cur):
     Args:
         cur: the Cursor object used to interact with the database.
     """
-    cur.execute(
-        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
-        (
-            "priority_decay_half_life",
-            (1 * 604800),
-        ),
-    )
-    cur.execute(
-        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
-        (
-            "priority_usage_reset_period",
-            (4 * 604800),
-        ),
-    )
-    cur.execute(
-        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
-        (
-            "decay_factor",
-            "0.5",
-        ),
-    )
-    cur.execute(
-        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
-        (
-            "node_weight",
-            "1.0",
-        ),
-    )
-    cur.execute(
-        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
-        (
-            "core_weight",
-            "0.0",
-        ),
-    )
-    cur.execute(
-        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
-        (
-            "gpu_weight",
-            "0.0",
-        ),
-    )
-    cur.execute(
-        "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
-        (
-            "deny_unknown_queues",
-            "false",
-        ),
-    )
+    config_entries = [
+        ("priority_decay_half_life", 1 * 604800),
+        ("priority_usage_reset_period", 4 * 604800),
+        ("decay_factor", "0.5"),
+        ("node_weight", "1.0"),
+        ("core_weight", "0.0"),
+        ("gpu_weight", "0.0"),
+        ("deny_unknown_queues", "false"),
+    ]
+
+    for key, value in config_entries:
+        cur.execute(
+            "INSERT OR IGNORE INTO config_table VALUES (?, ?)",
+            (key, value),
+        )
+        if cur.rowcount > 0:
+            LOGGER.info("adding %s into config_table", key)
 
 
 def migrate_job_usage_to_per_assoc(cur):
@@ -353,6 +342,7 @@ def migrate_job_usage_to_per_assoc(cur):
 
 
 def update_db(path, new_db):
+    LOGGER.info("starting database update for %s", path)
     old_conn = est_sqlite_conn(path)
     old_cur = old_conn.cursor()
 
@@ -383,9 +373,14 @@ def update_db(path, new_db):
             old_cur.execute(
                 "PRAGMA user_version = %d" % (fluxacct.accounting.DB_SCHEMA_VERSION)
             )
+            LOGGER.info(
+                "updated database schema version to %d",
+                fluxacct.accounting.DB_SCHEMA_VERSION,
+            )
 
             # commit changes
             old_conn.commit()
+            LOGGER.info("database update complete")
 
             # close connections to DB's and remove temporary database
             old_conn.close()
