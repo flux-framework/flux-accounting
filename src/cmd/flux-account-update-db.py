@@ -343,6 +343,11 @@ def migrate_job_usage_to_per_assoc(cur):
 
 def update_db(path, new_db):
     LOGGER.info("starting database update for %s", path)
+    # create a backup of the database
+    backup_path = path + ".backup"
+    shutil.copy2(path, backup_path)
+    LOGGER.info("created backup at %s", backup_path)
+
     old_conn = est_sqlite_conn(path)
     old_cur = old_conn.cursor()
 
@@ -391,11 +396,15 @@ def update_db(path, new_db):
             new_db,
             exc,
         )
-        shutil.rmtree(tmp_dir_name)
+        LOGGER.info("restoring database from backup %s", backup_path)
+        old_conn.close()
+        shutil.copy2(backup_path, path)
         sys.exit(1)
     except sqlite3.IntegrityError as exc:
         LOGGER.exception("SQLite integrity error: %s", exc)
-        shutil.rmtree(tmp_dir_name)
+        LOGGER.info("restoring database from backup %s", backup_path)
+        old_conn.close()
+        shutil.copy2(backup_path, path)
         sys.exit(1)
 
 
