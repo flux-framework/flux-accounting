@@ -120,6 +120,8 @@ for db in ${SHARNESS_TEST_SRCDIR}/expected/test_dbs/*; do
 		chmod +rw $tmp_db
 		test_expect_success 'update old DB: '$(basename $db) \
 			"flux account-update-db -v -p $tmp_db > update.test 2>&1"
+		test_expect_success 'verify backup was created: '$(basename $db) \
+			"test -f ${tmp_db}.backup"
 		test_expect_success 'verify INFO logs appear: '$(basename $db) \
 			"grep -E '(checking for new tables|\
 checking for new columns|\
