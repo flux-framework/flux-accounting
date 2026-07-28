@@ -46,7 +46,8 @@ MAN1_FILES_PRIMARY = \
 	man1/flux-account-view-config.1 \
 	man1/flux-account-edit-config.1 \
 	man1/flux-account-delete-config.1 \
-	man1/flux-account-list-configs.1
+	man1/flux-account-list-configs.1 \
+	man1/flux-account-fairshare-emulate.1
 
 RST_FILES  = \
 	$(MAN1_FILES_PRIMARY:.1=.rst)
