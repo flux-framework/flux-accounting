@@ -101,6 +101,7 @@ TESTSCRIPTS = \
 	t1096-flux-account-bank-info.t \
 	t1097-mf-priority-unknown-queues.t \
 	t1098-fairshare-emulate.t \
+	t1099-export-db-fairshare.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
