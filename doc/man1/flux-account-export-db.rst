@@ -16,7 +16,17 @@ DESCRIPTION
 .. program:: flux account export-db
 
 :program:`flux account export-db` will extract flux-accounting database
-information into two ``.csv`` files.
+information into separate ``.csv`` files, or as hierarchical JSON for the
+fairshare emulator when the ``--fairshare-emulate`` option is specified.
+
+OPTIONS
+=======
+
+.. option:: -F, --fairshare-emulate
+
+    Export database as a hierarchical JSON structure suitable for use
+    with :program:`flux account fairshare-emulate`. This option outputs
+    a single JSON file to stdout instead of creating CSV files.
 
 .. option:: -u, --users
 
