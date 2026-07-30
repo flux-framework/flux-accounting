@@ -130,6 +130,56 @@ def export_db_info(conn):
             writer.writerows(rows)
 
 
+@with_cursor
+def export_db_as_fairshare_json(conn, cursor):
+    """
+    Export database as hierarchical JSON for the fairshare-emulate command.
+    """
+    # fetch all active banks and associations
+    cursor.execute("SELECT bank,parent_bank,shares,job_usage FROM bank_table")
+    banks = cursor.fetchall()
+    cursor.execute("SELECT username,bank,shares,job_usage FROM association_table")
+    associations = cursor.fetchall()
+
+    bank_nodes = {}
+    for row in banks:
+        bank_name = str(row["bank"])
+        bank_nodes[bank_name] = {
+            "bank": bank_name,
+            "shares": int(row["shares"]),
+            "usage": float(row["job_usage"]),
+            "children": [],
+        }
+    for row in associations:
+        bank = str(row["bank"])
+        if bank in bank_nodes:
+            bank_nodes[bank]["children"].append(
+                {
+                    "username": str(row["username"]),
+                    "shares": int(row["shares"]),
+                    "usage": float(row["job_usage"]),
+                }
+            )
+
+    # build hierarchy by linking banks to parents
+    root_node = None
+    for row in banks:
+        bank_name = str(row["bank"])
+        parent_bank = str(row["parent_bank"]) if row["parent_bank"] else ""
+
+        if parent_bank == "":
+            # root bank
+            root_node = bank_nodes[bank_name]
+        elif parent_bank in bank_nodes:
+            # add the bank as a child of its parent
+            bank_nodes[parent_bank]["children"].append(bank_nodes[bank_name])
+
+    if root_node is None:
+        raise ValueError("No root bank found in database")
+
+    return json.dumps({"root": root_node}, indent=2)
+
+
 def populate_db(conn, csv_file, columns_included=None):
     """
     Populate an existing table from a single .csv file with an option

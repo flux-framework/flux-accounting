@@ -568,7 +568,11 @@ class AccountingService:
 
     def export_db(self, handle, watcher, msg, arg):
         try:
-            val = d.export_db_info(self.conn)
+            fairshare_emulate = msg.payload.get("fairshare_emulate", False)
+            if fairshare_emulate:
+                val = d.export_db_as_fairshare_json(self.conn)
+            else:
+                val = d.export_db_info(self.conn)
 
             payload = {"export_db": val}
 

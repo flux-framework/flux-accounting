@@ -1183,6 +1183,12 @@ def add_export_db_arg(subparsers):
         formatter_class=flux.util.help_formatter(),
     )
     subparser.set_defaults(func="export_db")
+    subparser.add_argument(
+        "-F",
+        "--fairshare-emulate",
+        action="store_true",
+        help="export as JSON hierarchy for flux account fairshare-emulate",
+    )
 
 
 def add_pop_db_arg(subparsers):
