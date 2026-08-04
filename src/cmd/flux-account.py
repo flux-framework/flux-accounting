@@ -1040,7 +1040,7 @@ def add_edit_queue_arg(subparsers):
             "max number of jobs in SCHED state an association can have in this queue "
             "at any given time"
         ),
-        default=INTEGER_MAX,
+        default=None,
         metavar="NJOBS",
     )
     subparser_edit_queue.add_argument(
@@ -1051,7 +1051,7 @@ def add_edit_queue_arg(subparsers):
             "max number of nodes in SCHED state an association can have across all of "
             "their active jobs in this queue at any given time"
         ),
-        default=INTEGER_MAX,
+        default=None,
         metavar="NNODES",
     )
     subparser_edit_queue.add_argument(
@@ -1062,7 +1062,7 @@ def add_edit_queue_arg(subparsers):
             "max number of cores in SCHED state an association can have across all of "
             "their active jobs in this queue at any given time"
         ),
-        default=INTEGER_MAX,
+        default=None,
         metavar="NCORES",
     )
 
