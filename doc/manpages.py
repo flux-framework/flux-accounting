@@ -300,4 +300,11 @@ man_pages = [
         [author],
         1,
     ),
+    (
+        "man1/flux-account-fairshare-emulate",
+        "flux-account-fairshare-emulate",
+        "emulate fair-share calculation for a given database hierarchy",
+        [author],
+        1,
+    ),
 ]
