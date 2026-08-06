@@ -54,7 +54,8 @@ TESTS = \
 	job_test02.t \
 	dependencies_test03.t \
 	banks_test04.t \
-	queue_limits_test05.t
+	queue_limits_test05.t \
+	queue_sched_resource_limits_test06.t
 check_PROGRAMS = $(TESTS)
 
 TEST_EXTENSIONS = .t
@@ -150,6 +151,19 @@ queue_limits_test05_t_SOURCES = \
 	plugins/jj.cpp
 queue_limits_test05_t_CXXFLAGS = $(AM_CXXFLAGS) -I$(top_srcdir) $(JANSSON_CFLAGS)
 queue_limits_test05_t_LDADD = \
+	common/libtap/libtap.la \
+	$(JANSSON_LIBS)
+
+queue_sched_resource_limits_test06_t_SOURCES = \
+	plugins/test/queue_sched_resource_limits_test06.cpp \
+	plugins/accounting.cpp \
+	plugins/accounting.hpp \
+	plugins/job.cpp \
+	plugins/job.hpp \
+	plugins/jj.cpp
+queue_sched_resource_limits_test06_t_CXXFLAGS = \
+	$(AM_CXXFLAGS) -I$(top_srcdir) $(JANSSON_CFLAGS)
+queue_sched_resource_limits_test06_t_LDADD = \
 	common/libtap/libtap.la \
 	$(JANSSON_LIBS)
 
