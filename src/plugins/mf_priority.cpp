@@ -542,6 +542,49 @@ error:
 
 
 /*
+ * Release held jobs after a job in "queue" belonging to association "freed"
+ * has left, freeing both that association's per-association headroom and the
+ * queue-wide total max_nodes/cores headroom.
+ *
+ * The per-association limits only gate "freed"'s own held jobs, so "freed" gets
+ * a full scan of its held_jobs vector (any queue). The queue-total limit is
+ * shared across associations but only gates held jobs in "queue", so every
+ * *other* association is scanned with a queue filter -- this avoids walking
+ * potentially many held jobs submitted to unrelated queues. This is a superset
+ * of the association-local check_and_release_held_jobs () call for "freed", so
+ * callers should use this instead of, not in addition to, that call.
+ */
+static int release_held_jobs_for_queue (flux_plugin_t *p,
+                                        Association *freed,
+                                        const std::string &queue)
+{
+    flux_t *h = flux_jobtap_get_flux (p);
+
+    for (auto &entry : users) {
+        auto &banks = entry.second;
+
+        for (auto &bank_entry : banks) {
+            Association *b = &bank_entry.second;
+            if (b->held_jobs.empty ())
+                continue;
+            // full scan for the association that freed resources; queue-scoped
+            // scan for every other association (only the queue-total limit can
+            // have changed for them)
+            const std::string &filter = (b == freed) ? "" : queue;
+            if (check_and_release_held_jobs (p, b, filter) < 0) {
+                flux_log_error (h,
+                                "release_held_jobs_for_queue: error checking "
+                                "and releasing held jobs for association");
+                return -1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+
+/*
  * Take a vector of strings and join them into just one string with a custom
  * delimiter.
  */
