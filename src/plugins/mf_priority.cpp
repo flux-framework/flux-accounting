@@ -2088,9 +2088,13 @@ static int inactive_cb (flux_plugin_t *p,
             b->queue_usage[queue_str].cur_sched_nodes -= j->nnodes ();
             b->queue_usage[queue_str].cur_sched_cores -= j->ncores ();
             // check to see if any jobs held due to the limits above can now
-            // have their dependency removed
+            // have their dependency removed. Gather this association's held
+            // jobs and release them in priority order (jobid tiebreak).
             if (!b->held_jobs.empty ()) {
-                if (check_and_release_held_jobs (p, b) < 0) {
+                std::vector<std::pair<Association *, Job *>> candidates;
+                for (auto &held_job : b->held_jobs)
+                    candidates.push_back (std::make_pair (b, &held_job));
+                if (release_held_jobs_ordered (p, candidates) < 0) {
                     flux_log_error (h,
                                     "%s: error checking and releasing held "
                                     "jobs for association",
@@ -2131,9 +2135,14 @@ static int inactive_cb (flux_plugin_t *p,
     }
 
     if (!b->held_jobs.empty ()) {
-        // the Association has at least one held Job; begin looping through
-        // held Jobs and see if they satisfy the requirements to be released
-        if (check_and_release_held_jobs (p, b) < 0)
+        // the Association has at least one held Job; gather them and release in
+        // priority order (jobid tiebreak). Any future change to add a
+        // cross-association limit grows the gather of candidates to span
+        // multiple associations.
+        std::vector<std::pair<Association *, Job *>> candidates;
+        for (auto &held_job : b->held_jobs)
+            candidates.push_back (std::make_pair (b, &held_job));
+        if (release_held_jobs_ordered (p, candidates) < 0)
             goto error;
     }
 
