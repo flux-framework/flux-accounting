@@ -502,6 +502,72 @@ bool Association::under_queue_max_sched_cores (
 }
 
 
+bool under_queue_total_max_nodes (
+                            const Job &job,
+                            const std::string &queue,
+                            const std::map<std::string, Queue> &queues,
+                            const std::map<std::string, int> &totals)
+{
+    return under_queue_total_max_nodes (job, queue, queues, totals, 0);
+}
+
+
+bool under_queue_total_max_nodes (
+                            const Job &job,
+                            const std::string &queue,
+                            const std::map<std::string, Queue> &queues,
+                            const std::map<std::string, int> &totals,
+                            int pending)
+{
+    auto qit = queues.find (queue);
+    if (qit == queues.end ())
+        // queue is unknown to flux-accounting; skip check
+        return true;
+    const int max_nodes = qit->second.max_nodes;
+
+    // look up current queue-wide total sched node usage across all associations
+    int cur_total_sched_nodes = 0;
+    auto it = totals.find (queue);
+    if (it != totals.end ())
+        cur_total_sched_nodes = it->second;
+
+    return (cur_total_sched_nodes + job.nnodes + pending) <= max_nodes;
+}
+
+
+bool under_queue_total_max_cores (
+                            const Job &job,
+                            const std::string &queue,
+                            const std::map<std::string, Queue> &queues,
+                            const std::map<std::string, int> &totals)
+{
+    return under_queue_total_max_cores (job, queue, queues, totals, 0);
+}
+
+
+bool under_queue_total_max_cores (
+                            const Job &job,
+                            const std::string &queue,
+                            const std::map<std::string, Queue> &queues,
+                            const std::map<std::string, int> &totals,
+                            int pending)
+{
+    auto qit = queues.find (queue);
+    if (qit == queues.end ())
+        // queue is unknown to flux-accounting; skip check
+        return true;
+    const int max_cores = qit->second.max_cores;
+
+    // look up current queue-wide total sched core usage across all associations
+    int cur_total_sched_cores = 0;
+    auto it = totals.find (queue);
+    if (it != totals.end ())
+        cur_total_sched_cores = it->second;
+
+    return (cur_total_sched_cores + job.ncores + pending) <= max_cores;
+}
+
+
 json_t* convert_queues_to_json (const std::map<std::string, Queue> &queues)
 {
     json_t *root = json_object ();
