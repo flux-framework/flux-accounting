@@ -313,8 +313,14 @@ static int decrement_resources (Association *b,
  * iterator to the next job and check to see if it satisfies all requirements
  * to be released. Continue to loop until we've checked every held job for the
  * association.
+ *
+ * If queue_filter is non-empty, only held jobs submitted under that queue are
+ * considered; this lets the queue-wide total limit sweep skip an association's
+ * jobs in unrelated queues instead of scanning its entire held_jobs vector.
  */
-static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
+static int check_and_release_held_jobs (flux_plugin_t *p,
+                                        Association *b,
+                                        const std::string &queue_filter = "")
 {
     std::string dependency = "";
     flux_jobid_t held_job_id = 0;
@@ -345,6 +351,12 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
     while (it != b->held_jobs.end ()) {
         // grab held Job object
         Job &held_job = *it;
+
+        if (!queue_filter.empty () && held_job.queue != queue_filter) {
+            // caller only cares about held jobs in a specific queue; skip
+            ++it;
+            continue;
+        }
 
         // per-job pending contributions, which are only committed to the
         // pass-wide counters if this job ends up fully released
