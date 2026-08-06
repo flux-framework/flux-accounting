@@ -58,6 +58,13 @@ std::vector<std::string> projects;
 std::map<std::string, int> priority_weights;
 bool deny_unknown_queues = false;
 
+// live per-queue totals: nodes/cores of all non-terminal (SCHED + RUN) jobs
+// across every association in a queue. these track the queue-wide total
+// max_nodes/cores limit and must live here as globals rather than on the
+// Queue object, which load_queues () clears on every DB sync.
+std::map<std::string, int> queue_total_nodes;
+std::map<std::string, int> queue_total_cores;
+
 /******************************************************************************
  *                                                                            *
  *                           Helper Functions                                 *
@@ -346,6 +353,8 @@ static int check_and_release_held_jobs (flux_plugin_t *p,
     std::map<std::string, int> released_queue_sched;
     std::map<std::string, int> released_queue_sched_nodes;
     std::map<std::string, int> released_queue_sched_cores;
+    std::map<std::string, int> released_queue_total_sched_nodes;
+    std::map<std::string, int> released_queue_total_sched_cores;
 
     auto it = b->held_jobs.begin ();
     while (it != b->held_jobs.end ()) {
@@ -366,6 +375,8 @@ static int check_and_release_held_jobs (flux_plugin_t *p,
         int job_queue_sched = 0;
         int job_queue_sched_nodes = 0;
         int job_queue_sched_cores = 0;
+        int job_queue_total_sched_nodes = 0;
+        int job_queue_total_sched_cores = 0;
 
         // is the association under the max running jobs limit for the
         // queue the held job is submitted under?
@@ -441,6 +452,46 @@ static int check_and_release_held_jobs (flux_plugin_t *p,
             held_job.remove_dep (D_QUEUE_MSC);
             job_queue_sched_cores += held_job.ncores;
         }
+        // is the queue under its total SCHED nodes limit across all
+        // associations? like the per-assoc case above, queue_total_nodes
+        // already reflects any jobs released earlier in this pass that entered
+        // SCHED, so only the speculative (non-SCHED) offset is passed in
+        if (under_queue_total_max_nodes (
+                        held_job,
+                        held_job.queue,
+                        queues,
+                        queue_total_nodes,
+                        released_queue_total_sched_nodes[held_job.queue]) &&
+            held_job.contains_dep (D_QUEUE_TOTAL_MSN)) {
+            if (flux_jobtap_dependency_remove (p,
+                                               held_job.id,
+                                               D_QUEUE_TOTAL_MSN) < 0) {
+                dependency = D_QUEUE_TOTAL_MSN;
+                held_job_id = held_job.id;
+                goto error;
+            }
+            held_job.remove_dep (D_QUEUE_TOTAL_MSN);
+            job_queue_total_sched_nodes += held_job.nnodes;
+        }
+        // is the queue under its total SCHED cores limit across all
+        // associations?
+        if (under_queue_total_max_cores (
+                        held_job,
+                        held_job.queue,
+                        queues,
+                        queue_total_cores,
+                        released_queue_total_sched_cores[held_job.queue]) &&
+            held_job.contains_dep (D_QUEUE_TOTAL_MSC)) {
+            if (flux_jobtap_dependency_remove (p,
+                                               held_job.id,
+                                               D_QUEUE_TOTAL_MSC) < 0) {
+                dependency = D_QUEUE_TOTAL_MSC;
+                held_job_id = held_job.id;
+                goto error;
+            }
+            held_job.remove_dep (D_QUEUE_TOTAL_MSC);
+            job_queue_total_sched_cores += held_job.ncores;
+        }
         // is the association under the max nodes limit for the queue the
         // held job is submitted under?
         if (b->under_queue_max_resources (held_job, held_job.queue, queues) &&
@@ -511,6 +562,10 @@ static int check_and_release_held_jobs (flux_plugin_t *p,
                 released_queue_sched[held_job.queue] += job_queue_sched;
                 released_queue_sched_nodes[held_job.queue] += job_queue_sched_nodes;
                 released_queue_sched_cores[held_job.queue] += job_queue_sched_cores;
+                released_queue_total_sched_nodes[held_job.queue] +=
+                    job_queue_total_sched_nodes;
+                released_queue_total_sched_cores[held_job.queue] +=
+                    job_queue_total_sched_cores;
             }
             // the Job no longer has any flux-accounting dependencies on it and
             // is now actually being released to SCHED state; commit this job's
@@ -1440,6 +1495,11 @@ static int new_cb (flux_plugin_t *p,
                 return -1;
             }
         }
+        // the queue-total counter tracks non-terminal (SCHED + RUN) jobs; on a
+        // plugin reload the globals reset and RUN jobs are re-seen here rather
+        // than via sched_cb, so re-establish the queue-wide totals
+        queue_total_nodes[queue_str] += j->nnodes;
+        queue_total_cores[queue_str] += j->ncores;
     }
     if (state == FLUX_JOB_STATE_SCHED) {
         // this job was in SCHED state; increment the association's sched
@@ -1449,6 +1509,9 @@ static int new_cb (flux_plugin_t *p,
         // increment cur_sched_nodes/cores count for association in this queue
         b->queue_usage[queue_str].cur_sched_nodes += j->nnodes;
         b->queue_usage[queue_str].cur_sched_cores += j->ncores;
+        // re-establish the queue-wide totals on reload (see RUN branch)
+        queue_total_nodes[queue_str] += j->nnodes;
+        queue_total_cores[queue_str] += j->ncores;
     }
 
     return 0;
@@ -1545,6 +1608,26 @@ static int depend_cb (flux_plugin_t *p,
             if (flux_jobtap_dependency_add (p, id, D_QUEUE_MSC) < 0)
                 goto error;
             job.add_dep (D_QUEUE_MSC);
+        }
+        if (!under_queue_total_max_nodes (job,
+                                                queue_str,
+                                                queues,
+                                                queue_total_nodes)) {
+            // the queue is already at its total nodes in SCHED state limit
+            // across all associations' jobs; add a dependency
+            if (flux_jobtap_dependency_add (p, id, D_QUEUE_TOTAL_MSN) < 0)
+                goto error;
+            job.add_dep (D_QUEUE_TOTAL_MSN);
+        }
+        if (!under_queue_total_max_cores (job,
+                                                queue_str,
+                                                queues,
+                                                queue_total_cores)) {
+            // the queue is already at its total cores in SCHED state limit
+            // across all associations' jobs; add a dependency
+            if (flux_jobtap_dependency_add (p, id, D_QUEUE_TOTAL_MSC) < 0)
+                goto error;
+            job.add_dep (D_QUEUE_TOTAL_MSC);
         }
         if (!b->under_queue_max_resources (job, queue_str, queues)) {
             // association is already at their max nodes limit across their
@@ -1656,6 +1739,12 @@ static int sched_cb (flux_plugin_t *p,
     a->queue_usage[queue_str].cur_sched_jobs++;
     a->queue_usage[queue_str].cur_sched_nodes += j->nnodes;
     a->queue_usage[queue_str].cur_sched_cores += j->ncores;
+
+    // increment the queue-wide totals tracking the max_nodes/cores limit;
+    // this counter spans all associations and is decremented at INACTIVE, so it
+    // reflects every non-terminal job committed to the queue
+    queue_total_nodes[queue_str] += j->nnodes;
+    queue_total_cores[queue_str] += j->ncores;
 
     return 0;
 }
@@ -2046,15 +2135,21 @@ static int inactive_cb (flux_plugin_t *p,
             b->queue_usage[queue_str].cur_sched_jobs--;
             b->queue_usage[queue_str].cur_sched_nodes -= j->nnodes;
             b->queue_usage[queue_str].cur_sched_cores -= j->ncores;
+            // sched_cb incremented the queue-wide totals for this job, so
+            // decrement them now that it is leaving without ever running
+            if (queue_total_nodes[queue_str] > 0)
+                queue_total_nodes[queue_str] -= j->nnodes;
+            if (queue_total_cores[queue_str] > 0)
+                queue_total_cores[queue_str] -= j->ncores;
             // check to see if any jobs held due to the limits above can now
-            // have their dependency removed
-            if (!b->held_jobs.empty ()) {
-                if (check_and_release_held_jobs (p, b) < 0) {
-                    flux_log_error (h,
-                                    "%s: error checking and releasing held "
-                                    "jobs for association",
-                                    topic);
-                }
+            // have their dependency removed; the queue-total limit spans
+            // associations, so sweep this association fully and every other
+            // association's held jobs in this queue
+            if (release_held_jobs_for_queue (p, b, queue_str) < 0) {
+                flux_log_error (h,
+                                "%s: error checking and releasing held "
+                                "jobs for queue",
+                                topic);
             }
         }
         return 0;
@@ -2089,12 +2184,19 @@ static int inactive_cb (flux_plugin_t *p,
             b->queue_usage[queue_str].cur_run_jobs--;
     }
 
-    if (!b->held_jobs.empty ()) {
-        // the Association has at least one held Job; begin looping through
-        // held Jobs and see if they satisfy the requirements to be released
-        if (check_and_release_held_jobs (p, b) < 0)
-            goto error;
-    }
+    // sched_cb incremented the queue-wide totals for this job when it entered
+    // SCHED and run_cb left them untouched, so decrement them now that the job
+    // is terminal
+    if (queue_total_nodes[queue_str] > 0)
+        queue_total_nodes[queue_str] -= j->nnodes;
+    if (queue_total_cores[queue_str] > 0)
+        queue_total_cores[queue_str] -= j->ncores;
+
+    // the queue-total limit spans associations, so sweep this association fully
+    // and every other association's held jobs in this queue to see if any can
+    // now be released
+    if (release_held_jobs_for_queue (p, b, queue_str) < 0)
+        goto error;
 
     return 0;
 error:
@@ -2135,6 +2237,8 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
     projects.clear ();
     priority_weights.clear ();
     deny_unknown_queues = false;
+    queue_total_nodes.clear ();
+    queue_total_cores.clear ();
 
     json_t *config_obj = NULL;
     flux_t *h = flux_jobtap_get_flux (p);
