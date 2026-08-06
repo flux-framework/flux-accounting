@@ -264,6 +264,27 @@ int get_queue_info (char *queue,
 }
 
 
+int64_t calc_priority (double fairshare,
+                       int queue_factor,
+                       double bank_factor,
+                       int urgency,
+                       const std::map<std::string, int> &weights)
+{
+    if (urgency == FLUX_JOB_URGENCY_HOLD)
+        return FLUX_JOB_PRIORITY_MIN;
+    if (urgency == FLUX_JOB_URGENCY_EXPEDITE)
+        return FLUX_JOB_PRIORITY_MAX;
+
+    int64_t priority = round (
+        (weights.at ("fairshare") * fairshare) +
+        (weights.at ("queue") * queue_factor) +
+        (weights.at ("bank") * bank_factor) +
+        (weights.at ("urgency") * (urgency - FLUX_JOB_URGENCY_DEFAULT)));
+
+    return priority < 0 ? FLUX_JOB_PRIORITY_MIN : priority;
+}
+
+
 bool check_map_for_dne_only (std::map<int, std::map<std::string, Association>>
                                &users,
                              std::map<int, std::string> &users_def_bank)
