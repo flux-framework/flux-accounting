@@ -115,6 +115,8 @@ def bulk_update(path):
             "max_sched_jobs": int(row["max_sched_jobs"]),
             "max_sched_nodes_per_assoc": int(row["max_sched_nodes_per_assoc"]),
             "max_sched_cores_per_assoc": int(row["max_sched_cores_per_assoc"]),
+            "max_nodes": int(row["max_nodes"]),
+            "max_cores": int(row["max_cores"]),
         }
         bulk_q_data.append(single_q_data)
 
