@@ -137,6 +137,21 @@ X_AC_EXPAND_INSTALL_DIRS
 ##
 RRA_WITH_SYSTEMD_UNITDIR
 
+##
+# Where to install the bash completion snippet.  It wraps flux-core's `flux`
+# completion, so it must be eagerly sourced -- install it under the compat dir
+# (sourced automatically by the bash-completion package), not completionsdir
+# (which is lazy-loaded by command name).
+##
+PKG_CHECK_MODULES([BASH_COMPLETION], [bash-completion], [
+    bashcompcompatdir=`$PKG_CONFIG --define-variable=prefix=${prefix} \
+        --define-variable=datadir=${datadir} \
+        --variable=compatdir bash-completion`
+], [
+    bashcompcompatdir="${sysconfdir}/bash_completion.d"
+])
+AC_SUBST(bashcompcompatdir)
+
 fluxplugin_ldflags="-avoid-version -export-symbols-regex '^flux_plugin_init\$\$' --disable-static -shared -export-dynamic"
 AC_SUBST(fluxplugin_ldflags)
 
