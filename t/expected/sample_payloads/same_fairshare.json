@@ -12,7 +12,8 @@
         "queues": "",
         "active": 1,
         "projects": "*",
-        "def_project": "*"
+        "def_project": "*",
+        "max_sched_jobs": 2147483647
       },
       {
         "userid": 5012,
@@ -26,7 +27,8 @@
         "queues": "",
         "active": 1,
         "projects": "*",
-        "def_project": "*"
+        "def_project": "*",
+        "max_sched_jobs": 2147483647
       },
       {
         "userid": 5013,
@@ -41,7 +43,8 @@
         "queues": "",
         "active": 1,
         "projects": "*",
-        "def_project": "*"
+        "def_project": "*",
+        "max_sched_jobs": 2147483647
       },
       {
         "userid": 5021,
@@ -55,7 +58,8 @@
         "queues": "",
         "active": 1,
         "projects": "*",
-        "def_project": "*"
+        "def_project": "*",
+        "max_sched_jobs": 2147483647
       },
       {
         "userid": 5022,
@@ -69,7 +73,8 @@
         "queues": "",
         "active": 1,
         "projects": "*",
-        "def_project": "*"
+        "def_project": "*",
+        "max_sched_jobs": 2147483647
       },
       {
         "userid": 5031,
@@ -83,7 +88,8 @@
         "queues": "",
         "active": 1,
         "projects": "*",
-        "def_project": "*"
+        "def_project": "*",
+        "max_sched_jobs": 2147483647
       },
       {
         "userid": 5032,
@@ -97,7 +103,8 @@
         "queues": "",
         "active": 1,
         "projects": "*",
-        "def_project": "*"
+        "def_project": "*",
+        "max_sched_jobs": 2147483647
       }
     ]
 }
