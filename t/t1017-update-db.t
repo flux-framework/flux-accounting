@@ -94,8 +94,8 @@ test_expect_success 'get all the tables of the old DB and check that new table w
 '
 
 test_expect_success 'get all the columns of the updated table in the DB and check that new columns were added' '
-	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -c association_table > association_table_columns.test &&
-	cat <<-EOF >association_table_columns.expected
+	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -c association_table | sort > association_table_columns.test &&
+	cat <<-EOF | sort > association_table_columns.expected
 	table name: association_table
 	creation_time
 	mod_time
@@ -122,8 +122,8 @@ test_expect_success 'get all the columns of the updated table in the DB and chec
 '
 
 test_expect_success 'get all the columns from the queue_table and make sure the dropped column does not show up' '
-	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -c queue_table > queue_table_columns.test &&
-	cat <<-EOF >queue_table_columns.expected
+	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -c queue_table | sort > queue_table_columns.test &&
+	cat <<-EOF | sort > queue_table_columns.expected
 	table name: queue_table
 	queue
 	min_nodes_per_job
