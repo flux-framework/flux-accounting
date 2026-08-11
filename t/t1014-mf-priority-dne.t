@@ -66,7 +66,8 @@ test_expect_success 'send the user/bank information to the plugin without reprio
 				"queues": "standby,special",
 				"active": 1,
 				"projects": "*",
-				"def_project": "*"
+				"def_project": "*",
+				"max_sched_jobs": 2147483647
 			}
 		]
 	}
