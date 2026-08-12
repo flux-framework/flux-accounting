@@ -69,24 +69,29 @@ def get_cols_list(old_columns, new_columns):
     return cols
 
 
+# builds the "<name> <type> [DEFAULT x] [NOT NULL]" column definition fragment
+# from a PRAGMA table_info() tuple, shared by the table-rebuild path and the
+# ALTER TABLE ... ADD COLUMN fast path
+def column_def(column):
+    column_name = column[1]
+    column_type = column[2]
+    not_null = column[3]
+    default_value = column[4]
+
+    col = column_name + " " + column_type
+    if default_value is not None:
+        col += " DEFAULT " + default_value
+    if not_null == 1:
+        col += " NOT NULL"
+
+    return col
+
+
 # adds a new version of the table to the DB
 def add_tmp_table_to_db(old_cur, table, cols):
     add_stmt = "CREATE TABLE IF NOT EXISTS " + table[0] + "_tmp" + " ("
 
-    for column in cols:
-        column_name = column[1]
-        column_type = column[2]
-        not_null = column[3]
-        default_value = column[4]
-
-        add_stmt += column_name + " " + column_type + " "
-        if default_value is not None:
-            add_stmt += "DEFAULT " + default_value
-        if not_null == 1:
-            add_stmt += " NOT NULL"
-        # only add a comma if column is not last item in list
-        if column != cols[-1]:
-            add_stmt += ", "
+    add_stmt += ", ".join(column_def(column) for column in cols)
 
     # look for primary key to add to table; if column[5] > 0, that means
     # it is either the primary key or one of the values that make up a
@@ -131,6 +136,20 @@ def rename_tmp_table(old_cur, table):
     LOGGER.info("replaced table %s with updated schema", table[0])
 
 
+# Add new columns in-place. This does not copy over existing rows.
+def add_columns(old_cur, table, new_columns, added_cols):
+    new_columns_by_name = {column[1]: column for column in new_columns}
+    for name in added_cols:
+        alter_stmt = (
+            "ALTER TABLE "
+            + table[0]
+            + " ADD COLUMN "
+            + column_def(new_columns_by_name[name])
+        )
+        old_cur.execute(alter_stmt)
+        LOGGER.info("added column %s to table %s", name, table[0])
+
+
 # update_tables() is responsible for adding any new tables that don't yet exist
 # in the old flux-accounting DB. It will look at the table schema for the table
 # that doesn't yet exist and create a "CREATE TABLE ..." statement to add to the
@@ -158,19 +177,7 @@ def update_tables(old_cur, new_cur):
 
             add_stmt = "CREATE TABLE IF NOT EXISTS " + table[0] + "("
 
-            for column in new_columns:
-                column_name = column[1]
-                column_type = column[2]
-                not_null = column[3]
-                default_value = column[4]
-
-                add_stmt += column_name + " " + column_type + " "
-                if default_value is not None:
-                    add_stmt += "DEFAULT " + default_value + " "
-                if not_null == 1:
-                    add_stmt += "NOT NULL"
-                if column != new_columns[-1]:
-                    add_stmt += ", "
+            add_stmt += ", ".join(column_def(column) for column in new_columns)
 
             # look for primary key in new table to add
             primary_keys = [column[1] for column in new_columns if column[5] > 0]
@@ -228,14 +235,18 @@ def update_columns(old_cur, new_cur):
                 len(added_cols),
                 len(removed_cols),
             )
-            # create a new version of table with the updated column list
+
+        if removed_cols:
+            # removing a column requires rebuilding the table: create a new
+            # version with the updated column list, copy every existing row, and
+            # replace the old table
             add_tmp_table_to_db(old_cur, table, cols)
-
-            # move elements from the old table to new version of the table
             move_existing_rows(old_cur, cols, old_columns, table)
-
-            # rename the new table to match the name of the old table
             rename_tmp_table(old_cur, table)
+        elif added_cols:
+            # columns only added: ALTER TABLE ... ADD COLUMN in place instead of copying
+            # over rows
+            add_columns(old_cur, table, new_columns, added_cols)
         else:
             LOGGER.info("no schema changes needed for table %s", table[0])
 

@@ -33,6 +33,10 @@ def main():
         "ALTER TABLE association_table ADD COLUMN yrs_experience int(11) DEFAULT 0 NOT NULL"
     )
 
+    # add a new column to the jobs table (used in t1017-update-db.t when updating a DB
+    # with many rows already in the table)
+    cur.execute("ALTER TABLE jobs ADD COLUMN queue text DEFAULT '' NOT NULL")
+
     # add a new table to the flux-accounting DB
     cur.execute(
         """CREATE TABLE IF NOT EXISTS organization (org_name        tinytext            NOT NULL,

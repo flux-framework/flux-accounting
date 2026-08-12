@@ -40,12 +40,38 @@ test_expect_success 'add some users to the DB' '
 	flux account add-user --username=user5014 --userid=5014 --bank=C
 '
 
+test_expect_success 'insert some rows into the jobs table' '
+	flux python -c "
+import sqlite3
+conn = sqlite3.connect(\"${DB_PATHv1}\")
+conn.executemany(
+    \"INSERT INTO jobs (id, userid, t_submit, t_run, t_inactive, ranks, R, jobspec) \"
+    \"VALUES (?, ?, ?, ?, ?, ?, ?, ?)\",
+    [(str(i), 5011, 0.0, 0.0, 0.0, \"0\", \"{}\", \"{}\") for i in range(100)],
+)
+conn.commit()
+conn.close()
+"
+'
+
 test_expect_success 'create a new flux-accounting DB with an additional table, additional columns in existing tables, and a removed column' '
 	flux python ${MODIFY_DB} ${DB_PATHv2}
 '
 
 test_expect_success 'run flux account-update-db' '
 	flux account-update-db -p ${DB_PATHv1} --new-db ${DB_PATHv2}
+'
+
+test_expect_success 'jobs rows survived and new column was added in place' '
+	flux python -c "
+import sqlite3
+conn = sqlite3.connect(\"${DB_PATHv1}\")
+cur = conn.cursor()
+assert cur.execute(\"SELECT COUNT(*) FROM jobs\").fetchone()[0] == 100
+cols = [c[1] for c in cur.execute(\"PRAGMA table_info(jobs)\").fetchall()]
+assert \"queue\" in cols, cols
+conn.close()
+"
 '
 
 test_expect_success 'get all the tables of the old DB and check that new table was added' '
@@ -68,8 +94,8 @@ test_expect_success 'get all the tables of the old DB and check that new table w
 '
 
 test_expect_success 'get all the columns of the updated table in the DB and check that new columns were added' '
-	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -c association_table > association_table_columns.test &&
-	cat <<-EOF >association_table_columns.expected
+	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -c association_table | sort > association_table_columns.test &&
+	cat <<-EOF | sort > association_table_columns.expected
 	table name: association_table
 	creation_time
 	mod_time
@@ -96,8 +122,8 @@ test_expect_success 'get all the columns of the updated table in the DB and chec
 '
 
 test_expect_success 'get all the columns from the queue_table and make sure the dropped column does not show up' '
-	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -c queue_table > queue_table_columns.test &&
-	cat <<-EOF >queue_table_columns.expected
+	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -c queue_table | sort > queue_table_columns.test &&
+	cat <<-EOF | sort > queue_table_columns.expected
 	table name: queue_table
 	queue
 	min_nodes_per_job
