@@ -39,6 +39,7 @@ public:
     int nnodes = 0;                // the number of nodes requested
     int ncores = 0;                // the number of cores requested
     std::string queue;             // the queue the job was submitted under
+    double fairshare = -1.0;       // fair-share value associated with this job
 
     // constructor
     Job () = default;
