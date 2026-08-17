@@ -593,8 +593,16 @@ def add_create_db_arg(subparsers):
         "--decay-factor",
         help="the amount of decay to apply to historical usage",
         type=float,
-        default=0.5,
+        default=None,
         metavar="DECAY_FACTOR",
+    )
+    subparser_create_db.add_argument(
+        "--config-path",
+        help=(
+            "path to a TOML file with an [accounting] section used to customize "
+            "the default values seeded into the database"
+        ),
+        metavar="PATH",
     )
 
 
@@ -1809,6 +1817,7 @@ def main():
             args.priority_usage_reset_period,
             args.priority_decay_half_life,
             args.decay_factor,
+            args.config_path,
         )
         sys.exit(0)
 
