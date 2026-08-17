@@ -14,10 +14,35 @@ import logging
 import functools
 import contextlib
 
+try:
+    import tomllib  # novermin
+except ModuleNotFoundError:
+    # tomllib was added to the standard library in Python 3.11; fall back
+    # to the tomli vendored by flux-core
+    from flux.utils import tomli as tomllib
+
 from flux.constants import FLUX_USERID_UNKNOWN
 from flux.util import parse_datetime
 from flux.job.JobID import JobID
 import fluxacct.accounting
+
+
+def load_toml(path):
+    """
+    Parse the TOML file at path and return its contents as a dictionary.
+
+    Args:
+        path: the path to a TOML file.
+
+    Raises:
+        ValueError: the file is not valid TOML.
+        OSError: the file cannot be opened.
+    """
+    with open(path, "rb") as toml_file:
+        try:
+            return tomllib.load(toml_file)
+        except tomllib.TOMLDecodeError as exc:
+            raise ValueError(f"{path}: {exc}") from exc
 
 
 def get_uid(username):

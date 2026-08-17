@@ -8,6 +8,7 @@ acctpy_PYTHON = \
 	jobs_table_subcommands.py \
 	db_info_subcommands.py \
 	fairshare_emulator.py \
+	config.py \
 	create_db.py \
 	formatter.py \
 	sql_util.py \
