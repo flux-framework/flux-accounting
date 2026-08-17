@@ -1,0 +1,29 @@
+{
+  "name": "Flux Accounting with Claude Developer Environment",
+  "dockerFile": "Dockerfile",
+  "context": "../../",
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "NODE_OPTIONS": "--max-old-space-size=4096",
+    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
+    "CLAUDE_ENV_FILE": "${containerWorkspaceFolder}/.devcontainer/claude/claude.env",
+    "POWERLEVEL9K_DISABLE_GITSTATUS": "true"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+  },
+      "extensions": [
+        "ms-vscode.cmake-tools",
+        "ms-vscode.cpptools-extension-pack",
+        "anthropic.claude-code"
+      ]
+    }
+  },
+  "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && sudo /usr/local/bin/init-firewall.sh \"$CLAUDE_ENV_FILE\"",
+  "waitFor": "postStartCommand",
+  "runArgs": [
+    "--cap-add=NET_ADMIN"
+  ]
+}

@@ -16,8 +16,7 @@ priority plugin.
 
 ### Install Instructions
 
-For instructions for using a VSCode Development Container, see [this document in flux-core](https://github.com/flux-framework/flux-core/blob/master/vscode.md). You'll want to create the environment
-and proceed with the steps below to build.
+For instructions for using a VSCode Development Container, see [this document in flux-core](https://github.com/flux-framework/flux-core/blob/master/vscode.md). You'll want to create the environment and proceed with the steps below to build. We have provided two environments - one `default` and one for use with [Claude Code](.devcontainer/claude code). 
 
 ##### Building From Source
 
