@@ -10,14 +10,65 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import pwd
+import math
 import logging
 import functools
 import contextlib
+
+try:
+    import tomllib  # novermin
+except ModuleNotFoundError:
+    # tomllib was added to the standard library in Python 3.11; fall back
+    # to the tomli vendored by flux-core
+    from flux.utils import tomli as tomllib
+
+import flux.util
 
 from flux.constants import FLUX_USERID_UNKNOWN
 from flux.util import parse_datetime
 from flux.job.JobID import JobID
 import fluxacct.accounting
+
+
+def load_toml(path):
+    """
+    Parse the TOML file at path and return its contents as a dictionary.
+
+    Args:
+        path: the path to a TOML file.
+
+    Raises:
+        ValueError: the file is not valid TOML.
+        OSError: the file cannot be opened.
+    """
+    with open(path, "rb") as toml_file:
+        try:
+            return tomllib.load(toml_file)
+        except tomllib.TOMLDecodeError as exc:
+            raise ValueError(f"{path}: {exc}") from exc
+
+
+def parse_fsd(value, key="duration"):
+    """
+    Parse a duration expressed in Flux Standard Duration (see RFC 23) or a
+    number of seconds and convert it to a number of seconds, preserving
+    integer values where possible.
+
+    Args:
+        value: the duration to parse.
+        key: a name for the value used in error messages.
+
+    Raises:
+        ValueError: the value is not a valid, positive, finite Flux
+            Standard Duration.
+    """
+    try:
+        seconds = flux.util.parse_fsd(str(value))
+    except ValueError as exc:
+        raise ValueError(f"{key} is not a valid Flux Standard Duration") from exc
+    if math.isinf(seconds) or seconds <= 0:
+        raise ValueError(f"{key} must be a positive, finite duration")
+    return int(seconds) if float(seconds).is_integer() else seconds
 
 
 def get_uid(username):
