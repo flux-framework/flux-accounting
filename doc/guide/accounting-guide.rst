@@ -100,6 +100,24 @@ parameters are assumed, including the accounting database path of
     are run as root, some commands that rewrite the database could change the
     owner to root, causing flux-accounting scripts run from flux cron to fail.
 
+The default values seeded into a new database (usage reset period and decay
+half-life, decay factor, job usage resource weights, and priority factor
+weights) can be customized with a TOML configuration file passed to ``flux
+account create-db`` with ``--config-path``. Keys live under an
+``[accounting]`` table and any key not present keeps its default:
+
+.. code-block:: toml
+
+ [accounting.usage]
+ decay-half-life = "14d"
+
+ [accounting.priority.factors]
+ fairshare = 50000
+
+See flux-config-accounting(5) for the full list of keys and their default
+values. An example configuration file is installed as
+``accounting.toml.example``.
+
 Banks must be added to the system, for example:
 
 .. code-block:: console
