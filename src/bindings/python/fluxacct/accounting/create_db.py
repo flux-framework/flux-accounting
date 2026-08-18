@@ -167,6 +167,8 @@ def create_db(
                 max_sched_jobs            int(11)    DEFAULT 2147483647 NOT NULL ON CONFLICT REPLACE DEFAULT 2147483647,
                 max_sched_nodes_per_assoc int(11)    DEFAULT 2147483647 NOT NULL ON CONFLICT REPLACE DEFAULT 2147483647,
                 max_sched_cores_per_assoc int(11)    DEFAULT 2147483647 NOT NULL ON CONFLICT REPLACE DEFAULT 2147483647,
+                max_nodes                 int(11)    DEFAULT 2147483647 NOT NULL ON CONFLICT REPLACE DEFAULT 2147483647,
+                max_cores                 int(11)    DEFAULT 2147483647 NOT NULL ON CONFLICT REPLACE DEFAULT 2147483647,
                 PRIMARY KEY (queue)
             );"""
     )

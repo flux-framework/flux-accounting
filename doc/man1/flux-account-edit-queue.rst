@@ -63,6 +63,16 @@ the ``queue_table`` in the flux-accounting database:
     The max number of cores in SCHED state an association can have across all
     of their active jobs in this queue at any given time.
 
+.. option:: --max-nodes
+
+    The max number of nodes in SCHED or RUN state across all associations'
+    jobs in this queue at any given time.
+
+.. option:: --max-cores
+
+    The max number of cores in SCHED or RUN state across all associations'
+    jobs in this queue at any given time.
+
 .. _flux-core: https://flux-framework.readthedocs.io/projects/flux-core/en/latest/man5/flux-config-queues.html
 
 .. _flux-sched: https://flux-framework.readthedocs.io/projects/flux-sched/en/latest/man5/flux-config-sched-fluxion-qmanager.html

@@ -104,6 +104,7 @@ TESTSCRIPTS = \
 	t1099-export-db-fairshare.t \
 	t1100-issue925.t \
 	t1101-max-resources-queue-sched.t \
+	t1102-per-queue-max-sched-resources-basic.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
