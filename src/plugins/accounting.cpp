@@ -367,11 +367,15 @@ bool Association::under_queue_max_resources (
         return true;
     const int queue_max_nodes_per_assoc = qit->second.max_nodes_per_assoc;
 
-    // look up current per-queue node usage for the association
+    // committed nodes in this queue = running (cur_nodes) + SCHED
+    // (cur_sched_nodes). max-resources-queue caps resources committed to the
+    // queue across both states, so a job counts from job.state.sched through
+    // job.state.inactive.
     int cur_nodes_in_queue = 0;
     auto uit = queue_usage.find (queue);
     if (uit != queue_usage.end ())
-        cur_nodes_in_queue = uit->second.cur_nodes;
+        cur_nodes_in_queue = uit->second.cur_nodes
+                             + uit->second.cur_sched_nodes;
 
     return (cur_nodes_in_queue + job.nnodes) <= queue_max_nodes_per_assoc;
 }

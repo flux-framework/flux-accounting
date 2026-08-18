@@ -141,6 +141,33 @@ void association_release_held_job_true ()
 }
 
 /*
+ * A job sitting in SCHED state (cur_sched_nodes > 0) counts against the
+ * per-queue max_nodes limit even when no job is running yet (cur_nodes == 0).
+ */
+void association_sched_node_counts_against_queue_max ()
+{
+    Association *a = &users[50001]["bank_A"];
+    a->cur_run_jobs = 0;
+    a->cur_nodes = 0;
+    a->queue_usage["bronze"].cur_run_jobs = 0;
+    a->queue_usage["bronze"].cur_nodes = 0;
+    a->queue_usage["bronze"].cur_sched_nodes = 1;
+
+    Job job;
+    job.id = 3;
+    job.nnodes = 1;
+    job.queue = "bronze";
+
+    ok (a->under_queue_max_resources (job, "bronze", queues) == false,
+        "SCHED-state node counts against per-queue max_nodes limit");
+
+    // once the SCHED commitment clears, the queue has headroom again
+    a->queue_usage["bronze"].cur_sched_nodes = 0;
+    ok (a->under_queue_max_resources (job, "bronze", queues) == true,
+        "queue has headroom once SCHED commitment clears");
+}
+
+/*
  * A Queue object's max_sched_jobs property can be set and configured.
  */
 void set_queue_max_sched_jobs_limit ()
@@ -205,6 +232,7 @@ int main (int argc, char* argv[])
     association_under_queue_max_nodes_limit_true ();
     association_under_queue_max_nodes_limit_false ();
     association_release_held_job_true ();
+    association_sched_node_counts_against_queue_max ();
     set_queue_max_sched_jobs_limit ();
     association_under_queue_max_sched_jobs_limit_true ();
     association_under_queue_max_sched_jobs_limit_false ();
