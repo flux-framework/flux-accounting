@@ -40,6 +40,7 @@ FAKE_ASSOCIATIONS = {
     50004: struct_passwd("50004", "x", 50004, 50004, "", "/home/50004", "/bin/bash"),
 }
 
+
 # helper lookup functions to overwrite those in accounting.util
 def fake_get_uid(uid):
     try:
@@ -119,9 +120,7 @@ class TestAccountingCLI(unittest.TestCase):
                ]
              }}
            }}
-           """.format(
-                rank=ranks, nodelist=nodes
-            )
+           """.format(rank=ranks, nodelist=nodes)
 
             for i in range(num_entries):
                 try:

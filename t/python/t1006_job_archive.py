@@ -26,7 +26,6 @@ from fluxacct.accounting import create_db as c
 from fluxacct.accounting import user_subcommands as u
 from fluxacct.accounting import bank_subcommands as b
 
-
 # create a tuple-compatible ctruct like pwd.struct_passwd
 struct_passwd = namedtuple(
     "struct_passwd",
@@ -40,6 +39,7 @@ FAKE_ASSOCIATIONS = {
     1003: struct_passwd("1003", "x", 1003, 1003, "", "/home/1003", "/bin/bash"),
     1004: struct_passwd("1004", "x", 1004, 1004, "", "/home/1004", "/bin/bash"),
 }
+
 
 # helper lookup functions to overwrite those in accounting.util
 def fake_get_uid(uid):
@@ -125,9 +125,7 @@ class TestAccountingCLI(unittest.TestCase):
                 ]
               }}
             }}
-            """.format(
-                rank=ranks, nodelist=nodes
-            )
+            """.format(rank=ranks, nodelist=nodes)
 
             for i in range(num_entries):
                 try:

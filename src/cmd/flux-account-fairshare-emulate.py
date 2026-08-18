@@ -17,13 +17,11 @@ from fluxacct.accounting import fairshare_emulator
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="""
+    parser = argparse.ArgumentParser(description="""
         Fair-share emulator: Calculate fair-share values from JSON input
         without requiring a database. Useful for testing fair-share scenarios
         and previewing changes before applying them to production.
-        """
-    )
+        """)
 
     parser.add_argument(
         "-i",

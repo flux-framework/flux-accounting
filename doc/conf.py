@@ -80,6 +80,7 @@ py_bindings_dir = os.path.normpath(os.path.join(script_dir, "../src/bindings/pyt
 # Make sure that the python bindings are in PYTHONPATH for autodoc
 sys.path.insert(0, py_bindings_dir)
 
+
 # run api doc
 def run_apidoc(_):
     # Move import inside so that `gen-cmdhelp.py` can exec this file in LGTM.com

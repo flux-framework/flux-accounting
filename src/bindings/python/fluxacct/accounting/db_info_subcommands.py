@@ -267,12 +267,10 @@ def export_as_json(conn, cursor):
     config = {}  # will store all of the above lists
 
     # fetch all rows from association_table
-    for row in cursor.execute(
-        """SELECT userid, bank, default_bank,
+    for row in cursor.execute("""SELECT userid, bank, default_bank,
         fairshare, max_running_jobs, max_active_jobs,
         queues, active, projects, default_project, max_nodes, max_cores, max_sched_jobs
-        FROM association_table"""
-    ):
+        FROM association_table"""):
         # create a JSON payload with the results of the query
         association = {
             "userid": int(row["userid"]),

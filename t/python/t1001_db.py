@@ -69,43 +69,37 @@ class TestDB(unittest.TestCase):
 
     # add an association to the association_table
     def test_02_create_association(self):
-        conn.execute(
-            """
+        conn.execute("""
             INSERT INTO association_table
             (creation_time, mod_time, username, userid,
             bank, default_bank, shares, queues)
             VALUES
             (0, 0, "test user", 1234, "test account", "test_account", 0, "")
-            """
-        )
+            """)
         cursor = conn.cursor()
         num_rows = cursor.execute("DELETE FROM association_table").rowcount
         self.assertEqual(num_rows, 1)
 
     # add a top-level account to the bank_table
     def test_03_create_top_level_account(self):
-        conn.execute(
-            """
+        conn.execute("""
             INSERT INTO bank_table
             (bank, shares)
             VALUES
             ("root", 100)
-            """
-        )
+            """)
         select_stmt = "SELECT * FROM bank_table"
         cur.execute(select_stmt)
         self.assertEqual(len(cur.fetchall()), 1)
 
     # let's add a sub account under root
     def test_04_create_sub_account(self):
-        conn.execute(
-            """
+        conn.execute("""
             INSERT INTO bank_table
             (bank, parent_bank, shares)
             VALUES
             ("sub_account_1", "parent_account", 50)
-            """
-        )
+            """)
         select_stmt = "SELECT * FROM bank_table"
         cur.execute(select_stmt)
         self.assertEqual(len(cur.fetchall()), 2)

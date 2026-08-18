@@ -170,9 +170,11 @@ def insert_jobs_in_db(conn, cur, job_records):
                     single_job["ranks"],
                     single_job["R"],
                     single_job["jobspec"],
-                    single_job["project"]
-                    if single_job.get("project") is not None
-                    else "",
+                    (
+                        single_job["project"]
+                        if single_job.get("project") is not None
+                        else ""
+                    ),
                     single_job["bank"] if single_job.get("bank") is not None else "",
                     single_job.get("requested_duration"),
                     single_job.get("actual_duration"),
@@ -224,12 +226,10 @@ def copy_db_contents(old_cur, cur, conn):
 
 # pylint: disable=broad-except
 def main():
-    parser = argparse.ArgumentParser(
-        description="""
+    parser = argparse.ArgumentParser(description="""
         Description: Fetch new job records using Flux's job-list and job-info
         interfaces and insert them into a table in the flux-accounting DB.
-        """
-    )
+        """)
 
     parser.add_argument(
         "-p", "--path", dest="path", help="specify location of database file"

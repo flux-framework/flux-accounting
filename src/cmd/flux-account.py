@@ -1789,12 +1789,10 @@ LOGGER = logging.getLogger("flux-account")
 @flux.util.CLIMain(LOGGER)
 def main():
 
-    parser = argparse.ArgumentParser(
-        description="""
+    parser = argparse.ArgumentParser(description="""
         Description: Translate command line arguments into
         SQLite instructions for the Flux Accounting Database.
-        """
-    )
+        """)
     subparsers = parser.add_subparsers(help="sub-command help", dest="subcommand")
     subparsers.required = True
 
