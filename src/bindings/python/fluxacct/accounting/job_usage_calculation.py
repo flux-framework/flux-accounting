@@ -84,12 +84,10 @@ def get_usage_weights(cur):
     Returns:
         tuple: (node_weight, core_weight, gpu_weight) as floats.
     """
-    cur.execute(
-        """
+    cur.execute("""
         SELECT key, value FROM config_table
         WHERE key IN ('node_weight', 'core_weight', 'gpu_weight')
-        """
-    )
+        """)
     weights = {row[0]: float(row[1]) for row in cur.fetchall()}
     return (
         weights.get("node_weight", 1.0),

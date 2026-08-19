@@ -49,12 +49,10 @@ def est_sqlite_conn(path):
 
 # pylint: disable=broad-except
 def main():
-    parser = argparse.ArgumentParser(
-        description="""
+    parser = argparse.ArgumentParser(description="""
         Description: Update the job usage values for every association and bank
         in the flux-accounting database.
-        """
-    )
+        """)
 
     parser.add_argument(
         "-p", "--path", dest="path", help="specify location of database file"

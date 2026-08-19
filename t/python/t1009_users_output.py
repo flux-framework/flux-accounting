@@ -59,8 +59,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # test JSON output for viewing an association
     def test_view_association(self):
-        expected = textwrap.dedent(
-            """\
+        expected = textwrap.dedent("""\
         [
           {
             "active": 1,
@@ -69,21 +68,18 @@ class TestAccountingCLI(unittest.TestCase):
             "shares": 1
           }
         ]
-        """
-        )
+        """)
         test = u.view_user(
             conn, user="user1", cols=["active", "username", "bank", "shares"]
         )
         self.assertEqual(expected.strip(), test.strip())
 
     def test_view_association_table(self):
-        expected = textwrap.dedent(
-            """\
+        expected = textwrap.dedent("""\
         active | username | bank | shares
         -------+----------+------+-------
         true   | user1    | A    | 1  
-        """
-        )
+        """)
         test = u.view_user(
             conn,
             user="user1",

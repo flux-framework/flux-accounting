@@ -67,8 +67,7 @@ def create_db(
 
     # Association Table
     LOGGER.info("Creating association_table in DB...")
-    conn.execute(
-        """
+    conn.execute("""
             CREATE TABLE IF NOT EXISTS association_table (
                 creation_time    bigint(20)                         NOT NULL,
                 mod_time         bigint(20)  DEFAULT 0              NOT NULL,
@@ -89,15 +88,13 @@ def create_db(
                 default_project  tinytext    DEFAULT '*'            NOT NULL    ON CONFLICT REPLACE DEFAULT '*',
                 max_sched_jobs   int(11)     DEFAULT 2147483647     NOT NULL    ON CONFLICT REPLACE DEFAULT 2147483647,
                 PRIMARY KEY   (username, bank)
-        );"""
-    )
+        );""")
     LOGGER.info("Created association_table successfully")
 
     # Bank Table
     # bank_id gets auto-incremented with every new entry
     LOGGER.info("Creating bank_table in DB...")
-    conn.execute(
-        """
+    conn.execute("""
             CREATE TABLE IF NOT EXISTS bank_table (
                 bank_id           integer    PRIMARY KEY AUTOINCREMENT,
                 bank              text                   NOT NULL,
@@ -107,55 +104,49 @@ def create_db(
                 job_usage         real       DEFAULT 0.0 NOT NULL,
                 priority          real       DEFAULT 0.0 NOT NULL    ON CONFLICT REPLACE DEFAULT 0.0,
                 ignore_older_than bigint(20) DEFAULT 0
-        );"""
-    )
+        );""")
     LOGGER.info("Created bank_table successfully")
 
     # Job Usage Factor Table
     # stores past job usage factors for users
     LOGGER.info("Creating job_usage_factor table in DB...")
-    conn.execute(
-        """
+    conn.execute("""
             CREATE TABLE IF NOT EXISTS job_usage_factor_table (
                 username            tinytext                    NOT NULL,
                 userid              int(11)                     NOT NULL,
                 bank                tinytext                    NOT NULL,
                 last_job_timestamp  real        DEFAULT 0.0,
                 PRIMARY KEY (username, bank)
-        );"""
-    )
+        );""")
     LOGGER.info("Created job_usage_factor_table successfully")
 
     # Half Life Timestamp Table
     # keeps track of current half-life period
     LOGGER.info("Creating t_half_life_period_table in DB...")
-    conn.execute(
-        """
+    conn.execute("""
             CREATE TABLE IF NOT EXISTS t_half_life_period_table (
                 cluster               tinytext DEFAULT 'cluster',
                 end_half_life_period  real     DEFAULT 0.0
 
-        );"""
-    )
-    conn.execute(
-        """
+        );""")
+    conn.execute("""
             INSERT INTO t_half_life_period_table (cluster, end_half_life_period)
             VALUES ('cluster', 0.0);
-        """
-    )
+        """)
     set_half_life_period_end(
         conn,
-        parse_fsd(str(priority_decay_half_life))
-        if priority_decay_half_life is not None
-        else 604800,
+        (
+            parse_fsd(str(priority_decay_half_life))
+            if priority_decay_half_life is not None
+            else 604800
+        ),
     )
     LOGGER.info("Created t_half_life_period_table successfully")
 
     # Queue Table
     # stores queues, associated priorities, and limit information
     LOGGER.info("Creating queue_table in DB...")
-    conn.execute(
-        """
+    conn.execute("""
             CREATE TABLE IF NOT EXISTS queue_table (
                 queue               tinytext                      NOT NULL,
                 min_nodes_per_job         int(11)    DEFAULT 1          NOT NULL ON CONFLICT REPLACE DEFAULT 1,
@@ -170,28 +161,24 @@ def create_db(
                 max_nodes                 int(11)    DEFAULT 2147483647 NOT NULL ON CONFLICT REPLACE DEFAULT 2147483647,
                 max_cores                 int(11)    DEFAULT 2147483647 NOT NULL ON CONFLICT REPLACE DEFAULT 2147483647,
                 PRIMARY KEY (queue)
-            );"""
-    )
+            );""")
 
     # Projects Table
     # stores projects
     LOGGER.info("Creating project_table in DB...")
-    conn.execute(
-        """
+    conn.execute("""
             CREATE TABLE IF NOT EXISTS project_table (
                 project_id          integer    PRIMARY KEY AUTOINCREMENT,
                 project             tinytext               NOT NULL,
                 usage               real       DEFAULT 0.0 NOT NULL
-            );"""
-    )
+            );""")
     conn.execute("INSERT INTO project_table (project) VALUES ('*')")
     conn.commit()
 
     # Jobs Table
     # stores job records for associations
     LOGGER.info("Creating jobs table in DB...")
-    conn.execute(
-        """
+    conn.execute("""
             CREATE TABLE IF NOT EXISTS jobs (
                 id                  char(16)   PRIMARY KEY NOT NULL,
                 userid              integer                NOT NULL,
@@ -205,20 +192,17 @@ def create_db(
                 bank                text,
                 requested_duration  real       DEFAULT 0.0,
                 actual_duration     real       DEFAULT 0.0
-            );"""
-    )
+            );""")
     LOGGER.info("Created jobs table successfully")
 
     # Priority Factor Table
     # stores the weights for each priority factor to be used in the plugin
     LOGGER.info("Creating priority_factor_weight_table in DB...")
-    conn.execute(
-        """
+    conn.execute("""
             CREATE TABLE IF NOT EXISTS priority_factor_weight_table (
                 factor      text     PRIMARY KEY NOT NULL,
                 weight      integer              NOT NULL
-            );"""
-    )
+            );""")
     LOGGER.info("Created priority_factor_weight_table successfully")
     # create and set the default weights for each factor
     conn.execute(
@@ -243,13 +227,11 @@ def create_db(
     # stores information like the configuration parameters for job usage decay
     # and any potentially other relevant database information
     LOGGER.info("Creating config_table in DB...")
-    conn.execute(
-        """
+    conn.execute("""
             CREATE TABLE IF NOT EXISTS config_table (
                 key     TEXT PRIMARY KEY NOT NULL,
                 value   TEXT             NOT NULL
-            );"""
-    )
+            );""")
     # convert a Flux Standard Duration to a number of seconds before INSERT-ing it
     # to config_table
     priority_usage_reset_period = (
@@ -320,8 +302,7 @@ def create_db(
     # are (configured via PriorityDecayHalfLife and PriorityUsageResetPeriod parameters
     # in config_table)
     LOGGER.info("Creating job_usage_per_association table in DB...")
-    conn.execute(
-        """
+    conn.execute("""
             CREATE TABLE IF NOT EXISTS job_usage_per_association_table (
                 username tinytext              NOT NULL,
                 userid   int(11)               NOT NULL,
@@ -329,8 +310,7 @@ def create_db(
                 period   int(11)               NOT NULL,
                 value    real     DEFAULT 0.0,
                 PRIMARY KEY (username, bank, period)
-            );"""
-    )
+            );""")
     LOGGER.info("Created job_usage_per_association table successfully")
 
     conn.close()

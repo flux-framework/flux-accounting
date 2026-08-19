@@ -78,8 +78,7 @@ def populate_job_archive_db(jobs_conn, userid, bank, num_entries, starting_jobid
 
 def main():
     jobs_conn = sqlite3.connect("file:job-archive.sqlite?mode:rwc", uri=True)
-    jobs_conn.execute(
-        """
+    jobs_conn.execute("""
             CREATE TABLE IF NOT EXISTS jobs (
                 id            char(16)  NOT NULL,
                 userid        int       NOT NULL,
@@ -92,8 +91,7 @@ def main():
                 jobspec       text      NOT NULL,
                 R             text      NOT NULL,
                 PRIMARY KEY   (id)
-        );"""
-    )
+        );""")
 
     # populate the job-archive DB with fake job entries
     populate_job_archive_db(jobs_conn, 5011, "account1", 2, 1000)

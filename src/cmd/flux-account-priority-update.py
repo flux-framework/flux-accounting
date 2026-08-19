@@ -75,12 +75,10 @@ def bulk_update(path):
     bulk_factor_data = []
 
     # fetch all rows from association_table (will print out tuples)
-    for row in cur.execute(
-        """SELECT userid, bank, default_bank,
+    for row in cur.execute("""SELECT userid, bank, default_bank,
            fairshare, max_running_jobs, max_active_jobs,
            queues, active, projects, default_project, max_nodes, max_cores,
-           max_sched_jobs FROM association_table"""
-    ):
+           max_sched_jobs FROM association_table"""):
         # create a JSON payload with the results of the query
         single_user_data = {
             "userid": int(row["userid"]),
@@ -212,12 +210,10 @@ def send_instance_owner_info():
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="""
+    parser = argparse.ArgumentParser(description="""
         Description: Send a bulk update of user information from a
         flux-accounting database to the multi-factor priority plugin.
-        """
-    )
+        """)
 
     parser.add_argument(
         "-p", "--path", dest="path", help="specify location of database file"

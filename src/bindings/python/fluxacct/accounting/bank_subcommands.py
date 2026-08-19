@@ -21,6 +21,7 @@ from fluxacct.accounting import job_usage_calculation as jobs
 from fluxacct.accounting import util
 from fluxacct.accounting.util import with_cursor
 
+
 ###############################################################
 #                                                             #
 #                      Helper Functions                       #

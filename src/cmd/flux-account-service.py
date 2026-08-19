@@ -160,9 +160,11 @@ class AccountingService:
                 self.conn,
                 msg.payload["username"],
                 msg.payload.get("parsable"),
-                msg.payload.get("fields").split(",")
-                if msg.payload.get("fields")
-                else None,
+                (
+                    msg.payload.get("fields").split(",")
+                    if msg.payload.get("fields")
+                    else None
+                ),
                 msg.payload.get("list_banks"),
                 msg.payload.get("format"),
                 msg.payload.get("job_usage"),
@@ -186,9 +188,11 @@ class AccountingService:
         try:
             val = u.list_users(
                 self.conn,
-                cols=msg.payload.get("fields").split(",")
-                if msg.payload.get("fields")
-                else None,
+                cols=(
+                    msg.payload.get("fields").split(",")
+                    if msg.payload.get("fields")
+                    else None
+                ),
                 json_fmt=msg.payload.get("json"),
                 format_string=msg.payload.get("format"),
                 active=msg.payload.get("active"),
@@ -294,9 +298,11 @@ class AccountingService:
                 msg.payload.get("tree"),
                 msg.payload.get("users"),
                 msg.payload.get("parsable"),
-                msg.payload.get("fields").split(",")
-                if msg.payload.get("fields")
-                else None,
+                (
+                    msg.payload.get("fields").split(",")
+                    if msg.payload.get("fields")
+                    else None
+                ),
                 msg.payload.get("format"),
                 msg.payload.get("concise"),
                 msg.payload.get("active"),
@@ -367,9 +373,11 @@ class AccountingService:
             val = b.list_banks(
                 self.conn,
                 msg.payload.get("inactive"),
-                msg.payload.get("fields").split(",")
-                if msg.payload.get("fields")
-                else None,
+                (
+                    msg.payload.get("fields").split(",")
+                    if msg.payload.get("fields")
+                    else None
+                ),
                 msg.payload.get("json"),
                 msg.payload.get("format"),
             )
@@ -539,9 +547,11 @@ class AccountingService:
         try:
             val = p.list_projects(
                 self.conn,
-                msg.payload.get("fields").split(",")
-                if msg.payload.get("fields")
-                else None,
+                (
+                    msg.payload.get("fields").split(",")
+                    if msg.payload.get("fields")
+                    else None
+                ),
                 msg.payload.get("json"),
                 msg.payload.get("format"),
             )
@@ -606,9 +616,11 @@ class AccountingService:
         try:
             val = qu.list_queues(
                 self.conn,
-                msg.payload.get("fields").split(",")
-                if msg.payload.get("fields")
-                else None,
+                (
+                    msg.payload.get("fields").split(",")
+                    if msg.payload.get("fields")
+                    else None
+                ),
                 msg.payload.get("json"),
                 msg.payload.get("format"),
             )
@@ -658,9 +670,11 @@ class AccountingService:
         try:
             val = prio.list_factors(
                 conn=self.conn,
-                cols=msg.payload["fields"].split(",")
-                if msg.payload.get("fields")
-                else None,
+                cols=(
+                    msg.payload["fields"].split(",")
+                    if msg.payload.get("fields")
+                    else None
+                ),
                 json_fmt=msg.payload.get("json"),
                 format_string=msg.payload.get("format"),
             )
@@ -882,9 +896,11 @@ class AccountingService:
         try:
             val = d.list_configs(
                 conn=self.conn,
-                cols=msg.payload["fields"].split(",")
-                if msg.payload.get("fields")
-                else None,
+                cols=(
+                    msg.payload["fields"].split(",")
+                    if msg.payload.get("fields")
+                    else None
+                ),
                 json_fmt=msg.payload.get("json"),
                 format_string=msg.payload.get("format"),
             )

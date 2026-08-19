@@ -30,19 +30,35 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: actions/setup-python@v7
       with:
-        python-version: 3.9
+        python-version: '3.13'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     - name: Lint with black
       run: |
-        pip install --upgrade black==20.8b1 click==8.0.2
+        pip install --upgrade 'black~=26.1'
         # return the status of running black formatter
-        black . --check
+        black . --check --diff
+
+  python-compat:
+    name: python ${{ matrix.python-version }} compatibility
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
+    steps:
+    - uses: actions/checkout@v7
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v7
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Check python source compatibility
+      run: python -m compileall -q src/bindings/python src/cmd t/python
 
   python-lint:
     name: python lint

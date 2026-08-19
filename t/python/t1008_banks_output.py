@@ -53,8 +53,7 @@ class TestAccountingCLI(unittest.TestCase):
 
     # test JSON output for listing all banks
     def test_list_banks_default(self):
-        expected = textwrap.dedent(
-            """\
+        expected = textwrap.dedent("""\
         [
           {
             "bank_id": 1,
@@ -77,15 +76,13 @@ class TestAccountingCLI(unittest.TestCase):
             "ignore_older_than": 0
           }
         ]
-        """
-        )
+        """)
         test = b.list_banks(conn, json_fmt=True)
         self.assertEqual(expected.strip(), test.strip())
 
     # test JSON output with custom columns
     def test_list_banks_custom_one(self):
-        expected = textwrap.dedent(
-            """\
+        expected = textwrap.dedent("""\
         [
           {
             "bank_id": 1
@@ -94,14 +91,12 @@ class TestAccountingCLI(unittest.TestCase):
             "bank_id": 2
           }
         ]
-        """
-        )
+        """)
         test = b.list_banks(conn, json_fmt=True, cols=["bank_id"])
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_custom_two(self):
-        expected = textwrap.dedent(
-            """\
+        expected = textwrap.dedent("""\
         [
           {
             "bank_id": 1,
@@ -112,14 +107,12 @@ class TestAccountingCLI(unittest.TestCase):
             "bank": "A"
           }
         ]
-        """
-        )
+        """)
         test = b.list_banks(conn, json_fmt=True, cols=["bank_id", "bank"])
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_custom_three(self):
-        expected = textwrap.dedent(
-            """\
+        expected = textwrap.dedent("""\
         [
           {
             "bank_id": 1,
@@ -132,14 +125,12 @@ class TestAccountingCLI(unittest.TestCase):
             "active": 1
           }
         ]
-        """
-        )
+        """)
         test = b.list_banks(conn, json_fmt=True, cols=["bank_id", "bank", "active"])
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_custom_four(self):
-        expected = textwrap.dedent(
-            """\
+        expected = textwrap.dedent("""\
         [
           {
             "bank_id": 1,
@@ -154,16 +145,14 @@ class TestAccountingCLI(unittest.TestCase):
             "parent_bank": "root"
           }
         ]
-        """
-        )
+        """)
         test = b.list_banks(
             conn, json_fmt=True, cols=["bank_id", "bank", "active", "parent_bank"]
         )
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_custom_five(self):
-        expected = textwrap.dedent(
-            """\
+        expected = textwrap.dedent("""\
         [
           {
             "bank_id": 1,
@@ -180,8 +169,7 @@ class TestAccountingCLI(unittest.TestCase):
             "shares": 1
           }
         ]
-        """
-        )
+        """)
         test = b.list_banks(
             conn,
             json_fmt=True,
@@ -190,8 +178,7 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_custom_six(self):
-        expected = textwrap.dedent(
-            """\
+        expected = textwrap.dedent("""\
         [
           {
             "bank_id": 1,
@@ -210,8 +197,7 @@ class TestAccountingCLI(unittest.TestCase):
             "job_usage": 0.0
           }
         ]
-        """
-        )
+        """)
         test = b.list_banks(
             conn,
             json_fmt=True,
@@ -220,74 +206,62 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_table_default(self):
-        expected = textwrap.dedent(
-            """\
+        expected = textwrap.dedent("""\
         bank_id | bank | active | parent_bank | shares | job_usage | priority | ignore_older_than
         --------+------+--------+-------------+--------+-----------+----------+------------------
         1       | root | true   |             | 1      | 0.0       | 0.0      | 0                
         2       | A    | true   | root        | 1      | 0.0       | 0.0      | 0      
-        """
-        )
+        """)
         test = b.list_banks(conn)
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_table_custom_one(self):
-        expected = textwrap.dedent(
-            """\
+        expected = textwrap.dedent("""\
         bank_id
         -------
         1      
         2            
-        """
-        )
+        """)
         test = b.list_banks(conn, cols=["bank_id"])
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_table_custom_two(self):
-        expected = textwrap.dedent(
-            """\
+        expected = textwrap.dedent("""\
         bank_id | bank
         --------+-----
         1       | root
         2       | A      
-        """
-        )
+        """)
         test = b.list_banks(conn, cols=["bank_id", "bank"])
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_table_custom_three(self):
-        expected = textwrap.dedent(
-            """\
+        expected = textwrap.dedent("""\
         bank_id | bank | active
         --------+------+-------
         1       | root | true  
         2       | A    | true     
-        """
-        )
+        """)
         test = b.list_banks(conn, cols=["bank_id", "bank", "active"])
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_table_custom_four(self):
-        expected = textwrap.dedent(
-            """\
+        expected = textwrap.dedent("""\
         bank_id | bank | active | parent_bank
         --------+------+--------+------------
         1       | root | true   |            
         2       | A    | true   | root
-        """
-        )
+        """)
         test = b.list_banks(conn, cols=["bank_id", "bank", "active", "parent_bank"])
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_table_custom_five(self):
-        expected = textwrap.dedent(
-            """\
+        expected = textwrap.dedent("""\
         bank_id | bank | active | parent_bank | shares
         --------+------+--------+-------------+-------
         1       | root | true   |             | 1     
         2       | A    | true   | root        | 1
-        """
-        )
+        """)
         test = b.list_banks(
             conn,
             cols=["bank_id", "bank", "active", "parent_bank", "shares"],
@@ -295,14 +269,12 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertEqual(expected.strip(), test.strip())
 
     def test_list_banks_table_custom_five(self):
-        expected = textwrap.dedent(
-            """\
+        expected = textwrap.dedent("""\
         bank_id | bank | active | parent_bank | shares | job_usage
         --------+------+--------+-------------+--------+----------
         1       | root | true   |             | 1      | 0.0      
         2       | A    | true   | root        | 1      | 0.0
-        """
-        )
+        """)
         test = b.list_banks(
             conn,
             cols=["bank_id", "bank", "active", "parent_bank", "shares", "job_usage"],

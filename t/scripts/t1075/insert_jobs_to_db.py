@@ -33,9 +33,7 @@ def populate_db(conn, userid, bank, ranks, nodes, jobid, t_run, t_inactive):
         ]
       }}
     }}
-    """.format(
-        rank=ranks, nodelist=nodes
-    )
+    """.format(rank=ranks, nodelist=nodes)
 
     try:
         conn.execute(

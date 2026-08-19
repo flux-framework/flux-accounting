@@ -27,7 +27,6 @@ from fluxacct.accounting import job_usage_calculation as jobs
 from fluxacct.accounting import jobs_table_subcommands as j
 from fluxacct.accounting import db_info_subcommands as d
 
-
 # create a tuple-compatible struct like pwd.struct_passwd
 struct_passwd = namedtuple(
     "struct_passwd",

@@ -76,16 +76,14 @@ class TestAccountingCLI(unittest.TestCase):
     # list all of the factors in the table with no weight
     def test_07_list_factors_custom(self):
         test = prio.list_factors(conn, cols=["factor"])
-        expected = textwrap.dedent(
-            """\
+        expected = textwrap.dedent("""\
         factor   
         ---------
         bank     
         fairshare
         queue    
         urgency  
-        """
-        )
+        """)
         self.assertEqual(expected.strip(), test.strip())
 
     # remove database and log file
