@@ -84,3 +84,7 @@ config.status
 # local editor config dirs
 .vscode
 .DS_Store
+
+# local claude code credentials, never committed
+.devcontainer/claude/claude.env
+.claude/settings.local.json
