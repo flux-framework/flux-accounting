@@ -133,9 +133,7 @@ class AccountingConfig(Mapping):
             raise ValueError(f"{path}: missing [accounting] section")
         for section, keys in data["accounting"].items():
             if section not in self._conf:
-                raise ValueError(
-                    f"{path}: unknown section in [accounting]: {section}"
-                )
+                raise ValueError(f"{path}: unknown section in [accounting]: {section}")
             if not isinstance(keys, dict):
                 raise ValueError(f"{path}: [accounting.{section}] must be a table")
             self._merge_section(path, section, keys)

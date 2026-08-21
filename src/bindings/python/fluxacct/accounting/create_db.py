@@ -150,8 +150,7 @@ def create_db(
     conn.execute("""
             INSERT INTO t_half_life_period_table (cluster, end_half_life_period)
             VALUES ('cluster', 0.0);
-        """
-    )
+        """)
     set_half_life_period_end(conn, priority_decay_half_life)
     LOGGER.info("Created t_half_life_period_table successfully")
 
@@ -232,8 +231,7 @@ def create_db(
             CREATE TABLE IF NOT EXISTS config_table (
                 key     TEXT PRIMARY KEY NOT NULL,
                 value   TEXT             NOT NULL
-            );"""
-    )
+            );""")
     conn.execute(
         f"INSERT INTO config_table VALUES (?, ?)",
         (
