@@ -307,4 +307,11 @@ man_pages = [
         [author],
         1,
     ),
+    (
+        "man5/flux-config-accounting",
+        "flux-config-accounting",
+        "flux-accounting configuration file",
+        [author],
+        5,
+    ),
 ]
