@@ -1,0 +1,38 @@
+# Example flux-accounting configuration file.
+#
+# Every key is optional; the values below are the built-in defaults used
+# by "flux account create-db" when no configuration file is provided.
+# Pass a customized copy of this file to "flux account create-db" with
+# --config-path=/path/to/accounting.toml.
+#
+# Durations may be expressed in Flux Standard Duration (e.g. "7d") or as
+# a number of seconds.
+
+# job usage calculation
+[accounting.usage]
+# the amount of time before job usage gets reset to 0
+#reset-period = "28d"
+
+# the contribution of historical job usage on the composite usage value
+#decay-half-life = "7d"
+
+# the amount of decay to apply to historical usage
+#decay-factor = 0.5
+
+# per-resource-type weights applied when calculating job usage
+[accounting.usage.weights]
+#node = 1.0
+#core = 0.0
+#gpu = 0.0
+
+# the weights for each priority factor used by the multi-factor
+# priority plugin
+[accounting.priority.factors]
+#fairshare = 100000
+#queue = 10000
+#bank = 0
+#urgency = 1000
+
+[accounting.queues]
+# reject jobs submitted to queues not defined in the queue_table
+#deny-unknown = false

@@ -16,6 +16,7 @@ import pathlib
 import time
 
 import fluxacct.accounting
+from fluxacct.accounting.config import AccountingConfig
 from flux.util import parse_fsd
 
 LOGGER = logging.getLogger(__name__)
@@ -46,8 +47,25 @@ def create_db(
     filepath,
     priority_usage_reset_period=None,
     priority_decay_half_life=None,
-    decay_factor=0.5,
+    decay_factor=None,
+    config_path=None,
 ):
+    conf = AccountingConfig(config_path)
+
+    # explicitly passed-in arguments take precedence over any value from
+    # the configuration file; durations may be expressed in Flux Standard
+    # Duration or a number of seconds
+    if priority_usage_reset_period is not None:
+        priority_usage_reset_period = parse_fsd(str(priority_usage_reset_period))
+    else:
+        priority_usage_reset_period = conf["usage"]["reset-period"]
+    if priority_decay_half_life is not None:
+        priority_decay_half_life = parse_fsd(str(priority_decay_half_life))
+    else:
+        priority_decay_half_life = conf["usage"]["decay-half-life"]
+    if decay_factor is None:
+        decay_factor = conf["usage"]["decay-factor"]
+
     if not 0.0 < decay_factor < 1.0:
         raise ValueError(f"Value must be between 0.0 and 1.0, but got {decay_factor}")
 
@@ -133,14 +151,7 @@ def create_db(
             INSERT INTO t_half_life_period_table (cluster, end_half_life_period)
             VALUES ('cluster', 0.0);
         """)
-    set_half_life_period_end(
-        conn,
-        (
-            parse_fsd(str(priority_decay_half_life))
-            if priority_decay_half_life is not None
-            else 604800
-        ),
-    )
+    set_half_life_period_end(conn, priority_decay_half_life)
     LOGGER.info("Created t_half_life_period_table successfully")
 
     # Queue Table
@@ -204,23 +215,12 @@ def create_db(
                 weight      integer              NOT NULL
             );""")
     LOGGER.info("Created priority_factor_weight_table successfully")
-    # create and set the default weights for each factor
-    conn.execute(
-        f"INSERT INTO priority_factor_weight_table "
-        f"VALUES ('fairshare', {fluxacct.accounting.FSHARE_WEIGHT_DEFAULT});"
-    )
-    conn.execute(
-        f"INSERT INTO priority_factor_weight_table "
-        f"VALUES ('queue', {fluxacct.accounting.QUEUE_WEIGHT_DEFAULT});"
-    )
-    conn.execute(
-        f"INSERT INTO priority_factor_weight_table "
-        f"VALUES ('bank', {fluxacct.accounting.BANK_WEIGHT_DEFAULT});"
-    )
-    conn.execute(
-        f"INSERT INTO priority_factor_weight_table "
-        f"VALUES ('urgency', {fluxacct.accounting.URGENCY_WEIGHT_DEFAULT});"
-    )
+    # set the weights for each factor
+    for factor in fluxacct.accounting.PRIORITY_FACTORS:
+        conn.execute(
+            "INSERT INTO priority_factor_weight_table VALUES (?, ?);",
+            (factor, conf["priority"]["factors"][factor]),
+        )
     conn.commit()
 
     # Config Table
@@ -232,19 +232,6 @@ def create_db(
                 key     TEXT PRIMARY KEY NOT NULL,
                 value   TEXT             NOT NULL
             );""")
-    # convert a Flux Standard Duration to a number of seconds before INSERT-ing it
-    # to config_table
-    priority_usage_reset_period = (
-        parse_fsd(str(priority_usage_reset_period))
-        if priority_usage_reset_period is not None
-        else 4 * 604800
-    )
-    priority_decay_half_life = (
-        parse_fsd(str(priority_decay_half_life))
-        if priority_decay_half_life is not None
-        else 1 * 604800
-    )
-
     conn.execute(
         f"INSERT INTO config_table VALUES (?, ?)",
         (
@@ -266,32 +253,19 @@ def create_db(
             decay_factor,
         ),
     )
-    conn.execute(
-        f"INSERT INTO config_table VALUES (?, ?)",
-        (
-            "node_weight",
-            "1.0",
-        ),
-    )
-    conn.execute(
-        f"INSERT INTO config_table VALUES (?, ?)",
-        (
-            "core_weight",
-            "0.0",
-        ),
-    )
-    conn.execute(
-        f"INSERT INTO config_table VALUES (?, ?)",
-        (
-            "gpu_weight",
-            "0.0",
-        ),
-    )
+    for rtype, weight in conf["usage"]["weights"].items():
+        conn.execute(
+            "INSERT INTO config_table VALUES (?, ?)",
+            (
+                f"{rtype}_weight",
+                str(float(weight)),
+            ),
+        )
     conn.execute(
         f"INSERT INTO config_table VALUES (?, ?)",
         (
             "deny_unknown_queues",
-            "false",
+            str(conf["queues"]["deny-unknown"]).lower(),
         ),
     )
     conn.commit()

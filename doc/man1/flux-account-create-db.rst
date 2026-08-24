@@ -34,3 +34,15 @@ projects, and job records.
 
    The amount of decay to apply to historical usage. By default, this is set at
    0.5.
+
+.. option:: --config-path
+
+   Path to a TOML file with an ``[accounting]`` table used to customize the
+   default values seeded into the database (see
+   :man5:`flux-config-accounting`). Explicitly passed-in command-line options
+   take precedence over values from the configuration file.
+
+SEE ALSO
+========
+
+:man5:`flux-config-accounting`
