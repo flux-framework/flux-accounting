@@ -1,0 +1,7 @@
+{
+  "name": "Flux Accounting Developer Environment",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "remoteUser": "vscode"
+}

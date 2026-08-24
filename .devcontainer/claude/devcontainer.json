@@ -1,0 +1,10 @@
+{
+  "name": "Flux Accounting Developer Environment (Claude)",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "CLAUDE_ENV_FILE": "${containerWorkspaceFolder}/.devcontainer/claude/claude.env"
+  }
+}
