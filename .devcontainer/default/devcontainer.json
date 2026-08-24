@@ -1,7 +1,7 @@
 {
   "name": "Flux Accounting Developer Environment",
   "dockerFile": "Dockerfile",
-  "context": "../",
+  "context": "../../",
 
   "customizations": {
     "vscode": {
