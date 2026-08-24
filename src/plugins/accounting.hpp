@@ -56,6 +56,8 @@ extern "C" {
 #define D_QUEUE_MSJ  "max-sched-jobs-queue-limit"
 #define D_QUEUE_MSN  "max-sched-nodes-queue-limit"
 #define D_QUEUE_MSC  "max-sched-cores-queue-limit"
+#define D_QUEUE_TOTAL_MSN "max-nodes-queue-total-limit"
+#define D_QUEUE_TOTAL_MSC "max-cores-queue-total-limit"
 
 // error messages for flux-accounting-specific validation messages
 #define MSG_INVALID_QUEUE \
@@ -84,6 +86,8 @@ public:
     int max_sched_jobs = 2147483647;
     int max_sched_nodes_per_assoc = std::numeric_limits<int>::max ();
     int max_sched_cores_per_assoc = std::numeric_limits<int>::max ();
+    int max_nodes = std::numeric_limits<int>::max ();
+    int max_cores = std::numeric_limits<int>::max ();
 };
 
 // a class to track an association's usage in a particular queue
@@ -204,6 +208,34 @@ bool has_text (const char *s);
 int get_queue_info (char *queue,
                     const std::vector<std::string> &permissible_queues,
                     const std::map<std::string, Queue> &queues);
+
+// check whether a job can be scheduled without exceeding the queue-wide total
+// max_sched_nodes/cores limit; unlike the per-association checks, the live
+// running total is a global keyed by queue name (see queue_total_sched_* in
+// mf_priority.cpp) that spans all associations, so it is passed in via the
+// "totals" map. the "pending" overloads add headroom already consumed by jobs
+// released earlier in the current check_and_release_held_jobs () pass but not
+// yet reflected in the global counter.
+bool under_queue_total_max_nodes (
+                            const Job &job,
+                            const std::string &queue,
+                            const std::map<std::string, Queue> &queues,
+                            const std::map<std::string, int> &totals);
+bool under_queue_total_max_cores (
+                            const Job &job,
+                            const std::string &queue,
+                            const std::map<std::string, Queue> &queues,
+                            const std::map<std::string, int> &totals);
+bool under_queue_total_max_nodes (const Job &job,
+                                  const std::string &queue,
+                                  const std::map<std::string, Queue> &queues,
+                                  const std::map<std::string, int> &totals,
+                                  int pending);
+bool under_queue_total_max_cores (const Job &job,
+                                  const std::string &queue,
+                                  const std::map<std::string, Queue> &queues,
+                                  const std::map<std::string, int> &totals,
+                                  int pending);
 
 // check the contents of the users map to see if every user's bank is a
 // temporary "DNE" value; if it is, the plugin is still waiting on

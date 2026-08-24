@@ -106,6 +106,7 @@ TESTSCRIPTS = \
 	t1101-max-resources-queue-sched.t \
 	t1102-per-queue-max-sched-resources-basic.t \
 	t1103-mf-priority-memo-events.t \
+	t1104-per-queue-max-sched-resources.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
