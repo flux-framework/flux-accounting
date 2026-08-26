@@ -34,7 +34,12 @@ RUN apt-get update \
     fd-find \
     less \
     bats \
-    ripgrep
+    ripgrep \
+    sqlite3 \
+    # flux-accounting specific dependencies. libsqlite3-dev is already in the base
+    python3-pip && \
+    rm -rf /var/lib/apt/lists/* && \
+    python3 -m pip install --break-system-packages 'black~=26.1'
 
 # Add the group and user that match our ids
 RUN groupadd -g ${USER_GID} ${USERNAME} && \
