@@ -250,22 +250,20 @@ static int increment_resources (Association *b,
                                 const std::string &queue,
                                 json_t *jobspec)
 {
-    struct jj_counts counts;
+    jj_counts counts;
 
-    if (jj_get_counts_json (jobspec, &counts) < 0)
+    if (jj_get_counts_json (jobspec, counts) < 0)
         return -1;
 
-    if ((counts.nslots * counts.slot_size) > 0 && counts.nnodes == 0)
-        // the job only specified cores; set nnodes == 1
-        counts.nnodes = 1;
-
-    b->cur_nodes = b->cur_nodes + counts.nnodes;
-    b->cur_cores = b->cur_cores + (counts.nslots * counts.slot_size);
+    // after a successful parse the node and core keys are guaranteed to
+    // be present in the counts map with counts of at least 1
+    b->cur_nodes = b->cur_nodes + counts.get ("node");
+    b->cur_cores = b->cur_cores + counts.get ("core");
 
     // increment cur_nodes for queue
     if (!queue.empty ())
         b->queue_usage[queue].cur_nodes = b->queue_usage[queue].cur_nodes +
-                                          counts.nnodes;
+                                          counts.get ("node");
 
     return 0;
 }
@@ -279,22 +277,18 @@ static int decrement_resources (Association *b,
                                 const std::string &queue,
                                 json_t *jobspec)
 {
-    struct jj_counts counts;
+    jj_counts counts;
 
-    if (jj_get_counts_json (jobspec, &counts) < 0)
+    if (jj_get_counts_json (jobspec, counts) < 0)
         return -1;
 
-    if ((counts.nslots * counts.slot_size) > 0 && counts.nnodes == 0)
-        // the job only specified cores; set nnodes == 1
-        counts.nnodes = 1;
-
-    b->cur_nodes = b->cur_nodes - counts.nnodes;
-    b->cur_cores = b->cur_cores - (counts.nslots * counts.slot_size);
+    b->cur_nodes = b->cur_nodes - counts.get ("node");
+    b->cur_cores = b->cur_cores - counts.get ("core");
 
     // decrement cur_nodes for queue
     if (!queue.empty ())
         b->queue_usage[queue].cur_nodes = b->queue_usage[queue].cur_nodes -
-                                          counts.nnodes;
+                                          counts.get ("node");
 
     return 0;
 }
@@ -409,7 +403,7 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
                 goto error;
             }
             held_job.remove_dep (D_QUEUE_MSN);
-            job_queue_sched_nodes += held_job.nnodes;
+            job_queue_sched_nodes += held_job.nnodes ();
         }
         // is association under the max SCHED cores limit for the queue the
         // held job is submitted under?
@@ -427,7 +421,7 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
                 goto error;
             }
             held_job.remove_dep (D_QUEUE_MSC);
-            job_queue_sched_cores += held_job.ncores;
+            job_queue_sched_cores += held_job.ncores ();
         }
         // is the association under the max nodes limit for the queue the
         // held job is submitted under?
@@ -1180,24 +1174,24 @@ static int validate_cb (flux_plugin_t *p,
         // max_nodes_per_association limit
         if (queues.find (queue_str) != queues.end ()) {
             int queue_max_nodes = queues[queue_str].max_nodes_per_assoc;
-            if (job.nnodes > queue_max_nodes) {
+            if (job.nnodes () > queue_max_nodes) {
                 // the job size is greater than the max nodes per-association limit
                 // configured for this queue; reject the job
                 return flux_jobtap_reject_job (p,
                                                args,
                                                MSG_QUEUE_MRES,
-                                               job.nnodes,
+                                               job.nnodes (),
                                                queue_max_nodes);
             }
         }
-        if ((job.nnodes > a->max_nodes) || (job.ncores > a->max_cores)) {
+        if ((job.nnodes () > a->max_nodes) || (job.ncores () > a->max_cores)) {
             // the job size is greater than the max resources limits (max nodes
             // OR max cores) configured for this association; reject the job
             return flux_jobtap_reject_job (p,
                                            args,
                                            MSG_ASSOC_MRES,
-                                           job.nnodes,
-                                           job.ncores,
+                                           job.nnodes (),
+                                           job.ncores (),
                                            a->max_nodes,
                                            a->max_cores);
         }
@@ -1392,8 +1386,8 @@ static int new_cb (flux_plugin_t *p,
         b->cur_sched_jobs++;
         b->queue_usage[queue_str].cur_sched_jobs++;
         // increment cur_sched_nodes/cores count for association in this queue
-        b->queue_usage[queue_str].cur_sched_nodes += j->nnodes;
-        b->queue_usage[queue_str].cur_sched_cores += j->ncores;
+        b->queue_usage[queue_str].cur_sched_nodes += j->nnodes ();
+        b->queue_usage[queue_str].cur_sched_cores += j->ncores ();
     }
 
     return 0;
@@ -1599,8 +1593,8 @@ static int sched_cb (flux_plugin_t *p,
     a->cur_sched_jobs++;
     std::string queue_str = queue ? queue : "";
     a->queue_usage[queue_str].cur_sched_jobs++;
-    a->queue_usage[queue_str].cur_sched_nodes += j->nnodes;
-    a->queue_usage[queue_str].cur_sched_cores += j->ncores;
+    a->queue_usage[queue_str].cur_sched_nodes += j->nnodes ();
+    a->queue_usage[queue_str].cur_sched_cores += j->ncores ();
 
     return 0;
 }
@@ -1692,8 +1686,8 @@ static int run_cb (flux_plugin_t *p,
     b->cur_sched_jobs--;
     b->queue_usage[queue_str].cur_sched_jobs--;
     // decrement the association's current SCHED resources in queue
-    b->queue_usage[queue_str].cur_sched_nodes -= j->nnodes;
-    b->queue_usage[queue_str].cur_sched_cores -= j->ncores;
+    b->queue_usage[queue_str].cur_sched_nodes -= j->nnodes ();
+    b->queue_usage[queue_str].cur_sched_cores -= j->ncores ();
     // check to see if any jobs held due to max_sched_jobs limit can now
     // have their dependency removed
     if (!b->held_jobs.empty ()) {
@@ -1989,8 +1983,8 @@ static int inactive_cb (flux_plugin_t *p,
             // contributing to since it never ran
             b->cur_sched_jobs--;
             b->queue_usage[queue_str].cur_sched_jobs--;
-            b->queue_usage[queue_str].cur_sched_nodes -= j->nnodes;
-            b->queue_usage[queue_str].cur_sched_cores -= j->ncores;
+            b->queue_usage[queue_str].cur_sched_nodes -= j->nnodes ();
+            b->queue_usage[queue_str].cur_sched_cores -= j->ncores ();
             // check to see if any jobs held due to the limits above can now
             // have their dependency removed
             if (!b->held_jobs.empty ()) {

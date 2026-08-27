@@ -12,17 +12,13 @@
 
 int Job::count_resources (json_t *jobspec)
 {
-    struct jj_counts counts;
-    if (jj_get_counts_json (jobspec, &counts) < 0)
+    jj_counts counts;
+    if (jj_get_counts_json (jobspec, counts) < 0)
         return -1;
-        
-    nnodes = counts.nnodes;
-    ncores = counts.nslots * counts.slot_size;
-    if (ncores > 0 && nnodes == 0) {
-        // the job specified cores but no nodes, so we need to set nnodes == 1
-        // here
-        nnodes = 1;
-    }
+
+    // after a successful parse the node, slot, and core keys are
+    // guaranteed to be present in the map with counts of at least 1
+    resources = counts.counts;
     return 0;
 }
 
