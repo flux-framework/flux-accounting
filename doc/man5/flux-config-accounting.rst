@@ -38,6 +38,30 @@ decay-factor
    (optional) The amount of decay to apply to historical usage. Must be
    greater than 0.0 and less than 1.0 (default: ``0.5``).
 
+calculation-mode
+   (optional) How job usage is decayed over time, either ``"periodic"``
+   or ``"continuous"`` (default: ``"periodic"``).
+
+   In ``periodic`` mode, usage is binned into fixed half-life periods and
+   the oldest bin is dropped once ``reset-period`` is exceeded, serving as
+   a hard cutoff.
+
+   In ``continuous`` mode, usage is decayed by exact elapsed wall time on
+   every :man1:`flux-account-update-usage`,
+
+   .. math::
+
+      U(t_1) = U(t_0)\,D^{(t_1-t_0)/H}
+               + \sum_j C_j\,D^{(t_1-t_{inactive,j})/H}
+
+   where ``H`` is ``decay-half-life``, ``D`` is ``decay-factor``, and each
+   newly completed job ``j`` contributes its weighted resource-seconds
+   ``C_j`` decayed from its own completion time. There is no reset
+   cutoff since usage approaches zero exponentially. Jobs are still charged
+   only at completion. Changing ``decay-half-life`` or ``decay-factor`` in
+   this mode does **not** clear or rebuild usage; the new values apply to the
+   next update interval.
+
 weights
    (optional) A sub-table mapping each resource type to the weight it is
    given when calculating job usage: ``node`` (default: ``1.0``), ``core``
@@ -68,6 +92,7 @@ EXAMPLE
    reset-period = "28d"
    decay-half-life = "7d"
    decay-factor = 0.5
+   calculation-mode = "periodic"
 
    [accounting.usage.weights]
    node = 1.0
