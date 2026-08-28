@@ -333,8 +333,8 @@ void max_resources_per_association ()
     // add held Job to Association object
     Job job;
     job.id = 4;
-    job.ncores = 1;
-    job.nnodes = 1;
+    job.resources["core"] = 1;
+    job.resources["node"] = 1;
     job.add_dep (D_ASSOC_MRES);
     a->held_jobs.emplace_back (job);
 
@@ -370,8 +370,8 @@ void under_max_resources_per_association_true ()
     a->cur_cores = 0;
     Job held_job = a->held_jobs.front ();
 
-    ok (held_job.nnodes == 1, "held job is requesting one node");
-    ok (held_job.ncores == 1, "held job is requesting one core");
+    ok (held_job.nnodes () == 1, "held job is requesting one node");
+    ok (held_job.ncores () == 1, "held job is requesting one core");
 
     ok (a->under_max_run_jobs () == true,
         "association is under max-run-jobs per-association limit");
@@ -429,8 +429,8 @@ void max_resources_per_association_partial ()
     // add held Job to Association object
     Job job;
     job.id = 5;
-    job.ncores = 4;
-    job.nnodes = 1;
+    job.resources["core"] = 4;
+    job.resources["node"] = 1;
     job.add_dep (D_ASSOC_MRES);
     a->held_jobs.emplace_back (job);
 
@@ -466,8 +466,8 @@ void under_max_resources_per_association_partial_true ()
     a->cur_cores = 0;
     Job held_job = a->held_jobs.front ();
 
-    ok (held_job.nnodes == 1, "held job is requesting one node");
-    ok (held_job.ncores == 4, "held job is requesting four cores");
+    ok (held_job.nnodes () == 1, "held job is requesting one node");
+    ok (held_job.ncores () == 4, "held job is requesting four cores");
 
     ok (a->under_max_run_jobs () == true,
         "association is under max-run-jobs per-association limit");

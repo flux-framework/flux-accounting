@@ -73,7 +73,7 @@ void association_under_queue_max_nodes_limit_true ()
     // create a Job object
     Job job;
     job.id = 1;
-    job.nnodes = 1;
+    job.resources["node"] = 1;
     job.queue = "bronze";
 
     ok (a->queue_usage["bronze"].cur_nodes == 0,
@@ -100,7 +100,7 @@ void association_under_queue_max_nodes_limit_false ()
     // also under the "bronze" queue (so it will have a dependency added to it)
     Job job;
     job.id = 2;
-    job.nnodes = 1;
+    job.resources["node"] = 1;
     job.queue = "bronze";
     job.add_dep (D_QUEUE_MRES);
     a->held_jobs.emplace_back (job);
@@ -155,7 +155,7 @@ void association_sched_node_counts_against_queue_max ()
 
     Job job;
     job.id = 3;
-    job.nnodes = 1;
+    job.resources["node"] = 1;
     job.queue = "bronze";
 
     ok (a->under_queue_max_resources (job, "bronze", queues) == false,

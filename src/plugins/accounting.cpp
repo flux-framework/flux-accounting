@@ -98,8 +98,8 @@ json_t* Association::to_json () const
     for (const auto &entry : held_jobs) {
         const Job &job = entry;
         job_json = json_pack ("{s:i, s:i, s:s, s:o}",
-                              "nnodes", job.nnodes,
-                              "ncores", job.ncores,
+                              "nnodes", job.nnodes (),
+                              "ncores", job.ncores (),
                               "queue", job.queue.c_str (),
                               "deps", json_array ());
 
@@ -348,8 +348,8 @@ double get_bank_priority (const char *bank,
 
 bool Association::under_max_resources (const Job &job)
 {
-    bool under_max_nodes = ((cur_nodes + job.nnodes) <= max_nodes);
-    bool under_max_cores = ((cur_cores + job.ncores) <= max_cores);
+    bool under_max_nodes = ((cur_nodes + job.nnodes ()) <= max_nodes);
+    bool under_max_cores = ((cur_cores + job.ncores ()) <= max_cores);
     bool under_max_resources = (max_nodes > 0 && max_cores > 0) &&
                                (under_max_nodes && under_max_cores);
 
@@ -377,7 +377,7 @@ bool Association::under_queue_max_resources (
         cur_nodes_in_queue = uit->second.cur_nodes
                              + uit->second.cur_sched_nodes;
 
-    return (cur_nodes_in_queue + job.nnodes) <= queue_max_nodes_per_assoc;
+    return (cur_nodes_in_queue + job.nnodes ()) <= queue_max_nodes_per_assoc;
 }
 
 bool Association::under_max_sched_jobs ()
@@ -432,7 +432,7 @@ bool Association::under_queue_max_sched_nodes (
     if (uit != queue_usage.end ())
         cur_sched_nodes_in_queue = uit->second.cur_sched_nodes;
 
-    return (cur_sched_nodes_in_queue + job.nnodes) <= max_sched_nodes;
+    return (cur_sched_nodes_in_queue + job.nnodes ()) <= max_sched_nodes;
 }
 
 
@@ -454,7 +454,7 @@ bool Association::under_queue_max_sched_nodes (
     if (uit != queue_usage.end ())
         cur_sched_nodes_in_queue = uit->second.cur_sched_nodes;
 
-    return (cur_sched_nodes_in_queue + job.nnodes + pending)
+    return (cur_sched_nodes_in_queue + job.nnodes () + pending)
             <= max_sched_nodes;
 }
 
@@ -476,7 +476,7 @@ bool Association::under_queue_max_sched_cores (
     if (uit != queue_usage.end ())
         cur_sched_cores_in_queue = uit->second.cur_sched_cores;
 
-    return (cur_sched_cores_in_queue + job.ncores) <= max_sched_cores;
+    return (cur_sched_cores_in_queue + job.ncores ()) <= max_sched_cores;
 }
 
 bool Association::under_queue_max_sched_cores (
@@ -497,7 +497,7 @@ bool Association::under_queue_max_sched_cores (
     if (uit != queue_usage.end ())
         cur_sched_cores_in_queue = uit->second.cur_sched_cores;
 
-    return (cur_sched_cores_in_queue + job.ncores + pending)
+    return (cur_sched_cores_in_queue + job.ncores () + pending)
             <= max_sched_cores;
 }
 

@@ -34,10 +34,11 @@ extern "C" {
 class Job {
 public:
     // attributes
-    flux_jobid_t id = 0;               // the ID of the job
+    flux_jobid_t id = 0;           // the ID of the job
     std::vector<std::string> deps; // any dependencies on job
-    int nnodes = 0;                // the number of nodes requested
-    int ncores = 0;                // the number of cores requested
+    // the total amount of each resource type requested, keyed by type
+    // name such as node or core. Populated by count_resources ()
+    std::map<std::string, int> resources;
     std::string queue;             // the queue the job was submitted under
     double fairshare = -1.0;       // fair-share value associated with this job
 
@@ -47,6 +48,18 @@ public:
     // methods
     // count the resources requested for a job
     int count_resources (json_t *jobspec);
+
+    // look up the total count requested for a resource type. Returns 0
+    // if the job did not request the type
+    int get_resource (const std::string &type) const
+    {
+        return resource_count (resources, type);
+    }
+
+    // convenience accessors for the resource types currently tracked by
+    // the plugin's limits
+    int nnodes () const { return get_resource ("node"); }
+    int ncores () const { return get_resource ("core"); }
 
     // add a dependency to the job's list of dependencies
     void add_dep (const std::string &dep);
