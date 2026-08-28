@@ -69,6 +69,8 @@ def create_db(
     if not 0.0 < decay_factor < 1.0:
         raise ValueError(f"Value must be between 0.0 and 1.0, but got {decay_factor}")
 
+    usage_calculation_mode = conf["usage"]["calculation-mode"]
+
     db_dir = pathlib.PosixPath(filepath).parent
     db_dir.mkdir(parents=True, exist_ok=True)
     try:
@@ -268,6 +270,13 @@ def create_db(
             str(conf["queues"]["deny-unknown"]).lower(),
         ),
     )
+    conn.execute(
+        f"INSERT INTO config_table VALUES (?, ?)",
+        (
+            "usage_calculation_mode",
+            usage_calculation_mode,
+        ),
+    )
     conn.commit()
     LOGGER.info("Created config_table successfully")
 
@@ -286,5 +295,21 @@ def create_db(
                 PRIMARY KEY (username, bank, period)
             );""")
     LOGGER.info("Created job_usage_per_association table successfully")
+
+    # Usage Update State Table
+    # single-row checkpoint holding the timestamp of the last successful
+    # continuous-decay usage update
+    LOGGER.info("Creating usage_update_state table in DB...")
+    conn.execute("""
+            CREATE TABLE IF NOT EXISTS usage_update_state (
+                cluster           tinytext DEFAULT 'cluster',
+                last_update_time  real     DEFAULT 0.0
+            );""")
+    conn.execute("""
+            INSERT INTO usage_update_state (cluster, last_update_time)
+            VALUES ('cluster', 0.0);
+        """)
+    conn.commit()
+    LOGGER.info("Created usage_update_state table successfully")
 
     conn.close()
