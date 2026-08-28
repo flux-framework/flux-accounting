@@ -87,10 +87,20 @@ test_expect_success 'get all the tables of the old DB and check that new table w
 	priority_factor_weight_table
 	config_table
 	job_usage_per_association_table
+	usage_update_state
 	organization
 	queue_table
 	EOF
 	test_cmp tables.expected tables.test
+'
+
+test_expect_success 'upgraded DB has usage_calculation_mode config key and seeded checkpoint' '
+	flux account list-configs > new_configs.test &&
+	grep "usage_calculation_mode" new_configs.test
+'
+
+test_expect_success 'upgraded DB has new checkpoint table' '
+	flux python ${CHECK_TABLES} -p ${DB_PATHv1} -t usage_update_state
 '
 
 test_expect_success 'get all the columns of the updated table in the DB and check that new columns were added' '

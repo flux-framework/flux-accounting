@@ -33,6 +33,7 @@ class TestAccountingConfig(unittest.TestCase):
         self.assertEqual(conf["usage"]["reset-period"], 2419200)
         self.assertEqual(conf["usage"]["decay-half-life"], 604800)
         self.assertEqual(conf["usage"]["decay-factor"], 0.5)
+        self.assertEqual(conf["usage"]["calculation-mode"], "periodic")
         self.assertEqual(
             conf["usage"]["weights"], {"node": 1.0, "core": 0.0, "gpu": 0.0}
         )
@@ -153,6 +154,7 @@ class TestAccountingConfig(unittest.TestCase):
             "[accounting.usage]\n"
             'decay-half-life = "14d"\n'
             "decay-factor = 0.8\n"
+            'calculation-mode = "continuous"\n'
             "[accounting.usage.weights]\n"
             "core = 1.0\n"
             "[accounting.priority.factors]\n"
@@ -176,6 +178,7 @@ class TestAccountingConfig(unittest.TestCase):
         self.assertEqual(config_table["core_weight"], "1.0")
         self.assertEqual(config_table["node_weight"], "1.0")
         self.assertEqual(config_table["deny_unknown_queues"], "true")
+        self.assertEqual(config_table["usage_calculation_mode"], "continuous")
         self.assertEqual(factor_weights["fairshare"], 999)
         self.assertEqual(factor_weights["queue"], 10000)
 
@@ -190,6 +193,18 @@ class TestAccountingConfig(unittest.TestCase):
         os.remove(dbname)
         os.remove(filename)
         self.assertEqual(float(config_table["priority_decay_half_life"]), 86400.0)
+
+    # calculation-mode accepts 'continuous'; an unknown mode raises a ValueError
+    def test_17_calculation_mode(self):
+        filename = write_toml('[accounting.usage]\ncalculation-mode = "continuous"\n')
+        conf = AccountingConfig(filename)
+        os.remove(filename)
+        self.assertEqual(conf["usage"]["calculation-mode"], "continuous")
+
+        filename = write_toml('[accounting.usage]\ncalculation-mode = "bogus"\n')
+        with self.assertRaises(ValueError):
+            AccountingConfig(filename)
+        os.remove(filename)
 
 
 def suite():
