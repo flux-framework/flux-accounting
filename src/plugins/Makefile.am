@@ -7,7 +7,10 @@ AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS) -fPIC -shared
 jobtapdir = \
   $(fluxlibdir)/job-manager/plugins/
 
-jobtap_LTLIBRARIES = mf_priority.la
+jobtap_LTLIBRARIES = mf_priority.la resource_quotas.la
 mf_priority_la_SOURCES = mf_priority.cpp accounting.cpp jj.cpp job.cpp
 mf_priority_la_CPPFLAGS = -I$(top_srcdir)/src/plugins
 mf_priority_la_LDFLAGS = $(fluxplugin_ldflags) -module
+resource_quotas_la_SOURCES = resource_quotas.cpp
+resource_quotas_la_CPPFLAGS = -I$(top_srcdir)/src/plugins
+resource_quotas_la_LDFLAGS = $(fluxplugin_ldflags) -module
