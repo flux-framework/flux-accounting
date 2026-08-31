@@ -29,6 +29,7 @@ extern "C" {
 #include <algorithm>
 #include <unordered_map>
 #include <cmath>
+#include <cstdint>
 
 #include "job.hpp"
 
@@ -204,6 +205,15 @@ bool has_text (const char *s);
 int get_queue_info (char *queue,
                     const std::vector<std::string> &permissible_queues,
                     const std::map<std::string, Queue> &queues);
+
+// Compute a job's priority from already-resolved factors. Pure: no memo, no
+// CURRENT_JOB lookup, so it is reusable from the held-job release sweep where
+// there is no current-job context.
+int64_t calc_priority (double fairshare,
+                       int queue_factor,
+                       double bank_factor,
+                       int urgency,
+                       const std::map<std::string, int> &weights);
 
 // check the contents of the users map to see if every user's bank is a
 // temporary "DNE" value; if it is, the plugin is still waiting on
