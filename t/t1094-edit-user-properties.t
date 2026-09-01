@@ -110,6 +110,33 @@ test_expect_success 'add queue_2 across all of their banks' '
 	grep "\"queues\": \"queue_1,queue_3,queue_2\"" user1_both_banks.out
 '
 
+test_expect_success 'add a new association for edit-all-users tests' '
+	flux account add-user --username=user2 --bank=A --userid=50002
+'
+
+test_expect_success 'edit-all-users --add-queue adds a queue to every association' '
+	flux account add-queue queue_4 &&
+	flux account edit-all-users --add-queue=queue_4 &&
+	flux account list-users --fields=username,queues > edit_all_users_added_queue.out &&
+	grep "user1    | queue_1,queue_3,queue_2,queue_4" edit_all_users_added_queue.out &&
+	grep "user1    | queue_1,queue_2,queue_4" edit_all_users_added_queue.out &&
+	grep "user2    | queue_4" edit_all_users_added_queue.out
+'
+
+test_expect_success 'edit-all-users --delete-queue removes a queue from every association' '
+	flux account edit-all-users --delete-queue=queue_4 &&
+	flux account list-users --fields=username,queues > edit_all_users_deleted_queue.out &&
+	grep "user1    | queue_1,queue_3,queue_2" edit_all_users_deleted_queue.out &&
+	grep "user1    | queue_1,queue_2" edit_all_users_deleted_queue.out &&
+	grep "user2    |" edit_all_users_deleted_queue.out
+'
+
+test_expect_success 'deleting an unknown queue should fail' '
+	test_must_fail flux account edit-all-users \
+		--delete-queue=nonexistent_queue > bad_delete_queue.out 2>&1 &&
+	grep "does not exist in queue_table" bad_delete_queue.out
+'
+
 test_expect_success '--add-queue and --delete-queue raise error when same queue is passed' '
 	test_must_fail flux account edit-user user1 \
 		--add-queue=queue_2 --delete-queue=queue_2 > double_queue.out 2>&1 &&

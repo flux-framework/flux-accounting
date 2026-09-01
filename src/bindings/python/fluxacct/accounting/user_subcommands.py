@@ -208,7 +208,9 @@ def clear_projects(conn, cur, username, bank=None):
     return 0
 
 
-def modify_queues(conn, cur, username, bank, add_queue=None, delete_queue=None):
+def modify_queues(
+    conn, cur, username=None, bank=None, add_queue=None, delete_queue=None
+):
     """
     Incrementally add or remove a queue from a user's existing queues.
 
@@ -220,25 +222,38 @@ def modify_queues(conn, cur, username, bank, add_queue=None, delete_queue=None):
         add_queue: A queue to add to the user's existing queues.
         delete_queue: A queue to remove from the user's existing queues.
     """
-    select_stmt = "SELECT queues, bank FROM association_table WHERE username=?"
-    params = [username]
-    if bank is not None:
-        select_stmt += " AND bank=?"
-        params.append(bank)
+    # queues must exist in queue_table before they can be added to or removed from an
+    # association, so validate it first
+    for queue in (add_queue, delete_queue):
+        if queue:
+            validate_queue(cur, queues=queue)
 
+    select_stmt = "SELECT username, bank, queues FROM association_table"
+    params = []
+    if username is not None:
+        select_stmt += " WHERE username=?"
+        params.append(username)
+    if bank is not None:
+        if username is not None:
+            select_stmt += " AND bank=?"
+        else:
+            select_stmt += " WHERE bank=?"
+        params.append(bank)
     cur.execute(select_stmt, tuple(params))
     rows = cur.fetchall()
 
     if not rows:
-        raise ValueError(f"user {username} not found in association_table")
+        if username is not None:
+            raise ValueError(f"user {username} not found in association_table")
+        raise ValueError("no associations found in association_table")
 
     for row in rows:
         current_queues = row["queues"] if row["queues"] else ""
+        row_username = row["username"]
         row_bank = row["bank"]
         queue_list = [q.strip() for q in current_queues.split(",") if q.strip()]
 
         if add_queue:
-            validate_queue(cur, queues=add_queue)
             if add_queue not in queue_list:
                 queue_list.append(add_queue)
         if delete_queue:
@@ -247,11 +262,11 @@ def modify_queues(conn, cur, username, bank, add_queue=None, delete_queue=None):
 
         # update the "queues" property for the row
         new_queues = ",".join(queue_list)
-        update_stmt = (
-            "UPDATE association_table SET queues=? WHERE username=? AND bank=?"
+        cur.execute(
+            "UPDATE association_table SET queues=?, mod_time=? "
+            "WHERE username=? AND bank=?",
+            (new_queues, int(time.time()), row_username, row_bank),
         )
-        update_params = [new_queues, username, row_bank]
-        cur.execute(update_stmt, tuple(update_params))
 
     return 0
 
@@ -755,6 +770,8 @@ def edit_all_users(conn, cur, **kwargs):
             running jobs.
         queues: A comma-separated list of all of the queues an association can run jobs
             under.
+        add_queue: A single queue to add to every association's existing queues.
+        delete_queue: A single queue to remove from every association's existing queues.
         projects: A comma-separated list of all of the projects an association can run jobs
             under.
         default_project: The association's default project.
@@ -775,12 +792,13 @@ def edit_all_users(conn, cur, **kwargs):
         "default_project",
         "max_sched_jobs",
     }
+    queue_action_fields = {"add_queue", "delete_queue"}
 
-    if not set(kwargs.keys()) <= editable_fields:
-        raise ValueError(
-            f"unrecognized argument(s) passed: "
-            f"{[kwarg for kwarg in kwargs if kwarg not in editable_fields]}"
-        )
+    allowed_fields = editable_fields | queue_action_fields
+    unrecognized_fields = [kwarg for kwarg in kwargs if kwarg not in allowed_fields]
+
+    if unrecognized_fields:
+        raise ValueError(f"unrecognized argument(s) passed: {unrecognized_fields}")
 
     updates = {
         field: value
@@ -788,8 +806,25 @@ def edit_all_users(conn, cur, **kwargs):
         if value is not None and field in editable_fields
     }
 
-    if not updates:
+    add_queue = kwargs.get("add_queue")
+    delete_queue = kwargs.get("delete_queue")
+
+    if not updates and not add_queue and not delete_queue:
+        # no editable fields were provided; raise an exception
         raise ValueError("no fields provided for update")
+
+    # validate that queues and add_queue/delete_queue are not used together
+    if updates.get("queues") is not None and (add_queue or delete_queue):
+        raise ValueError(
+            "cannot specify --queues with --add-queue or --delete-queue; "
+            "use either full replacement (--queues) or incremental operations "
+            "(--add-queue/--delete-queue)"
+        )
+
+    if add_queue and delete_queue and (add_queue == delete_queue):
+        raise ValueError("cannot pass queue to both --add-queue and --delete-queue")
+    if add_queue or delete_queue:
+        modify_queues(conn, cur, add_queue=add_queue, delete_queue=delete_queue)
 
     reset_statements = []
     reset_values = []
@@ -822,7 +857,8 @@ def edit_all_users(conn, cur, **kwargs):
         cur.execute(stmt, reset_values)
         # update mod_time
         cur.execute("UPDATE association_table SET mod_time=?", (int(time.time()),))
-        conn.commit()
+
+    conn.commit()
 
     return 0
 
