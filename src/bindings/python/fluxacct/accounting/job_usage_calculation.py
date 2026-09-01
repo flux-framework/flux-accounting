@@ -321,7 +321,173 @@ def calc_parent_bank_usage(acct_conn, cur, bank):
     return total_usage
 
 
+def get_usage_calculation_mode(cur):
+    """
+    Return the configured usage calculation mode ('periodic' or 'continuous'),
+    defaulting to 'periodic' when the key is absent.
+    """
+    row = cur.execute(
+        "SELECT value FROM config_table WHERE key='usage_calculation_mode'"
+    ).fetchone()
+    return row[0] if row is not None else "periodic"
+
+
 def update_job_usage(acct_conn):
+    """
+    Update job usage for every association and bank.
+    """
+    acct_conn.row_factory = sqlite3.Row
+    mode = get_usage_calculation_mode(acct_conn.cursor())
+    if mode == "continuous":
+        return update_job_usage_continuous(acct_conn)
+    return update_job_usage_periodic(acct_conn)
+
+
+def update_job_usage_continuous(acct_conn):
+    """
+    Continuous exponential-decay job-usage update. Every association's usage is decayed
+    by the wall time elapsed since the last update, and each newly completed job
+    contributes its weighted resource-seconds decayed from its own t_inactive to the
+    update time:
+
+        U(t1) = U(t0) * D^((t1 - t0)/H) + sum_j C_j * D^((t1 - t_inactive_j) / H)
+
+    where:
+        * H = priority_decay_half_life
+        * D = decay_factor, and
+        * C_j is resource-seconds
+
+    The job_usage column in association_table is the only column needed for an
+    association's total usage, but is replicated into period 0 of
+    job_usage_per_association_table (with older periods zeroed) for compatibility with
+    the "view-user --job-usage" command.
+    """
+    LOGGER.info(
+        "beginning continuous job-usage update for flux-accounting DB; "
+        "slow response times may occur"
+    )
+    acct_conn.row_factory = sqlite3.Row
+    cur = acct_conn.cursor()
+
+    # BEGIN IMMEDIATE takes the write lock up front so the checkpoint we read is
+    # the one we update; everything below commits or rolls back together
+    acct_conn.execute("BEGIN IMMEDIATE")
+    try:
+        return _update_job_usage_continuous(acct_conn, cur)
+    except Exception:
+        # leave usage, watermarks, bins, and the checkpoint unchanged
+        acct_conn.rollback()
+        raise
+
+
+def _update_job_usage_continuous(acct_conn, cur):
+    node_weight, core_weight, gpu_weight = get_usage_weights(cur)
+
+    pdhl = float(
+        cur.execute(
+            "SELECT value FROM config_table WHERE key='priority_decay_half_life'"
+        ).fetchone()[0]
+    )
+    decay = float(
+        cur.execute(
+            "SELECT value FROM config_table WHERE key='decay_factor'"
+        ).fetchone()[0]
+    )
+
+    # read the checkpoint (last successful update time)
+    time_0 = float(
+        cur.execute(
+            "SELECT last_update_time FROM usage_update_state WHERE cluster='cluster'"
+        ).fetchone()[0]
+    )
+    time_1 = time.time()
+
+    # decay factor applied to every association's existing usage. A non-positive
+    # checkpoint (e.g. a fresh/upgraded DB that never established one) preserves existing
+    # usage this round and just anchors the checkpoint at t1.
+    elapsed = max(0.0, time_1 - time_0) if time_0 > 0 else 0.0
+    global_decay = decay ** (elapsed / pdhl)
+
+    last_reconfigured = cur.execute(
+        "SELECT value FROM config_table WHERE key='reconfigure_time'"
+    ).fetchone()
+    last_reconfigured = last_reconfigured[0] if last_reconfigured is not None else 0.0
+
+    # fetch newly completed jobs per-association; exclude jobs that will finish later
+    # than t1 so they will be processed in a later update
+    s_new_jobs = """
+        SELECT r.userid,r.id,r.t_submit,r.t_run,r.t_inactive,r.ranks,r.R,r.jobspec,
+        r.project,r.bank,r.requested_duration,r.actual_duration,b.ignore_older_than
+        FROM jobs r LEFT JOIN job_usage_factor_table j
+        ON r.userid = j.userid AND r.bank = j.bank
+        LEFT JOIN bank_table b
+        ON r.bank = b.bank WHERE r.t_inactive > j.last_job_timestamp
+        AND r.t_inactive > b.ignore_older_than
+        AND r.t_inactive > ?
+        AND r.t_inactive <= ?
+    """
+    cur.execute(s_new_jobs, (last_reconfigured, time_1))
+    new_job_records = j.convert_to_obj(cur.fetchall())
+    association_jobs = defaultdict(list)
+    for job in new_job_records:
+        association_jobs[(job.userid, job.bank)].append(job)
+
+    # update usage for every association in the association_table
+    cur.execute("SELECT username, userid, bank, job_usage FROM association_table")
+    for row in cur.fetchall():
+        user, userid, bank, old_usage = (
+            row["username"],
+            row["userid"],
+            row["bank"],
+            row["job_usage"],
+        )
+
+        # decay existing usage
+        usage = old_usage * global_decay
+
+        # add each new job's contribution, decayed from its own t_inactive to t1
+        user_jobs = association_jobs[(userid, bank)]
+        if user_jobs:
+            for job in user_jobs:
+                weighted = (
+                    (job.nnodes * node_weight)
+                    + (job.ncores * core_weight)
+                    + (job.ngpus * gpu_weight)
+                ) * job.elapsed
+                usage += weighted * decay ** ((time_1 - job.t_inactive) / pdhl)
+            # set last_t_inactive to the most recent job we processed
+            last_t_inactive = max(job.t_inactive for job in user_jobs)
+            update_t_inactive(acct_conn, last_t_inactive, user, bank)
+
+        update_hist_usg_col(acct_conn, usage, user, bank)
+
+        # mirror the total job usage into period 0 and zero older periods out so that
+        # "view-user --job-usage" exposes one meaningful row
+        cur.execute(
+            "UPDATE job_usage_per_association_table SET value=0.0 "
+            "WHERE username=? AND bank=? AND period > 0",
+            (user, bank),
+        )
+        update_curr_usg_col(acct_conn, usage, user, bank, userid)
+
+    # aggregate usage through the bank hierarchy
+    s_root_bank = "SELECT bank FROM bank_table WHERE parent_bank=''"
+    cur.execute(s_root_bank)
+    parent_bank = cur.fetchall()[0][0]
+    calc_parent_bank_usage(acct_conn, cur, parent_bank)
+
+    # advance the checkpoint atomically with everything above
+    cur.execute(
+        "UPDATE usage_update_state SET last_update_time=? WHERE cluster='cluster'",
+        (time_1,),
+    )
+
+    acct_conn.commit()
+    LOGGER.info("job-usage update for flux-accounting DB now complete")
+    return 0
+
+
+def update_job_usage_periodic(acct_conn):
     LOGGER.info(
         "beginning job-usage update for flux-accounting DB; "
         "slow response times may occur"

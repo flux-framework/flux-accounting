@@ -42,6 +42,7 @@ def default_config():
             "reset-period": "28d",
             "decay-half-life": "7d",
             "decay-factor": 0.5,
+            "calculation-mode": "periodic",
             "weights": {
                 "node": 1.0,
                 "core": 0.0,
@@ -151,6 +152,11 @@ class AccountingConfig(Mapping):
             raise ValueError(
                 f"usage.decay-factor must be between 0.0 and 1.0, "
                 f"but got {usage['decay-factor']}"
+            )
+        if usage["calculation-mode"] not in ("periodic", "continuous"):
+            raise ValueError(
+                f"usage.calculation-mode must be 'periodic' or 'continuous', "
+                f"but got {usage['calculation-mode']}"
             )
         for rtype, weight in usage["weights"].items():
             if isinstance(weight, bool) or not isinstance(weight, (int, float)):

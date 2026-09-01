@@ -380,6 +380,58 @@ def add_config(conn, cursor, key_value_string):
     return 0
 
 
+def _mirror_scalar_to_period0(cursor):
+    """
+    Condense all of the periodic usage bins into a single period-0 value and zero all
+    periods > 0. Set period 0 to the association's current job_usage value in
+    association_table. This is used when transitioning to either mode so that whichever
+    mode runs next sees *one* meaningful usage value with no stale behind it.
+    """
+    cursor.execute(
+        "UPDATE job_usage_per_association_table SET value=0.0 WHERE period > 0"
+    )
+    cursor.execute("""
+        UPDATE job_usage_per_association_table
+        SET value = (
+            SELECT a.job_usage FROM association_table a
+            WHERE a.username = job_usage_per_association_table.username
+            AND a.bank = job_usage_per_association_table.bank
+        )
+        WHERE period = 0
+        """)
+
+
+def _switch_to_continuous(cursor):
+    """
+    Transition from periodic -> continuous: preserve current scalar usage, mirror it
+    into period 0, and establish a current-time checkpoint. Jobs are not replayed.
+    """
+    _mirror_scalar_to_period0(cursor)
+    cursor.execute(
+        "UPDATE usage_update_state SET last_update_time=? WHERE cluster='cluster'",
+        (time.time(),),
+    )
+
+
+def _switch_to_periodic(cursor):
+    """
+    Transition from continuous -> periodic: use the current usage as period 0, zero
+    older periods, and reset the periodic half-life boundary. Jobs are not
+    replayed.
+    """
+    _mirror_scalar_to_period0(cursor)
+    half_life = float(
+        cursor.execute(
+            "SELECT value FROM config_table WHERE key='priority_decay_half_life'"
+        ).fetchone()[0]
+    )
+    cursor.execute(
+        "UPDATE t_half_life_period_table SET end_half_life_period=? "
+        "WHERE cluster='cluster'",
+        (str(time.time() + half_life),),
+    )
+
+
 @with_cursor
 def edit_config(conn, cursor, key_value_strings):
     """
@@ -393,6 +445,12 @@ def edit_config(conn, cursor, key_value_strings):
     bin_config_keys = {"priority_usage_reset_period", "priority_decay_half_life"}
     usage_config_keys = {"node_weight", "core_weight", "gpu_weight"}
     requires_rebin = False
+
+    row = cursor.execute(
+        "SELECT value FROM config_table WHERE key='usage_calculation_mode'"
+    ).fetchone()
+    current_mode = row[0] if row is not None else "periodic"
+    new_mode = current_mode
 
     for key_value_string in key_value_strings:
         key, value = key_value_string.split("=")
@@ -414,6 +472,12 @@ def edit_config(conn, cursor, key_value_strings):
             # ensure value is exactly "true" or "false" (case-insensitive)
             if value.lower() not in ["true", "false"]:
                 raise ValueError("deny_unknown_queues must be 'true' or 'false'")
+        if key == "usage_calculation_mode":
+            if value not in ("periodic", "continuous"):
+                raise ValueError(
+                    "usage_calculation_mode must be 'periodic' or 'continuous'"
+                )
+            new_mode = value
         cursor.execute(
             "UPDATE config_table SET value=? WHERE key=?",
             (value, key),
@@ -421,7 +485,27 @@ def edit_config(conn, cursor, key_value_strings):
         if cursor.rowcount == 0:
             raise ValueError(f"key {key} not found in config_table")
 
-    if requires_rebin:
+    if new_mode != current_mode:
+        if requires_rebin:
+            # since a reconfiguration of the bins clears all of the existing bins
+            # and switching the usage calculation mode *preserves* existing usage,
+            # reject the ability for an admin to both reconfigure the bins and switch
+            # usage calculation modes in the same pass
+            raise ValueError(
+                "cannot change usage_calculation_mode together with "
+                "priority_decay_half_life, priority_usage_reset_period, or "
+                "decay_factor in the same edit-config; change these separately"
+            )
+        # a new usage calculation mode was selected; preserve existing usage
+        # and update the database according to the new mode selected
+        if new_mode == "continuous":
+            _switch_to_continuous(cursor)
+        else:
+            _switch_to_periodic(cursor)
+    # period mode is the only mode that maintains usage bins which is why we have
+    # this check for "periodic" here; "continuous" mode does not require bins since
+    # half-life or decay factor simply apply to the next update interval
+    elif requires_rebin and current_mode == "periodic":
         # pylint: disable=no-value-for-parameter
         reconfigure_usage_bins(conn)
 
@@ -442,6 +526,7 @@ def delete_config(conn, cursor, key):
         "core_weight",
         "gpu_weight",
         "deny_unknown_queues",
+        "usage_calculation_mode",
     ]:
         raise ValueError(
             "key-value pair is not allowed to be removed from config_table"
