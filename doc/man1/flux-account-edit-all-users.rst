@@ -61,6 +61,16 @@ fields are as follows:
     A comma-separated list of all of the queues each association can run jobs
     under.
 
+.. option:: --add-queue
+
+    Add a single queue to every association's list of permissible queues.
+
+.. option:: --delete-queue
+
+    Remove a single queue from every association's list of permissible queues.
+
+The queue supplied to either option must exist in ``queue_table`` first.
+
 .. option:: --projects
 
     A comma-separated list of all of the projects each association can run jobs
