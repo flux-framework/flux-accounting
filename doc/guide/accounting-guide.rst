@@ -598,6 +598,49 @@ Consider a scenario where:
   deleted. Changes to this setting require updating the plugin configuration
   via ``flux account-priority-update`` to take effect.
 
+**********************
+Resource Quotas Plugin
+**********************
+
+flux-accounting ships two jobtap_ plugins with distinct policy sources. The
+multi-factor priority plugin enforces what the flux-accounting database
+defines. Those are per-association values managed with ``flux account``
+commands, such as multi-factor job priority, fair-share, per-association
+resource and job limits, and bank and queue permissions. The resource quotas
+plugin enforces what the TOML configuration defines. Those are site-wide
+concurrent resource quotas that apply uniformly, per user across banks and
+eventually instance-wide, for any resource type including custom ones. The
+plugins are independent and either or both can be loaded. A job must satisfy
+every policy from every loaded plugin.
+
+The resource quotas plugin currently tracks per-user resource usage for every
+resource type found in the jobspec of every running job. Usage is added when
+a job starts running and removed when it becomes inactive. Jobs that are
+already running when the plugin is loaded are also counted, so the tracked
+state survives a plugin reload.
+
+The plugin can be loaded with ``flux jobtap load`` and requires no
+flux-accounting database or service to run:
+
+.. code-block:: console
+
+ $ flux jobtap load resource_quotas.so
+
+The tracked usage can be inspected at any time with ``flux jobtap query``,
+which reports the total amount of each resource type in use by each user's
+running jobs, keyed by user ID:
+
+.. code-block:: console
+
+ $ flux jobtap query resource_quotas.so | jq .user_resources
+ {
+   "58985": {
+     "core": 3,
+     "node": 2,
+     "slot": 3
+   }
+ }
+
 .. _glossary-section:
 
 ********
