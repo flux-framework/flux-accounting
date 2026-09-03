@@ -48,6 +48,11 @@ Projects, along with their total job usage, can be listed with the
     3          | silver  | 0.0  
     4          | gold    | 0.0
 
+The usage values are incremented from newly archived job records whenever
+``flux account-update-usage`` runs. They represent all-time weighted resource
+usage for each registered project, using the configured node, core, and GPU
+resource weights.
+
 .. note::
 
     You do not need to manually add the ``*`` project - this project is added
