@@ -18,6 +18,7 @@ from unittest import mock
 
 from fluxacct.accounting import create_db as c
 from fluxacct.accounting import bank_subcommands as b
+from fluxacct.accounting import project_subcommands as p
 from fluxacct.accounting import user_subcommands as u
 from fluxacct.accounting import job_usage_calculation as j
 
@@ -45,6 +46,7 @@ class TestAccountingCLI(unittest.TestCase):
         # add banks
         b.add_bank(conn, "root", 1)
         b.add_bank(conn, "A", 1, "root")
+        p.add_project(conn, "P1")
         # add and association
         u.add_user(conn, username="user1", bank="A", uid=50001)
 
@@ -62,9 +64,10 @@ class TestAccountingCLI(unittest.TestCase):
                     ranks,
                     R,
                     jobspec,
+                    project,
                     bank
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     "200",
@@ -75,6 +78,7 @@ class TestAccountingCLI(unittest.TestCase):
                     "0",
                     '{"version":1,"execution": {"R_lite":[{"rank":"0","children": {"core": "0"}}]}}',
                     '{ "attributes": { "system": { "bank": "A"} } }',
+                    "P1",
                     "A",
                 ),
             )
@@ -94,10 +98,13 @@ class TestAccountingCLI(unittest.TestCase):
         usage_bank_A = cur.fetchone()[0]
         cur.execute("SELECT job_usage FROM association_table WHERE username='user1'")
         usage_assoc_user1 = cur.fetchone()[0]
+        cur.execute("SELECT usage FROM project_table WHERE project='P1'")
+        usage_project = cur.fetchone()[0]
 
         self.assertEqual(usage_bank_root, 200)
         self.assertEqual(usage_bank_A, 200)
         self.assertEqual(usage_assoc_user1, 200)
+        self.assertEqual(usage_project, 200)
 
     # clearing the usage will reset the usage for bank A and all of its users; the usage
     # change will also be propagated up to the root bank
@@ -108,6 +115,8 @@ class TestAccountingCLI(unittest.TestCase):
         usage_bank_A = cur.fetchone()[0]
         cur.execute("SELECT job_usage FROM association_table WHERE username='user1'")
         usage_assoc_user1 = cur.fetchone()[0]
+        cur.execute("SELECT usage FROM project_table WHERE project='P1'")
+        usage_project = cur.fetchone()[0]
         cur.execute(
             "SELECT VALUE FROM job_usage_per_association_table "
             "WHERE username='user1' AND period=0"
@@ -123,6 +132,7 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(usage_bank_A, 0)
         self.assertEqual(usage_assoc_user1, 0)
+        self.assertEqual(usage_project, 200)
         # ensure most recent usage factor period has been cleared
         self.assertEqual(usage_factor_period_0, 0)
         # ensure the last seen job for the user is also reset
@@ -141,12 +151,15 @@ class TestAccountingCLI(unittest.TestCase):
         usage_bank_A = cur.fetchone()[0]
         cur.execute("SELECT job_usage FROM association_table WHERE username='user1'")
         usage_assoc_user1 = cur.fetchone()[0]
+        cur.execute("SELECT usage FROM project_table WHERE project='P1'")
+        usage_project = cur.fetchone()[0]
 
         # since the usage for bank 'A' has been cleared, any subsequent job usage updates
         # will still reflect a usage of 0 in bank 'A' and any users under that bank
         self.assertEqual(usage_bank_root, 0)
         self.assertEqual(usage_bank_A, 0)
         self.assertEqual(usage_assoc_user1, 0)
+        self.assertEqual(usage_project, 200)
 
     @mock.patch("time.time", mock.MagicMock(return_value=10000001))
     def test_03_remove_ignore_older_than(self):
@@ -159,12 +172,15 @@ class TestAccountingCLI(unittest.TestCase):
         usage_bank_A = cur.fetchone()[0]
         cur.execute("SELECT job_usage FROM association_table WHERE username='user1'")
         usage_assoc_user1 = cur.fetchone()[0]
+        cur.execute("SELECT usage FROM project_table WHERE project='P1'")
+        usage_project = cur.fetchone()[0]
 
         # resetting the 'ignore_older_than' attribute will result in older jobs being
         # counted towards usage if they are within the current usage period
         self.assertEqual(usage_bank_root, 200)
         self.assertEqual(usage_bank_A, 200)
         self.assertEqual(usage_assoc_user1, 200)
+        self.assertEqual(usage_project, 200)
 
     # remove database and log file
     @classmethod
