@@ -297,6 +297,23 @@ def calc_bank_usage(cur, bank):
     return total_usage
 
 
+def update_project_usage(cur, job_records, node_weight, core_weight, gpu_weight):
+    """Add weighted usage from newly completed jobs to registered projects."""
+    project_usage = defaultdict(float)
+    for job in job_records:
+        weighted_usage = (
+            (job.nnodes * node_weight)
+            + (job.ncores * core_weight)
+            + (job.ngpus * gpu_weight)
+        ) * job.elapsed
+        project_usage[job.project] += round(weighted_usage, 5)
+
+    cur.executemany(
+        "UPDATE project_table SET usage=usage+? WHERE project=?",
+        [(usage, project) for project, usage in project_usage.items()],
+    )
+
+
 def calc_parent_bank_usage(acct_conn, cur, bank):
     # find all sub-banks of the current bank
     cur.execute("SELECT bank FROM bank_table WHERE parent_bank=?", (bank,))
@@ -412,6 +429,15 @@ def update_job_usage(acct_conn):
 
         # update the job usage for every bank in the bank_table
         calc_parent_bank_usage(acct_conn, cur, parent_bank)
+
+        # add newly completed jobs to their registered projects' usage
+        update_project_usage(
+            cur,
+            new_job_records,
+            node_weight,
+            core_weight,
+            gpu_weight,
+        )
 
         check_end_hl(acct_conn, pdhl)
 
