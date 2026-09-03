@@ -200,4 +200,5 @@ dist_fluxcmd_SCRIPTS = \
 	cmd/flux-account-service.py \
 	cmd/flux-account-fetch-job-records.py \
 	cmd/flux-account-update-usage.py \
+	cmd/flux-account-rebuild-project-usage.py \
 	cmd/flux-account-fairshare-emulate.py
