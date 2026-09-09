@@ -314,4 +314,40 @@ test_expect_success 'quotas are removed by reloading a config without them' '
 	flux job wait-event -t 30 ${job12} clean
 '
 
+test_expect_success 'a quotas value that is not a table is rejected' '
+	test_must_fail flux config load <<-EOF 2>quotas.err &&
+	[accounting]
+	quotas = 5
+	EOF
+	test_debug "cat quotas.err" &&
+	grep "failed to unpack accounting.quotas.user" quotas.err
+'
+
+test_expect_success 'a job whose resources cannot be counted is rejected' '
+	flux run --dry-run -n1 true \
+		| jq ".resources = [{\"type\": \"node\", \"count\": 1}]" \
+		> noslot.json &&
+	test_must_fail flux job submit noslot.json 2>noslot.err &&
+	test_debug "cat noslot.err" &&
+	grep "failed to count job resources" noslot.err
+'
+
+test_expect_success 'a held job whose resources cannot be counted gets an exception on reload' '
+	job13=$(flux submit -N1 sleep 60) &&
+	flux job wait-event -t 30 ${job13} start &&
+	flux jobtap remove resource_quotas.so &&
+	jq ".attributes.system.dependencies = \
+		[{\"scheme\": \"afterany\", \"value\": \"${job13}\"}]" \
+		noslot.json > noslot-dep.json &&
+	job14=$(flux job submit noslot-dep.json) &&
+	flux job wait-event -t 30 ${job14} dependency-add &&
+	flux jobtap load ${RESOURCE_QUOTAS} &&
+	flux job wait-event -t 30 ${job14} exception > exception.out &&
+	test_debug "cat exception.out" &&
+	grep "failed to count job resources" exception.out &&
+	flux job wait-event -t 30 ${job14} clean &&
+	flux cancel ${job13} &&
+	flux job wait-event -t 30 ${job13} clean
+'
+
 test_done
