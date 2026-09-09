@@ -147,8 +147,42 @@ class TestAccountingConfig(unittest.TestCase):
         with self.assertRaises(OSError):
             AccountingConfig("nonexistent_config.toml")
 
+    # the default configuration has no user quotas
+    def test_15_default_quotas(self):
+        conf = AccountingConfig()
+        self.assertEqual(conf["quotas"]["user"], {})
+
+    # quotas.user is an open table: custom resource types are allowed
+    def test_16_load_user_quotas(self):
+        filename = write_toml("[accounting.quotas.user]\nquantum = 2\nnode = 4\n")
+        conf = AccountingConfig(filename)
+        os.remove(filename)
+        self.assertEqual(conf["quotas"]["user"], {"quantum": 2, "node": 4})
+
+    # a negative quota raises a ValueError
+    def test_17_negative_quota(self):
+        filename = write_toml("[accounting.quotas.user]\nnode = -1\n")
+        with self.assertRaises(ValueError):
+            AccountingConfig(filename)
+        os.remove(filename)
+
+    # a non-integer quota raises a ValueError
+    def test_18_non_integer_quota(self):
+        for value in ("1.5", "true", '"2"'):
+            filename = write_toml(f"[accounting.quotas.user]\nnode = {value}\n")
+            with self.assertRaises(ValueError):
+                AccountingConfig(filename)
+            os.remove(filename)
+
+    # an unknown key directly under [accounting.quotas] raises a ValueError
+    def test_19_unknown_quotas_key(self):
+        filename = write_toml("[accounting.quotas]\nbank = {}\n")
+        with self.assertRaises(ValueError):
+            AccountingConfig(filename)
+        os.remove(filename)
+
     # creating a DB with a config file seeds the configured values
-    def test_15_create_db_with_config(self):
+    def test_20_create_db_with_config(self):
         filename = write_toml(
             "[accounting.usage]\n"
             'decay-half-life = "14d"\n'
@@ -180,7 +214,7 @@ class TestAccountingConfig(unittest.TestCase):
         self.assertEqual(factor_weights["queue"], 10000)
 
     # explicitly passed-in arguments take precedence over the config file
-    def test_16_create_db_arg_precedence(self):
+    def test_21_create_db_arg_precedence(self):
         filename = write_toml('[accounting.usage]\ndecay-half-life = "14d"\n')
         dbname = f"TestDB_{round(time.time())}.db"
         c.create_db(dbname, priority_decay_half_life="1d", config_path=filename)

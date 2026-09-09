@@ -30,6 +30,14 @@ DURATION_KEYS = (
     "decay-half-life",
 )
 
+# (section, key) pairs whose sub-table accepts arbitrary keys instead of
+# only ones present in the defaults
+OPEN_TABLES = frozenset(
+    {
+        ("quotas", "user"),
+    }
+)
+
 
 def default_config():
     """
@@ -58,6 +66,9 @@ def default_config():
         },
         "queues": {
             "deny-unknown": False,
+        },
+        "quotas": {
+            "user": {},
         },
     }
 
@@ -115,7 +126,9 @@ class AccountingConfig(Mapping):
     def _merge_section(self, path, section, overrides):
         """
         Overlay the keys of one [accounting.<section>] table onto the
-        section's defaults, rejecting unknown keys.
+        section's defaults, rejecting unknown keys. Sub-tables listed in
+        OPEN_TABLES accept arbitrary keys instead of only ones present in
+        the defaults.
         """
         defaults = self._conf[section]
         for key, value in overrides.items():
@@ -128,8 +141,9 @@ class AccountingConfig(Mapping):
                     raise ValueError(
                         f"{path}: [accounting.{section}.{key}] must be a table"
                     )
+                open_table = (section, key) in OPEN_TABLES
                 for subkey, subvalue in value.items():
-                    if subkey not in defaults[key]:
+                    if not open_table and subkey not in defaults[key]:
                         raise ValueError(
                             f"{path}: unknown key in "
                             f"[accounting.{section}.{key}]: {subkey}"
@@ -160,6 +174,9 @@ class AccountingConfig(Mapping):
                 raise ValueError(f"priority.factors.{factor} must be an integer")
         if not isinstance(self._conf["queues"]["deny-unknown"], bool):
             raise ValueError("queues.deny-unknown must be a boolean")
+        for rtype, quota in self._conf["quotas"]["user"].items():
+            if isinstance(quota, bool) or not isinstance(quota, int) or quota < 0:
+                raise ValueError(f"quotas.user.{rtype} must be a non-negative integer")
 
     def to_dict(self):
         """Return a deep copy of the configuration as a plain dictionary."""
