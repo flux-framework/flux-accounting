@@ -186,6 +186,21 @@ def create_db(
     conn.execute("INSERT INTO project_table (project) VALUES ('*')")
     conn.commit()
 
+    # Project Usage State Table
+    # stores the latest job included in each project's all-time usage
+    LOGGER.info("Creating project_usage_state table in DB...")
+    conn.execute("""
+            CREATE TABLE IF NOT EXISTS project_usage_state (
+                project             tinytext    PRIMARY KEY NOT NULL,
+                last_job_timestamp  real        DEFAULT 0.0 NOT NULL
+            );""")
+    conn.execute(
+        "INSERT INTO project_usage_state (project, last_job_timestamp) "
+        "VALUES ('*', 0.0)"
+    )
+    conn.commit()
+    LOGGER.info("Created project_usage_state table successfully")
+
     # Jobs Table
     # stores job records for associations
     LOGGER.info("Creating jobs table in DB...")

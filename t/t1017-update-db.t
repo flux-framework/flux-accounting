@@ -83,6 +83,7 @@ test_expect_success 'get all the tables of the old DB and check that new table w
 	job_usage_factor_table
 	t_half_life_period_table
 	project_table
+	project_usage_state
 	jobs
 	priority_factor_weight_table
 	config_table

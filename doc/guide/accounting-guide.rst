@@ -285,6 +285,9 @@ consists of the following tables:
 | project_table                | stores projects for associations to charge their |
 |                              | jobs against                                     |
 +------------------------------+--------------------------------------------------+
+| project_usage_state          | stores the latest job included in each project's |
+|                              | all-time usage                                    |
++------------------------------+--------------------------------------------------+
 | jobs                         | stores inactive jobs for job usage and fair      |
 |                              | share calculation                                |
 +------------------------------+--------------------------------------------------+
