@@ -72,12 +72,17 @@ def add_project(conn, cur, project):
             insert_stmt,
             (project,),
         )
+        cur.execute(
+            "INSERT INTO project_usage_state (project) VALUES (?)",
+            (project,),
+        )
 
         conn.commit()
 
         return 0
     # make sure entry is unique
     except sqlite3.IntegrityError:
+        conn.rollback()
         raise sqlite3.IntegrityError(
             f"project {project} already exists in project_table"
         )
@@ -95,8 +100,8 @@ def delete_project(conn, cur, project):
         "account for this deleted project."
     )
 
-    delete_stmt = "DELETE FROM project_table WHERE project=?"
-    cur.execute(delete_stmt, (project,))
+    cur.execute("DELETE FROM project_usage_state WHERE project=?", (project,))
+    cur.execute("DELETE FROM project_table WHERE project=?", (project,))
 
     conn.commit()
 
