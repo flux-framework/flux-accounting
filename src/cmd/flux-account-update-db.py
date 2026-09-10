@@ -306,6 +306,19 @@ def init_config_table(cur):
             LOGGER.info("adding %s into config_table", key)
 
 
+def init_project_usage_state(cur):
+    """Initialize project usage checkpoints for an upgraded database."""
+    cur.execute("""
+        INSERT OR IGNORE INTO project_usage_state (project, last_job_timestamp)
+        SELECT p.project, COALESCE(MAX(j.t_inactive), 0.0)
+        FROM project_table p
+        LEFT JOIN jobs j ON p.project = j.project
+        GROUP BY p.project
+        """)
+    if cur.rowcount > 0:
+        LOGGER.info("initialized usage state for %d project(s)", cur.rowcount)
+
+
 def migrate_job_usage_to_per_assoc(cur):
     """
     Migrate existing usage bin columns from job_usage_factor_table into the
@@ -384,6 +397,7 @@ def update_db(path, new_db):
 
             init_priority_factor_table(old_cur)
             init_config_table(old_cur)
+            init_project_usage_state(old_cur)
 
             # update user_version for DB
             old_cur.execute(
