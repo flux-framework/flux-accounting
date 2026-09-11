@@ -14,9 +14,31 @@ import json
 from flux.resource import ResourceSet
 from flux.job.JobID import JobID
 from flux.constants import FLUX_USERID_UNKNOWN
-from fluxacct.accounting import formatter as fmt
-from fluxacct.accounting import util
-from fluxacct.accounting import JOB_RECORD_FIELDS, JOB_RECORD_FLOAT_FIELDS
+from fluxacct.formatting import formatters as fmt
+from fluxacct import util
+
+JOB_RECORD_FIELDS = [
+    "jobid",
+    "username",
+    "userid",
+    "t_submit",
+    "t_run",
+    "t_inactive",
+    "nnodes",
+    "project",
+    "bank",
+    "requested_duration",
+    "actual_duration",
+    "duration_delta",
+]
+JOB_RECORD_FLOAT_FIELDS = {
+    "t_submit",
+    "t_run",
+    "t_inactive",
+    "requested_duration",
+    "actual_duration",
+    "duration_delta",
+}
 
 
 class JobRecord:

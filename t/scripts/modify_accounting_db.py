@@ -11,8 +11,7 @@
 import sqlite3
 import sys
 
-import fluxacct.accounting
-from fluxacct.accounting import create_db as c
+from fluxacct.database import create as c
 
 
 def main():

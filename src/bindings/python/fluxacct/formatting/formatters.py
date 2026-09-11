@@ -14,7 +14,7 @@ import math
 import string
 
 import flux.util
-import fluxacct.accounting.util as u
+import fluxacct.util as u
 
 
 class AccountingFormatter:

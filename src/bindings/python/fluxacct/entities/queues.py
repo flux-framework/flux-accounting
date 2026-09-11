@@ -11,11 +11,11 @@
 ###############################################################
 import sqlite3
 
-import fluxacct.accounting
-from fluxacct.accounting import formatter as fmt
-from fluxacct.accounting import sql_util as sql
-from fluxacct.accounting.util import with_cursor
-from fluxacct.accounting import INTEGER_MAX
+from fluxacct.database import schema
+from fluxacct.database import sql
+from fluxacct.policy.constants import INTEGER_MAX
+from fluxacct.formatting import formatters as fmt
+from fluxacct.util import with_cursor
 
 
 @with_cursor
@@ -197,9 +197,9 @@ def list_queues(conn, cur, cols=None, json_fmt=False, format_string=""):
             names should be used as placeholders.
     """
     # use all column names if none are passed in
-    cols = cols or fluxacct.accounting.QUEUE_TABLE
+    cols = cols or schema.QUEUE_TABLE
 
-    sql.validate_columns(cols, fluxacct.accounting.QUEUE_TABLE)
+    sql.validate_columns(cols, schema.QUEUE_TABLE)
     # construct SELECT statement
     select_stmt = f"SELECT {', '.join(cols)} FROM queue_table"
     cur.execute(select_stmt)

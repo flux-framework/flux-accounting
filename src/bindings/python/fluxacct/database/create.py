@@ -15,8 +15,9 @@ import sys
 import pathlib
 import time
 
-import fluxacct.accounting
-from fluxacct.accounting.config import AccountingConfig
+from fluxacct.config import AccountingConfig
+from fluxacct.database import schema
+from fluxacct.policy import constants as policy_constants
 from flux.util import parse_fsd
 
 LOGGER = logging.getLogger(__name__)
@@ -81,7 +82,7 @@ def create_db(
         sys.exit(1)
 
     # set version number of database
-    conn.execute("PRAGMA user_version = %d" % (fluxacct.accounting.DB_SCHEMA_VERSION))
+    conn.execute("PRAGMA user_version = %d" % (schema.DB_SCHEMA_VERSION))
 
     # Association Table
     LOGGER.info("Creating association_table in DB...")
@@ -231,7 +232,7 @@ def create_db(
             );""")
     LOGGER.info("Created priority_factor_weight_table successfully")
     # set the weights for each factor
-    for factor in fluxacct.accounting.PRIORITY_FACTORS:
+    for factor in policy_constants.PRIORITY_FACTORS:
         conn.execute(
             "INSERT INTO priority_factor_weight_table VALUES (?, ?);",
             (factor, conf["priority"]["factors"][factor]),

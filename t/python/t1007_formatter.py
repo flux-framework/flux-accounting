@@ -14,11 +14,11 @@ import os
 import sqlite3
 import time
 
-import fluxacct.accounting
-from fluxacct.accounting import create_db as c
-from fluxacct.accounting import bank_subcommands as b
-from fluxacct.accounting import formatter as fmt
-from fluxacct.accounting import sql_util as sql
+from fluxacct.database import create as c
+from fluxacct.database import schema
+from fluxacct.database import sql
+from fluxacct.entities import banks as b
+from fluxacct.formatting import formatters as fmt
 
 
 class TestAccountingCLI(unittest.TestCase):
@@ -64,7 +64,7 @@ class TestAccountingCLI(unittest.TestCase):
         cur.execute("SELECT * FROM bank_table")
         formatter = fmt.AccountingFormatter(cur)
 
-        self.assertEqual(formatter.get_column_names(), fluxacct.accounting.BANK_TABLE)
+        self.assertEqual(formatter.get_column_names(), schema.BANK_TABLE)
 
     def test_formatter_get_column_names_custom(self):
         cur.execute("SELECT bank_id FROM bank_table")
@@ -79,28 +79,28 @@ class TestAccountingCLI(unittest.TestCase):
         columns = cur.fetchall()
         association_table = [column[1] for column in columns]
 
-        self.assertEqual(fluxacct.accounting.ASSOCIATION_TABLE, association_table)
+        self.assertEqual(schema.ASSOCIATION_TABLE, association_table)
 
     def test_default_columns_bank_table(self):
         cur.execute("PRAGMA table_info (bank_table)")
         columns = cur.fetchall()
         bank_table = [column[1] for column in columns]
 
-        self.assertEqual(fluxacct.accounting.BANK_TABLE, bank_table)
+        self.assertEqual(schema.BANK_TABLE, bank_table)
 
     def test_default_columns_queue_table(self):
         cur.execute("PRAGMA table_info (queue_table)")
         columns = cur.fetchall()
         queue_table = [column[1] for column in columns]
 
-        self.assertEqual(fluxacct.accounting.QUEUE_TABLE, queue_table)
+        self.assertEqual(schema.QUEUE_TABLE, queue_table)
 
     def test_default_columns_project_table(self):
         cur.execute("PRAGMA table_info (project_table)")
         columns = cur.fetchall()
         project_table = [column[1] for column in columns]
 
-        self.assertEqual(fluxacct.accounting.PROJECT_TABLE, project_table)
+        self.assertEqual(schema.PROJECT_TABLE, project_table)
 
     def test_default_columns_project_usage_state_table(self):
         cur.execute("PRAGMA table_info (project_usage_state)")
@@ -108,7 +108,7 @@ class TestAccountingCLI(unittest.TestCase):
         project_usage_state_table = [column[1] for column in columns]
 
         self.assertEqual(
-            fluxacct.accounting.PROJECT_USAGE_STATE_TABLE,
+            schema.PROJECT_USAGE_STATE_TABLE,
             project_usage_state_table,
         )
 
@@ -117,18 +117,18 @@ class TestAccountingCLI(unittest.TestCase):
         columns = cur.fetchall()
         jobs_table = [column[1] for column in columns]
 
-        self.assertEqual(fluxacct.accounting.JOBS_TABLE, jobs_table)
+        self.assertEqual(schema.JOBS_TABLE, jobs_table)
 
     # an exception is raised if the columns passed in are not valid
     def test_validate_columns_invalid(self):
         with self.assertRaises(ValueError):
-            sql.validate_columns(["foo"], fluxacct.accounting.ASSOCIATION_TABLE)
+            sql.validate_columns(["foo"], schema.ASSOCIATION_TABLE)
 
     def test_validate_columns_valid(self):
         cur.execute("SELECT username, bank FROM association_table")
         column_names = [description[0] for description in cur.description]
 
-        sql.validate_columns(column_names, fluxacct.accounting.ASSOCIATION_TABLE)
+        sql.validate_columns(column_names, schema.ASSOCIATION_TABLE)
 
     # remove database and log file
     @classmethod

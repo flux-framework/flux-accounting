@@ -20,8 +20,8 @@ import logging
 
 import flux
 import flux.job
-import fluxacct.accounting
-from fluxacct.accounting import util
+from fluxacct.database import paths
+from fluxacct import util
 
 logging.basicConfig(
     level=logging.INFO,
@@ -32,7 +32,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def set_db_loc(args):
-    path = args.path if args.path else fluxacct.accounting.DB_PATH
+    path = args.path if args.path else paths.DB_PATH
 
     return path
 

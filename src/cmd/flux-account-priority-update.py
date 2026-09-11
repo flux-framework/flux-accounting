@@ -19,12 +19,13 @@ import pwd
 
 import flux
 
-import fluxacct.accounting
-from fluxacct.accounting import sql_util as sql
+from fluxacct.database import paths, schema
+from fluxacct.database import sql
+from fluxacct.policy.constants import INTEGER_MAX
 
 
 def set_db_loc(args):
-    path = args.path if args.path else fluxacct.accounting.DB_PATH
+    path = args.path if args.path else paths.DB_PATH
 
     return path
 
@@ -46,7 +47,7 @@ def est_sqlite_conn(path):
         sys.exit(1)
 
     # check version of database; if not up to date, output message and exit
-    if sql.db_version(conn) < fluxacct.accounting.DB_SCHEMA_VERSION:
+    if sql.db_version(conn) < schema.DB_SCHEMA_VERSION:
         print(
             """flux-accounting database out of date; updating DB with """
             """'flux account-update-db' before sending information to plugin"""
@@ -200,7 +201,7 @@ def send_instance_owner_info():
         "def_project": "*",
         "max_nodes": 1000000,
         "max_cores": 1000000,
-        "max_sched_jobs": fluxacct.accounting.INTEGER_MAX,
+        "max_sched_jobs": INTEGER_MAX,
     }
 
     flux.Flux().rpc(
