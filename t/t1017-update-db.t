@@ -170,9 +170,7 @@ done
 test_expect_success 'create a DB with an older schema version' '
 	cat <<-EOF >create_old_db.py
 	import sqlite3
-	import fluxacct.accounting
-
-	from fluxacct.accounting import create_db as c
+	from fluxacct.database import create as c
 
 	old_db = "oldFluxAccounting.db"
 	c.create_db(old_db)

@@ -16,10 +16,9 @@ import subprocess
 
 import flux
 from flux.constants import FLUX_USERID_UNKNOWN
-import fluxacct.accounting
-
-from fluxacct.accounting import create_db as c
-from fluxacct.accounting import INTEGER_MAX
+from fluxacct.database import create as c
+from fluxacct.database import paths, schema
+from fluxacct.util import INTEGER_MAX
 
 
 def add_path_arg(parser):
@@ -92,7 +91,7 @@ def add_list_users_arg(subparsers):
         type=str,
         help="list of fields to include in output",
         default=None,
-        metavar=f"{','.join(fluxacct.accounting.ASSOCIATION_TABLE)}",
+        metavar=f"{','.join(schema.ASSOCIATION_TABLE)}",
     )
     subparser_list_users.add_argument(
         "-j",
@@ -1741,7 +1740,7 @@ def add_arguments_to_parser(parser, subparsers):
 
 
 def set_db_location(args):
-    path = args.path if args.path else fluxacct.accounting.DB_PATH
+    path = args.path if args.path else paths.DB_PATH
 
     return path
 

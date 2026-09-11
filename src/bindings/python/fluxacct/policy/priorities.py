@@ -13,10 +13,11 @@ import json
 
 import flux
 from flux.job.JobID import JobID
-import fluxacct.accounting
-from fluxacct.accounting import formatter as fmt
-from fluxacct.accounting import sql_util as sql
-from fluxacct.accounting import util
+from fluxacct.database import schema
+from fluxacct.database import sql
+from fluxacct.policy import constants
+from fluxacct.formatting import formatters as fmt
+from fluxacct import util
 
 
 ###############################################################
@@ -262,10 +263,10 @@ def edit_factor(conn, factor, weight):
         factor: the name of the priority factor.
         weight: the new integer weight associated with the priority factor.
     """
-    if factor not in fluxacct.accounting.PRIORITY_FACTORS:
+    if factor not in constants.PRIORITY_FACTORS:
         raise ValueError(
             f"factor {factor} not found in priority_factor_weight_table; "
-            f"available factors are {','.join(fluxacct.accounting.PRIORITY_FACTORS)}"
+            f"available factors are {','.join(constants.PRIORITY_FACTORS)}"
         )
     cur = conn.cursor()
     cur.execute(
@@ -293,11 +294,11 @@ def list_factors(conn, cols=None, json_fmt=False, format_string=""):
             names should be used as placeholders.
     """
     # use all column names if none are passed in
-    cols = cols or fluxacct.accounting.PRIORITY_FACTOR_WEIGHTS_TABLE
+    cols = cols or schema.PRIORITY_FACTOR_WEIGHTS_TABLE
 
     cur = conn.cursor()
 
-    sql.validate_columns(cols, fluxacct.accounting.PRIORITY_FACTOR_WEIGHTS_TABLE)
+    sql.validate_columns(cols, schema.PRIORITY_FACTOR_WEIGHTS_TABLE)
     # construct SELECT statement
     select_stmt = f"SELECT {', '.join(cols)} FROM priority_factor_weight_table"
     cur.execute(select_stmt)
@@ -323,22 +324,22 @@ def reset_factors(conn):
 
     cur.execute(
         f"INSERT INTO priority_factor_weight_table (factor, weight) "
-        f"VALUES ('fairshare', {fluxacct.accounting.FSHARE_WEIGHT_DEFAULT}) "
+        f"VALUES ('fairshare', {constants.FSHARE_WEIGHT_DEFAULT}) "
         f"ON CONFLICT(factor) DO UPDATE SET weight = excluded.weight;"
     )
     cur.execute(
         f"INSERT INTO priority_factor_weight_table (factor, weight) "
-        f"VALUES ('queue', {fluxacct.accounting.QUEUE_WEIGHT_DEFAULT}) "
+        f"VALUES ('queue', {constants.QUEUE_WEIGHT_DEFAULT}) "
         f"ON CONFLICT(factor) DO UPDATE SET weight = excluded.weight;"
     )
     cur.execute(
         f"INSERT INTO priority_factor_weight_table (factor, weight) "
-        f"VALUES ('bank', {fluxacct.accounting.BANK_WEIGHT_DEFAULT}) "
+        f"VALUES ('bank', {constants.BANK_WEIGHT_DEFAULT}) "
         f"ON CONFLICT(factor) DO UPDATE SET weight = excluded.weight;"
     )
     cur.execute(
         f"INSERT INTO priority_factor_weight_table (factor, weight) "
-        f"VALUES ('urgency', {fluxacct.accounting.URGENCY_WEIGHT_DEFAULT}) "
+        f"VALUES ('urgency', {constants.URGENCY_WEIGHT_DEFAULT}) "
         f"ON CONFLICT(factor) DO UPDATE SET weight = excluded.weight;"
     )
 

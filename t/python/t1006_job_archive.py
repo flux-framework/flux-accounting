@@ -20,11 +20,11 @@ from collections import namedtuple
 from unittest import mock
 
 from flux.constants import FLUX_USERID_UNKNOWN
-from fluxacct.accounting import job_usage_calculation as jobs
-from fluxacct.accounting import jobs_table_subcommands as j
-from fluxacct.accounting import create_db as c
-from fluxacct.accounting import user_subcommands as u
-from fluxacct.accounting import bank_subcommands as b
+from fluxacct.database import create as c
+from fluxacct.entities import associations as u
+from fluxacct.entities import banks as b
+from fluxacct.jobs import records as j
+from fluxacct.jobs import usage as jobs
 
 # create a tuple-compatible ctruct like pwd.struct_passwd
 struct_passwd = namedtuple(
@@ -229,8 +229,8 @@ class TestAccountingCLI(unittest.TestCase):
 
     # passing a user not in the jobs table
     # should return no jobs
-    @mock.patch("fluxacct.accounting.util.get_uid", side_effect=fake_get_uid)
-    @mock.patch("fluxacct.accounting.util.get_username", side_effect=fake_get_username)
+    @mock.patch("fluxacct.util.get_uid", side_effect=fake_get_uid)
+    @mock.patch("fluxacct.util.get_username", side_effect=fake_get_username)
     def test_07_by_user_failure(self, *_):
         my_dict = {"user": "9999"}
         job_records = j.get_jobs(acct_conn, **my_dict)
@@ -239,8 +239,8 @@ class TestAccountingCLI(unittest.TestCase):
     # view_jobs_run_by_username() interacts with a
     # passwd file; for the purpose of these tests,
     # just pass the userid
-    @mock.patch("fluxacct.accounting.util.get_uid", side_effect=fake_get_uid)
-    @mock.patch("fluxacct.accounting.util.get_username", side_effect=fake_get_username)
+    @mock.patch("fluxacct.util.get_uid", side_effect=fake_get_uid)
+    @mock.patch("fluxacct.util.get_username", side_effect=fake_get_username)
     def test_08_by_user_success(self, *_):
         my_dict = {"user": "1001"}
         job_records = j.get_jobs(acct_conn, **my_dict)
@@ -248,8 +248,8 @@ class TestAccountingCLI(unittest.TestCase):
 
     # passing a combination of params should further
     # refine the query
-    @mock.patch("fluxacct.accounting.util.get_uid", side_effect=fake_get_uid)
-    @mock.patch("fluxacct.accounting.util.get_username", side_effect=fake_get_username)
+    @mock.patch("fluxacct.util.get_uid", side_effect=fake_get_uid)
+    @mock.patch("fluxacct.util.get_username", side_effect=fake_get_username)
     @mock.patch("time.time", mock.MagicMock(return_value=9000500))
     def test_09_multiple_params(self, *_):
         my_dict = {"user": "1001", "after_start_time": time.time()}
@@ -395,8 +395,8 @@ class TestAccountingCLI(unittest.TestCase):
 
     # re-calculating a job usage factor after the end of the last half-life
     # period should create a new usage bin
-    @mock.patch("fluxacct.accounting.util.get_uid", side_effect=fake_get_uid)
-    @mock.patch("fluxacct.accounting.util.get_username", side_effect=fake_get_username)
+    @mock.patch("fluxacct.util.get_uid", side_effect=fake_get_uid)
+    @mock.patch("fluxacct.util.get_username", side_effect=fake_get_username)
     @mock.patch("time.time", mock.MagicMock(return_value=(100000000 + (604800 * 2.1))))
     def test_15_append_jobs_in_diff_half_life_period(self, *_):
         user = "1001"
