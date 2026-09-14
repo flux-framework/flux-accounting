@@ -655,6 +655,27 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
 
 
 /*
+ * Check every held job across all associations in one ordered release pass.
+ * Callers that may free shared headroom (like a per-queue limit) should use
+ * this helper so every association's held jobs can compete in the same
+ * priority-ordered sweep.
+ */
+static int check_and_release_all_held_jobs (flux_plugin_t *p)
+{
+    held_job_candidates_t candidates;
+
+    for (auto &entry : users) {
+        auto &banks = entry.second;
+
+        for (auto &bank_entry : banks)
+            gather_held_jobs (&bank_entry.second, candidates);
+    }
+
+    return release_held_jobs_ordered (p, candidates);
+}
+
+
+/*
  * Take a vector of strings and join them into just one string with a custom
  * delimiter.
  */
@@ -953,20 +974,11 @@ static void reprior_cb (flux_t *h,
     if (flux_respond (h, msg, NULL) < 0)
         flux_log_error (h, "flux_respond");
 
-    // iterate through map that stores associations and held job IDs; check to
-    // see if any previously-held jobs can now be released with the update
-    for (auto &entry: users) {
-        auto &banks = entry.second;
-
-        for (auto &bank_entry : banks) {
-            if (!bank_entry.second.held_jobs.empty ()) {
-                if (check_and_release_held_jobs (p, &bank_entry.second) < 0) {
-                    flux_log_error (h,
-                                    "reprior_cb: error checking and releasing "
-                                    "held jobs for user(s)");
-                }
-            }
-        }
+    // check to see if any previously-held jobs can now be released with the
+    // update
+    if (check_and_release_all_held_jobs (p) < 0) {
+        flux_log_error (h,
+                        "reprior_cb: error checking and releasing held jobs");
     }
     return;
 error:
@@ -2117,17 +2129,11 @@ static int inactive_cb (flux_plugin_t *p,
             b->queue_usage[queue_str].cur_sched_nodes -= j->nnodes ();
             b->queue_usage[queue_str].cur_sched_cores -= j->ncores ();
             // check to see if any jobs held due to the limits above can now
-            // have their dependency removed. Gather this association's held
-            // jobs and release them in priority order (jobid tiebreak).
-            if (!b->held_jobs.empty ()) {
-                held_job_candidates_t candidates;
-                gather_held_jobs (b, candidates);
-                if (release_held_jobs_ordered (p, candidates) < 0) {
-                    flux_log_error (h,
-                                    "%s: error checking and releasing held "
-                                    "jobs for association",
-                                    topic);
-                }
+            // have their dependency removed.
+            if (check_and_release_all_held_jobs (p) < 0) {
+                flux_log_error (h,
+                                "%s: error checking and releasing held jobs",
+                                topic);
             }
         }
         return 0;
@@ -2162,16 +2168,10 @@ static int inactive_cb (flux_plugin_t *p,
             b->queue_usage[queue_str].cur_run_jobs--;
     }
 
-    if (!b->held_jobs.empty ()) {
-        // the Association has at least one held Job; gather them and release in
-        // priority order (jobid tiebreak). Any future change to add a
-        // cross-association limit grows the gather of candidates to span
-        // multiple associations.
-        held_job_candidates_t candidates;
-        gather_held_jobs (b, candidates);
-        if (release_held_jobs_ordered (p, candidates) < 0)
-            goto error;
-    }
+    // check to see if any jobs held due to the limits above can now
+    // have their dependency removed
+    if (check_and_release_all_held_jobs (p) < 0)
+        flux_log_error (h, "error checking and releasing held jobs");
 
     return 0;
 error:
