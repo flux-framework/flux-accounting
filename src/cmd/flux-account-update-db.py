@@ -295,6 +295,7 @@ def init_config_table(cur):
         ("core_weight", "0.0"),
         ("gpu_weight", "0.0"),
         ("deny_unknown_queues", "false"),
+        ("usage_calculation_mode", "periodic"),
     ]
 
     for key, value in config_entries:
@@ -304,6 +305,25 @@ def init_config_table(cur):
         )
         if cur.rowcount > 0:
             LOGGER.info("adding %s into config_table", key)
+
+
+def init_usage_update_state(cur):
+    """
+    Add the usage_update_state checkpoint. update_tables() creates the table during
+    an upgrade but leaves it empty, so INSERT the 'cluster' row with a 0.0 timestamp
+    so continuous-mode updates have a checkpoint to read. INSERT-ing a 0.0 checkpoint
+    to the table leaves existing usage in the database untouched on the first continuous
+    update since switching modes will establish a real checkpoint.
+
+    Args:
+        cur: the Cursor object used to interact with the database.
+    """
+    cur.execute(
+        "INSERT OR IGNORE INTO usage_update_state (cluster, last_update_time) "
+        "VALUES ('cluster', 0.0)"
+    )
+    if cur.rowcount > 0:
+        LOGGER.info("initialized usage_update_state checkpoint")
 
 
 def migrate_job_usage_to_per_assoc(cur):
@@ -384,6 +404,7 @@ def update_db(path, new_db):
 
             init_priority_factor_table(old_cur)
             init_config_table(old_cur)
+            init_usage_update_state(old_cur)
 
             # update user_version for DB
             old_cur.execute(

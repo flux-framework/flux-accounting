@@ -65,6 +65,16 @@ test_expect_success 'editing a key-value pair that does not exist raises error' 
 	grep "edit-config: ValueError: key i_dont_exist not found in config_table" edit_config_bad_2.out
 '
 
+test_expect_success 'rejected mode switch and rebin leaves config unchanged' '
+	test_must_fail flux account edit-config \
+		usage_calculation_mode=continuous decay_factor=0.25 > edit_config_bad_3.out 2>&1 &&
+	grep "cannot change usage_calculation_mode" edit_config_bad_3.out &&
+	flux account view-config usage_calculation_mode -o "{value}" > mode.test &&
+	flux account view-config decay_factor -o "{value}" > decay.test &&
+	grep "periodic" mode.test &&
+	grep "0.5" decay.test
+'
+
 test_expect_success 'edit multiple key-value pairs at the same time' '
 	flux account add-config key1=value1 &&
 	flux account add-config key2=value2 &&
@@ -101,17 +111,18 @@ test_expect_success 'trying to delete decay_factor does not work' '
 test_expect_success 'list all configs in config_table' '
 	flux account list-configs > list_configs.test &&
 	cat <<-EOF >list_configs.expected &&
-	key                         | value  
-	----------------------------+--------
-	priority_usage_reset_period | 2419200
-	priority_decay_half_life    | 604800 
-	decay_factor                | 0.5    
-	node_weight                 | 1.0    
-	core_weight                 | 0.0    
-	gpu_weight                  | 0.0    
-	deny_unknown_queues         | false  
-	key1                        | foo1   
-	key2                        | foo2   
+	key                         | value   
+	----------------------------+---------
+	priority_usage_reset_period | 2419200 
+	priority_decay_half_life    | 604800  
+	decay_factor                | 0.5     
+	node_weight                 | 1.0     
+	core_weight                 | 0.0     
+	gpu_weight                  | 0.0     
+	deny_unknown_queues         | false   
+	usage_calculation_mode      | periodic
+	key1                        | foo1    
+	key2                        | foo2    
 	EOF
 	test_cmp list_configs.test list_configs.expected
 '
@@ -141,6 +152,7 @@ test_expect_success 'list all configs with --fields' '
 	node_weight                
 	priority_decay_half_life   
 	priority_usage_reset_period
+	usage_calculation_mode     
 	EOF
 	test_cmp keys.test keys.expected
 '
@@ -157,6 +169,7 @@ test_expect_success 'list all configs with format string' '
 	core_weight->0.0
 	gpu_weight->0.0
 	deny_unknown_queues->false
+	usage_calculation_mode->periodic
 	key1->foo1
 	key2->foo2
 	EOF

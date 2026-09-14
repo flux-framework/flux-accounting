@@ -29,6 +29,11 @@ for job usage calculation:
 - ``priority_usage_reset_period``
 - ``priority_decay_half_life``
 - ``decay_factor``
+- ``node_weight``
+- ``core_weight``
+- ``gpu_weight``
+- ``deny_unknown_queues``
+- ``usage_calculation_mode``
 
 Attempting to delete any of these keys will result in an error.
 

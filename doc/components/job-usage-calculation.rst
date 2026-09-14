@@ -334,4 +334,40 @@ Configuring resources to have different weights can be useful for certain kinds
 of cost-based accounting depending on how your system is built and how you want
 to consider usage of your system.
 
+Continuous Decay Mode
+=====================
+
+The default calculation described above is *periodic*: usage is binned into
+fixed **PriorityDecayHalfLife** periods and the oldest bin is dropped once
+**PriorityUsageResetPeriod** is exceeded. The ``usage_calculation_mode``
+configuration key can instead be set to ``continuous`` to decay usage by exact
+elapsed wall time rather than in discrete bins.
+
+In continuous mode, each ``flux account-update-usage`` decays every
+association's scalar usage and adds the weighted resource-seconds of any newly
+completed jobs, each decayed from its own completion time:
+
+:math:`U(t_1) = U(t_0) \times D^{(t_1 - t_0)/H} + \sum_j C_j \times D^{(t_1 - t_{inactive,j})/H}`
+
+where :math:`H` is **PriorityDecayHalfLife**, :math:`D` is the decay factor,
+and :math:`C_j` is the same weighted resource-seconds value used in periodic
+mode. Because decay is a function of elapsed time, the result is unchanging to
+how often ``update-usage`` runs. With continuous mode, job usage approaches
+zero exponentially instead of resetting all the way to 0 after
+**PriorityUsageResetPeriod**. In this mode, jobs are still only charged at
+completion.
+
+The total usage in ``association_table`` remains the reference point for all
+associations' usage. It is mirrored into period 0 of
+``job_usage_per_association`` table (with all older periods zeroed) so that
+``view-user --job-usage`` returns a single meaningful row. A single-row
+``usage_update_state`` table records the timestamp of the last successful
+update, which is referred to by the next decay interval.
+
+Editing ``priority_decay_half_life`` or ``decay_factor`` in continuous mode
+does **not** clear usage or rebuild bins; the new values simply apply to the
+next update interval. Switching ``usage_calculation_mode`` between ``periodic``
+and ``continuous`` preserves the current scalar usage and does not replay
+completed jobs.
+
 .. _Flux Standard Duration (FSD): https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_23.html
