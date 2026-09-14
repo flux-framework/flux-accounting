@@ -25,10 +25,10 @@ bool deny_unknown_queues = false;
 
 // default priority factor weights, mirroring the plugin's defaults
 static std::map<std::string, int> weights = {
-    {"fairshare", 100000},
-    {"queue", 10000},
-    {"bank", 0},
-    {"urgency", 1000},
+    {"fairshare", DEFAULT_FSHARE_WEIGHT},
+    {"queue", DEFAULT_QUEUE_WEIGHT},
+    {"bank", DEFAULT_BANK_WEIGHT},
+    {"urgency", DEFAULT_URGENCY_WEIGHT},
 };
 
 /*
@@ -103,12 +103,36 @@ static void negative_sum_clamps_to_min ()
         "a negative weighted sum clamps to FLUX_JOB_PRIORITY_MIN");
 }
 
+/*
+ * Missing priority factor weights should not throw through the jobtap plugin.
+ * Treat missing factors as default-weight contributions.
+ */
+static void missing_weights_default_to_plugin_defaults ()
+{
+    std::map<std::string, int> partial_weights = {
+        {"queue", 1},
+    };
+    int64_t expected =
+        (DEFAULT_FSHARE_WEIGHT / 2) +
+        (1 * 5) +
+        (DEFAULT_BANK_WEIGHT * 1) +
+        (DEFAULT_URGENCY_WEIGHT * (20 - FLUX_JOB_URGENCY_DEFAULT));
+    int64_t prio = calc_priority (0.5,
+                                  5,
+                                  1.0,
+                                  20,
+                                  partial_weights);
+    ok (prio == expected,
+        "missing priority factor weights use plugin defaults");
+}
+
 int main (int argc, char *argv[])
 {
     hold_urgency_returns_min ();
     expedite_urgency_returns_max ();
     weighted_sum_orders_by_factors ();
     negative_sum_clamps_to_min ();
+    missing_weights_default_to_plugin_defaults ();
 
     // indicate we are done testing
     done_testing ();
