@@ -29,6 +29,7 @@ extern "C" {
 #include <vector>
 #include <cstdint>
 #include <new>
+#include <utility>
 
 // custom Association class file
 #include "accounting.hpp"
@@ -522,30 +523,124 @@ error:
 }
 
 
+typedef std::map<Association *, std::vector<flux_jobid_t>> released_jobs_t;
+
+
+static void erase_released_held_jobs (const released_jobs_t &to_erase)
+{
+    for (const auto &entry : to_erase) {
+        Association *b = entry.first;
+        const std::vector<flux_jobid_t> &ids = entry.second;
+        auto released = [&ids] (const Job &job) {
+            return std::find (ids.begin (), ids.end (), job.id) != ids.end ();
+        };
+        b->held_jobs.erase (
+            std::remove_if (b->held_jobs.begin (),
+                            b->held_jobs.end (),
+                            released),
+            b->held_jobs.end ()
+        );
+    }
+}
+
+
 /*
- * Loop through an association's held_jobs vector and release any held job that
- * now satisfies all of its flux-accounting limits, erasing it from the vector.
- * A single ReleaseCounters tracks jobs already released this pass so that
- * subsequent held jobs are evaluated against the correct remaining headroom.
+ * Release a set of held jobs, gathered as {Association*, Job*} pairs, in
+ * priority order (highest priority first), breaking ties by jobid so that
+ * equal-priority jobs are released in submission order. When a limit spans
+ * associations, this ensures the highest-priority eligible job wins freed
+ * headroom rather than whichever association happens to be visited first --
+ * and lets an admin expedite a held job past earlier-submitted ones.
+ *
+ * Held jobs sit in DEPEND state, so no priority has been assigned to them yet;
+ * their effective priority is recomputed here from the association's current
+ * factors and the job's own queue and urgency.
+ *
+ * The Job* pointers point into associations' held_jobs vectors, so erasing a
+ * released job mid-pass would invalidate the other pointers. Removing the last
+ * flux-accounting dependency fires job.state.sched synchronously, but that
+ * callback only touches the persistent SCHED counters -- never held_jobs -- so
+ * the gathered pointers stay valid for the whole pass. Released jobs are
+ * therefore recorded and erased from their owning associations after the pass
+ * completes, or before returning if the pass fails.
  */
-static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
+static int release_held_jobs_ordered (
+                flux_plugin_t *p,
+                const std::vector<std::pair<Association *, Job *>> &candidates)
 {
     ReleaseCounters counters;
 
-    auto it = b->held_jobs.begin ();
-    while (it != b->held_jobs.end ()) {
-        release_result rc = try_release_held_job (p, b, *it, counters);
-        if (rc == RELEASE_ERROR)
-            return -1;
-        if (rc == RELEASE_DONE)
-            // the job was released; erase () returns the next valid iterator
-            it = b->held_jobs.erase (it);
-        else
-            // the job is still held; move onto the next one
-            ++it;
+    // compute each candidate's effective priority
+    struct scored { Association *b; Job *job; int64_t prio; };
+    std::vector<scored> ordered;
+    ordered.reserve (candidates.size ());
+    for (auto &c : candidates) {
+        int urgency = FLUX_JOB_URGENCY_DEFAULT;
+        flux_plugin_arg_t *info = flux_jobtap_job_lookup (p, c.second->id);
+        if (info) {
+            flux_plugin_arg_unpack (info, FLUX_PLUGIN_ARG_IN,
+                                    "{s:i}", "urgency", &urgency);
+            flux_plugin_arg_destroy (info);
+        }
+        // if the queue has an associated priority, fetch it
+        auto q = queues.find (c.second->queue);
+        int queue_factor = (q != queues.end ()) ? q->second.priority : 0;
+        ordered.push_back ({c.first, c.second,
+                            calc_priority (c.first->fairshare, queue_factor,
+                                           c.first->bank_factor, urgency,
+                                           priority_weights)});
     }
 
+    // sort jobs by their effective priority; ties are broken by submission
+    // order
+    std::sort (ordered.begin (),
+               ordered.end (),
+               [] (const scored &lhs, const scored &rhs) {
+        if (lhs.prio != rhs.prio)
+            return lhs.prio > rhs.prio;
+        return lhs.job->id < rhs.job->id;
+    });
+
+
+    // store fully released jobs in this pass so that they can be erased from
+    // the association's list of held jobs
+    released_jobs_t to_erase;
+
+    for (auto &candidate : ordered) {
+        Association *b = candidate.b;
+        Job *held_job = candidate.job;
+
+        release_result rc = try_release_held_job (p, b, *held_job, counters);
+        if (rc == RELEASE_ERROR) {
+            if (held_job->deps.empty ())
+                to_erase[b].push_back (held_job->id);
+            erase_released_held_jobs (to_erase);
+            return -1;
+        }
+        if (rc == RELEASE_DONE)
+            to_erase[b].push_back (held_job->id);
+    }
+
+    // deferred erase: remove released jobs from each association's held_jobs
+    erase_released_held_jobs (to_erase);
     return 0;
+}
+
+
+/*
+ * Check every held job of a single association and release any that now
+ * satisfy all of their flux-accounting limits. A convenience wrapper over
+ * release_held_jobs_ordered () for the per-association call sites; within one
+ * association, priority order still applies, with jobid (submission order) as
+ * the tiebreak for equal-priority jobs.
+ */
+static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
+{
+    std::vector<std::pair<Association *, Job *>> candidates;
+    for (auto &held_job : b->held_jobs)
+        candidates.push_back (std::make_pair (b, &held_job));
+
+    return release_held_jobs_ordered (p, candidates);
 }
 
 
