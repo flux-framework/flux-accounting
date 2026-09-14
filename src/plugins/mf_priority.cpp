@@ -42,12 +42,6 @@ extern "C" {
 // flux-accounting
 #define BANK_INFO_MISSING 999
 
-// default weights for each factor in the priority calculation for a job
-#define DEFAULT_FSHARE_WEIGHT 100000
-#define DEFAULT_QUEUE_WEIGHT 10000
-#define DEFAULT_BANK_WEIGHT 0
-#define DEFAULT_URGENCY_WEIGHT 1000
-
 static const double FSHARE_EPSILON = 1e-9;
 
 std::map<int, std::map<std::string, Association>> users;
@@ -137,15 +131,7 @@ static void post_fshare_memo (flux_plugin_t *p, Job *j, double fairshare)
 
 int64_t priority_calculation (flux_plugin_t *p, Job *j, int urgency)
 {
-    double fshare_factor = 0.0, priority = 0.0, bank_factor = 0.0;
-    int queue_factor = 0;
-    int fshare_weight, queue_weight, bank_weight, urgency_weight;
     Association *b;
-
-    fshare_weight = priority_weights["fairshare"];
-    queue_weight = priority_weights["queue"];
-    bank_weight = priority_weights["bank"];
-    urgency_weight = priority_weights["urgency"];
 
     if (urgency == FLUX_JOB_URGENCY_HOLD)
         return FLUX_JOB_PRIORITY_MIN;
@@ -165,21 +151,13 @@ int64_t priority_calculation (flux_plugin_t *p, Job *j, int urgency)
         return -1;
     }
 
-    fshare_factor = b->fairshare;
-    queue_factor = b->queue_factor;
-    bank_factor = b->bank_factor;
-
     post_fshare_memo (p, j, b->fairshare);
 
-    priority = round ((fshare_weight * fshare_factor) +
-                      (queue_weight * queue_factor) +
-                      (bank_weight * bank_factor) +
-                      (urgency_weight * (urgency - FLUX_JOB_URGENCY_DEFAULT)));
-
-    if (priority < 0)
-        return FLUX_JOB_PRIORITY_MIN;
-
-    return priority;
+    return calc_priority (b->fairshare,
+                          b->queue_factor,
+                          b->bank_factor,
+                          urgency,
+                          priority_weights);
 }
 
 
