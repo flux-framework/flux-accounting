@@ -60,6 +60,7 @@ class TestDB(unittest.TestCase):
             "t_half_life_period_table",
             "queue_table",
             "project_table",
+            "project_usage_state",
             "jobs",
             "priority_factor_weight_table",
             "config_table",

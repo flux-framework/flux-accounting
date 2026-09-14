@@ -48,6 +48,36 @@ Projects, along with their total job usage, can be listed with the
     3          | silver  | 0.0  
     4          | gold    | 0.0
 
+The usage values are incremented from newly archived job records whenever
+``flux account-update-usage`` runs. They represent all-time weighted resource
+usage for each registered project, using the configured node, core, and GPU
+resource weights.
+
+Rebuilding Project Usage
+************************
+
+Existing databases can initialize project usage from existing job records with
+``flux account-rebuild-project-usage``. Run the command during a quiet
+maintenance window using the following sequence:
+
+1. Pause automatic job fetching and usage updates.
+2. Run ``flux account-rebuild-project-usage``.
+3. Resume automatic job fetching and usage updates.
+
+The rebuild command resets every registered project total and recalculates
+usage from the job records currently stored in the database. It also resets
+the internal project usage checkpoints so subsequent association usage replays
+do not increment project totals again. Jobs without a project, jobs associated
+with an unregistered project, and jobs with unusable resource data are skipped
+and reported.
+
+.. warning::
+
+    Rebuilding after running ``flux account scrub-old-jobs`` can lower project
+    totals because deleted job history cannot be reconstructed. The rebuild
+    also applies the currently configured resource weights to every retained
+    job.
+
 .. note::
 
     You do not need to manually add the ``*`` project - this project is added
@@ -119,4 +149,3 @@ attribute at submission:
 .. code-block:: console
 
     $ flux submit -S project=silver my_job
-

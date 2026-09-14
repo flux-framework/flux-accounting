@@ -40,6 +40,11 @@ class TestAccountingCLI(unittest.TestCase):
         rows = cur.fetchall()
 
         self.assertEqual(len(rows), 1)
+        cur.execute(
+            "SELECT last_job_timestamp FROM project_usage_state "
+            "WHERE project='project_1'"
+        )
+        self.assertEqual(cur.fetchone()[0], 0.0)
 
     # let's make sure if we try to add it a second time,
     # it fails gracefully
@@ -54,6 +59,8 @@ class TestAccountingCLI(unittest.TestCase):
         rows = cur.fetchall()
 
         self.assertEqual(len(rows), 0)
+        cur.execute("SELECT * FROM project_usage_state WHERE project='project_1'")
+        self.assertIsNone(cur.fetchone())
 
     # add a user to the accounting DB without specifying a default project
     def test_04_default_project_unspecified(self):

@@ -96,6 +96,45 @@ def get_usage_weights(cur):
     )
 
 
+def get_new_job_rows(cur):
+    """Return job rows eligible for the regular usage update."""
+    last_reconfigured = cur.execute(
+        "SELECT value FROM config_table WHERE key='reconfigure_time'"
+    ).fetchone()
+    last_reconfigured = last_reconfigured[0] if last_reconfigured is not None else 0.0
+    query = """
+    SELECT r.userid,r.id,r.t_submit,r.t_run,r.t_inactive,r.ranks,r.R,r.jobspec,
+    r.project,r.bank,r.requested_duration,r.actual_duration,b.ignore_older_than
+    FROM jobs r LEFT JOIN job_usage_factor_table j
+    ON r.userid = j.userid AND r.bank = j.bank
+    LEFT JOIN bank_table b
+    ON r.bank = b.bank WHERE r.t_inactive > j.last_job_timestamp
+    AND r.t_inactive > b.ignore_older_than
+    AND r.t_inactive > ?
+    """
+
+    cur.execute(query, (last_reconfigured,))
+    return cur.fetchall()
+
+
+def get_new_project_job_rows(cur):
+    """Return jobs newer than their registered project's usage checkpoint."""
+    cur.execute("""
+        INSERT OR IGNORE INTO project_usage_state (project, last_job_timestamp)
+        SELECT project, 0.0 FROM project_table
+        """)
+    cur.execute("""
+        SELECT r.userid,r.id,r.t_submit,r.t_run,r.t_inactive,r.ranks,r.R,
+        r.jobspec,r.project,r.bank,r.requested_duration,r.actual_duration
+        FROM jobs r
+        JOIN project_table p ON r.project = p.project
+        JOIN project_usage_state s ON p.project = s.project
+        WHERE r.t_inactive > s.last_job_timestamp
+        ORDER BY r.project, r.t_inactive, r.id
+        """)
+    return cur.fetchall()
+
+
 def apply_decay_factor(acct_conn, user, bank, userid):
     """
     Apply a decay factor to an association's job usage period values. Since this helper
@@ -297,6 +336,155 @@ def calc_bank_usage(cur, bank):
     return total_usage
 
 
+def calculate_weighted_usage(job, node_weight, core_weight, gpu_weight):
+    """Calculate weighted resource usage for one job."""
+    weighted_usage = (
+        (job.nnodes * node_weight)
+        + (job.ncores * core_weight)
+        + (job.ngpus * gpu_weight)
+    ) * job.elapsed
+    return round(weighted_usage, 5)
+
+
+def calculate_project_usage(job_records, node_weight, core_weight, gpu_weight):
+    """Calculate weighted usage grouped by project."""
+    project_usage = defaultdict(float)
+    for job in job_records:
+        project_usage[job.project] += calculate_weighted_usage(
+            job,
+            node_weight,
+            core_weight,
+            gpu_weight,
+        )
+
+    return project_usage
+
+
+def update_project_usage(cur, job_records, node_weight, core_weight, gpu_weight):
+    """Add weighted usage from newly completed jobs to registered projects."""
+    project_usage = calculate_project_usage(
+        job_records,
+        node_weight,
+        core_weight,
+        gpu_weight,
+    )
+
+    cur.executemany(
+        "UPDATE project_table SET usage=usage+? WHERE project=?",
+        [(usage, project) for project, usage in project_usage.items()],
+    )
+
+
+def update_project_usage_state(cur, job_rows):
+    """Advance each project's checkpoint to its newest selected job."""
+    project_timestamps = defaultdict(float)
+    for row in job_rows:
+        project = row[8]
+        project_timestamps[project] = max(project_timestamps[project], row[4])
+
+    cur.executemany(
+        """
+        UPDATE project_usage_state SET last_job_timestamp=? WHERE project=?
+        """,
+        [(timestamp, project) for project, timestamp in project_timestamps.items()],
+    )
+
+
+def rebuild_project_usage(acct_conn):
+    """Replace project totals with usage calculated from all retained jobs."""
+    acct_conn.row_factory = sqlite3.Row
+    cur = acct_conn.cursor()
+
+    with acct_conn:
+        node_weight, core_weight, gpu_weight = get_usage_weights(cur)
+        registered_projects = {
+            row[0] for row in cur.execute("SELECT project FROM project_table")
+        }
+        cur.execute("""
+            INSERT OR IGNORE INTO project_usage_state
+                (project, last_job_timestamp)
+            SELECT project, 0.0 FROM project_table
+            """)
+        cur.execute("""
+            DELETE FROM project_usage_state
+            WHERE project NOT IN (SELECT project FROM project_table)
+            """)
+        rows = cur.execute("""
+            SELECT userid,id,t_submit,t_run,t_inactive,ranks,R,jobspec,project,
+            bank,requested_duration,actual_duration FROM jobs
+            ORDER BY id
+            """)
+
+        missing_project = 0
+        invalid_resources = 0
+        unregistered_projects = defaultdict(int)
+        project_usage = defaultdict(float)
+        project_timestamps = defaultdict(float)
+
+        for row in rows:
+            project = row["project"]
+            if not project:
+                # a project was not registered for this job; just skip it
+                missing_project += 1
+                continue
+            if project not in registered_projects:
+                # the project associated with this job could not be found in the
+                # flux-accounting database; just skip it
+                unregistered_projects[project] += 1
+                continue
+
+            project_timestamps[project] = max(
+                project_timestamps[project], row["t_inactive"]
+            )
+            records = j.convert_to_obj([row])
+            if not records:
+                # the resources for this job could not be extracted; just skip it
+                invalid_resources += 1
+                continue
+            project_usage[project] += calculate_weighted_usage(
+                records[0],
+                node_weight,
+                core_weight,
+                gpu_weight,
+            )
+
+        # since we are rebuilding project usage from scratch, clear the existing usage
+        cur.execute("UPDATE project_table SET usage=0.0")
+        cur.executemany(
+            "UPDATE project_table SET usage=? WHERE project=?",
+            [(usage, project) for project, usage in project_usage.items()],
+        )
+        cur.execute("UPDATE project_usage_state SET last_job_timestamp=0.0")
+        cur.executemany(
+            """
+            UPDATE project_usage_state SET last_job_timestamp=? WHERE project=?
+            """,
+            [(timestamp, project) for project, timestamp in project_timestamps.items()],
+        )
+
+    if missing_project:
+        LOGGER.warning(
+            "skipped %d job(s) without a project during project-usage rebuild",
+            missing_project,
+        )
+    for project, count in sorted(unregistered_projects.items()):
+        LOGGER.warning(
+            "project %r is not registered; skipped %d job(s)", project, count
+        )
+    if invalid_resources:
+        LOGGER.warning(
+            "skipped %d job(s) with unusable resource data during "
+            "project-usage rebuild",
+            invalid_resources,
+        )
+
+    return {
+        "missing_project": missing_project,
+        "invalid_resources": invalid_resources,
+        "unregistered_projects": dict(unregistered_projects),
+    }
+
+
 def calc_parent_bank_usage(acct_conn, cur, bank):
     # find all sub-banks of the current bank
     cur.execute("SELECT bank FROM bank_table WHERE parent_bank=?", (bank,))
@@ -352,29 +540,11 @@ def update_job_usage(acct_conn):
         cur.execute(s_assoc)
         result = cur.fetchall()
 
-        # fetch the last time the job_usage_per_association_table was reconfigured
-        # (if at all)
-        last_reconfigured = cur.execute(
-            "SELECT value FROM config_table WHERE key='reconfigure_time'"
-        ).fetchone()
-        last_reconfigured = (
-            last_reconfigured[0] if last_reconfigured is not None else 0.0
-        )
-
         # fetch new jobs for every association based on their last completed job
-        s_new_jobs = """
-            SELECT r.userid,r.id,r.t_submit,r.t_run,r.t_inactive,r.ranks,r.R,r.jobspec,
-            r.project,r.bank,r.requested_duration,r.actual_duration,b.ignore_older_than
-            FROM jobs r LEFT JOIN job_usage_factor_table j
-            ON r.userid = j.userid AND r.bank = j.bank
-            LEFT JOIN bank_table b
-            ON r.bank = b.bank WHERE r.t_inactive > j.last_job_timestamp
-            AND r.t_inactive > b.ignore_older_than
-            AND r.t_inactive > ?
-        """
-        cur.execute(s_new_jobs, (last_reconfigured,))
-        new_jobs = cur.fetchall()
+        new_jobs = get_new_job_rows(cur)
         new_job_records = j.convert_to_obj(new_jobs)
+        new_project_jobs = get_new_project_job_rows(cur)
+        new_project_job_records = j.convert_to_obj(new_project_jobs)
         # convert new jobs to a dictionary where they key is a tuple of the user ID and bank
         # associated with the job
         association_jobs = defaultdict(list)
@@ -412,6 +582,16 @@ def update_job_usage(acct_conn):
 
         # update the job usage for every bank in the bank_table
         calc_parent_bank_usage(acct_conn, cur, parent_bank)
+
+        # add newly completed jobs to their registered projects' usage
+        update_project_usage(
+            cur,
+            new_project_job_records,
+            node_weight,
+            core_weight,
+            gpu_weight,
+        )
+        update_project_usage_state(cur, new_project_jobs)
 
         check_end_hl(acct_conn, pdhl)
 

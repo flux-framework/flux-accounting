@@ -102,6 +102,16 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(fluxacct.accounting.PROJECT_TABLE, project_table)
 
+    def test_default_columns_project_usage_state_table(self):
+        cur.execute("PRAGMA table_info (project_usage_state)")
+        columns = cur.fetchall()
+        project_usage_state_table = [column[1] for column in columns]
+
+        self.assertEqual(
+            fluxacct.accounting.PROJECT_USAGE_STATE_TABLE,
+            project_usage_state_table,
+        )
+
     def test_default_columns_jobs_table(self):
         cur.execute("PRAGMA table_info (jobs)")
         columns = cur.fetchall()
