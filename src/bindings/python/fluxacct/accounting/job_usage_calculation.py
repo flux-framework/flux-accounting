@@ -10,90 +10,41 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import time
-import logging
-import sqlite3
-from collections import defaultdict
 from datetime import datetime, timedelta
 
 from fluxacct.accounting import jobs_table_subcommands as j
 from fluxacct.accounting import util
-from fluxacct.accounting.util import with_cursor
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s: %(levelname)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
+from fluxacct.accounting.usage_calculators import (
+    JobUsageCalculator,
+    PeriodicUsageCalculator,
 )
-LOGGER = logging.getLogger(__name__)
+from fluxacct.accounting.util import with_cursor
 
 
 def update_t_inactive(acct_conn, last_t_inactive, user, bank):
-    """
-    Save the timestamp of the most recent inactive job for the association.
-    """
-    u_ts = """
-        UPDATE job_usage_factor_table SET last_job_timestamp=? WHERE username=? AND bank=?
-        """
-    acct_conn.execute(
-        u_ts,
-        (
-            last_t_inactive,
-            user,
-            bank,
-        ),
+    """Save the most recent inactive-job timestamp for an association."""
+    return PeriodicUsageCalculator(acct_conn).update_last_job_timestamp(
+        last_t_inactive, user, bank
     )
 
 
 def update_hist_usg_col(acct_conn, usg_h, user, bank):
     """Update the job_usage column for the association."""
-    u_usg = """
-        UPDATE association_table SET job_usage=? WHERE username=? AND bank=?
-        """
-    acct_conn.execute(
-        u_usg,
-        (
-            usg_h,
-            user,
-            bank,
-        ),
+    return PeriodicUsageCalculator(acct_conn).update_association_usage(
+        usg_h, user, bank
     )
 
 
 def update_curr_usg_col(acct_conn, usg_h, user, bank, userid):
-    """
-    Write the current job usage factor for the association to the
-    job_usage_factor_table.
-    """
-    acct_conn.execute(
-        """
-        INSERT INTO job_usage_per_association_table (username, userid, bank, period, value)
-        VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT (username, bank, period) DO UPDATE SET value=excluded.value
-        """,
-        (user, userid, bank, 0, usg_h),
+    """Write the current job-usage bin for an association."""
+    return PeriodicUsageCalculator(acct_conn).update_current_usage_bin(
+        usg_h, user, bank, userid
     )
 
 
 def get_usage_weights(cur):
-    """
-    Fetch usage weight config values with fallback defaults.
-
-    Args:
-        cur: The SQLite Cursor object.
-
-    Returns:
-        tuple: (node_weight, core_weight, gpu_weight) as floats.
-    """
-    cur.execute("""
-        SELECT key, value FROM config_table
-        WHERE key IN ('node_weight', 'core_weight', 'gpu_weight')
-        """)
-    weights = {row[0]: float(row[1]) for row in cur.fetchall()}
-    return (
-        weights.get("node_weight", 1.0),
-        weights.get("core_weight", 0.0),
-        weights.get("gpu_weight", 0.0),
-    )
+    """Fetch usage weight config values with fallback defaults."""
+    return JobUsageCalculator.get_usage_weights(cur)
 
 
 def apply_decay_factor(acct_conn, user, bank, userid):
@@ -108,56 +59,7 @@ def apply_decay_factor(acct_conn, user, bank, userid):
         bank: The bank name of the association.
         userid: The userid of the association.
     """
-    cur = acct_conn.cursor()
-    cur.execute("SELECT value FROM config_table WHERE key='decay_factor'")
-    row = cur.fetchone()
-    # if decay_factor is not configured, fall back to 0.5
-    decay = float(row[0]) if row else 0.5
-
-    # fetch all periods ordered from oldest to most recent so we can shift
-    # values forward without overwriting anything we haven't read yet
-    cur.execute(
-        """
-        SELECT period, value FROM job_usage_per_association_table
-        WHERE username=? AND bank=?
-        ORDER BY period DESC
-        """,
-        (user, bank),
-    )
-    periods = cur.fetchall()
-
-    for period, value in periods:
-        # the oldest period just gets dropped off the end since it no longer affects
-        # historical usage
-        next_period = period + 1
-        cur.execute(
-            """
-            UPDATE job_usage_per_association_table SET value=?
-            WHERE username=? AND userid=? AND bank=? AND period=?
-            """,
-            (value * decay, user, userid, bank, next_period),
-        )
-
-    # period 0 will be written with the current period's usage
-    cur.execute(
-        """
-        UPDATE job_usage_per_association_table SET value=0.0
-        WHERE username=? AND userid=? AND bank=? AND period=0
-        """,
-        (user, userid, bank),
-    )
-
-    # return the sum of all periods excluding period 0 since that will be
-    # written separately
-    cur.execute(
-        """
-        SELECT SUM(value) FROM job_usage_per_association_table
-        WHERE username=? AND userid=? AND bank=? AND period > 0
-        """,
-        (user, userid, bank),
-    )
-    result = cur.fetchone()
-    return result[0] if result[0] is not None else 0.0
+    return PeriodicUsageCalculator(acct_conn).apply_decay_factor(user, bank, userid)
 
 
 def calc_usage_factor(
@@ -172,252 +74,33 @@ def calc_usage_factor(
     core_weight,
     gpu_weight,
 ):
-    cur = conn.cursor()
-
-    # fetch all current period values for this association
-    cur.execute(
-        """
-        SELECT period, value FROM job_usage_per_association_table
-        WHERE username=? AND bank=?
-        ORDER BY period ASC
-        """,
-        (user, bank),
+    return PeriodicUsageCalculator(conn).calculate_usage_factor(
+        pdhl,
+        user,
+        bank,
+        userid,
+        end_hl,
+        user_jobs,
+        node_weight,
+        core_weight,
+        gpu_weight,
     )
-    period_rows = cur.fetchall()
-    usage_factors = [row[1] for row in period_rows]
-
-    # hl_period represents the number of seconds that represent one usage bin
-    hl_period = pdhl
-
-    last_t_inactive = 0.0
-    usg_current = 0.0
-
-    if len(user_jobs) > 0:
-        user_jobs.sort(key=lambda job: job.t_inactive)
-
-        per_job_factors = []
-        for job in user_jobs:
-            weighted_usage = (
-                (job.nnodes * node_weight)
-                + (job.ncores * core_weight)
-                + (job.ngpus * gpu_weight)
-            ) * job.elapsed
-            per_job_factors.append(round(weighted_usage, 5))
-
-        last_t_inactive = user_jobs[-1].t_inactive
-        usg_current = sum(per_job_factors)
-
-        update_t_inactive(conn, last_t_inactive, user, bank)
-
-    if len(user_jobs) == 0 and (float(end_hl) > (time.time() - hl_period)):
-        # no new jobs in the current half-life period; the job usage for the
-        # association stays exactly the same
-        usg_historical = sum(usage_factors)
-    elif len(user_jobs) == 0 and (float(end_hl) < (time.time() - hl_period)):
-        # no new jobs in the new half-life period; previous job usage periods need
-        # to have a half-life decay applied to them
-        usg_historical = apply_decay_factor(conn, user, bank, userid)
-
-        update_curr_usg_col(
-            conn,
-            usg_current,
-            user,
-            bank,
-            userid,
-        )
-        update_hist_usg_col(conn, usg_historical, user, bank)
-    elif (last_t_inactive - float(end_hl)) < hl_period:
-        # found new jobs in the current half-life period; we need to 1) add the
-        # new jobs to the current usage period, and 2) update the historical usage
-        # period
-        usg_current += usage_factors[0]
-        usg_historical = usg_current + sum(usage_factors[1:])
-
-        update_curr_usg_col(conn, usg_current, user, bank, userid)
-        update_hist_usg_col(conn, usg_historical, user, bank)
-    else:
-        # found new jobs in the new half-life period
-        # apply decay factor to past usage periods of a user's jobs
-        usg_past = apply_decay_factor(conn, user, bank, userid)
-        usg_historical = usg_current + usg_past
-
-        update_curr_usg_col(conn, usg_historical, user, bank, userid)
-        update_hist_usg_col(conn, usg_historical, user, bank)
-
-    return usg_historical
 
 
 def check_end_hl(acct_conn, pdhl):
-    hl_period = pdhl
-
-    cur = acct_conn.cursor()
-
-    # fetch timestamp of the end of the current half-life period
-    s_end_hl = """
-        SELECT end_half_life_period
-        FROM t_half_life_period_table
-        WHERE cluster='cluster'
-        """
-    cur.execute(s_end_hl)
-    row = cur.fetchone()
-    end_hl = row[0]
-
-    if float(end_hl) < (time.time() - hl_period):
-        # update new end of half-life period timestamp
-        update_timestamp_stmt = """
-            UPDATE t_half_life_period_table
-            SET end_half_life_period=?
-            WHERE cluster='cluster'
-            """
-        acct_conn.execute(update_timestamp_stmt, ((float(end_hl) + hl_period),))
+    return PeriodicUsageCalculator(acct_conn).advance_half_life_period(pdhl)
 
 
 def calc_bank_usage(cur, bank):
-    # fetch the job_usage value for every user under the passed-in bank
-    s_associations = "SELECT job_usage FROM association_table WHERE bank=?"
-    cur.execute(s_associations, (bank,))
-    job_usage_list = cur.fetchall()
-
-    total_usage = 0.0
-    if job_usage_list:
-        # aggregate job usage for bank
-        for job_usage in job_usage_list:
-            total_usage += job_usage[0]
-
-    # update the bank_table with the total job usage for the bank
-    u_job_usage = "UPDATE bank_table SET job_usage=? WHERE bank=?"
-    cur.execute(
-        u_job_usage,
-        (
-            total_usage,
-            bank,
-        ),
-    )
-
-    return total_usage
+    return JobUsageCalculator.calculate_bank_usage(cur, bank)
 
 
 def calc_parent_bank_usage(acct_conn, cur, bank):
-    # find all sub-banks of the current bank
-    cur.execute("SELECT bank FROM bank_table WHERE parent_bank=?", (bank,))
-    sub_banks = cur.fetchall()
-
-    total_usage = 0.0
-    if len(sub_banks) == 0:
-        # we've reached a bank with no sub banks, so take the usage from that bank
-        # and add it to the total usage for the parent bank
-        total_usage = calc_bank_usage(cur, bank)
-    else:
-        # for each sub bank, keep traversing to find the usage for
-        # each bank with users in it
-        for sub_bank in sub_banks:
-            sub_usage = calc_parent_bank_usage(acct_conn, cur, sub_bank[0])
-            total_usage += sub_usage
-
-    # update the usage for this bank itself
-    u_job_usage = "UPDATE bank_table SET job_usage=? WHERE bank=?"
-    cur.execute(u_job_usage, (total_usage, bank))
-
-    return total_usage
+    return JobUsageCalculator.calculate_hierarchical_bank_usage(cur, bank)
 
 
 def update_job_usage(acct_conn):
-    LOGGER.info(
-        "beginning job-usage update for flux-accounting DB; "
-        "slow response times may occur"
-    )
-    acct_conn.row_factory = sqlite3.Row
-    cur = acct_conn.cursor()
-
-    with acct_conn:
-        # fetch timestamp of the end of the current half-life period
-        s_end_hl = """
-            SELECT end_half_life_period FROM t_half_life_period_table WHERE cluster='cluster'
-            """
-        cur.execute(s_end_hl)
-        row = cur.fetchone()
-        end_hl = row[0]
-
-        # fetch usage weights with fallback defaults
-        node_weight, core_weight, gpu_weight = get_usage_weights(cur)
-
-        # begin transaction for all of the updates in the DB
-        acct_conn.execute("BEGIN TRANSACTION")
-        s_assoc = """
-            SELECT a.username, a.userid, a.bank, a.default_bank, j.last_job_timestamp
-            FROM association_table a
-            LEFT JOIN job_usage_factor_table j
-            ON a.username = j.username AND a.bank = j.bank
-            """
-        cur.execute(s_assoc)
-        result = cur.fetchall()
-
-        # fetch the last time the job_usage_per_association_table was reconfigured
-        # (if at all)
-        last_reconfigured = cur.execute(
-            "SELECT value FROM config_table WHERE key='reconfigure_time'"
-        ).fetchone()
-        last_reconfigured = (
-            last_reconfigured[0] if last_reconfigured is not None else 0.0
-        )
-
-        # fetch new jobs for every association based on their last completed job
-        s_new_jobs = """
-            SELECT r.userid,r.id,r.t_submit,r.t_run,r.t_inactive,r.ranks,r.R,r.jobspec,
-            r.project,r.bank,r.requested_duration,r.actual_duration,b.ignore_older_than
-            FROM jobs r LEFT JOIN job_usage_factor_table j
-            ON r.userid = j.userid AND r.bank = j.bank
-            LEFT JOIN bank_table b
-            ON r.bank = b.bank WHERE r.t_inactive > j.last_job_timestamp
-            AND r.t_inactive > b.ignore_older_than
-            AND r.t_inactive > ?
-        """
-        cur.execute(s_new_jobs, (last_reconfigured,))
-        new_jobs = cur.fetchall()
-        new_job_records = j.convert_to_obj(new_jobs)
-        # convert new jobs to a dictionary where they key is a tuple of the user ID and bank
-        # associated with the job
-        association_jobs = defaultdict(list)
-        for job in new_job_records:
-            key = (job.userid, job.bank)
-            association_jobs[key].append(job)
-
-        # get PriorityDecayHalfLife
-        pdhl = float(
-            cur.execute(
-                "SELECT value FROM config_table WHERE key='priority_decay_half_life'"
-            ).fetchone()[0]
-        )
-
-        # update the job usage for every user in the association_table
-        for row in result:
-            calc_usage_factor(
-                conn=acct_conn,
-                pdhl=pdhl,
-                user=row["username"],
-                bank=row["bank"],
-                userid=row["userid"],
-                end_hl=end_hl,
-                user_jobs=association_jobs[(row["userid"], row["bank"])],
-                node_weight=node_weight,
-                core_weight=core_weight,
-                gpu_weight=gpu_weight,
-            )
-
-        # find the root bank in the flux-accounting database
-        s_root_bank = "SELECT bank FROM bank_table WHERE parent_bank=''"
-        cur.execute(s_root_bank)
-        result = cur.fetchall()
-        parent_bank = result[0][0]  # store the name of the root bank
-
-        # update the job usage for every bank in the bank_table
-        calc_parent_bank_usage(acct_conn, cur, parent_bank)
-
-        check_end_hl(acct_conn, pdhl)
-
-        LOGGER.info("job-usage update for flux-accounting DB now complete")
-
-        return 0
+    return PeriodicUsageCalculator(acct_conn).update()
 
 
 def scrub_old_jobs(conn, num_weeks=26):

@@ -1,3 +1,5 @@
+SUBDIRS = usage_calculators
+
 acctpy_PYTHON = \
 	__init__.py \
 	user_subcommands.py \
