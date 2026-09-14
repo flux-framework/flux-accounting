@@ -264,6 +264,48 @@ int get_queue_info (char *queue,
 }
 
 
+static int get_priority_weight (const std::map<std::string, int> &weights,
+                                const std::string &factor,
+                                int default_weight)
+{
+    auto it = weights.find (factor);
+    if (it != weights.end ())
+        return it->second;
+
+    return default_weight;
+}
+
+
+int64_t calc_priority (double fairshare,
+                       int queue_factor,
+                       double bank_factor,
+                       int urgency,
+                       const std::map<std::string, int> &weights)
+{
+    if (urgency == FLUX_JOB_URGENCY_HOLD)
+        return FLUX_JOB_PRIORITY_MIN;
+    if (urgency == FLUX_JOB_URGENCY_EXPEDITE)
+        return FLUX_JOB_PRIORITY_MAX;
+
+    int64_t priority = round (
+        (get_priority_weight (weights,
+                              "fairshare",
+                              DEFAULT_FSHARE_WEIGHT) * fairshare) +
+        (get_priority_weight (weights,
+                              "queue",
+                              DEFAULT_QUEUE_WEIGHT) * queue_factor) +
+        (get_priority_weight (weights,
+                              "bank",
+                              DEFAULT_BANK_WEIGHT) * bank_factor) +
+        (get_priority_weight (weights,
+                              "urgency",
+                              DEFAULT_URGENCY_WEIGHT) *
+            (urgency - FLUX_JOB_URGENCY_DEFAULT)));
+
+    return priority < 0 ? FLUX_JOB_PRIORITY_MIN : priority;
+}
+
+
 bool check_map_for_dne_only (std::map<int, std::map<std::string, Association>>
                                &users,
                              std::map<int, std::string> &users_def_bank)

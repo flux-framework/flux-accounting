@@ -108,6 +108,7 @@ TESTSCRIPTS = \
 	t1103-mf-priority-memo-events.t \
 	t1104-create-db-config.t \
 	t1105-resource-quotas.t \
+	t1106-mf-priority-priority-release.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
