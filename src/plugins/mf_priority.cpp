@@ -523,6 +523,7 @@ error:
 }
 
 
+typedef std::vector<std::pair<Association *, Job *>> held_job_candidates_t;
 typedef std::map<Association *, std::vector<flux_jobid_t>> released_jobs_t;
 
 
@@ -541,6 +542,14 @@ static void erase_released_held_jobs (const released_jobs_t &to_erase)
             b->held_jobs.end ()
         );
     }
+}
+
+
+static void gather_held_jobs (Association *b, held_job_candidates_t &candidates)
+{
+    candidates.reserve (candidates.size () + b->held_jobs.size ());
+    for (auto &held_job : b->held_jobs)
+        candidates.push_back (std::make_pair (b, &held_job));
 }
 
 
@@ -566,7 +575,7 @@ static void erase_released_held_jobs (const released_jobs_t &to_erase)
  */
 static int release_held_jobs_ordered (
                 flux_plugin_t *p,
-                const std::vector<std::pair<Association *, Job *>> &candidates)
+                const held_job_candidates_t &candidates)
 {
     ReleaseCounters counters;
 
@@ -636,9 +645,8 @@ static int release_held_jobs_ordered (
  */
 static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
 {
-    std::vector<std::pair<Association *, Job *>> candidates;
-    for (auto &held_job : b->held_jobs)
-        candidates.push_back (std::make_pair (b, &held_job));
+    held_job_candidates_t candidates;
+    gather_held_jobs (b, candidates);
 
     return release_held_jobs_ordered (p, candidates);
 }
