@@ -547,7 +547,6 @@ static void erase_released_held_jobs (const released_jobs_t &to_erase)
 
 static void gather_held_jobs (Association *b, held_job_candidates_t &candidates)
 {
-    candidates.reserve (candidates.size () + b->held_jobs.size ());
     for (auto &held_job : b->held_jobs)
         candidates.push_back (std::make_pair (b, &held_job));
 }
