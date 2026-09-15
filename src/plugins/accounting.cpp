@@ -358,9 +358,15 @@ bool Association::under_max_run_jobs (int pending)
 
 bool Association::under_queue_max_run_jobs (
                                 const std::string &queue,
-                                std::map<std::string, Queue> queues) {
+                                const std::map<std::string, Queue> &queues)
+{
+    auto qit = queues.find (queue);
+    if (qit == queues.end ())
+        // queue is unknown to flux-accounting; skip check
+        return true;
+
     bool under_queue_max_run_jobs = queue_usage[queue].cur_run_jobs
-                                    < queues[queue].max_running_jobs;
+                                    < qit->second.max_running_jobs;
 
     return under_queue_max_run_jobs;
 }
@@ -368,10 +374,16 @@ bool Association::under_queue_max_run_jobs (
 
 bool Association::under_queue_max_run_jobs (
                                 const std::string &queue,
-                                std::map<std::string, Queue> queues,
-                                int pending) {
+                                const std::map<std::string, Queue> &queues,
+                                int pending)
+{
+    auto qit = queues.find (queue);
+    if (qit == queues.end ())
+        // queue is unknown to flux-accounting; skip check
+        return true;
+
     bool under_queue_max_run_jobs = (queue_usage[queue].cur_run_jobs + pending)
-                                    < queues[queue].max_running_jobs;
+                                    < qit->second.max_running_jobs;
 
     return under_queue_max_run_jobs;
 }
@@ -434,26 +446,26 @@ bool Association::under_max_sched_jobs (int pending)
 
 bool Association::under_queue_max_sched_jobs (
                                 const std::string &queue,
-                                std::map<std::string, Queue> &queues)
+                                const std::map<std::string, Queue> &queues)
 {
     auto qit = queues.find (queue);
     if (qit == queues.end ())
         // queue is unknown to flux-accounting; skip check
         return true;
 
-    return queue_usage[queue].cur_sched_jobs < queues[queue].max_sched_jobs;
+    return queue_usage[queue].cur_sched_jobs < qit->second.max_sched_jobs;
 }
 
 bool Association::under_queue_max_sched_jobs (
                                 const std::string &queue,
-                                std::map<std::string, Queue> &queues,
+                                const std::map<std::string, Queue> &queues,
                                 int pending)
 {
     auto qit = queues.find (queue);
     if (qit == queues.end ())
         return true;
     return (queue_usage[queue].cur_sched_jobs + pending)
-           < queues[queue].max_sched_jobs;
+           < qit->second.max_sched_jobs;
 }
 
 
