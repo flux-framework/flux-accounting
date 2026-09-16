@@ -346,10 +346,10 @@ static release_result try_release_held_job (flux_plugin_t *p,
 
     // is the association under the max running jobs limit for the
     // queue the held job is submitted under?
-    if (b->under_queue_max_run_jobs (held_job.queue,
-                                     queues,
-                                     qc.run) &&
-        held_job.contains_dep (D_QUEUE_MRJ)) {
+    if (held_job.contains_dep (D_QUEUE_MRJ)
+        && b->under_queue_max_run_jobs (held_job.queue,
+                                        queues,
+                                        qc.run)) {
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_QUEUE_MRJ) < 0) {
@@ -363,10 +363,10 @@ static release_result try_release_held_job (flux_plugin_t *p,
     // is association under the max SCHED jobs limit for the queue the
     // held job is submitted under, accounting for jobs already released
     // in this pass?
-    if (b->under_queue_max_sched_jobs (held_job.queue,
-                                       queues,
-                                       qc.sched)
-        && held_job.contains_dep (D_QUEUE_MSJ)) {
+    if (held_job.contains_dep (D_QUEUE_MSJ)
+        && b->under_queue_max_sched_jobs (held_job.queue,
+                                          queues,
+                                          qc.sched)) {
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_QUEUE_MSJ) < 0) {
@@ -381,11 +381,11 @@ static release_result try_release_held_job (flux_plugin_t *p,
     // held job is submitted under? Jobs released earlier in this pass
     // that reached SCHED are already reflected in cur_sched_nodes by
     // sched_cb ()
-    if (b->under_queue_max_sched_nodes (held_job,
-                                        held_job.queue,
-                                        queues,
-                                        qc.sched_nodes) &&
-        held_job.contains_dep (D_QUEUE_MSN)) {
+    if (held_job.contains_dep (D_QUEUE_MSN)
+        && b->under_queue_max_sched_nodes (held_job,
+                                           held_job.queue,
+                                           queues,
+                                           qc.sched_nodes)) {
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_QUEUE_MSN) < 0) {
@@ -398,12 +398,11 @@ static release_result try_release_held_job (flux_plugin_t *p,
     }
     // is association under the max SCHED cores limit for the queue the
     // held job is submitted under?
-    if (b->under_queue_max_sched_cores (
-                            held_job,
-                            held_job.queue,
-                            queues,
-                            qc.sched_cores) &&
-        held_job.contains_dep (D_QUEUE_MSC)) {
+    if (held_job.contains_dep (D_QUEUE_MSC)
+        && b->under_queue_max_sched_cores (held_job,
+                                           held_job.queue,
+                                           queues,
+                                           qc.sched_cores)) {
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_QUEUE_MSC) < 0) {
@@ -416,8 +415,8 @@ static release_result try_release_held_job (flux_plugin_t *p,
     }
     // is the association under the max nodes limit for the queue the
     // held job is submitted under?
-    if (b->under_queue_max_resources (held_job, held_job.queue, queues) &&
-        held_job.contains_dep (D_QUEUE_MRES)) {
+    if (held_job.contains_dep (D_QUEUE_MRES)
+        && b->under_queue_max_resources (held_job, held_job.queue, queues)) {
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_QUEUE_MRES) < 0) {
@@ -428,8 +427,8 @@ static release_result try_release_held_job (flux_plugin_t *p,
         held_job.remove_dep (D_QUEUE_MRES);
     }
     // is association under their overall max running jobs limit?
-    if (b->under_max_run_jobs (counters.assoc_run[b]) &&
-        held_job.contains_dep (D_ASSOC_MRJ)) {
+    if (held_job.contains_dep (D_ASSOC_MRJ)
+        && b->under_max_run_jobs (counters.assoc_run[b])) {
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_ASSOC_MRJ) < 0) {
@@ -442,8 +441,8 @@ static release_result try_release_held_job (flux_plugin_t *p,
     }
     // is association under their max SCHED jobs limit, accounting for
     // jobs already released in this pass?
-    if (b->under_max_sched_jobs (counters.assoc_sched[b]) &&
-        held_job.contains_dep (D_ASSOC_MSJ)) {
+    if (held_job.contains_dep (D_ASSOC_MSJ)
+        && b->under_max_sched_jobs (counters.assoc_sched[b])) {
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_ASSOC_MSJ) < 0) {
@@ -456,8 +455,8 @@ static release_result try_release_held_job (flux_plugin_t *p,
     }
     // will association stay under or at their overall max resources limit
     // by releasing this job?
-    if (b->under_max_resources (held_job) &&
-        held_job.contains_dep (D_ASSOC_MRES)) {
+    if (held_job.contains_dep (D_ASSOC_MRES)
+        && b->under_max_resources (held_job)) {
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_ASSOC_MRES) < 0) {
