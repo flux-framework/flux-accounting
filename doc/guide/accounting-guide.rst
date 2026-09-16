@@ -644,6 +644,66 @@ running jobs, keyed by user ID:
    }
  }
 
+Per-user quotas
+================
+
+The plugin can limit how much of a resource type a single user may have in
+use at once across all of their running jobs. Quotas are read from the
+``[accounting.quotas.user]`` table of the broker configuration (see
+:man5:`flux-config-accounting`). Each key is a resource type and each value
+is the maximum amount of that type for one user. Custom resource types may
+be used. A type that is not in the table has no quota.
+
+.. code-block:: toml
+
+ [accounting.quotas.user]
+ quantum = 2
+ node = 4
+
+The table is loaded into the broker with ``flux config load`` or from the
+broker configuration directory. It can be loaded before or after the plugin
+and is applied again on every ``flux config reload``.
+
+A job that requests more of a resource type than the quota allows is
+rejected at submission. A job that would put the user over a quota when
+added to their running jobs is held in the ``DEPEND`` state with a
+``resource-quota-user`` dependency. When one of the user's jobs finishes,
+their held jobs are checked in submission order and each one that now fits
+is released. Held jobs can be listed with ``flux jobs``.
+
+.. code-block:: console
+
+ $ flux jobs -o "{id} {state} {dependencies}"
+
+The configured quotas and the held jobs of each user are reported by
+``flux jobtap query`` along with the tracked usage.
+
+.. code-block:: console
+
+ $ flux jobtap query resource_quotas.so | jq
+ {
+   "user_resources": {
+     "58985": {
+       "core": 3,
+       "node": 2,
+       "slot": 3
+     }
+   },
+   "quotas": {
+     "user": {
+       "quantum": 2
+     }
+   },
+   "held_jobs": {
+     "58985": [
+       24041455616
+     ]
+   }
+ }
+
+Quotas apply per user across banks. Instance-wide quotas are not yet
+supported.
+
 .. _glossary-section:
 
 ********

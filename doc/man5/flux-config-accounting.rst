@@ -10,11 +10,14 @@ The ``[accounting]`` TOML table configures the default values seeded into
 the flux-accounting database when it is created with
 :man1:`flux-account-create-db`. The path to a TOML file containing this
 table is passed to :man1:`flux-account-create-db` with ``--config-path``.
+The ``[accounting.quotas]`` section is instead read from the broker
+configuration by the resource quotas jobtap plugin. The same file may be
+used for both.
 
-The table is subdivided by function into sections: ``[accounting.usage]``
+The table is subdivided by function into sections. ``[accounting.usage]``
 configures the job usage calculation, ``[accounting.priority]`` configures
-the multi-factor priority plugin, and ``[accounting.queues]`` configures
-queue policy.
+the multi-factor priority plugin, ``[accounting.queues]`` configures queue
+policy, and ``[accounting.quotas]`` configures the resource quotas plugin.
 
 Every key is optional; a key not present in the file keeps its built-in
 default, and a database created without a configuration file is identical
@@ -59,6 +62,18 @@ deny-unknown
    (optional) Reject jobs submitted to queues that are not defined in the
    flux-accounting database (default: ``false``).
 
+QUOTAS KEYS
+===========
+
+user
+   (optional) A sub-table mapping each resource type to the maximum amount
+   of it a single user may have in use across their running jobs. Any
+   resource type from a jobspec may be used, including custom types such
+   as ``quantum``. A type that is not in the table has no quota (default
+   is empty). This table is read from the broker configuration by the
+   resource quotas jobtap plugin and is not stored in the flux-accounting
+   database.
+
 EXAMPLE
 =======
 
@@ -82,6 +97,9 @@ EXAMPLE
 
    [accounting.queues]
    deny-unknown = false
+
+   [accounting.quotas.user]
+   quantum = 2
 
 SEE ALSO
 ========
