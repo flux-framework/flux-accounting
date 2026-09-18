@@ -341,6 +341,7 @@ def delete_bank(conn, cur, bank, force=False):
                     FROM association_table WHERE bank=?
                     """
                 for assoc_row in cur.execute(select_assoc_stmt, (bank,)):
+                    # pylint: disable=no-value-for-parameter
                     u.delete_user(
                         conn,
                         username=assoc_row["username"],
