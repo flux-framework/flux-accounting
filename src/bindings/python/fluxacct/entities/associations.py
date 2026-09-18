@@ -13,12 +13,12 @@ import sqlite3
 import time
 
 from flux.constants import FLUX_USERID_UNKNOWN
-import fluxacct.accounting
-from fluxacct.accounting import formatter as fmt
-from fluxacct.accounting import sql_util as sql
-from fluxacct.accounting import util
-from fluxacct.accounting.util import with_cursor
-from fluxacct.accounting import INTEGER_MAX
+from fluxacct.database import schema
+from fluxacct.database import sql
+from fluxacct.policy.constants import INTEGER_MAX
+from fluxacct.formatting import formatters as fmt
+from fluxacct import util
+from fluxacct.util import with_cursor
 
 
 ###############################################################
@@ -334,7 +334,7 @@ def view_user(
         raise ValueError(f"-J/--job-usage cannot be combined with --fields")
 
     # use all column names if none are passed in
-    cols = cols or fluxacct.accounting.ASSOCIATION_TABLE
+    cols = cols or schema.ASSOCIATION_TABLE
 
     if job_usage:
         # only return a breakdown of the association's job usage factors that make up
@@ -344,7 +344,7 @@ def view_user(
         )
         formatter = fmt.AccountingFormatter(cur)
     else:
-        sql.validate_columns(cols, fluxacct.accounting.ASSOCIATION_TABLE)
+        sql.validate_columns(cols, schema.ASSOCIATION_TABLE)
         # construct SELECT statement
         select_stmt = (
             f"SELECT {', '.join(cols)} FROM association_table WHERE username=?"
@@ -377,12 +377,12 @@ def list_users(conn, cur, cols=None, json_fmt=False, format_string="", **kwargs)
         **kwargs: a list of optional constraints to filter the association_table by.
     """
     # use all column names if none are passed in
-    cols = cols or fluxacct.accounting.ASSOCIATION_TABLE
+    cols = cols or schema.ASSOCIATION_TABLE
 
     # if any filters are passed in, make sure they are valid columns
     table_filters = {key: val for key, val in kwargs.items() if val is not None}
 
-    sql.validate_columns(cols, fluxacct.accounting.ASSOCIATION_TABLE)
+    sql.validate_columns(cols, schema.ASSOCIATION_TABLE)
     # construct SELECT statement
     select_stmt = f"SELECT {', '.join(cols)} FROM association_table"
     # filter by any constraints passed in
@@ -400,7 +400,7 @@ def list_users(conn, cur, cols=None, json_fmt=False, format_string="", **kwargs)
         return [val]
 
     for col, val in table_filters.items():
-        sql.validate_columns([col], fluxacct.accounting.ASSOCIATION_TABLE)
+        sql.validate_columns([col], schema.ASSOCIATION_TABLE)
 
         values = to_list(val)
 
@@ -699,7 +699,7 @@ def edit_user(conn, cur, username, bank=None, **kwargs):
                     # set value to max integer
                     update_stmt = (
                         f"UPDATE association_table SET "
-                        f"{field}={fluxacct.accounting.INTEGER_MAX} WHERE username=?"
+                        f"{field}={INTEGER_MAX} WHERE username=?"
                     )
                     tup = (username,)
 

@@ -20,8 +20,8 @@ creating a new database.
 
 from collections.abc import Mapping
 
-import fluxacct.accounting
-from fluxacct.accounting import util
+from fluxacct.policy import constants
+from fluxacct import util
 
 # keys under [accounting.usage] that represent a duration; values may be
 # expressed in Flux Standard Duration (e.g. "7d") or a number of seconds
@@ -50,10 +50,10 @@ def default_config():
         },
         "priority": {
             "factors": {
-                "fairshare": fluxacct.accounting.FSHARE_WEIGHT_DEFAULT,
-                "queue": fluxacct.accounting.QUEUE_WEIGHT_DEFAULT,
-                "bank": fluxacct.accounting.BANK_WEIGHT_DEFAULT,
-                "urgency": fluxacct.accounting.URGENCY_WEIGHT_DEFAULT,
+                "fairshare": constants.FSHARE_WEIGHT_DEFAULT,
+                "queue": constants.QUEUE_WEIGHT_DEFAULT,
+                "bank": constants.BANK_WEIGHT_DEFAULT,
+                "urgency": constants.URGENCY_WEIGHT_DEFAULT,
             },
         },
         "queues": {

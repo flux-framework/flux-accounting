@@ -15,15 +15,15 @@ import argparse
 import sys
 import os
 
-import fluxacct.accounting
-from fluxacct.accounting import job_usage_calculation as job_usage
-from fluxacct.accounting import util
+from fluxacct.database import paths
+from fluxacct.jobs import usage as job_usage
+from fluxacct import util
 
 LOGGER = logging.getLogger(__name__)
 
 
 def set_db_loc(args):
-    path = args.path if args.path else fluxacct.accounting.DB_PATH
+    path = args.path if args.path else paths.DB_PATH
 
     return path
 

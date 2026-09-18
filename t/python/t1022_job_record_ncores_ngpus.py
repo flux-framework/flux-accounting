@@ -15,10 +15,10 @@ import sqlite3
 import time
 import json
 
-from fluxacct.accounting import create_db as c
-from fluxacct.accounting import bank_subcommands as b
-from fluxacct.accounting import user_subcommands as u
-from fluxacct.accounting import jobs_table_subcommands as j
+from fluxacct.database import create as c
+from fluxacct.entities import associations as u
+from fluxacct.entities import banks as b
+from fluxacct.jobs import records as j
 
 
 class TestJobRecordResourceExtraction(unittest.TestCase):

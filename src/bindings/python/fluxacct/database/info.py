@@ -15,10 +15,10 @@ import json
 import math
 import time
 
-import fluxacct
-from fluxacct.accounting.util import with_cursor
-from fluxacct.accounting import formatter as fmt
-from fluxacct.accounting import sql_util as sql
+from fluxacct.database import schema
+from fluxacct.util import with_cursor
+from fluxacct.database import sql
+from fluxacct.formatting import formatters as fmt
 from flux.util import parse_fsd
 
 
@@ -468,9 +468,9 @@ def list_configs(conn, cursor, cols=None, json_fmt=False, format_string=""):
     List all of the key-value pairs in config_table.
     """
     # use all column names if none are passed in
-    cols = cols or fluxacct.accounting.CONFIG_TABLE
+    cols = cols or schema.CONFIG_TABLE
 
-    sql.validate_columns(cols, fluxacct.accounting.CONFIG_TABLE)
+    sql.validate_columns(cols, schema.CONFIG_TABLE)
     # construct SELECT statement
     select_stmt = f"SELECT {', '.join(cols)} FROM config_table"
     cursor.execute(select_stmt)

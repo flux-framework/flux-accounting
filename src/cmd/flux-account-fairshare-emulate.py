@@ -13,7 +13,7 @@ import argparse
 import json
 import sys
 
-from fluxacct.accounting import fairshare_emulator
+from fluxacct.policy import fairshare
 
 
 def main():
@@ -69,12 +69,12 @@ def main():
         sys.exit(1)
 
     try:
-        root = fairshare_emulator.parse_json_input(json_data)
+        root = fairshare.parse_json_input(json_data)
     except ValueError as exc:
         print(f"fairshare-emulate: ValueError: {exc}", file=sys.stderr)
         sys.exit(1)
 
-    calculator = fairshare_emulator.FairShareCalculator(root)
+    calculator = fairshare.FairShareCalculator(root)
     users = calculator.calculate()
 
     if args.parsable:
@@ -83,7 +83,7 @@ def main():
         format_string = args.format_string
 
     try:
-        output = fairshare_emulator.format_results(
+        output = fairshare.format_results(
             users, json_fmt=args.json, format_string=format_string
         )
         print(output)

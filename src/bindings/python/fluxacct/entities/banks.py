@@ -13,13 +13,13 @@ import sqlite3
 import os
 import pwd
 
-import fluxacct.accounting
-from fluxacct.accounting import user_subcommands as u
-from fluxacct.accounting import formatter as fmt
-from fluxacct.accounting import sql_util as sql
-from fluxacct.accounting import job_usage_calculation as jobs
-from fluxacct.accounting import util
-from fluxacct.accounting.util import with_cursor
+from fluxacct.database import schema
+from fluxacct.database import sql
+from fluxacct.entities import associations as u
+from fluxacct.jobs import usage as jobs
+from fluxacct.formatting import formatters as fmt
+from fluxacct import util
+from fluxacct.util import with_cursor
 
 
 ###############################################################
@@ -285,9 +285,9 @@ def view_bank(
         raise ValueError(f"-P/--parsable can only be passed with -t/--tree")
 
     # use all column names if none are passed in
-    cols = cols or fluxacct.accounting.BANK_TABLE
+    cols = cols or schema.BANK_TABLE
 
-    sql.validate_columns(cols, fluxacct.accounting.BANK_TABLE)
+    sql.validate_columns(cols, schema.BANK_TABLE)
     # construct SELECT statement
     select_stmt = f"SELECT {', '.join(cols)} FROM bank_table WHERE bank=?"
     cur.execute(select_stmt, (bank,))
@@ -341,6 +341,7 @@ def delete_bank(conn, cur, bank, force=False):
                     FROM association_table WHERE bank=?
                     """
                 for assoc_row in cur.execute(select_assoc_stmt, (bank,)):
+                    # pylint: disable=no-value-for-parameter
                     u.delete_user(
                         conn,
                         username=assoc_row["username"],
@@ -444,9 +445,9 @@ def list_banks(
             names should be used as placeholders.
     """
     # use all column names if none are passed in
-    cols = cols or fluxacct.accounting.BANK_TABLE
+    cols = cols or schema.BANK_TABLE
 
-    sql.validate_columns(cols, fluxacct.accounting.BANK_TABLE)
+    sql.validate_columns(cols, schema.BANK_TABLE)
     # construct SELECT statement
     select_stmt = f"SELECT {', '.join(cols)} FROM bank_table"
     if not inactive:

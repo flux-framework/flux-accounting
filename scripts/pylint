@@ -2,7 +2,8 @@
 
 pylint=$(command -v pylint3 pylint | head -1)
 if test -n "$pylint"; then
-    $pylint --rcfile=scripts/.pylintrc src/bindings/python/fluxacct/accounting/*.py
+    find src/bindings/python/fluxacct -type f -name "*.py" | sort \
+        | xargs $pylint --rcfile=scripts/.pylintrc
 
     # awk cmd copied from:
     # https://unix.stackexchange.com/questions/66097/find-all-files-with-a-python-shebang
