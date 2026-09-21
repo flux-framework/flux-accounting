@@ -58,6 +58,8 @@ fi
 # checks for packages
 PKG_CHECK_MODULES([JANSSON], [jansson >= 2.10], [], [])
 
+AC_ARG_ENABLE([docs], AS_HELP_STRING([--disable-docs], [disable building docs]))
+
 AS_IF([test "x$enable_docs" != "xno"], [
             AM_CHECK_PYMOD(sphinx,
                            [Version(sphinx.__version__) >= Version ('1.6.7')],
