@@ -1,13 +1,13 @@
-DB_DIR = "@X_LOCALSTATEDIR@/lib/flux/"
-DB_PATH = "@X_LOCALSTATEDIR@/lib/flux/FluxAccounting.db"
+###############################################################
+# Copyright 2026 Lawrence Livermore National Security, LLC
+# (c.f. AUTHORS, NOTICE.LLNS, COPYING)
+#
+# This file is part of the Flux resource manager framework.
+# For details, see https://github.com/flux-framework.
+#
+# SPDX-License-Identifier: LGPL-3.0
+###############################################################
 DB_SCHEMA_VERSION = 39
-
-PRIORITY_FACTORS = ["fairshare", "queue", "bank", "urgency"]
-FSHARE_WEIGHT_DEFAULT = 100000
-QUEUE_WEIGHT_DEFAULT = 10000
-BANK_WEIGHT_DEFAULT = 0
-URGENCY_WEIGHT_DEFAULT = 1000
-INTEGER_MAX = 2147483647
 
 # flux-accounting DB table column names
 ASSOCIATION_TABLE = [
@@ -78,40 +78,4 @@ JOB_USAGE_PER_ASSOC_TABLE = [
     "bank",
     "period",
     "value",
-]
-JOB_RECORD_FIELDS = [
-    "jobid",
-    "username",
-    "userid",
-    "t_submit",
-    "t_run",
-    "t_inactive",
-    "nnodes",
-    "project",
-    "bank",
-    "requested_duration",
-    "actual_duration",
-    "duration_delta",
-]
-JOB_RECORD_FLOAT_FIELDS = {
-    "t_submit",
-    "t_run",
-    "t_inactive",
-    "requested_duration",
-    "actual_duration",
-    "duration_delta",
-}
-
-__all__ = [
-    "DB_DIR",
-    "DB_PATH",
-    "DB_SCHEMA_VERSION",
-    "ASSOCIATION_TABLE",
-    "BANK_TABLE",
-    "QUEUE_TABLE",
-    "PROJECT_TABLE",
-    "PROJECT_USAGE_STATE_TABLE",
-    "JOBS_TABLE",
-    "PRIORITY_FACTOR_WEIGHTS_TABLE",
-    "CONFIG_TABLE",
 ]

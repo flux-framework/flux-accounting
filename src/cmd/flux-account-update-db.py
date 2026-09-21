@@ -19,15 +19,16 @@ import shutil
 
 from argparse import RawDescriptionHelpFormatter
 
-import fluxacct.accounting
-from fluxacct.accounting import create_db as c
-from fluxacct.accounting import util
+from fluxacct.database import create as c
+from fluxacct.database import paths, schema
+from fluxacct.policy import constants
+from fluxacct import util
 
 LOGGER = logging.getLogger(__name__)
 
 
 def set_db_loc(args):
-    path = args.old_db if args.old_db else fluxacct.accounting.DB_PATH
+    path = args.old_db if args.old_db else paths.DB_PATH
 
     return path
 
@@ -260,10 +261,10 @@ def init_priority_factor_table(cur):
         cur: the Cursor object used to interact with the database.
     """
     factors = [
-        ("fairshare", fluxacct.accounting.FSHARE_WEIGHT_DEFAULT),
-        ("queue", fluxacct.accounting.QUEUE_WEIGHT_DEFAULT),
-        ("bank", fluxacct.accounting.BANK_WEIGHT_DEFAULT),
-        ("urgency", fluxacct.accounting.URGENCY_WEIGHT_DEFAULT),
+        ("fairshare", constants.FSHARE_WEIGHT_DEFAULT),
+        ("queue", constants.QUEUE_WEIGHT_DEFAULT),
+        ("bank", constants.BANK_WEIGHT_DEFAULT),
+        ("urgency", constants.URGENCY_WEIGHT_DEFAULT),
     ]
 
     for factor, weight in factors:
@@ -400,12 +401,10 @@ def update_db(path, new_db):
             init_project_usage_state(old_cur)
 
             # update user_version for DB
-            old_cur.execute(
-                "PRAGMA user_version = %d" % (fluxacct.accounting.DB_SCHEMA_VERSION)
-            )
+            old_cur.execute("PRAGMA user_version = %d" % (schema.DB_SCHEMA_VERSION))
             LOGGER.info(
                 "updated database schema version to %d",
-                fluxacct.accounting.DB_SCHEMA_VERSION,
+                schema.DB_SCHEMA_VERSION,
             )
 
             # commit changes

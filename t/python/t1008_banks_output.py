@@ -15,10 +15,10 @@ import sqlite3
 import textwrap
 import time
 
-import fluxacct.accounting
-from fluxacct.accounting import create_db as c
-from fluxacct.accounting import bank_subcommands as b
-from fluxacct.accounting import formatter as fmt
+from fluxacct.database import create as c
+from fluxacct.database import schema
+from fluxacct.entities import banks as b
+from fluxacct.formatting import formatters as fmt
 
 
 class TestAccountingCLI(unittest.TestCase):
@@ -49,7 +49,7 @@ class TestAccountingCLI(unittest.TestCase):
         columns = cur.fetchall()
         bank_table = [column[1] for column in columns]
 
-        self.assertEqual(fluxacct.accounting.BANK_TABLE, bank_table)
+        self.assertEqual(schema.BANK_TABLE, bank_table)
 
     # test JSON output for listing all banks
     def test_list_banks_default(self):

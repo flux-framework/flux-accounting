@@ -18,19 +18,18 @@ import logging
 
 import flux
 import flux.constants
-import fluxacct.accounting
-
 from flux.constants import FLUX_MSGTYPE_REQUEST
-from fluxacct.accounting import user_subcommands as u
-from fluxacct.accounting import bank_subcommands as b
-from fluxacct.accounting import job_usage_calculation as jobs
-from fluxacct.accounting import queue_subcommands as qu
-from fluxacct.accounting import project_subcommands as p
-from fluxacct.accounting import jobs_table_subcommands as j
-from fluxacct.accounting import db_info_subcommands as d
-from fluxacct.accounting import priorities as prio
-from fluxacct.accounting import visuals as vis
-from fluxacct.accounting import sql_util as sql
+from fluxacct.database import paths, schema
+from fluxacct.database import info as d
+from fluxacct.database import sql
+from fluxacct.entities import associations as u
+from fluxacct.entities import banks as b
+from fluxacct.entities import projects as p
+from fluxacct.entities import queues as qu
+from fluxacct.jobs import records as j
+from fluxacct.jobs import usage as jobs
+from fluxacct.policy import priorities as prio
+from fluxacct.formatting import visuals as vis
 
 
 def establish_sqlite_connection(path):
@@ -958,11 +957,11 @@ def main():
 
     # try to connect to flux-accounting database; if connection fails, exit
     # flux-accounting service
-    db_path = args.path if args.path else fluxacct.accounting.DB_PATH
+    db_path = args.path if args.path else paths.DB_PATH
     conn = establish_sqlite_connection(db_path)
 
     # check version of database; if not up to date, output message and exit
-    if sql.db_version(conn) < fluxacct.accounting.DB_SCHEMA_VERSION:
+    if sql.db_version(conn) < schema.DB_SCHEMA_VERSION:
         LOGGER.error(
             "flux-accounting database out of date; please update DB with "
             "'flux account-update-db' before running commands"

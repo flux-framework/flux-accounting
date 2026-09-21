@@ -15,11 +15,11 @@ import sqlite3
 import time
 import unittest
 
-from fluxacct.accounting import bank_subcommands as b
-from fluxacct.accounting import create_db as c
-from fluxacct.accounting import job_usage_calculation as jobs
-from fluxacct.accounting import project_subcommands as p
-from fluxacct.accounting import user_subcommands as u
+from fluxacct.database import create as c
+from fluxacct.entities import associations as u
+from fluxacct.entities import banks as b
+from fluxacct.entities import projects as p
+from fluxacct.jobs import usage as j
 
 
 def insert_job(
@@ -98,7 +98,7 @@ class TestProjectUsage(unittest.TestCase):
         insert_job(cls.conn, 3, "*", 10, 40)
 
     def test_01_update_usage_increments_project_usage(self):
-        jobs.update_job_usage(self.conn)
+        j.update_job_usage(self.conn)
 
         rows = self.conn.execute("SELECT project, usage FROM project_table").fetchall()
         usage = {row["project"]: row["usage"] for row in rows}
@@ -108,7 +108,7 @@ class TestProjectUsage(unittest.TestCase):
         self.assertEqual(usage["unused"], 0.0)
 
     def test_02_update_usage_does_not_double_count_project_usage(self):
-        jobs.update_job_usage(self.conn)
+        j.update_job_usage(self.conn)
 
         rows = self.conn.execute("SELECT project, usage FROM project_table").fetchall()
         usage = {row["project"]: row["usage"] for row in rows}
@@ -154,20 +154,20 @@ class TestRebuildProjectUsage(unittest.TestCase):
         self.conn.execute("UPDATE project_table SET usage=7.0 WHERE project='P1'")
         self.conn.commit()
 
-        jobs.rebuild_project_usage(self.conn)
+        j.rebuild_project_usage(self.conn)
         self.assertEqual(self.project_usage()["P1"], 40.0)
         state = self.conn.execute(
             "SELECT last_job_timestamp FROM project_usage_state WHERE project='P1'"
         ).fetchone()[0]
         self.assertEqual(state, 20.0)
 
-        jobs.update_job_usage(self.conn)
+        j.update_job_usage(self.conn)
         self.assertEqual(self.project_usage()["P1"], 40.0)
-        jobs.rebuild_project_usage(self.conn)
+        j.rebuild_project_usage(self.conn)
         self.assertEqual(self.project_usage()["P1"], 40.0)
 
         insert_job(self.conn, 2, "P1", 30, 40)
-        jobs.update_job_usage(self.conn)
+        j.update_job_usage(self.conn)
         self.assertEqual(self.project_usage()["P1"], 55.0)
         state = self.conn.execute(
             "SELECT last_job_timestamp FROM project_usage_state WHERE project='P1'"
@@ -176,14 +176,14 @@ class TestRebuildProjectUsage(unittest.TestCase):
 
     def test_rebuild_includes_jobs_ignored_by_regular_updates(self):
         insert_job(self.conn, 1, "P1", 10, 20, ncores=2, ngpus=1)
-        jobs.update_job_usage(self.conn)
+        j.update_job_usage(self.conn)
 
         self.conn.execute("UPDATE bank_table SET ignore_older_than=100 WHERE bank='A'")
         self.conn.execute("UPDATE project_table SET usage=999.0")
         self.conn.commit()
         insert_job(self.conn, 2, "P2", 30, 40, ncores=4)
 
-        jobs.rebuild_project_usage(self.conn)
+        j.rebuild_project_usage(self.conn)
         usage = self.project_usage()
         self.assertEqual(usage["P1"], 40.0)
         self.assertEqual(usage["P2"], 30.0)
@@ -194,8 +194,8 @@ class TestRebuildProjectUsage(unittest.TestCase):
         insert_job(self.conn, 2, "removed", 10, 20)
         insert_job(self.conn, 3, "P1", 10, 20, resources="invalid")
 
-        with self.assertLogs(jobs.LOGGER, level="WARNING") as logs:
-            skipped = jobs.rebuild_project_usage(self.conn)
+        with self.assertLogs(j.LOGGER, level="WARNING") as logs:
+            skipped = j.rebuild_project_usage(self.conn)
 
         self.assertEqual(skipped["missing_project"], 1)
         self.assertEqual(skipped["invalid_resources"], 1)
@@ -216,7 +216,7 @@ class TestRebuildProjectUsage(unittest.TestCase):
         self.conn.commit()
 
         with self.assertRaises(sqlite3.IntegrityError):
-            jobs.rebuild_project_usage(self.conn)
+            j.rebuild_project_usage(self.conn)
         self.assertEqual(self.project_usage()["P1"], 7.0)
 
 

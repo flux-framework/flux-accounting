@@ -14,8 +14,8 @@ import os
 import sqlite3
 import time
 
-from fluxacct.accounting import create_db as c
-from fluxacct.accounting import queue_subcommands as q
+from fluxacct.database import create as c
+from fluxacct.entities import queues as q
 
 
 class TestAccountingCLI(unittest.TestCase):

@@ -15,6 +15,8 @@ import logging
 import functools
 import contextlib
 
+import fluxacct
+
 try:
     import tomllib  # novermin
 except ModuleNotFoundError:
@@ -27,7 +29,8 @@ import flux.util
 from flux.constants import FLUX_USERID_UNKNOWN
 from flux.util import parse_datetime
 from flux.job.JobID import JobID
-import fluxacct.accounting
+
+INTEGER_MAX = 2147483647
 
 
 def load_toml(path):
@@ -120,7 +123,7 @@ def format_value(val):
     Args:
         val: the value being evaluated
     """
-    if val == fluxacct.accounting.INTEGER_MAX:
+    if val == INTEGER_MAX:
         return "unlimited"
     return val
 

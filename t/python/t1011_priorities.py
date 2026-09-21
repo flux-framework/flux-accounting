@@ -15,8 +15,8 @@ import sqlite3
 import textwrap
 import time
 
-from fluxacct.accounting import create_db as c
-from fluxacct.accounting import priorities as prio
+from fluxacct.database import create as c
+from fluxacct.policy import priorities as prio
 
 
 class TestAccountingCLI(unittest.TestCase):

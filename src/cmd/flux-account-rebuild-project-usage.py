@@ -15,15 +15,15 @@ import os
 import sqlite3
 import sys
 
-import fluxacct.accounting
-from fluxacct.accounting import job_usage_calculation as job_usage
-from fluxacct.accounting import util
+from fluxacct.database import paths
+from fluxacct.jobs import usage
+from fluxacct import util
 
 LOGGER = logging.getLogger(__name__)
 
 
 def set_db_loc(args):
-    return args.path if args.path else fluxacct.accounting.DB_PATH
+    return args.path if args.path else paths.DB_PATH
 
 
 def est_sqlite_conn(path):
@@ -73,7 +73,7 @@ def main():
         return 1
 
     try:
-        job_usage.rebuild_project_usage(conn)
+        usage.rebuild_project_usage(conn)
     except Exception as exc:
         LOGGER.error("unable to rebuild project usage: %s", exc)
         return 1

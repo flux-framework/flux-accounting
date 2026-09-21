@@ -11,10 +11,9 @@
 import sqlite3
 import sys
 
-import fluxacct.accounting
-from fluxacct.accounting import user_subcommands as u
-from fluxacct.accounting import bank_subcommands as b
-from fluxacct.accounting import create_db as c
+from fluxacct.database import create as c
+from fluxacct.entities import associations as u
+from fluxacct.entities import banks as b
 
 
 def edit_usage_col(conn, username, value):
