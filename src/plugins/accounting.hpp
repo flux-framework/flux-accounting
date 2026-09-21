@@ -232,6 +232,32 @@ bool check_map_for_dne_only (std::map<int, std::map<std::string, Association>>
                                &users,
                              std::map<int, std::string> &users_def_bank);
 
+bool under_queue_total_max_nodes (
+                        const Job &job,
+                        const std::string &queue,
+                        const std::map<std::string, Queue> &queues,
+                        const std::map<std::string, int> &queue_total_nodes);
+
+bool under_queue_total_max_nodes (
+                        const Job &job,
+                        const std::string &queue,
+                        const std::map<std::string, Queue> &queues,
+                        const std::map<std::string, int> &queue_total_nodes,
+                        int pending);
+
+bool under_queue_total_max_cores (
+                        const Job &job,
+                        const std::string &queue,
+                        const std::map<std::string, Queue> &queues,
+                        const std::map<std::string, int> &queue_total_cores);
+
+bool under_queue_total_max_cores (
+                        const Job &job,
+                        const std::string &queue,
+                        const std::map<std::string, Queue> &queues,
+                        const std::map<std::string, int> &queue_total_cores,
+                        int pending);
+
 // validate a potentially passed-in project by an association
 int get_project_info (const char *project,
                       std::vector<std::string> &permissible_projects,

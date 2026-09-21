@@ -320,6 +320,77 @@ bool check_map_for_dne_only (std::map<int, std::map<std::string, Association>>
 }
 
 
+static int get_queue_total_usage (const std::string &queue,
+                                  const std::map<std::string, int> &usage)
+{
+    auto uit = usage.find (queue);
+    if (uit == usage.end ())
+        return 0;
+
+    return uit->second;
+}
+
+
+bool under_queue_total_max_nodes (
+                        const Job &job,
+                        const std::string &queue,
+                        const std::map<std::string, Queue> &queues,
+                        const std::map<std::string, int> &queue_total_nodes)
+{
+    return under_queue_total_max_nodes (job,
+                                        queue,
+                                        queues,
+                                        queue_total_nodes,
+                                        0);
+}
+
+
+bool under_queue_total_max_nodes (
+                        const Job &job,
+                        const std::string &queue,
+                        const std::map<std::string, Queue> &queues,
+                        const std::map<std::string, int> &queue_total_nodes,
+                        int pending)
+{
+    auto qit = queues.find (queue);
+    if (qit == queues.end ())
+        return true;
+
+    return (get_queue_total_usage (queue, queue_total_nodes)
+            + job.nnodes () + pending) <= qit->second.max_nodes;
+}
+
+
+bool under_queue_total_max_cores (
+                        const Job &job,
+                        const std::string &queue,
+                        const std::map<std::string, Queue> &queues,
+                        const std::map<std::string, int> &queue_total_cores)
+{
+    return under_queue_total_max_cores (job,
+                                        queue,
+                                        queues,
+                                        queue_total_cores,
+                                        0);
+}
+
+
+bool under_queue_total_max_cores (
+                        const Job &job,
+                        const std::string &queue,
+                        const std::map<std::string, Queue> &queues,
+                        const std::map<std::string, int> &queue_total_cores,
+                        int pending)
+{
+    auto qit = queues.find (queue);
+    if (qit == queues.end ())
+        return true;
+
+    return (get_queue_total_usage (queue, queue_total_cores)
+            + job.ncores () + pending) <= qit->second.max_cores;
+}
+
+
 int get_project_info (const char *project,
                       std::vector<std::string> &permissible_projects,
                       std::vector<std::string> projects)
