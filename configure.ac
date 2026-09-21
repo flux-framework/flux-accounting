@@ -151,6 +151,7 @@ AC_CONFIG_FILES([Makefile
   src/bindings/python/fluxacct/database/paths.py
   src/bindings/python/fluxacct/entities/Makefile
   src/bindings/python/fluxacct/jobs/Makefile
+  src/bindings/python/fluxacct/jobs/calculators/Makefile
   src/bindings/python/fluxacct/policy/Makefile
   src/bindings/python/fluxacct/formatting/Makefile
   src/plugins/Makefile

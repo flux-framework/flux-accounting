@@ -16,7 +16,7 @@ import pwd
 from fluxacct.database import schema
 from fluxacct.database import sql
 from fluxacct.entities import associations as u
-from fluxacct.jobs import usage as jobs
+from fluxacct.jobs.calculators.periodic import PeriodicUsageCalculator
 from fluxacct.formatting import formatters as fmt
 from fluxacct import util
 from fluxacct.util import with_cursor
@@ -362,7 +362,7 @@ def delete_bank(conn, cur, bank, force=False):
             s_root_bank = "SELECT bank FROM bank_table WHERE parent_bank=''"
             cur.execute(s_root_bank)
             root_bank = cur.fetchone()[0]
-            jobs.calc_parent_bank_usage(conn, cur, root_bank)
+            PeriodicUsageCalculator(conn).calc_bank_usage_tree(root_bank)
     # if an exception occurs while recursively deleting
     # the parent banks, then throw the exception and roll
     # back the changes made to the DB
