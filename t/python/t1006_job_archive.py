@@ -25,6 +25,7 @@ from fluxacct.entities import associations as u
 from fluxacct.entities import banks as b
 from fluxacct.jobs import records as j
 from fluxacct.jobs import usage as jobs
+from fluxacct.jobs.calculators.periodic import PeriodicUsageCalculator
 
 # create a tuple-compatible ctruct like pwd.struct_passwd
 struct_passwd = namedtuple(
@@ -291,8 +292,7 @@ class TestAccountingCLI(unittest.TestCase):
         acct_conn.execute(update_stmt)
         acct_conn.commit()
 
-        usage_factor = jobs.calc_usage_factor(
-            acct_conn,
+        usage_factor = PeriodicUsageCalculator(acct_conn).calc_usage_factor(
             pdhl=1,
             user=user,
             bank=bank,
@@ -334,8 +334,7 @@ class TestAccountingCLI(unittest.TestCase):
         acct_conn.execute(update_stmt)
         acct_conn.commit()
 
-        usage_factor = jobs.calc_usage_factor(
-            acct_conn,
+        usage_factor = PeriodicUsageCalculator(acct_conn).calc_usage_factor(
             pdhl=1,
             user=user,
             bank=bank,
@@ -360,8 +359,7 @@ class TestAccountingCLI(unittest.TestCase):
 
         self.assertEqual(ts_old, 0.0)
 
-        usage_factor = jobs.calc_usage_factor(
-            acct_conn,
+        PeriodicUsageCalculator(acct_conn).calc_usage_factor(
             pdhl=1,
             user="1003",
             bank="D",
@@ -443,8 +441,7 @@ class TestAccountingCLI(unittest.TestCase):
             j.get_jobs(acct_conn, user="1001", bank="C", after_start_time=time.time())
         )
 
-        usage_factor = jobs.calc_usage_factor(
-            acct_conn,
+        usage_factor = PeriodicUsageCalculator(acct_conn).calc_usage_factor(
             pdhl=1,
             user=user,
             bank=bank,
@@ -465,8 +462,7 @@ class TestAccountingCLI(unittest.TestCase):
         bank = "C"
         userid = 1001
 
-        usage_factor = jobs.calc_usage_factor(
-            acct_conn,
+        usage_factor = PeriodicUsageCalculator(acct_conn).calc_usage_factor(
             pdhl=1,
             user=user,
             bank=bank,
@@ -498,7 +494,7 @@ class TestAccountingCLI(unittest.TestCase):
         cur.execute(s_end_hl)
         old_hl = cur.fetchone()[0]
 
-        jobs.check_end_hl(acct_conn, pdhl=1)
+        PeriodicUsageCalculator(acct_conn).check_end_hl(pdhl=1)
 
         cur.execute(s_end_hl)
         new_hl = cur.fetchone()[0]

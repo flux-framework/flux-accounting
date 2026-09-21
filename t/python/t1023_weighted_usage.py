@@ -26,6 +26,7 @@ from fluxacct.entities import associations as u
 from fluxacct.entities import banks as b
 from fluxacct.jobs import records as j
 from fluxacct.jobs import usage as jobs
+from fluxacct.jobs.calculators.periodic import PeriodicUsageCalculator
 
 # create a tuple-compatible struct like pwd.struct_passwd
 struct_passwd = namedtuple(
@@ -201,8 +202,9 @@ class TestWeightedUsage(unittest.TestCase):
     def test_05_get_usage_weights_helper(self):
         d.edit_config(conn, ["node_weight=2.0", "core_weight=0.1", "gpu_weight=3.5"])
 
-        cur = conn.cursor()
-        node_weight, core_weight, gpu_weight = jobs.get_usage_weights(cur)
+        node_weight, core_weight, gpu_weight = PeriodicUsageCalculator(
+            conn
+        ).get_usage_weights()
         self.assertEqual(node_weight, 2.0)
         self.assertEqual(core_weight, 0.1)
         self.assertEqual(gpu_weight, 3.5)
