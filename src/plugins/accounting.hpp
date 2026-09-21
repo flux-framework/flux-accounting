@@ -65,6 +65,8 @@ enum priority_weight_default {
 #define D_QUEUE_MSJ  "max-sched-jobs-queue-limit"
 #define D_QUEUE_MSN  "max-sched-nodes-queue-limit"
 #define D_QUEUE_MSC  "max-sched-cores-queue-limit"
+#define D_QUEUE_TMN "max-nodes-total-queue-limit"
+#define D_QUEUE_TMC "max-cores-total-queue-limit"
 
 // error messages for flux-accounting-specific validation messages
 #define MSG_INVALID_QUEUE \
