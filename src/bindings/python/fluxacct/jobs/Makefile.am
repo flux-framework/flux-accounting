@@ -1,3 +1,5 @@
+SUBDIRS = calculators
+
 jobspydir = $(fluxpydir)/jobs
 
 jobspy_PYTHON = \
