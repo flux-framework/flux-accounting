@@ -65,6 +65,8 @@ enum priority_weight_default {
 #define D_QUEUE_MSJ  "max-sched-jobs-queue-limit"
 #define D_QUEUE_MSN  "max-sched-nodes-queue-limit"
 #define D_QUEUE_MSC  "max-sched-cores-queue-limit"
+#define D_QUEUE_TMN "max-nodes-total-queue-limit"
+#define D_QUEUE_TMC "max-cores-total-queue-limit"
 
 // error messages for flux-accounting-specific validation messages
 #define MSG_INVALID_QUEUE \
@@ -93,6 +95,8 @@ public:
     int max_sched_jobs = 2147483647;
     int max_sched_nodes_per_assoc = std::numeric_limits<int>::max ();
     int max_sched_cores_per_assoc = std::numeric_limits<int>::max ();
+    int max_nodes = std::numeric_limits<int>::max ();
+    int max_cores = std::numeric_limits<int>::max ();
 };
 
 // a class to track an association's usage in a particular queue
@@ -229,6 +233,32 @@ int64_t calc_priority (double fairshare,
 bool check_map_for_dne_only (std::map<int, std::map<std::string, Association>>
                                &users,
                              std::map<int, std::string> &users_def_bank);
+
+bool under_queue_total_max_nodes (
+                        const Job &job,
+                        const std::string &queue,
+                        const std::map<std::string, Queue> &queues,
+                        const std::map<std::string, int> &queue_total_nodes);
+
+bool under_queue_total_max_nodes (
+                        const Job &job,
+                        const std::string &queue,
+                        const std::map<std::string, Queue> &queues,
+                        const std::map<std::string, int> &queue_total_nodes,
+                        int pending);
+
+bool under_queue_total_max_cores (
+                        const Job &job,
+                        const std::string &queue,
+                        const std::map<std::string, Queue> &queues,
+                        const std::map<std::string, int> &queue_total_cores);
+
+bool under_queue_total_max_cores (
+                        const Job &job,
+                        const std::string &queue,
+                        const std::map<std::string, Queue> &queues,
+                        const std::map<std::string, int> &queue_total_cores,
+                        int pending);
 
 // validate a potentially passed-in project by an association
 int get_project_info (const char *project,
