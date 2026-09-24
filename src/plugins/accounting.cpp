@@ -410,6 +410,24 @@ bool Association::under_max_resources (const Job &job)
     return under_max_resources;
 }
 
+void Association::increment_resources (const Job &job, const std::string &queue)
+{
+    cur_nodes += job.nnodes ();
+    cur_cores += job.ncores ();
+
+    if (!queue.empty ())
+        queue_usage[queue].cur_nodes += job.nnodes ();
+}
+
+void Association::decrement_resources (const Job &job, const std::string &queue)
+{
+    cur_nodes -= job.nnodes ();
+    cur_cores -= job.ncores ();
+
+    if (!queue.empty ())
+        queue_usage[queue].cur_nodes -= job.nnodes ();
+}
+
 bool Association::under_queue_max_resources (
                                     const Job &job,
                                     const std::string &queue,

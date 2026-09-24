@@ -33,8 +33,6 @@ extern "C" {
 
 // custom Association class file
 #include "accounting.hpp"
-// custom job resource counting file
-#include "jj.hpp"
 // custom Job class file
 #include "job.hpp"
 
@@ -250,58 +248,6 @@ static void add_special_association (flux_plugin_t *p, flux_t *h, int userid)
                                  a,
                                  NULL) < 0)
         flux_log_error (h, "flux_jobtap_job_aux_set");
-}
-
-
-/*
- * Using the jobspec from a job, increment the cur_nodes and cur_cores counts
- * for an association.
- */
-static int increment_resources (Association *b,
-                                const std::string &queue,
-                                json_t *jobspec)
-{
-    jj_counts counts;
-
-    if (jj_get_counts_json (jobspec, counts) < 0)
-        return -1;
-
-    // after a successful parse the node and core keys are guaranteed to
-    // be present in the counts map with counts of at least 1
-    b->cur_nodes = b->cur_nodes + counts.get ("node");
-    b->cur_cores = b->cur_cores + counts.get ("core");
-
-    // increment cur_nodes for queue
-    if (!queue.empty ())
-        b->queue_usage[queue].cur_nodes = b->queue_usage[queue].cur_nodes +
-                                          counts.get ("node");
-
-    return 0;
-}
-
-
-/*
- * Using the jobspec from a job, decrement the cur_nodes and cur_cores counts
- * for an association.
- */
-static int decrement_resources (Association *b,
-                                const std::string &queue,
-                                json_t *jobspec)
-{
-    jj_counts counts;
-
-    if (jj_get_counts_json (jobspec, counts) < 0)
-        return -1;
-
-    b->cur_nodes = b->cur_nodes - counts.get ("node");
-    b->cur_cores = b->cur_cores - counts.get ("core");
-
-    // decrement cur_nodes for queue
-    if (!queue.empty ())
-        b->queue_usage[queue].cur_nodes = b->queue_usage[queue].cur_nodes -
-                                          counts.get ("node");
-
-    return 0;
 }
 
 
@@ -1507,20 +1453,7 @@ static int new_cb (flux_plugin_t *p,
             // queue-specific running jobs for this association
             b->queue_usage[std::string (queue)].cur_run_jobs++;
         }
-        if (jobspec == NULL) {
-            flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
-                                         "mf_priority", 0,
-                                         "job.new: failed to unpack jobspec");
-            return -1;
-        } else {
-            if (increment_resources (b, queue_str, jobspec) < 0) {
-                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
-                                             "mf_priority", 0,
-                                             "job.new: failed to increment "
-                                             "resource count");
-                return -1;
-            }
-        }
+        b->increment_resources (*j, queue_str);
     }
     if (state == FLUX_JOB_STATE_SCHED) {
         // this job was in SCHED state; increment the association's sched
@@ -1749,7 +1682,6 @@ static int run_cb (flux_plugin_t *p,
 {
     int userid;
     Association *b;
-    json_t *jobspec = NULL;
     char *queue = NULL;
     std::string queue_str;
     Job *j;
@@ -1757,8 +1689,7 @@ static int run_cb (flux_plugin_t *p,
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:o, s{s{s{s?s}}}}",
-                                "jobspec", &jobspec,
+                                "{s{s{s{s?s}}}}",
                                 "jobspec", "attributes", "system",
                                 "queue", &queue) < 0) {
         flux_log (h,
@@ -1804,25 +1735,7 @@ static int run_cb (flux_plugin_t *p,
 
     // increment the user's current running jobs count
     b->cur_run_jobs++;
-    if (jobspec == NULL) {
-        flux_jobtap_raise_exception (p,
-                                     FLUX_JOBTAP_CURRENT_JOB,
-                                     "mf_priority",
-                                     0,
-                                     "job.state.run: failed to unpack " \
-                                     "jobspec");
-        return -1;
-    } else {
-        if (increment_resources (b, queue_str, jobspec) < 0) {
-            flux_jobtap_raise_exception (p,
-                                         FLUX_JOBTAP_CURRENT_JOB,
-                                         "mf_priority",
-                                         0,
-                                         "job.state.run: failed to increment "
-                                         "resource count");
-            return -1;
-        }
-    }
+    b->increment_resources (*j, queue_str);
 
     // decrement the association's current SCHED jobs count
     b->cur_sched_jobs--;
@@ -2056,7 +1969,6 @@ static int inactive_cb (flux_plugin_t *p,
 {
     int userid;
     Association *b;
-    json_t *jobspec = NULL;
     char *queue = NULL;
     std::string queue_str;
     flux_jobid_t jobid;
@@ -2065,10 +1977,9 @@ static int inactive_cb (flux_plugin_t *p,
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:I, s:i, s:o, s{s{s{s?s}}}}",
+                                "{s:I, s:i, s{s{s{s?s}}}}",
                                 "id", &jobid,
                                 "userid", &userid,
-                                "jobspec", &jobspec,
                                 "jobspec", "attributes", "system",
                                 "queue", &queue) < 0) {
         flux_log (h,
@@ -2141,25 +2052,7 @@ static int inactive_cb (flux_plugin_t *p,
     // this job was running, so decrement the current running jobs count
     // and the resources count and look to see if any held jobs can be released
     b->cur_run_jobs--;
-    if (jobspec == NULL) {
-        flux_jobtap_raise_exception (p,
-                                     FLUX_JOBTAP_CURRENT_JOB,
-                                     "mf_priority",
-                                     0,
-                                     "job.state.inactive: failed to " \
-                                     "unpack jobspec");
-        return -1;
-    } else {
-        if (decrement_resources (b, queue_str, jobspec) < 0) {
-            flux_jobtap_raise_exception (p,
-                                         FLUX_JOBTAP_CURRENT_JOB,
-                                         "mf_priority",
-                                         0,
-                                         "job.state.inactive: failed to " \
-                                         "decrement resource count");
-            return -1;
-        }
-    }
+    b->decrement_resources (*j, queue_str);
 
     if (!queue_str.empty ()) {
         if (b->queue_usage[queue_str].cur_run_jobs > 0)

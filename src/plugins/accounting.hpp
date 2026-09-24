@@ -154,6 +154,8 @@ public:
                                   const Job &job,
                                   const std::string &queue,
                                   const std::map<std::string, Queue> &queues);
+    void increment_resources (const Job &job, const std::string &queue);
+    void decrement_resources (const Job &job, const std::string &queue);
     bool under_max_sched_jobs ();
     bool under_max_sched_jobs (int pending);
     bool under_queue_max_sched_jobs (const std::string &queue,
