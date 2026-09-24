@@ -86,6 +86,10 @@ test_expect_success 'job1 is counted in SCHED for bronze' '
 	jq -e \
 		".mf_priority_map[] |
 		 select(.userid == 50001) |
+		 .banks[0].queue_usage[\"bronze\"].cur_nodes == 2" <query.json &&
+	jq -e \
+		".mf_priority_map[] |
+		 select(.userid == 50001) |
 		 .banks[0].queue_usage[\"bronze\"].cur_sched_nodes == 2" <query.json
 '
 

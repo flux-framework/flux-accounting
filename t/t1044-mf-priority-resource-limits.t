@@ -1,6 +1,6 @@
 #!/bin/bash
 
-test_description='track and enforce resource limits across running jobs per-association in priority plugin'
+test_description='track and enforce reserved resource limits per-association in priority plugin'
 
 . `dirname $0`/sharness.sh
 
@@ -45,7 +45,11 @@ test_expect_success 'add an association, configure limits' '
 	flux account add-user \
 		--username=user1 --userid=5001 --bank=A \
 		--max-active-jobs=1000 --max-running-jobs=3 \
-		--max-nodes=2 --max-cores=4
+		--max-nodes=2 --max-cores=4 &&
+	flux account add-user \
+		--username=user2 --userid=5002 --bank=A \
+		--max-active-jobs=1000 --max-running-jobs=3 \
+		--max-nodes=100 --max-cores=100
 '
 
 test_expect_success 'send flux-accounting DB information to the plugin' '
@@ -86,6 +90,34 @@ test_expect_success 'submit a job that takes up one core' '
 test_expect_success 'cancel job; check resource counts' '
 	flux cancel ${job3} &&
 	flux job wait-event -f json ${job3} clean &&
+	flux jobtap query mf_priority.so > query.json &&
+	test_debug "jq -S . <query.json" &&
+	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].cur_nodes == 0" <query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].cur_cores == 0" <query.json
+'
+
+# Resource reservations begin in SCHED. A job waiting for physical resources
+# must still consume the association resource limit before it ever runs.
+test_expect_success 'SCHED job consumes max resources before RUN' '
+	filler=$(flux python ${SUBMIT_AS} 5002 -N4 sleep 60) &&
+	flux job wait-event -vt 10 ${filler} alloc &&
+	job1=$(flux python ${SUBMIT_AS} 5001 -N2 sleep 60) &&
+	flux job wait-event -vt 10 ${job1} priority &&
+	flux jobtap query mf_priority.so > query.json &&
+	test_debug "jq -S . <query.json" &&
+	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].cur_nodes == 2" <query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].cur_cores == 2" <query.json &&
+	job2=$(flux python ${SUBMIT_AS} 5001 -N1 sleep 60) &&
+	flux job wait-event -vt 10 \
+		--match-context=description="max-resources-user-limit" \
+		${job2} dependency-add
+'
+
+test_expect_success 'cancel SCHED resource reservation jobs' '
+	flux cancel ${filler} ${job1} ${job2} &&
+	flux job wait-event -vt 10 ${filler} clean &&
+	flux job wait-event -vt 10 ${job1} clean &&
+	flux job wait-event -vt 10 ${job2} clean &&
 	flux jobtap query mf_priority.so > query.json &&
 	test_debug "jq -S . <query.json" &&
 	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].cur_nodes == 0" <query.json &&
