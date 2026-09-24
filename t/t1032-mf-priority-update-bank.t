@@ -10,6 +10,19 @@ MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
 SUBMIT_AS=${SHARNESS_TEST_SRCDIR}/scripts/submit_as.py
 DB_PATH=$(pwd)/FluxAccountingTest.db
 
+wait_mf_priority_query() {
+	query=$1
+	i=0
+	while test $i -lt 50; do
+		flux jobtap query mf_priority.so > query.json &&
+		jq -e "${query}" <query.json >/dev/null && return 0
+		sleep 0.1
+		i=$((i + 1))
+	done
+	test_debug "jq -S . <query.json"
+	return 1
+}
+
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
 test_under_flux 1 job -o,--config-path=$(pwd)/conf.d -Slog-stderr-level=1
 
@@ -37,7 +50,8 @@ test_expect_success 'add some banks to the DB' '
 	flux account add-bank root 1 &&
 	flux account add-bank --parent-bank=root A 1 &&
 	flux account add-bank --parent-bank=root B 1 &&
-	flux account add-bank --parent-bank=root C 1
+	flux account add-bank --parent-bank=root C 1 &&
+	flux account add-bank --parent-bank=root D 1
 '
 
 test_expect_success 'add a user to the DB' '
@@ -51,6 +65,25 @@ test_expect_success 'add a user to the DB' '
 		--bank=B \
 		--max-active-jobs=3 \
 		--max-running-jobs=2
+'
+
+test_expect_success 'add a user for SCHED reservation updates' '
+	flux account add-user \
+		--username=user2 \
+		--userid=5002 \
+		--bank=A &&
+	flux account add-user \
+		--username=user2 \
+		--userid=5002 \
+		--bank=B &&
+	flux account add-user \
+		--username=user2 \
+		--userid=5002 \
+		--bank=D \
+		--max-active-jobs=1000 \
+		--max-running-jobs=1000 \
+		--max-nodes=1 \
+		--max-cores=1
 '
 
 test_expect_success 'send flux-accounting DB information to the plugin' '
@@ -131,6 +164,71 @@ test_expect_success 'check that plugin also sees the job update' '
 	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[0].cur_active_jobs == 1" <query.json &&
 	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[1].bank_name == \"B\"" <query.json &&
 	jq -e ".mf_priority_map[] | select(.userid == 5001) | .banks[1].cur_active_jobs == 0" <query.json
+'
+
+test_expect_success 'cancel updated pending job' '
+	flux cancel ${job6} &&
+	flux job wait-event -t 10 ${job6} clean
+'
+
+test_expect_success 'submit SCHED job for bank reservation update' '
+	filler=$(flux python ${SUBMIT_AS} 5002 --setattr=bank=D -N1 sleep 60) &&
+	flux job wait-event -t 10 ${filler} alloc &&
+	sched_bank_job=$(flux python ${SUBMIT_AS} 5002 \
+		--setattr=bank=A -N1 sleep 60) &&
+	flux job wait-event -t 10 ${sched_bank_job} priority
+'
+
+test_expect_success 'bank update transfers SCHED reservation counters' '
+	flux update ${sched_bank_job} bank=B &&
+	flux job wait-event -t 10 ${sched_bank_job} priority &&
+	wait_mf_priority_query \
+		".mf_priority_map[] |
+		 select(.userid == 5002) |
+		 ([.banks[] |
+		   select(.bank_name == \"A\") |
+		   .cur_nodes][0] == 0 and
+		  [.banks[] |
+		   select(.bank_name == \"A\") |
+		   .cur_sched_jobs][0] == 0 and
+		  [.banks[] |
+		   select(.bank_name == \"B\") |
+		   .cur_nodes][0] == 1 and
+		  [.banks[] |
+		   select(.bank_name == \"B\") |
+		   .cur_sched_jobs][0] == 1)"
+'
+
+test_expect_success 'bank update rejects target without resource headroom' '
+	test_must_fail \
+		flux update ${sched_bank_job} bank=D > max_resources_bank.out 2>&1 &&
+	test_debug "cat max_resources_bank.out" &&
+	grep "new bank is already at max-resources limit" max_resources_bank.out
+'
+
+test_expect_success 'cancel SCHED bank reservation update jobs' '
+	flux cancel ${sched_bank_job} &&
+	flux job wait-event -t 10 ${sched_bank_job} clean &&
+	wait_mf_priority_query \
+		".mf_priority_map[] |
+		 select(.userid == 5002) |
+		 ([.banks[] |
+		   select(.bank_name == \"B\") |
+		   .cur_nodes][0] == 0 and
+		  [.banks[] |
+		   select(.bank_name == \"B\") |
+		   .cur_sched_jobs][0] == 0 and
+		  [.banks[] |
+		   select(.bank_name == \"D\") |
+		   .cur_nodes][0] == 1)" &&
+	flux cancel ${filler} &&
+	flux job wait-event -t 10 ${filler} clean &&
+	wait_mf_priority_query \
+		".mf_priority_map[] |
+		 select(.userid == 5002) |
+		 [.banks[] |
+		  select(.bank_name == \"D\") |
+		  .cur_nodes][0] == 0"
 '
 
 test_expect_success 'shut down flux-accounting service' '

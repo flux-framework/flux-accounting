@@ -10,6 +10,19 @@ MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
 SUBMIT_AS=${SHARNESS_TEST_SRCDIR}/scripts/submit_as.py
 DB_PATH=$(pwd)/FluxAccountingTest.db
 
+wait_mf_priority_query() {
+	query=$1
+	i=0
+	while test $i -lt 50; do
+		flux jobtap query mf_priority.so > query.json &&
+		jq -e "${query}" <query.json >/dev/null && return 0
+		sleep 0.1
+		i=$((i + 1))
+	done
+	test_debug "jq -S . <query.json"
+	return 1
+}
+
 export TEST_UNDER_FLUX_NO_JOB_EXEC=y
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
 test_under_flux 1 job -o,--config-path=$(pwd)/conf.d -Slog-stderr-level=1
@@ -42,7 +55,7 @@ test_expect_success 'add some banks to the DB' '
 
 test_expect_success 'add some queues to the DB' '
 	flux account add-queue bronze --priority=100 &&
-	flux account add-queue silver --priority=200 &&
+	flux account add-queue silver --priority=200 --max-nodes-per-assoc=1 &&
 	flux account add-queue gold --priority=300
 '
 
@@ -82,7 +95,18 @@ test_expect_success 'update of queue of pending job works' '
 	flux job wait-event -f json ${jobid1} priority &&
 	flux job eventlog ${jobid1} > eventlog.out &&
 	grep "attributes.system.queue=\"silver\"" eventlog.out &&
-	grep 2050000 eventlog.out
+	grep 2050000 eventlog.out &&
+	wait_mf_priority_query \
+		".mf_priority_map[] |
+		 select(.userid == 5001) |
+		 [.banks[] |
+		  select(.bank_name == \"A\") |
+		  (.cur_nodes == 1 and
+		   .cur_sched_jobs == 1 and
+		   .queue_usage[\"bronze\"].cur_nodes == 0 and
+		   .queue_usage[\"bronze\"].cur_sched_jobs == 0 and
+		   .queue_usage[\"silver\"].cur_nodes == 1 and
+		   .queue_usage[\"silver\"].cur_sched_jobs == 1)][0]"
 '
 
 test_expect_success 'updating a job using a queue the user does not belong to fails' '
@@ -92,7 +116,14 @@ test_expect_success 'updating a job using a queue the user does not belong to fa
 '
 
 test_expect_success 'cancel job' '
-	flux cancel ${jobid1}
+	flux cancel ${jobid1} &&
+	flux job wait-event -f json ${jobid1} clean &&
+	wait_mf_priority_query \
+		".mf_priority_map[] |
+		 select(.userid == 5001) |
+		 [.banks[] |
+		  select(.bank_name == \"A\") |
+		  .queue_usage[\"silver\"].cur_nodes][0] == 0"
 '
 
 test_expect_success 'submit job for testing under non-default bank' '
@@ -107,7 +138,18 @@ test_expect_success 'update of queue of pending job under a non-default bank wor
 	flux job wait-event -f json ${jobid2} priority &&
 	flux job eventlog ${jobid2} > eventlog.out &&
 	grep "attributes.system.queue=\"silver\"" eventlog.out &&
-	grep 2050000 eventlog.out
+	grep 2050000 eventlog.out &&
+	wait_mf_priority_query \
+		".mf_priority_map[] |
+		 select(.userid == 5001) |
+		 [.banks[] |
+		  select(.bank_name == \"B\") |
+		  (.cur_nodes == 1 and
+		   .cur_sched_jobs == 1 and
+		   .queue_usage[\"bronze\"].cur_nodes == 0 and
+		   .queue_usage[\"bronze\"].cur_sched_jobs == 0 and
+		   .queue_usage[\"silver\"].cur_nodes == 1 and
+		   .queue_usage[\"silver\"].cur_sched_jobs == 1)][0]"
 '
 
 test_expect_success 'updating a job under non-default bank using a queue the user does not belong to fails' '
@@ -116,8 +158,33 @@ test_expect_success 'updating a job under non-default bank using a queue the use
 	grep "ERROR: mf_priority: queue not valid for user: gold" unavail_queue.out
 '
 
+test_expect_success 'updating a SCHED job to a queue at max-resources fails' '
+	jobid3=$(flux python ${SUBMIT_AS} 5001 \
+		--setattr=bank=B --queue=bronze sleep 30) &&
+	flux job wait-event -f json ${jobid3} priority &&
+	wait_mf_priority_query \
+		".mf_priority_map[] |
+		 select(.userid == 5001) |
+		 [.banks[] |
+		  select(.bank_name == \"B\") |
+		  .queue_usage[\"bronze\"].cur_nodes][0] == 1" &&
+	test_must_fail \
+		flux update ${jobid3} queue=silver > max_resources_queue.out 2>&1 &&
+	test_debug "cat max_resources_queue.out" &&
+	grep "new queue is already at max-resources limit" max_resources_queue.out
+'
+
 test_expect_success 'cancel job' '
-	flux cancel ${jobid2}
+	flux cancel ${jobid2} &&
+	flux job wait-event -f json ${jobid2} clean &&
+	flux cancel ${jobid3} &&
+	flux job wait-event -f json ${jobid3} clean &&
+	wait_mf_priority_query \
+		".mf_priority_map[] |
+		 select(.userid == 5001) |
+		 [.banks[] |
+		  select(.bank_name == \"B\") |
+		  .queue_usage[\"silver\"].cur_nodes][0] == 0"
 '
 
 test_expect_success 'shut down flux-accounting service' '
