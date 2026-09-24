@@ -63,21 +63,24 @@ enum release_result {
 // Speculative counters for one association's usage of one queue.
 struct AssocQueueCounters {
     int run = 0;
+    int nodes = 0;
     int sched = 0;
     int sched_nodes = 0;
     int sched_cores = 0;
 };
 
 // Speculative counters for a single held-job release sweep. Released jobs are
-// not re-acounted in an association's persistent counters until their own
-// job.state.run / job.state.inactive callbacks fire, so without these a second
-// held job would observe the same headroom as the first and be released even
-// though the limit no longer permits it.
+// not re-counted in an association's persistent counters until their own
+// job.state.sched / job.state.inactive callbacks fire, so without these a
+// second held job would observe the same headroom as the first and be released
+// even though the limit no longer permits it.
 //
 // The per-association counters are keyed by Association* so a single sweep can
 // span more than one association.
 struct ReleaseCounters {
     std::map<Association *, int> assoc_run;
+    std::map<Association *, int> assoc_nodes;
+    std::map<Association *, int> assoc_cores;
     std::map<Association *, int> assoc_sched;
     std::map<Association *, std::map<std::string, AssocQueueCounters>>
         assoc_queue;
@@ -362,7 +365,10 @@ static release_result try_release_held_job (flux_plugin_t *p,
     // is the association under the max nodes limit for the queue the
     // held job is submitted under?
     if (held_job.contains_dep (D_QUEUE_MRES)
-        && b->under_queue_max_resources (held_job, held_job.queue, queues)) {
+        && b->under_queue_max_resources (held_job,
+                                         held_job.queue,
+                                         queues,
+                                         qc.nodes)) {
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_QUEUE_MRES) < 0) {
@@ -402,7 +408,9 @@ static release_result try_release_held_job (flux_plugin_t *p,
     // will association stay under or at their overall max resources limit
     // by releasing this job?
     if (held_job.contains_dep (D_ASSOC_MRES)
-        && b->under_max_resources (held_job)) {
+        && b->under_max_resources (held_job,
+                                   counters.assoc_nodes[b],
+                                   counters.assoc_cores[b])) {
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_ASSOC_MRES) < 0) {
@@ -444,6 +452,9 @@ static release_result try_release_held_job (flux_plugin_t *p,
             qc.sched += job_queue_sched;
             qc.sched_nodes += job_queue_sched_nodes;
             qc.sched_cores += job_queue_sched_cores;
+            counters.assoc_nodes[b] += held_job.nnodes ();
+            counters.assoc_cores[b] += held_job.ncores ();
+            qc.nodes += held_job.nnodes ();
         }
         // the Job no longer has any flux-accounting dependencies on it and
         // is now actually being released to SCHED state; commit this job's
@@ -1460,6 +1471,7 @@ static int new_cb (flux_plugin_t *p,
         // jobs count
         b->cur_sched_jobs++;
         b->queue_usage[queue_str].cur_sched_jobs++;
+        b->increment_resources (*j, queue_str);
         // increment cur_sched_nodes/cores count for association in this queue
         b->queue_usage[queue_str].cur_sched_nodes += j->nnodes ();
         b->queue_usage[queue_str].cur_sched_cores += j->ncores ();
@@ -1562,7 +1574,7 @@ static int depend_cb (flux_plugin_t *p,
         }
         if (!b->under_queue_max_resources (job, queue_str, queues)) {
             // association is already at their max nodes limit across their
-            // running jobs in this queue; add a dependency
+            // SCHED or RUN jobs in this queue; add a dependency
             if (flux_jobtap_dependency_add (p, id, D_QUEUE_MRES) < 0)
                 goto error;
             job.add_dep (D_QUEUE_MRES);
@@ -1668,6 +1680,7 @@ static int sched_cb (flux_plugin_t *p,
     a->cur_sched_jobs++;
     std::string queue_str = queue ? queue : "";
     a->queue_usage[queue_str].cur_sched_jobs++;
+    a->increment_resources (*j, queue_str);
     a->queue_usage[queue_str].cur_sched_nodes += j->nnodes ();
     a->queue_usage[queue_str].cur_sched_cores += j->ncores ();
 
@@ -1735,7 +1748,6 @@ static int run_cb (flux_plugin_t *p,
 
     // increment the user's current running jobs count
     b->cur_run_jobs++;
-    b->increment_resources (*j, queue_str);
 
     // decrement the association's current SCHED jobs count
     b->cur_sched_jobs--;
@@ -2038,6 +2050,7 @@ static int inactive_cb (flux_plugin_t *p,
             b->queue_usage[queue_str].cur_sched_jobs--;
             b->queue_usage[queue_str].cur_sched_nodes -= j->nnodes ();
             b->queue_usage[queue_str].cur_sched_cores -= j->ncores ();
+            b->decrement_resources (*j, queue_str);
             // check to see if any jobs held due to the limits above can now
             // have their dependency removed.
             if (check_and_release_all_held_jobs (p) < 0) {

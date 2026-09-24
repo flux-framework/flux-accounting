@@ -99,7 +99,7 @@ public:
 class QueueUsage {
 public:
     int cur_run_jobs = 0;   // number of running jobs in queue
-    int cur_nodes = 0;      // number of nodes across all running jobs in queue
+    int cur_nodes = 0;      // number of nodes reserved in SCHED/RUN in queue
     int cur_sched_jobs = 0; // number of jobs in SCHED state in queue
     int cur_sched_nodes = 0;// number of nodes in SCHED state in queue
     int cur_sched_cores = 0;// number of cores in SCHED state in queue
@@ -124,10 +124,10 @@ public:
     int active;                        // active status
     std::vector<std::string> projects; // list of accessible projects
     std::string def_project;           // default project
-    int max_nodes;                     // max num nodes across all running jobs
-    int max_cores;                     // max num cores across all running jobs
-    int cur_nodes;                     // current number of used nodes
-    int cur_cores;                     // current number of used cores
+    int max_nodes;                     // max nodes reserved in SCHED/RUN
+    int max_cores;                     // max cores reserved in SCHED/RUN
+    int cur_nodes;                     // current number of reserved nodes
+    int cur_cores;                     // current number of reserved cores
     std::unordered_map<std::string, QueueUsage>
       queue_usage;                     // the association's usage per-queue
 
@@ -150,10 +150,18 @@ public:
                                    const std::map<std::string, Queue> &queues,
                                    int pending);
     bool under_max_resources (const Job &job);
+    bool under_max_resources (const Job &job,
+                              int pending_nodes,
+                              int pending_cores);
     bool under_queue_max_resources (
                                   const Job &job,
                                   const std::string &queue,
                                   const std::map<std::string, Queue> &queues);
+    bool under_queue_max_resources (
+                                  const Job &job,
+                                  const std::string &queue,
+                                  const std::map<std::string, Queue> &queues,
+                                  int pending_nodes);
     void increment_resources (const Job &job, const std::string &queue);
     void decrement_resources (const Job &job, const std::string &queue);
     bool under_max_sched_jobs ();

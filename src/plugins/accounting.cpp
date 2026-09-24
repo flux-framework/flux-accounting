@@ -402,8 +402,17 @@ double get_bank_priority (const char *bank,
 
 bool Association::under_max_resources (const Job &job)
 {
-    bool under_max_nodes = ((cur_nodes + job.nnodes ()) <= max_nodes);
-    bool under_max_cores = ((cur_cores + job.ncores ()) <= max_cores);
+    return under_max_resources (job, 0, 0);
+}
+
+bool Association::under_max_resources (const Job &job,
+                                       int pending_nodes,
+                                       int pending_cores)
+{
+    bool under_max_nodes = ((cur_nodes + job.nnodes () + pending_nodes)
+                            <= max_nodes);
+    bool under_max_cores = ((cur_cores + job.ncores () + pending_cores)
+                            <= max_cores);
     bool under_max_resources = (max_nodes > 0 && max_cores > 0) &&
                                (under_max_nodes && under_max_cores);
 
@@ -433,23 +442,28 @@ bool Association::under_queue_max_resources (
                                     const std::string &queue,
                                     const std::map<std::string, Queue> &queues)
 {
+    return under_queue_max_resources (job, queue, queues, 0);
+}
+
+bool Association::under_queue_max_resources (
+                                    const Job &job,
+                                    const std::string &queue,
+                                    const std::map<std::string, Queue> &queues,
+                                    int pending_nodes)
+{
     auto qit = queues.find (queue);
     if (qit == queues.end ())
         // queue is unknown to flux-accounting; skip check
         return true;
     const int queue_max_nodes_per_assoc = qit->second.max_nodes_per_assoc;
 
-    // committed nodes in this queue = running (cur_nodes) + SCHED
-    // (cur_sched_nodes). max-resources-queue caps resources committed to the
-    // queue across both states, so a job counts from job.state.sched through
-    // job.state.inactive.
     int cur_nodes_in_queue = 0;
     auto uit = queue_usage.find (queue);
     if (uit != queue_usage.end ())
-        cur_nodes_in_queue = uit->second.cur_nodes
-                             + uit->second.cur_sched_nodes;
+        cur_nodes_in_queue = uit->second.cur_nodes;
 
-    return (cur_nodes_in_queue + job.nnodes ()) <= queue_max_nodes_per_assoc;
+    return (cur_nodes_in_queue + job.nnodes () + pending_nodes)
+           <= queue_max_nodes_per_assoc;
 }
 
 bool Association::under_max_sched_jobs ()
