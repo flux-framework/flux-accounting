@@ -254,6 +254,97 @@ static void add_special_association (flux_plugin_t *p, flux_t *h, int userid)
 }
 
 
+static void increment_sched_reservation (Association *a,
+                                         const std::string &queue,
+                                         Job *j)
+{
+    if (j->sched_reserved)
+        return;
+
+    a->cur_sched_jobs++;
+    a->increment_resources (*j, queue);
+    a->queue_usage[queue].cur_sched_jobs++;
+    a->queue_usage[queue].cur_sched_nodes += j->nnodes ();
+    a->queue_usage[queue].cur_sched_cores += j->ncores ();
+    j->sched_reserved = true;
+}
+
+
+static void decrement_sched_reservation (Association *a,
+                                         const std::string &queue,
+                                         Job *j)
+{
+    if (!j->sched_reserved)
+        return;
+
+    a->cur_sched_jobs--;
+    a->decrement_resources (*j, queue);
+    a->queue_usage[queue].cur_sched_jobs--;
+    a->queue_usage[queue].cur_sched_nodes -= j->nnodes ();
+    a->queue_usage[queue].cur_sched_cores -= j->ncores ();
+    j->sched_reserved = false;
+}
+
+
+static void transfer_sched_reservation (Association *old_assoc,
+                                        Association *new_assoc,
+                                        const std::string &old_queue,
+                                        const std::string &new_queue,
+                                        Job *j)
+{
+    if (old_assoc == new_assoc && old_queue == new_queue)
+        return;
+    decrement_sched_reservation (old_assoc, old_queue, j);
+    increment_sched_reservation (new_assoc, new_queue, j);
+}
+
+
+static int validate_sched_reservation_transfer (flux_plugin_t *p,
+                                                flux_plugin_arg_t *args,
+                                                Association *old_assoc,
+                                                Association *new_assoc,
+                                                const std::string &old_queue,
+                                                const std::string &new_queue,
+                                                Job *j)
+{
+    if (old_assoc != new_assoc) {
+        if (!new_assoc->under_max_resources (*j))
+            return flux_jobtap_error (p,
+                                      args,
+                                      "new bank is already at max-resources "
+                                      "limit");
+        if (!new_assoc->under_max_sched_jobs ())
+            return flux_jobtap_error (p,
+                                      args,
+                                      "new bank is already at max-sched-jobs "
+                                      "limit");
+    }
+    if (old_assoc != new_assoc || old_queue != new_queue) {
+        if (!new_assoc->under_queue_max_resources (*j, new_queue, queues))
+            return flux_jobtap_error (p,
+                                      args,
+                                      "new queue is already at max-resources "
+                                      "limit");
+        if (!new_assoc->under_queue_max_sched_jobs (new_queue, queues))
+            return flux_jobtap_error (p,
+                                      args,
+                                      "new queue is already at max-sched-jobs "
+                                      "limit");
+        if (!new_assoc->under_queue_max_sched_nodes (*j, new_queue, queues))
+            return flux_jobtap_error (p,
+                                      args,
+                                      "new queue is already at "
+                                      "max-sched-nodes limit");
+        if (!new_assoc->under_queue_max_sched_cores (*j, new_queue, queues))
+            return flux_jobtap_error (p,
+                                      args,
+                                      "new queue is already at "
+                                      "max-sched-cores limit");
+    }
+    return 0;
+}
+
+
 /*
  * Run the per-limit release checks for a single held job of association b.
  * Check each flux-accounting limit individually to 1) ensure that the
@@ -1468,13 +1559,8 @@ static int new_cb (flux_plugin_t *p,
     }
     if (state == FLUX_JOB_STATE_SCHED) {
         // this job was in SCHED state; increment the association's sched
-        // jobs count
-        b->cur_sched_jobs++;
-        b->queue_usage[queue_str].cur_sched_jobs++;
-        b->increment_resources (*j, queue_str);
-        // increment cur_sched_nodes/cores count for association in this queue
-        b->queue_usage[queue_str].cur_sched_nodes += j->nnodes ();
-        b->queue_usage[queue_str].cur_sched_cores += j->ncores ();
+        // jobs count and resource reservation
+        increment_sched_reservation (b, queue_str, j);
     }
 
     return 0;
@@ -1676,13 +1762,8 @@ static int sched_cb (flux_plugin_t *p,
         return -1;
     }
 
-    // increment association's current SCHED jobs count
-    a->cur_sched_jobs++;
     std::string queue_str = queue ? queue : "";
-    a->queue_usage[queue_str].cur_sched_jobs++;
-    a->increment_resources (*j, queue_str);
-    a->queue_usage[queue_str].cur_sched_nodes += j->nnodes ();
-    a->queue_usage[queue_str].cur_sched_cores += j->ncores ();
+    increment_sched_reservation (a, queue_str, j);
 
     return 0;
 }
@@ -1693,25 +1774,11 @@ static int run_cb (flux_plugin_t *p,
                    flux_plugin_arg_t *args,
                    void *data)
 {
-    int userid;
     Association *b;
-    char *queue = NULL;
     std::string queue_str;
     Job *j;
 
     flux_t *h = flux_jobtap_get_flux (p);
-    if (flux_plugin_arg_unpack (args,
-                                FLUX_PLUGIN_ARG_IN,
-                                "{s{s{s{s?s}}}}",
-                                "jobspec", "attributes", "system",
-                                "queue", &queue) < 0) {
-        flux_log (h,
-                  LOG_ERR,
-                  "flux_plugin_arg_unpack: %s",
-                  flux_plugin_arg_strerror (args));
-        return -1;
-    }
-
     b = static_cast<Association *>
         (flux_jobtap_job_aux_get (p,
                                   FLUX_JOBTAP_CURRENT_JOB,
@@ -1739,22 +1806,24 @@ static int run_cb (flux_plugin_t *p,
         return -1;
     }
 
-    if (queue != NULL) {
+    queue_str = j->queue;
+    if (!queue_str.empty ()) {
         // a queue was passed-in; increment counter of the number of
         // queue-specific running jobs for this association
-        b->queue_usage[std::string (queue)].cur_run_jobs++;
-        queue_str = queue;
+        b->queue_usage[queue_str].cur_run_jobs++;
     }
 
     // increment the user's current running jobs count
     b->cur_run_jobs++;
-
-    // decrement the association's current SCHED jobs count
-    b->cur_sched_jobs--;
-    b->queue_usage[queue_str].cur_sched_jobs--;
-    // decrement the association's current SCHED resources in queue
-    b->queue_usage[queue_str].cur_sched_nodes -= j->nnodes ();
-    b->queue_usage[queue_str].cur_sched_cores -= j->ncores ();
+    if (j->sched_reserved) {
+        // decrement the association's current SCHED jobs count, but leave
+        // resource reservations charged until INACTIVE.
+        b->cur_sched_jobs--;
+        b->queue_usage[queue_str].cur_sched_jobs--;
+        b->queue_usage[queue_str].cur_sched_nodes -= j->nnodes ();
+        b->queue_usage[queue_str].cur_sched_cores -= j->ncores ();
+        j->sched_reserved = false;
+    }
     // check to see if any jobs held due to max_sched_jobs limit can now
     // have their dependency removed
     if (!b->held_jobs.empty ()) {
@@ -1783,6 +1852,12 @@ static int job_updated (flux_plugin_t *p,
     char *updated_queue = NULL;
     char *updated_bank = NULL;
     Association *a;
+    Association *a_old = NULL;
+    Association *a_new = NULL;
+    Job *j = NULL;
+    bool sched_reserved = false;
+    std::string old_queue;
+    std::string new_queue;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
@@ -1808,16 +1883,37 @@ static int job_updated (flux_plugin_t *p,
 
         return -1;
     }
+    a_old = a;
 
+    if (updated_bank != NULL || updated_queue != NULL) {
+        j = static_cast<Job *> (
+                flux_jobtap_job_aux_get (p,
+                                         FLUX_JOBTAP_CURRENT_JOB,
+                                         "mf_priority:job_info"));
+        if (j == NULL) {
+            flux_jobtap_raise_exception (p,
+                                         FLUX_JOBTAP_CURRENT_JOB,
+                                         "mf_priority",
+                                         0,
+                                         "%s: job info missing",
+                                         topic);
+            return -1;
+        }
+        sched_reserved = j->sched_reserved;
+        old_queue = j->queue;
+        new_queue = updated_queue ? updated_queue : old_queue;
+    }
+
+    a_new = a;
     if (updated_bank != NULL && a->bank_name != std::string (updated_bank)) {
         // the bank for the user has been updated, so we need to update
         // the Association object for this job
 
         // get attributes of new bank
-        Association *a_new = get_association (userid,
-                                              updated_bank,
-                                              users,
-                                              users_def_bank);
+        a_new = get_association (userid,
+                                 updated_bank,
+                                 users,
+                                 users_def_bank);
         if (a_new == nullptr) {
             flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
                                          "mf_priority", 0,
@@ -1827,7 +1923,27 @@ static int job_updated (flux_plugin_t *p,
 
             return -1;
         }
+    }
 
+    if (updated_queue != NULL
+        && get_queue_info (updated_queue, a_new->queues, queues)
+           == INVALID_QUEUE)
+        return flux_jobtap_error (p,
+                                  args,
+                                  "mf_priority: queue not valid for user: %s",
+                                  updated_queue);
+
+    if (sched_reserved
+        && validate_sched_reservation_transfer (p,
+                                                args,
+                                                a_old,
+                                                a_new,
+                                                old_queue,
+                                                new_queue,
+                                                j) < 0)
+        return -1;
+
+    if (updated_bank != NULL && a->bank_name != std::string (updated_bank)) {
         // update the active jobs count of the old bank
         a->cur_active_jobs--;
         // assign the new Association object to the original Association object
@@ -1846,6 +1962,12 @@ static int job_updated (flux_plugin_t *p,
                                      NULL) < 0)
             flux_log_error (h, "flux_jobtap_job_aux_set");
     }
+
+    if (sched_reserved)
+        transfer_sched_reservation (a_old, a_new, old_queue, new_queue, j);
+
+    if (j != NULL && updated_queue != NULL)
+        j->queue = new_queue;
 
     if (updated_queue != NULL)
         // the queue for the job has been updated, so fetch the priority
@@ -1871,6 +1993,7 @@ static int update_queue_cb (flux_plugin_t *p,
     char *bank = NULL;
     char *updated_queue = NULL;
     Association *a;
+    Job *j;
 
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
@@ -1899,6 +2022,21 @@ static int update_queue_cb (flux_plugin_t *p,
                                   "mf_priority: queue not valid for user: %s",
                                   updated_queue);
 
+    j = static_cast<Job *> (
+            flux_jobtap_job_aux_get (p,
+                                     FLUX_JOBTAP_CURRENT_JOB,
+                                     "mf_priority:job_info"));
+    if (j != NULL
+        && j->sched_reserved
+        && validate_sched_reservation_transfer (p,
+                                                args,
+                                                a,
+                                                a,
+                                                j->queue,
+                                                updated_queue,
+                                                j) < 0)
+        return -1;
+
     return 0;
 }
 
@@ -1920,6 +2058,8 @@ static int update_bank_cb (flux_plugin_t *p,
     int userid;
     char *bank = NULL;
     Association *a;
+    Association *old_assoc;
+    Job *j;
 
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
@@ -1970,6 +2110,26 @@ static int update_bank_cb (flux_plugin_t *p,
                                   "again later",
                                   bank);
 
+    old_assoc = static_cast<Association *> (
+                    flux_jobtap_job_aux_get (p,
+                                             FLUX_JOBTAP_CURRENT_JOB,
+                                             "mf_priority:bank_info"));
+    j = static_cast<Job *> (
+            flux_jobtap_job_aux_get (p,
+                                     FLUX_JOBTAP_CURRENT_JOB,
+                                     "mf_priority:job_info"));
+    if (old_assoc != NULL
+        && j != NULL
+        && j->sched_reserved
+        && validate_sched_reservation_transfer (p,
+                                                args,
+                                                old_assoc,
+                                                a,
+                                                j->queue,
+                                                j->queue,
+                                                j) < 0)
+        return -1;
+
     return 0;
 }
 
@@ -1981,7 +2141,6 @@ static int inactive_cb (flux_plugin_t *p,
 {
     int userid;
     Association *b;
-    char *queue = NULL;
     std::string queue_str;
     flux_jobid_t jobid;
     Job *j;
@@ -1989,11 +2148,9 @@ static int inactive_cb (flux_plugin_t *p,
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:I, s:i, s{s{s{s?s}}}}",
+                                "{s:I, s:i}",
                                 "id", &jobid,
-                                "userid", &userid,
-                                "jobspec", "attributes", "system",
-                                "queue", &queue) < 0) {
+                                "userid", &userid) < 0) {
         flux_log (h,
                   LOG_ERR,
                   "flux_plugin_arg_unpack: %s",
@@ -2026,8 +2183,7 @@ static int inactive_cb (flux_plugin_t *p,
                                      "%s: job info missing", topic);
         return -1;
     }
-    // if a queue cannot be found, just set it to ""
-    queue_str = queue ? queue : "";
+    queue_str = j->queue;
 
     b->cur_active_jobs--;
     if (!flux_jobtap_job_event_posted (p, FLUX_JOBTAP_CURRENT_JOB, "alloc")) {
@@ -2046,11 +2202,7 @@ static int inactive_cb (flux_plugin_t *p,
             // this job was actually in SCHED state, so we need to decrement
             // the SCHED counts for the association that this job is
             // contributing to since it never ran
-            b->cur_sched_jobs--;
-            b->queue_usage[queue_str].cur_sched_jobs--;
-            b->queue_usage[queue_str].cur_sched_nodes -= j->nnodes ();
-            b->queue_usage[queue_str].cur_sched_cores -= j->ncores ();
-            b->decrement_resources (*j, queue_str);
+            decrement_sched_reservation (b, queue_str, j);
             // check to see if any jobs held due to the limits above can now
             // have their dependency removed.
             if (check_and_release_all_held_jobs (p) < 0) {

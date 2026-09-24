@@ -41,6 +41,7 @@ public:
     std::map<std::string, int> resources;
     std::string queue;             // the queue the job was submitted under
     double fairshare = -1.0;       // fair-share value associated with this job
+    bool sched_reserved = false;   // true if SCHED reservation was charged
 
     // constructor
     Job () = default;
