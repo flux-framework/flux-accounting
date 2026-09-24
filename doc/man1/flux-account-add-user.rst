@@ -57,13 +57,13 @@ be defined upon user creation.
 
 .. option:: -N/--max-nodes
 
-    The max number of nodes an association can have across all of their running
-    jobs.
+    The max number of nodes an association can have reserved across jobs in
+    SCHED or RUN state.
 
 .. option:: -c/--max-cores
 
-    The max number of cores an association can have across all of their running
-    jobs.
+    The max number of cores an association can have reserved across jobs in
+    SCHED or RUN state.
 
 .. option:: -q/--queues
 

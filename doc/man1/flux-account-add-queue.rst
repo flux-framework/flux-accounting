@@ -46,8 +46,8 @@ each queue:
 
 .. option:: --max-nodes-per-assoc
 
-    The maximum number of nodes an association can have across all of their
-    running jobs in this queue.
+    The maximum number of nodes an association can have reserved across jobs in
+    SCHED or RUN state in this queue.
 
 .. option:: --max-sched-jobs
 

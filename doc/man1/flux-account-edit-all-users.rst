@@ -48,13 +48,13 @@ fields are as follows:
 
 .. option:: --max-nodes
 
-    The max number of nodes each association can have across all of their running
-    jobs.
+    The max number of nodes each association can have reserved across jobs in
+    SCHED or RUN state.
 
 .. option:: --max-cores
 
-    The max number of cores each association can have across all of their running
-    jobs.
+    The max number of cores each association can have reserved across jobs in
+    SCHED or RUN state.
 
 .. option:: --queues
 

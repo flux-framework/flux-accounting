@@ -35,15 +35,15 @@ The soft limits in flux-accounting are composed of:
 
 (per-association) max resources
   The max number of resources (total cores + total nodes) an association can
-  have across their running jobs at any given time.
+  have reserved across jobs in SCHED or RUN state at any given time.
 
 (per-queue) max running jobs
   The max number of running jobs an association can have in a given queue at
   any given time.
 
 (per-queue) max nodes
-  The max number of nodes an association can have across their running jobs in
-  a givent queue at any given time.
+  The max number of nodes an association can have reserved across jobs in SCHED
+  or RUN state in a given queue at any given time.
 
 .. note::
     For more details on the difference between an active job and a running job,
@@ -115,7 +115,8 @@ attributes, and its dependencies. Ensure that the job would not:
 
 * Put the association over the max running jobs limit for the *queue* the job is submitted in.
 
-* Put the association over the max nodes limit for the *queue* the job is submitted in.
+* Put the association over the max reserved nodes limit for jobs in SCHED or
+  RUN state in the *queue* the job is submitted in.
 
 * Put the association over their max running jobs limit *regardless of queue*.
 

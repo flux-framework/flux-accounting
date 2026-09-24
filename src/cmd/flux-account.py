@@ -215,14 +215,14 @@ def add_add_user_arg(subparsers):
     subparser_add_user.add_argument(
         "-N",
         "--max-nodes",
-        help="max number of nodes a user can have across all of their running jobs",
+        help="max number of nodes a user can have reserved in SCHED or RUN",
         default=INTEGER_MAX,
         metavar="MAX_NODES",
     )
     subparser_add_user.add_argument(
         "-c",
         "--max-cores",
-        help="max number of cores a user can have across all of their running jobs",
+        help="max number of cores a user can have reserved in SCHED or RUN",
         default=INTEGER_MAX,
         metavar="MAX_CORES",
     )
@@ -339,14 +339,14 @@ def add_edit_user_arg(subparsers):
     subparser_edit_user.add_argument(
         "-N",
         "--max-nodes",
-        help="max number of nodes a user can have across all of their running jobs",
+        help="max number of nodes a user can have reserved in SCHED or RUN",
         default=None,
         metavar="MAX_NODES",
     )
     subparser_edit_user.add_argument(
         "-c",
         "--max-cores",
-        help="max number of cores a user can have across all of their running jobs",
+        help="max number of cores a user can have reserved in SCHED or RUN",
         default=None,
         metavar="MAX_CORES",
     )
@@ -435,13 +435,13 @@ def add_edit_all_users_arg(subparsers):
     )
     subparser_edit_all_users.add_argument(
         "--max-nodes",
-        help="max number of nodes all users can have across all of their running jobs",
+        help="max number of nodes all users can have reserved in SCHED or RUN",
         default=None,
         metavar="MAX_NODES",
     )
     subparser_edit_all_users.add_argument(
         "--max-cores",
-        help="max number of cores all users can have across all of their running jobs",
+        help="max number of cores all users can have reserved in SCHED or RUN",
         default=None,
         metavar="MAX_CORES",
     )
@@ -929,8 +929,8 @@ def add_add_queue_arg(subparsers):
     subparser_add_queue.add_argument(
         "--max-nodes-per-assoc",
         help=(
-            "max number of nodes an association can have across all of their running "
-            "jobs in the queue"
+            "max number of nodes an association can have reserved in SCHED or RUN "
+            "in the queue"
         ),
         default=INTEGER_MAX,
         metavar="MAX_NODES_PER_ASSOC",
@@ -1066,8 +1066,8 @@ def add_edit_queue_arg(subparsers):
         "--max-nodes-per-assoc",
         type=int,
         help=(
-            "max number of nodes an association can have across all of their running "
-            "jobs in the queue"
+            "max number of nodes an association can have reserved in SCHED or RUN "
+            "in the queue"
         ),
         default=None,
         metavar="MAX_NODES_PER_ASSOC",

@@ -622,10 +622,10 @@ def edit_user(conn, cur, username, bank=None, **kwargs):
             given time.
         max_active_jobs: The max number of both pending and running jobs the association
             can have at any given time.
-        max_nodes: The man number of nodes an association can have across all of their
-            running jobs.
-        max_cores: The max number of cores an association can have across all of their
-            running jobs.
+        max_nodes: The max number of nodes an association can have reserved
+            across jobs in SCHED or RUN state.
+        max_cores: The max number of cores an association can have reserved
+            across jobs in SCHED or RUN state.
         queues: A comma-separated list of all of the queues an association can run jobs
             under.
         add_queue: A single queue to add to the user's existing queues.
@@ -763,10 +763,10 @@ def edit_all_users(conn, cur, **kwargs):
             given time.
         max_active_jobs: The max number of both pending and running jobs the association
             can have at any given time.
-        max_nodes: The max number of nodes an association can have across all of their
-            running jobs.
-        max_cores: The max number of cores an association can have across all of their
-            running jobs.
+        max_nodes: The max number of nodes an association can have reserved
+            across jobs in SCHED or RUN state.
+        max_cores: The max number of cores an association can have reserved
+            across jobs in SCHED or RUN state.
         queues: A comma-separated list of all of the queues an association can run jobs
             under.
         add_queue: A single queue to add to every association's existing queues.
