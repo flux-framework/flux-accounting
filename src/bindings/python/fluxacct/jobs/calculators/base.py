@@ -42,6 +42,55 @@ def calculate_weighted_usage(job, node_weight, core_weight, gpu_weight):
     return round(weighted_usage, 5)
 
 
+def calculate_bank_usage(cursor, bank):
+    # fetch the job_usage value for every user under the passed-in bank
+    s_associations = "SELECT job_usage FROM association_table WHERE bank=?"
+    job_usage_list = cursor.execute(s_associations, (bank,)).fetchall()
+
+    total_usage = 0.0
+    if job_usage_list:
+        # aggregate job usage for bank
+        for job_usage in job_usage_list:
+            total_usage += job_usage[0]
+
+    # update the bank_table with the total job usage for the bank
+    u_job_usage = "UPDATE bank_table SET job_usage=? WHERE bank=?"
+    cursor.execute(
+        u_job_usage,
+        (
+            total_usage,
+            bank,
+        ),
+    )
+
+    return total_usage
+
+
+def calc_bank_usage_tree(cursor, bank):
+    # find all sub-banks of the current bank
+    sub_banks = cursor.execute(
+        "SELECT bank FROM bank_table WHERE parent_bank=?", (bank,)
+    ).fetchall()
+
+    total_usage = 0.0
+    if len(sub_banks) == 0:
+        # we've reached a bank with no sub banks, so take the usage from that
+        # bank and add it to the total usage for the parent bank
+        total_usage = calculate_bank_usage(cursor, bank)
+    else:
+        # for each sub bank, keep traversing to find the usage for
+        # each bank with users in it
+        for sub_bank in sub_banks:
+            sub_usage = calc_bank_usage_tree(cursor, sub_bank[0])
+            total_usage += sub_usage
+
+    # update the usage for this bank itself
+    u_job_usage = "UPDATE bank_table SET job_usage=? WHERE bank=?"
+    cursor.execute(u_job_usage, (total_usage, bank))
+
+    return total_usage
+
+
 class JobUsageCalculator(ABC):
     """Base class for job-usage calculation strategies."""
 
@@ -65,53 +114,6 @@ class JobUsageCalculator(ABC):
                 bank,
             ),
         )
-
-    def calculate_bank_usage(self, bank):
-        # fetch the job_usage value for every user under the passed-in bank
-        s_associations = "SELECT job_usage FROM association_table WHERE bank=?"
-        job_usage_list = self.conn.execute(s_associations, (bank,)).fetchall()
-
-        total_usage = 0.0
-        if job_usage_list:
-            # aggregate job usage for bank
-            for job_usage in job_usage_list:
-                total_usage += job_usage[0]
-
-        # update the bank_table with the total job usage for the bank
-        u_job_usage = "UPDATE bank_table SET job_usage=? WHERE bank=?"
-        self.conn.execute(
-            u_job_usage,
-            (
-                total_usage,
-                bank,
-            ),
-        )
-
-        return total_usage
-
-    def calc_bank_usage_tree(self, bank):
-        # find all sub-banks of the current bank
-        sub_banks = self.conn.execute(
-            "SELECT bank FROM bank_table WHERE parent_bank=?", (bank,)
-        ).fetchall()
-
-        total_usage = 0.0
-        if len(sub_banks) == 0:
-            # we've reached a bank with no sub banks, so take the usage from that
-            # bank and add it to the total usage for the parent bank
-            total_usage = self.calculate_bank_usage(bank)
-        else:
-            # for each sub bank, keep traversing to find the usage for
-            # each bank with users in it
-            for sub_bank in sub_banks:
-                sub_usage = self.calc_bank_usage_tree(sub_bank[0])
-                total_usage += sub_usage
-
-        # update the usage for this bank itself
-        u_job_usage = "UPDATE bank_table SET job_usage=? WHERE bank=?"
-        self.conn.execute(u_job_usage, (total_usage, bank))
-
-        return total_usage
 
     @staticmethod
     def calculate_project_usage(job_records, node_weight, core_weight, gpu_weight):
