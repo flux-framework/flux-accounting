@@ -1,6 +1,6 @@
 #!/bin/bash
 
-test_description='test limiting number of resources in SCHED per-queue'
+test_description='test limiting number of resources in SCHED or RUN per-queue'
 
 . `dirname $0`/sharness.sh
 
@@ -29,8 +29,8 @@ test_expect_success 'start flux-accounting service' '
 '
 
 # Setting max-sched-nodes and max-sched-cores to 4 means that an association
-# can have up to 4 nodes and 4 cores in SCHED state in the "pdebug" queue at
-# any given time.
+# can have up to 4 nodes and 4 cores in SCHED or RUN state in the "pdebug"
+# queue at any given time.
 test_expect_success 'add a queue to DB' '
 	flux account add-queue pdebug \
 		--max-sched-nodes-per-assoc=4 \
@@ -75,22 +75,16 @@ test_expect_success 'queue is properly configured in plugin internal data struct
 		".queues.pdebug.max_sched_cores_per_assoc == 4" <query.json
 '
 
-# This job will proceed to RUN immediately but take up all current resources
-# of this instance, so any job submitted while this job is running will be
-# placed in SCHED state.
+# This job will proceed to RUN immediately but take up all of the available
+# nodes/cores allowed per-association in this queue, so any other job submitted
+# by this association while this job is running will have a dependency placed
+# on it.
 test_expect_success 'first job proceeds to RUN immediately' '
 	job1=$(flux python ${SUBMIT_AS} 50001 -N4 --queue=pdebug sleep inf) &&
 	flux job wait-event -t 5 ${job1} alloc
 '
 
-# Since the first job is currently running, this job is placed in SCHED state
-# until enough resources are freed up for this job to run.
-test_expect_success 'second job gets placed in SCHED state' '
-	job2=$(flux python ${SUBMIT_AS} 50001 -N4 --queue=pdebug sleep inf) &&
-	flux job wait-event -t 5 ${job2} priority
-'
-
-test_expect_success 'association has 4 nodes and 4 cores in SCHED state' '
+test_expect_success 'association has 4 nodes and 4 cores in SCHED or RUN state' '
 	flux jobtap query mf_priority.so > query.json &&
 	test_debug "jq -S . <query.json" &&
 	jq -e \
@@ -103,16 +97,16 @@ test_expect_success 'association has 4 nodes and 4 cores in SCHED state' '
 		 .banks[0].queue_usage.pdebug.cur_sched_cores == 4" <query.json
 '
 
-# Since the association already has 4 nodes and 4 cores in SCHED state, this
-# job has dependencies placed on it.
+# Since the association already has 4 nodes and 4 cores allocated to a job,
+# this job has dependencies placed on it.
 test_expect_success 'third submitted job has SCHED-state-related dependency' '
-	job3=$(flux python ${SUBMIT_AS} 50001 -N1 --queue=pdebug sleep inf) &&
+	job2=$(flux python ${SUBMIT_AS} 50001 -N1 --queue=pdebug sleep inf) &&
 	flux job wait-event -t 5 \
 		--match-context=description="max-sched-nodes-queue-limit" \
-		${job3} dependency-add &&
+		${job2} dependency-add &&
 	flux job wait-event -t 5 \
 		--match-context=description="max-sched-cores-queue-limit" \
-		${job3} dependency-add
+		${job2} dependency-add
 '
 
 # When the first job gets cancelled, the second job can proceed to run because
@@ -122,22 +116,9 @@ test_expect_success 'second job receives alloc event' '
 	flux job wait-event -t 5 ${job2} alloc
 '
 
-# When the second job proceeds to run, the job.state.run callback checks to see
-# if any other jobs held due to the max_sched_nodes and max_sched_cores
-# per-queue limit can have their dependency removed.
-test_expect_success 'third job has max-sched-nodes and max-sched-cores dependencies removed' '
-	flux job wait-event -t 5 \
-		--match-context=description="max-sched-nodes-queue-limit" \
-		${job3} dependency-remove &&
-	flux job wait-event -t 5 \
-		--match-context=description="max-sched-cores-queue-limit" \
-		${job3} dependency-remove
-'
-
 test_expect_success 'cancel jobs' '
-	flux cancel ${job2} ${job3} &&
-	flux job wait-event -t 5 ${job2} clean &&
-	flux job wait-event -t 5 ${job3} clean
+	flux cancel ${job2} &&
+	flux job wait-event -t 5 ${job2} clean
 '
 
 test_expect_success 'association job counts are correct' '
