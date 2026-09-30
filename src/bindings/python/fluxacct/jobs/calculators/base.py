@@ -66,6 +66,56 @@ def calculate_bank_usage(cursor, bank):
     return total_usage
 
 
+def calculate_project_usage(job_records, node_weight, core_weight, gpu_weight):
+    """Calculate weighted usage grouped by project."""
+    project_usage = defaultdict(float)
+    for job in job_records:
+        project_usage[job.project] += calculate_weighted_usage(
+            job,
+            node_weight,
+            core_weight,
+            gpu_weight,
+        )
+
+    return project_usage
+
+
+def update_project_usage(
+    cursor,
+    job_records,
+    node_weight,
+    core_weight,
+    gpu_weight,
+):
+    """Add weighted usage from newly completed jobs to registered projects."""
+    project_usage = calculate_project_usage(
+        job_records,
+        node_weight,
+        core_weight,
+        gpu_weight,
+    )
+
+    cursor.executemany(
+        "UPDATE project_table SET usage=usage+? WHERE project=?",
+        [(usage, project) for project, usage in project_usage.items()],
+    )
+
+
+def update_project_usage_state(cursor, job_rows):
+    """Advance each project's checkpoint to its newest selected job."""
+    project_timestamps = defaultdict(float)
+    for row in job_rows:
+        project = row[8]
+        project_timestamps[project] = max(project_timestamps[project], row[4])
+
+    cursor.executemany(
+        """
+        UPDATE project_usage_state SET last_job_timestamp=? WHERE project=?
+        """,
+        [(timestamp, project) for project, timestamp in project_timestamps.items()],
+    )
+
+
 def calc_bank_usage_tree(cursor, bank):
     # find all sub-banks of the current bank
     sub_banks = cursor.execute(
@@ -113,52 +163,4 @@ class JobUsageCalculator(ABC):
                 user,
                 bank,
             ),
-        )
-
-    @staticmethod
-    def calculate_project_usage(job_records, node_weight, core_weight, gpu_weight):
-        """Calculate weighted usage grouped by project."""
-        project_usage = defaultdict(float)
-        for job in job_records:
-            project_usage[job.project] += calculate_weighted_usage(
-                job,
-                node_weight,
-                core_weight,
-                gpu_weight,
-            )
-
-        return project_usage
-
-    def update_project_usage(
-        self,
-        job_records,
-        node_weight,
-        core_weight,
-        gpu_weight,
-    ):
-        """Add weighted usage from newly completed jobs to registered projects."""
-        project_usage = self.calculate_project_usage(
-            job_records,
-            node_weight,
-            core_weight,
-            gpu_weight,
-        )
-
-        self.conn.executemany(
-            "UPDATE project_table SET usage=usage+? WHERE project=?",
-            [(usage, project) for project, usage in project_usage.items()],
-        )
-
-    def update_project_usage_state(self, job_rows):
-        """Advance each project's checkpoint to its newest selected job."""
-        project_timestamps = defaultdict(float)
-        for row in job_rows:
-            project = row[8]
-            project_timestamps[project] = max(project_timestamps[project], row[4])
-
-        self.conn.executemany(
-            """
-            UPDATE project_usage_state SET last_job_timestamp=? WHERE project=?
-            """,
-            [(timestamp, project) for project, timestamp in project_timestamps.items()],
         )
