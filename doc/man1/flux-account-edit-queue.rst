@@ -55,13 +55,13 @@ the ``queue_table`` in the flux-accounting database:
 
 .. option:: -msn/--max-sched-nodes-per-assoc
 
-    The max number of nodes in SCHED state an association can have across all
-    of their active jobs in this queue at any given time.
+    The max number of nodes an association can have across all of their jobs in
+    SCHED state or RUN state in a queue at any given time.
 
 .. option:: -msc/--max-sched-cores-per-assoc
 
-    The max number of cores in SCHED state an association can have across all
-    of their active jobs in this queue at any given time.
+    The max number of cores an association can have across all of their jobs in
+    SCHED state or RUN state in a queue at any given time.
 
 .. option:: --max-nodes
 
