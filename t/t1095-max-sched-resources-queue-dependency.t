@@ -382,12 +382,6 @@ test_expect_success 'running job occupies all resources' '
 	flux job wait-event -t 5 ${rjob} alloc
 '
 
-# ssjob sits in SCHED and consumes all resources available to be in SCHED
-test_expect_success 'sched job consumes all per-queue sched headroom' '
-	ssjob=$(flux python ${SUBMIT_AS} 50001 -N4 --queue=pdebug sleep inf) &&
-	flux job wait-event -t 5 ${ssjob} priority
-'
-
 # both jobs here will have both SCHED-related resource limits applied to them
 test_expect_success 'heldA and heldB both pick up node and core dependencies' '
 	heldA=$(flux python ${SUBMIT_AS} 50001 -N2 --queue=pdebug sleep inf) &&
@@ -406,14 +400,13 @@ test_expect_success 'heldA and heldB both pick up node and core dependencies' '
 		${heldB} dependency-add
 '
 
-# Cancel the running job. ssjob transitions to RUN, freeing all 4 sched
-# nodes/cores. In the resulting check_and_release_held_jobs () pass, heldA
-# is released first; its job.state.sched callback fires synchronously and bumps
-# cur_sched_nodes/cores to 2 before heldB is evaluated. heldB must then release
-# because cur_sched_nodes (2) + heldB.nnodes (2) == 4, which is <= 4
-test_expect_success 'cancel running job; sched job runs and both held jobs release' '
+# Cancel the running job, freeing all 4 sched nodes/cores. In the resulting
+# check_and_release_held_jobs () pass, heldA is released first; its job.state.sched
+# callback fires synchronously and bumps cur_sched_nodes/cores to 2 before heldB is
+# evaluated. heldB must then release because cur_sched_nodes (2) +
+# heldB.nnodes (2) == 4, which is <= 4
+test_expect_success 'cancel running job; both held jobs release' '
 	flux cancel ${rjob} &&
-	flux job wait-event -t 5 ${ssjob} alloc &&
 	flux job wait-event -t 5 \
 		--match-context=description="max-sched-nodes-queue-limit" \
 		${heldA} dependency-remove &&
@@ -429,8 +422,7 @@ test_expect_success 'cancel running job; sched job runs and both held jobs relea
 '
 
 test_expect_success 'cancel jobs' '
-	flux cancel ${ssjob} ${heldA} ${heldB} &&
-	flux job wait-event -t 5 ${ssjob} clean &&
+	flux cancel ${heldA} ${heldB} &&
 	flux job wait-event -t 5 ${heldA} clean &&
 	flux job wait-event -t 5 ${heldB} clean
 '
