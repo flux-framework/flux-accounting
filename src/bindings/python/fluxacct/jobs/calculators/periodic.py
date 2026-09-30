@@ -18,6 +18,9 @@ from fluxacct.jobs import records as j
 from fluxacct.jobs.calculators.base import (
     calculate_weighted_usage,
     get_usage_weights,
+    calc_bank_usage_tree,
+    update_project_usage,
+    update_project_usage_state,
     JobUsageCalculator,
 )
 
@@ -348,16 +351,17 @@ class PeriodicUsageCalculator(JobUsageCalculator):
             parent_bank = result[0][0]  # store the name of the root bank
 
             # update the job usage for every bank in the bank_table
-            self.calc_bank_usage_tree(parent_bank)
+            calc_bank_usage_tree(cur, parent_bank)
 
             # add newly completed jobs to their registered projects' usage
-            self.update_project_usage(
+            update_project_usage(
+                cur,
                 new_project_job_records,
                 node_weight,
                 core_weight,
                 gpu_weight,
             )
-            self.update_project_usage_state(new_project_jobs)
+            update_project_usage_state(cur, new_project_jobs)
 
             self.check_end_hl(pdhl)
 
