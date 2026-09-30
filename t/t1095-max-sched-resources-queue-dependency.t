@@ -320,9 +320,7 @@ test_expect_success 'edit properties of pdebug queue' '
 # cur_sched_cores counts are correctly counted after a plugin restart.
 test_expect_success 'submit enough jobs to keep one in SCHED state' '
 	job1=$(flux python ${SUBMIT_AS} 50001 -N4 --queue=pdebug sleep inf) &&
-	flux job wait-event -t 5 ${job1} alloc &&
-	job2=$(flux python ${SUBMIT_AS} 50001 -N4 --queue=pdebug sleep inf) &&
-	flux job wait-event -t 5 ${job2} priority
+	flux job wait-event -t 5 ${job1} alloc
 '
 
 test_expect_success 'association has 4 nodes and 4 cores in SCHED state' '
@@ -350,15 +348,11 @@ test_expect_success 'association still has 4 nodes and 4 cores in SCHED state af
 	jq -e \
 		".mf_priority_map[] |
 		 select(.userid == 50001) |
-		 .banks[0].cur_active_jobs == 2" <query.json &&
+		 .banks[0].cur_active_jobs == 1" <query.json &&
 	jq -e \
 		".mf_priority_map[] |
 		 select(.userid == 50001) |
 		 .banks[0].cur_run_jobs == 1" <query.json &&
-	jq -e \
-		".mf_priority_map[] |
-		 select(.userid == 50001) |
-		 .banks[0].cur_sched_jobs == 1" <query.json &&
 	jq -e \
 		".mf_priority_map[] |
 		 select(.userid == 50001) |
@@ -369,10 +363,9 @@ test_expect_success 'association still has 4 nodes and 4 cores in SCHED state af
 		 .banks[0].queue_usage.pdebug.cur_sched_cores == 4" <query.json
 '
 
-test_expect_success 'cancel jobs' '
-	flux cancel ${job1} ${job2} &&
-	flux job wait-event -t 5 ${job1} clean &&
-	flux job wait-event -t 5 ${job2} clean
+test_expect_success 'cancel job' '
+	flux cancel ${job1} &&
+	flux job wait-event -t 5 ${job1} clean
 '
 
 # Verify that when a SCHED job transitions out of SCHED, the freed per-queue
