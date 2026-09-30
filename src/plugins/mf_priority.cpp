@@ -1643,15 +1643,15 @@ static int depend_cb (flux_plugin_t *p,
             job.add_dep (D_QUEUE_MSJ);
         }
         if (!b->under_queue_max_sched_nodes (job, queue_str, queues)) {
-            // association is already at their max nodes in SCHED state limit
-            // across their running jobs in this queue; add a dependency
+            // association is already at their max nodes in SCHED/RUN state
+            // limit across their running jobs in this queue; add a dependency
             if (flux_jobtap_dependency_add (p, id, D_QUEUE_MSN) < 0)
                 goto error;
             job.add_dep (D_QUEUE_MSN);
         }
         if (!b->under_queue_max_sched_cores (job, queue_str, queues)) {
-            // association is already at their max cores in SCHED state limit
-            // across their running jobs in this queue; add a dependency
+            // association is already at their max cores in SCHED/RUN state
+            // limit across their running jobs in this queue; add a dependency
             if (flux_jobtap_dependency_add (p, id, D_QUEUE_MSC) < 0)
                 goto error;
             job.add_dep (D_QUEUE_MSC);
