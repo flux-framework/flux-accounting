@@ -20,7 +20,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - name: Check Spelling
-      uses: crate-ci/typos@v1.50.0
+      uses: crate-ci/typos@v1.50.3
 
   python-format:
     name: python format
