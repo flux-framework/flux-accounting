@@ -84,7 +84,9 @@ test_expect_success 'send the user/bank information to the plugin without reprio
 				"max_nodes_per_assoc": 2147483647,
 				"max_sched_jobs": 2147483647,
 				"max_sched_nodes_per_assoc": 2147483647,
-				"max_sched_cores_per_assoc": 2147483647
+				"max_sched_cores_per_assoc": 2147483647,
+				"max_nodes": 2147483647,
+				"max_cores": 2147483647
 			}
 		]
 	}

@@ -47,6 +47,8 @@ static const double FSHARE_EPSILON = 1e-9;
 
 std::map<int, std::map<std::string, Association>> users;
 std::map<std::string, Queue> queues;
+std::map<std::string, int> queue_total_nodes;
+std::map<std::string, int> queue_total_cores;
 std::map<std::string, Bank> banks;
 std::map<int, std::string> users_def_bank;
 std::vector<std::string> projects;
@@ -83,6 +85,8 @@ struct ReleaseCounters {
     std::map<Association *, int> assoc_sched;
     std::map<Association *, std::map<std::string, AssocQueueCounters>>
         assoc_queue;
+    std::map<std::string, int> queue_total_nodes;
+    std::map<std::string, int> queue_total_cores;
 };
 
 /******************************************************************************
@@ -90,6 +94,87 @@ struct ReleaseCounters {
  *                           Helper Functions                                 *
  *                                                                            *
  *****************************************************************************/
+
+// Return true if dep is one of the queue-total resource dependencies.
+static bool is_queue_total_dep (const std::string &dep)
+{
+    return dep == D_QUEUE_TMN || dep == D_QUEUE_TMC;
+}
+
+
+// Count dependencies that are not queue-total resource dependencies.
+// These are the dependencies that can keep a job held before queue-total
+// limits need to make the final release decision.
+static int count_non_queue_total_deps (const Job &job)
+{
+    int count = 0;
+
+    for (const auto &dep : job.deps) {
+        if (!is_queue_total_dep (dep))
+            count++;
+    }
+    return count;
+}
+
+
+// Add queue-total dependencies to held_job if current queue usage plus
+// pending speculative usage leaves no room for the job.
+static int ensure_queue_total_deps (flux_plugin_t *p,
+                                    Job &held_job,
+                                    int pending_nodes,
+                                    int pending_cores,
+                                    std::string &dependency,
+                                    flux_jobid_t &held_job_id)
+{
+    if (!under_queue_total_max_nodes (held_job,
+                                      held_job.queue,
+                                      queues,
+                                      queue_total_nodes,
+                                      pending_nodes)
+        && !held_job.contains_dep (D_QUEUE_TMN)) {
+        if (flux_jobtap_dependency_add (p, held_job.id, D_QUEUE_TMN) < 0) {
+            dependency = D_QUEUE_TMN;
+            held_job_id = held_job.id;
+            return -1;
+        }
+        held_job.add_dep (D_QUEUE_TMN);
+    }
+    if (!under_queue_total_max_cores (held_job,
+                                      held_job.queue,
+                                      queues,
+                                      queue_total_cores,
+                                      pending_cores)
+        && !held_job.contains_dep (D_QUEUE_TMC)) {
+        if (flux_jobtap_dependency_add (p, held_job.id, D_QUEUE_TMC) < 0) {
+            dependency = D_QUEUE_TMC;
+            held_job_id = held_job.id;
+            return -1;
+        }
+        held_job.add_dep (D_QUEUE_TMC);
+    }
+    return 0;
+}
+
+
+// If held_job has exactly one non-queue-total dependency left, then removing
+// that dependency may release the job immediately. Add any needed queue-total
+// dependencies first so the job cannot slip through a full queue.
+static int ensure_queue_total_deps_before_release (flux_plugin_t *p,
+                                                   Job &held_job,
+                                                   int pending_nodes,
+                                                   int pending_cores,
+                                                   std::string &dependency,
+                                                   flux_jobid_t &held_job_id)
+{
+    if (count_non_queue_total_deps (held_job) != 1)
+        return 0;
+    return ensure_queue_total_deps (p,
+                                    held_job,
+                                    pending_nodes,
+                                    pending_cores,
+                                    dependency,
+                                    held_job_id);
+}
 
 /*
  * Calculate a user's job priority using the following factors:
@@ -334,6 +419,8 @@ static release_result try_release_held_job (flux_plugin_t *p,
     std::string dependency = "";
     flux_jobid_t held_job_id = 0;
     AssocQueueCounters &qc = counters.assoc_queue[b][held_job.queue];
+    int &qtc_nodes = counters.queue_total_nodes[held_job.queue];
+    int &qtc_cores = counters.queue_total_cores[held_job.queue];
 
     // per-job pending contributions, which are only committed to the
     // sweep-wide counters if this job ends up fully released
@@ -343,6 +430,8 @@ static release_result try_release_held_job (flux_plugin_t *p,
     int job_queue_sched = 0;
     int job_queue_sched_nodes = 0;
     int job_queue_sched_cores = 0;
+    int job_queue_wide_nodes = 0;
+    int job_queue_wide_cores = 0;
 
     // is the association under the max running jobs limit for the
     // queue the held job is submitted under?
@@ -350,6 +439,15 @@ static release_result try_release_held_job (flux_plugin_t *p,
         && b->under_queue_max_run_jobs (held_job.queue,
                                         queues,
                                         qc.run)) {
+        // check that any per-queue limits are also satisfied if this is the
+        // only dependency on the job
+        if (ensure_queue_total_deps_before_release (p,
+                                                    held_job,
+                                                    qtc_nodes,
+                                                    qtc_cores,
+                                                    dependency,
+                                                    held_job_id) < 0)
+            goto error;
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_QUEUE_MRJ) < 0) {
@@ -367,6 +465,13 @@ static release_result try_release_held_job (flux_plugin_t *p,
         && b->under_queue_max_sched_jobs (held_job.queue,
                                           queues,
                                           qc.sched)) {
+        if (ensure_queue_total_deps_before_release (p,
+                                                    held_job,
+                                                    qtc_nodes,
+                                                    qtc_cores,
+                                                    dependency,
+                                                    held_job_id) < 0)
+            goto error;
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_QUEUE_MSJ) < 0) {
@@ -386,6 +491,13 @@ static release_result try_release_held_job (flux_plugin_t *p,
                                            held_job.queue,
                                            queues,
                                            qc.sched_nodes)) {
+        if (ensure_queue_total_deps_before_release (p,
+                                                    held_job,
+                                                    qtc_nodes,
+                                                    qtc_cores,
+                                                    dependency,
+                                                    held_job_id) < 0)
+            goto error;
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_QUEUE_MSN) < 0) {
@@ -403,6 +515,13 @@ static release_result try_release_held_job (flux_plugin_t *p,
                                            held_job.queue,
                                            queues,
                                            qc.sched_cores)) {
+        if (ensure_queue_total_deps_before_release (p,
+                                                    held_job,
+                                                    qtc_nodes,
+                                                    qtc_cores,
+                                                    dependency,
+                                                    held_job_id) < 0)
+            goto error;
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_QUEUE_MSC) < 0) {
@@ -417,6 +536,13 @@ static release_result try_release_held_job (flux_plugin_t *p,
     // held job is submitted under?
     if (held_job.contains_dep (D_QUEUE_MRES)
         && b->under_queue_max_resources (held_job, held_job.queue, queues)) {
+        if (ensure_queue_total_deps_before_release (p,
+                                                    held_job,
+                                                    qtc_nodes,
+                                                    qtc_cores,
+                                                    dependency,
+                                                    held_job_id) < 0)
+            goto error;
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_QUEUE_MRES) < 0) {
@@ -429,6 +555,13 @@ static release_result try_release_held_job (flux_plugin_t *p,
     // is association under their overall max running jobs limit?
     if (held_job.contains_dep (D_ASSOC_MRJ)
         && b->under_max_run_jobs (counters.assoc_run[b])) {
+        if (ensure_queue_total_deps_before_release (p,
+                                                    held_job,
+                                                    qtc_nodes,
+                                                    qtc_cores,
+                                                    dependency,
+                                                    held_job_id) < 0)
+            goto error;
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_ASSOC_MRJ) < 0) {
@@ -443,6 +576,13 @@ static release_result try_release_held_job (flux_plugin_t *p,
     // jobs already released in this pass?
     if (held_job.contains_dep (D_ASSOC_MSJ)
         && b->under_max_sched_jobs (counters.assoc_sched[b])) {
+        if (ensure_queue_total_deps_before_release (p,
+                                                    held_job,
+                                                    qtc_nodes,
+                                                    qtc_cores,
+                                                    dependency,
+                                                    held_job_id) < 0)
+            goto error;
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_ASSOC_MSJ) < 0) {
@@ -457,6 +597,13 @@ static release_result try_release_held_job (flux_plugin_t *p,
     // by releasing this job?
     if (held_job.contains_dep (D_ASSOC_MRES)
         && b->under_max_resources (held_job)) {
+        if (ensure_queue_total_deps_before_release (p,
+                                                    held_job,
+                                                    qtc_nodes,
+                                                    qtc_cores,
+                                                    dependency,
+                                                    held_job_id) < 0)
+            goto error;
         if (flux_jobtap_dependency_remove (p,
                                            held_job.id,
                                            D_ASSOC_MRES) < 0) {
@@ -465,6 +612,68 @@ static release_result try_release_held_job (flux_plugin_t *p,
             goto error;
         }
         held_job.remove_dep (D_ASSOC_MRES);
+    }
+
+    if (count_non_queue_total_deps (held_job) == 0) {
+        // Queue-total limits are global and may have changed while this job
+        // was held for another dependency, so recheck both dimensions before
+        // removing either dependency since removing the last dependency may
+        // move the job into SCHED synchronously
+        bool under_max_nodes = under_queue_total_max_nodes (
+                                held_job,
+                                held_job.queue,
+                                queues,
+                                queue_total_nodes,
+                                qtc_nodes);
+        bool under_max_cores = under_queue_total_max_cores (
+                                held_job,
+                                held_job.queue,
+                                queues,
+                                queue_total_cores,
+                                qtc_cores);
+
+        if (!under_max_nodes && !held_job.contains_dep (D_QUEUE_TMN)) {
+            if (flux_jobtap_dependency_add (p, held_job.id, D_QUEUE_TMN) < 0) {
+                dependency = D_QUEUE_TMN;
+                held_job_id = held_job.id;
+                goto error;
+            }
+            held_job.add_dep (D_QUEUE_TMN);
+        }
+
+        if (!under_max_cores && !held_job.contains_dep (D_QUEUE_TMC)) {
+            if (flux_jobtap_dependency_add (p, held_job.id, D_QUEUE_TMC) < 0) {
+                dependency = D_QUEUE_TMC;
+                held_job_id = held_job.id;
+                goto error;
+            }
+            held_job.add_dep (D_QUEUE_TMC);
+        }
+
+        if (under_max_nodes && under_max_cores) {
+            if (held_job.contains_dep (D_QUEUE_TMN)) {
+                if (flux_jobtap_dependency_remove (p,
+                                                   held_job.id,
+                                                   D_QUEUE_TMN) < 0) {
+                    dependency = D_QUEUE_TMN;
+                    held_job_id = held_job.id;
+                    goto error;
+                }
+                held_job.remove_dep (D_QUEUE_TMN);
+            }
+            if (held_job.contains_dep (D_QUEUE_TMC)) {
+                if (flux_jobtap_dependency_remove (p,
+                                                   held_job.id,
+                                                   D_QUEUE_TMC) < 0) {
+                    dependency = D_QUEUE_TMC;
+                    held_job_id = held_job.id;
+                    goto error;
+                }
+                held_job.remove_dep (D_QUEUE_TMC);
+            }
+            job_queue_wide_nodes += held_job.nnodes ();
+            job_queue_wide_cores += held_job.ncores ();
+        }
     }
 
     if (held_job.deps.empty ()) {
@@ -498,6 +707,8 @@ static release_result try_release_held_job (flux_plugin_t *p,
             qc.sched += job_queue_sched;
             qc.sched_nodes += job_queue_sched_nodes;
             qc.sched_cores += job_queue_sched_cores;
+            qtc_nodes += job_queue_wide_nodes;
+            qtc_cores += job_queue_wide_cores;
         }
         // the Job no longer has any flux-accounting dependencies on it and
         // is now actually being released to SCHED state; commit this job's
@@ -518,7 +729,7 @@ error:
                                  "mf_priority",
                                  0,
                                  "check_and_release_held_jobs: failed to "
-                                 "remove %s dependency from job %ju",
+                                 "update %s dependency on job %ju",
                                  dependency.c_str (),
                                  held_job_id);
     return RELEASE_ERROR;
@@ -1500,8 +1711,10 @@ static int new_cb (flux_plugin_t *p,
 
     if (state == FLUX_JOB_STATE_RUN) {
         // this job was already running; increment the association's running
-        // jobs and resource counts
+        // jobs and resource counts as well as the queue's resource counts
         b->cur_run_jobs++;
+        queue_total_nodes[queue_str] += j->nnodes ();
+        queue_total_cores[queue_str] += j->ncores ();
         if (queue != NULL) {
             // a queue was passed in; increment counter of the number of
             // queue-specific running jobs for this association
@@ -1528,8 +1741,11 @@ static int new_cb (flux_plugin_t *p,
         b->cur_sched_jobs++;
         b->queue_usage[queue_str].cur_sched_jobs++;
         // increment cur_sched_nodes/cores count for association in this queue
+        // as well as for the queue
         b->queue_usage[queue_str].cur_sched_nodes += j->nnodes ();
         b->queue_usage[queue_str].cur_sched_cores += j->ncores ();
+        queue_total_nodes[queue_str] += j->nnodes ();
+        queue_total_cores[queue_str] += j->ncores ();
     }
 
     return 0;
@@ -1626,6 +1842,28 @@ static int depend_cb (flux_plugin_t *p,
             if (flux_jobtap_dependency_add (p, id, D_QUEUE_MSC) < 0)
                 goto error;
             job.add_dep (D_QUEUE_MSC);
+        }
+        if (!under_queue_total_max_nodes (job,
+                                                queue_str,
+                                                queues,
+                                                queue_total_nodes)) {
+            // the queue is already at its max nodes limit
+            if (flux_jobtap_dependency_add (p, id, D_QUEUE_TMN) < 0) {
+                dependency = D_QUEUE_TMN;
+                goto error;
+            }
+            job.add_dep (D_QUEUE_TMN);
+        }
+        if (!under_queue_total_max_cores (job,
+                                                queue_str,
+                                                queues,
+                                                queue_total_cores)) {
+            // the queue is already at its max cores limit
+            if (flux_jobtap_dependency_add (p, id, D_QUEUE_TMC) < 0) {
+                dependency = D_QUEUE_TMC;
+                goto error;
+            }
+            job.add_dep (D_QUEUE_TMC);
         }
         if (!b->under_queue_max_resources (job, queue_str, queues)) {
             // association is already at their max nodes limit across their
@@ -1737,6 +1975,9 @@ static int sched_cb (flux_plugin_t *p,
     a->queue_usage[queue_str].cur_sched_jobs++;
     a->queue_usage[queue_str].cur_sched_nodes += j->nnodes ();
     a->queue_usage[queue_str].cur_sched_cores += j->ncores ();
+    // increment the queue's total nodes/cores counts
+    queue_total_nodes[queue_str] += j->nnodes ();
+    queue_total_cores[queue_str] += j->ncores ();
 
     return 0;
 }
@@ -2127,6 +2368,9 @@ static int inactive_cb (flux_plugin_t *p,
             b->queue_usage[queue_str].cur_sched_jobs--;
             b->queue_usage[queue_str].cur_sched_nodes -= j->nnodes ();
             b->queue_usage[queue_str].cur_sched_cores -= j->ncores ();
+            // decrement the queue's nodes/cores counts
+            queue_total_nodes[queue_str] -= j->nnodes ();
+            queue_total_cores[queue_str] -= j->ncores ();
             // check to see if any jobs held due to the limits above can now
             // have their dependency removed.
             if (check_and_release_all_held_jobs (p) < 0) {
@@ -2159,6 +2403,8 @@ static int inactive_cb (flux_plugin_t *p,
                                          "decrement resource count");
             return -1;
         }
+        queue_total_nodes[queue_str] -= j->nnodes ();
+        queue_total_cores[queue_str] -= j->ncores ();
     }
 
     if (!queue_str.empty ()) {
@@ -2206,6 +2452,8 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
     // explicitly reset all global state of internal data structures
     users.clear ();
     queues.clear ();
+    queue_total_nodes.clear ();
+    queue_total_cores.clear ();
     banks.clear ();
     users_def_bank.clear ();
     projects.clear ();

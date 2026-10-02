@@ -111,6 +111,7 @@ TESTSCRIPTS = \
 	t1106-mf-priority-priority-release.t \
 	t1107-rebuild-project-usage.t \
 	t1108-mf-priority-global-release-sweep.t \
+	t1109-max-sched-resources-queue-total.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
