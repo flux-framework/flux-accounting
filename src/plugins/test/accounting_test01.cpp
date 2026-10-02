@@ -34,37 +34,48 @@ bool deny_unknown_queues = false;
 
 
 /*
+ * helper function to create a test Association object
+ */
+static Association make_association (const std::string &bank_name)
+{
+    Association a {};
+
+    a.bank_name = bank_name;
+    a.fairshare = 0.5;
+    a.max_run_jobs = 5;
+    a.cur_run_jobs = 0;
+    a.max_active_jobs = 7;
+    a.cur_active_jobs = 0;
+    a.cur_sched_jobs = 2147483647;
+    a.max_sched_jobs = 0;
+    a.held_jobs = {};
+    a.queues = {};
+    a.queue_factor = 0;
+    a.bank_factor = 0.0;
+    a.active = 1;
+    a.projects = {"*"};
+    a.def_project = "*";
+    a.max_nodes = 2147483647;
+    a.max_cores = 2147483647;
+    a.cur_nodes = 0;
+    a.cur_cores = 0;
+    a.queue_usage = {};
+
+    return a;
+}
+
+
+/*
  * helper function to add a user/bank to the users map
  */
 void add_user_to_map (
                 std::map<int, std::map<std::string, Association>> &users,
                 int userid,
-                const std::string& bank,
-                Association a)
+                const std::string &bank,
+                const Association &a)
 {
     // insert user to users map
-    users[userid][bank] = {
-        a.bank_name,
-        a.fairshare,
-        a.max_run_jobs,
-        a.cur_run_jobs,
-        a.max_active_jobs,
-        a.cur_active_jobs,
-        a.cur_sched_jobs,
-        a.max_sched_jobs,
-        a.held_jobs,
-        a.queues,
-        a.queue_factor,
-        a.bank_factor,
-        a.active,
-        a.projects,
-        a.def_project,
-        a.max_nodes,
-        a.max_cores,
-        a.cur_nodes,
-        a.cur_cores,
-        a.queue_usage
-    };
+    users[userid][bank] = a;
 }
 
 
@@ -74,12 +85,8 @@ void add_user_to_map (
 void initialize_map (
     std::map<int, std::map<std::string, Association>> &users)
 {
-    Association user1 = {"bank_A", 0.5, 5, 0, 7, 0, 2147483647, 0, {},
-                         {}, 0, 0.0, 1, {"*"}, "*", 2147483647, 2147483647, 0, 0,
-                         {}};
-    Association user2 = {"bank_A", 0.5, 5, 0, 7, 0, 2147483647, 0, {},
-                         {}, 0, 0.0, 1, {"*"}, "*", 2147483647, 2147483647, 0, 0,
-                         {}};
+    Association user1 = make_association ("bank_A");
+    Association user2 = make_association ("bank_A");
 
     add_user_to_map (users, 1001, "bank_A", user1);
     users_def_bank[1001] = "bank_A";
@@ -303,9 +310,7 @@ static void test_check_map_dne_true ()
     users.clear ();
     users_def_bank.clear ();
 
-    Association tmp_user = {"DNE", 0.5, 5, 0, 7, 0, 2147483647, 0, {},
-                            {}, 0, 0.0, 1, {"*"}, "*", 2147483647, 2147483647,
-                            0, 0, {}};
+    Association tmp_user = make_association ("DNE");
     add_user_to_map (users, 9999, "DNE", tmp_user);
     users_def_bank[9999] = "DNE";
 
