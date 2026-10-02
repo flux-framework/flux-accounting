@@ -45,6 +45,14 @@ The soft limits in flux-accounting are composed of:
   The max number of nodes an association can have across their running jobs in
   a givent queue at any given time.
 
+(per-queue) max scheduled nodes
+  The max number of nodes an association can have across all of their jobs in
+  SCHED state or RUN state in a queue at any given time.
+
+(per-queue) max scheduled cores
+  The max number of cores an association can have across all of their jobs in
+  SCHED state or RUN state in a queue at any given time.
+
 .. note::
     For more details on the difference between an active job and a running job,
     see the `virtual states`_ section of RFC 21.
