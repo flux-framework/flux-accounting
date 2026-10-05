@@ -50,7 +50,7 @@ public:
     // the total amount of each resource type requested, keyed by type
     // name such as node or core. Populated by count_resources ()
     std::map<std::string, int> resources;
-    std::string queue;             // the queue the job was submitted under
+    std::string queue;             // queue the job is currently assigned to
     double fairshare = -1.0;       // fair-share value associated with this job
 
     // constructor
