@@ -66,6 +66,21 @@ static Association make_association (const std::string &bank_name)
 
 
 /*
+ * helper function to create a test Job object
+ */
+static Job make_job (flux_jobid_t id, int nnodes, int ncores)
+{
+    Job job {};
+
+    job.id = id;
+    job.resources["node"] = nnodes;
+    job.resources["core"] = ncores;
+
+    return job;
+}
+
+
+/*
  * helper function to add a user/bank to the users map
  */
 void add_user_to_map (
@@ -320,6 +335,152 @@ static void test_check_map_dne_true ()
 }
 
 
+// ensure a job is only charged once to SCHED counters
+static void test_sched_usage_double_charge ()
+{
+    Association a = make_association ("bank_A");
+    Job job = make_job (1, 2, 8);
+
+    a.cur_sched_jobs = 0;
+
+    ok (job.charge_sched (&a, "pbatch"),
+        "first charge reports SCHED usage was charged");
+    ok (!job.charge_sched (&a, "pbatch"),
+        "second charge is ignored");
+
+    ok (a.cur_sched_jobs == 1,
+        "double charge counts one SCHED job");
+    ok (a.queue_usage["pbatch"].cur_sched_jobs == 1,
+        "double charge counts one queue SCHED job");
+    ok (a.queue_usage["pbatch"].cur_sched_nodes == 2,
+        "double charge counts SCHED nodes once");
+    ok (a.queue_usage["pbatch"].cur_sched_cores == 8,
+        "double charge counts SCHED cores once");
+    ok (job.sched_jobs_charged () && job.sched_resources_charged (),
+        "double charge leaves SCHED counted flags set");
+}
+
+
+// ensure a job is only released once from SCHED counters
+static void test_sched_usage_double_release ()
+{
+    Association a = make_association ("bank_A");
+    Job job = make_job (1, 2, 8);
+    bool released_jobs;
+    bool released_resources;
+
+    a.cur_sched_jobs = 0;
+
+    job.charge_sched (&a, "pbatch");
+    released_jobs = job.release_sched_jobs ();
+    released_resources = job.release_sched_resources ();
+
+    ok (released_jobs && released_resources,
+        "first release reports SCHED usage was freed");
+    ok (!job.release_sched_jobs (),
+        "second SCHED jobs release is ignored");
+    ok (!job.release_sched_resources (),
+        "second SCHED resources release is ignored");
+    ok (a.cur_sched_jobs == 0,
+        "double release leaves SCHED job count at zero");
+    ok (a.queue_usage["pbatch"].cur_sched_jobs == 0,
+        "double release leaves queue SCHED job count at zero");
+    ok (a.queue_usage["pbatch"].cur_sched_nodes == 0,
+        "double release leaves queue SCHED nodes at zero");
+    ok (a.queue_usage["pbatch"].cur_sched_cores == 0,
+        "double release leaves queue SCHED cores at zero");
+    ok (!job.sched_jobs_charged () && !job.sched_resources_charged (),
+        "double release leaves SCHED counted flags clear");
+}
+
+
+// ensure releasing a job that was never charged is a no-op
+static void test_sched_usage_release_without_charge ()
+{
+    Association a = make_association ("bank_A");
+    Job job = make_job (1, 2, 8);
+
+    a.cur_sched_jobs = 0;
+
+    ok (!job.release_sched_jobs (),
+        "SCHED jobs release without charge returns false");
+    ok (!job.release_sched_resources (),
+        "SCHED resources release without charge returns false");
+    ok (a.cur_sched_jobs == 0,
+        "release without charge leaves SCHED job count at zero");
+    ok (a.queue_usage.find ("pbatch") == a.queue_usage.end (),
+        "release without charge does not create queue usage");
+    ok (!job.sched_jobs_charged () && !job.sched_resources_charged (),
+        "release without charge leaves SCHED counted flags clear");
+}
+
+
+// ensure moving to the same association and queue is a no-op
+static void test_sched_usage_move_same_association_and_queue ()
+{
+    Association a = make_association ("bank_A");
+    Job job = make_job (1, 2, 8);
+
+    a.cur_sched_jobs = 0;
+    job.queue = "pbatch";
+
+    job.charge_sched (&a, "pbatch");
+
+    ok (!job.move_sched (&a, "pbatch"),
+        "move to same association and queue reports no freed usage");
+    ok (job.queue == "pbatch",
+        "move to same association and queue preserves job queue");
+    ok (a.cur_sched_jobs == 1,
+        "move to same association and queue preserves SCHED job count");
+    ok (a.queue_usage["pbatch"].cur_sched_jobs == 1,
+        "move to same association and queue preserves queue SCHED jobs");
+    ok (a.queue_usage["pbatch"].cur_sched_nodes == 2,
+        "move to same association and queue preserves SCHED nodes");
+    ok (a.queue_usage["pbatch"].cur_sched_cores == 8,
+        "move to same association and queue preserves SCHED cores");
+    ok (job.sched_jobs_charged () && job.sched_resources_charged (),
+        "move to same association and queue leaves counted flags set");
+}
+
+
+// ensure moving across associations transfers all SCHED counters
+static void test_sched_usage_move_across_associations ()
+{
+    Association old_assoc = make_association ("bank_A");
+    Association new_assoc = make_association ("bank_B");
+    Job job = make_job (1, 2, 8);
+
+    old_assoc.cur_sched_jobs = 0;
+    new_assoc.cur_sched_jobs = 0;
+    job.queue = "pbatch";
+
+    job.charge_sched (&old_assoc, "pbatch");
+
+    ok (job.move_sched (&new_assoc, "pdebug"),
+        "move across associations reports freed usage");
+    ok (job.queue == "pdebug",
+        "move across associations updates job queue");
+    ok (job.sched_jobs_charged () && job.sched_resources_charged (),
+        "move across associations leaves counted flags set");
+    ok (old_assoc.cur_sched_jobs == 0,
+        "move across associations clears old association SCHED jobs");
+    ok (old_assoc.queue_usage["pbatch"].cur_sched_jobs == 0,
+        "move across associations clears old queue SCHED jobs");
+    ok (old_assoc.queue_usage["pbatch"].cur_sched_nodes == 0,
+        "move across associations clears old queue SCHED nodes");
+    ok (old_assoc.queue_usage["pbatch"].cur_sched_cores == 0,
+        "move across associations clears old queue SCHED cores");
+    ok (new_assoc.cur_sched_jobs == 1,
+        "move across associations charges new association SCHED jobs");
+    ok (new_assoc.queue_usage["pdebug"].cur_sched_jobs == 1,
+        "move across associations charges new queue SCHED jobs");
+    ok (new_assoc.queue_usage["pdebug"].cur_sched_nodes == 2,
+        "move across associations charges new queue SCHED nodes");
+    ok (new_assoc.queue_usage["pdebug"].cur_sched_cores == 8,
+        "move across associations charges new queue SCHED cores");
+}
+
+
 int main (int argc, char* argv[])
 {
     // add users to the test map
@@ -346,6 +507,11 @@ int main (int argc, char* argv[])
     test_check_map_dne_true ();
     test_under_queue_max_running_jobs_true ();
     test_under_queue_max_running_jobs_false ();
+    test_sched_usage_double_charge ();
+    test_sched_usage_double_release ();
+    test_sched_usage_release_without_charge ();
+    test_sched_usage_move_same_association_and_queue ();
+    test_sched_usage_move_across_associations ();
 
     // indicate we are done testing
     done_testing ();

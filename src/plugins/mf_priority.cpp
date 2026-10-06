@@ -555,6 +555,39 @@ static void gather_held_jobs (Association *b, held_job_candidates_t &candidates)
 
 
 /*
+ * If a job is still held by flux-accounting dependencies, move its held_jobs
+ * entry to the updated association/queue so future release checks evaluate the
+ * job against its current jobspec. Return true only if a held job's
+ * association or queue changed; return false if the job is not held or is
+ * already held under the requested association/queue.
+ */
+static bool move_held_job (Association *old_assoc,
+                           Association *new_assoc,
+                           flux_jobid_t jobid,
+                           const std::string &new_queue)
+{
+    for (auto it = old_assoc->held_jobs.begin ();
+         it != old_assoc->held_jobs.end ();
+         it++) {
+        if (it->id != jobid)
+            continue;
+
+        if (old_assoc == new_assoc && it->queue == new_queue)
+            return false;
+
+        it->queue = new_queue;
+        if (old_assoc != new_assoc) {
+            new_assoc->held_jobs.push_back (*it);
+            old_assoc->held_jobs.erase (it);
+        }
+        return true;
+    }
+
+    return false;
+}
+
+
+/*
  * Release a set of held jobs, gathered as {Association*, Job*} pairs, in
  * priority order (highest priority first), breaking ties by jobid so that
  * equal-priority jobs are released in submission order. When a limit spans
@@ -1525,11 +1558,7 @@ static int new_cb (flux_plugin_t *p,
     if (state == FLUX_JOB_STATE_SCHED) {
         // this job was in SCHED state; increment the association's sched
         // jobs count
-        b->cur_sched_jobs++;
-        b->queue_usage[queue_str].cur_sched_jobs++;
-        // increment cur_sched_nodes/cores count for association in this queue
-        b->queue_usage[queue_str].cur_sched_nodes += j->nnodes ();
-        b->queue_usage[queue_str].cur_sched_cores += j->ncores ();
+        j->charge_sched (b, queue_str);
     }
 
     return 0;
@@ -1731,12 +1760,9 @@ static int sched_cb (flux_plugin_t *p,
         return -1;
     }
 
-    // increment association's current SCHED jobs count
-    a->cur_sched_jobs++;
     std::string queue_str = queue ? queue : "";
-    a->queue_usage[queue_str].cur_sched_jobs++;
-    a->queue_usage[queue_str].cur_sched_nodes += j->nnodes ();
-    a->queue_usage[queue_str].cur_sched_cores += j->ncores ();
+    // increment association's current SCHED jobs count
+    j->charge_sched (a, queue_str);
 
     return 0;
 }
@@ -1824,12 +1850,9 @@ static int run_cb (flux_plugin_t *p,
         }
     }
 
-    // decrement the association's current SCHED jobs count
-    b->cur_sched_jobs--;
-    b->queue_usage[queue_str].cur_sched_jobs--;
-    // decrement the association's current SCHED resources in queue
-    b->queue_usage[queue_str].cur_sched_nodes -= j->nnodes ();
-    b->queue_usage[queue_str].cur_sched_cores -= j->ncores ();
+    // decrement the association's current SCHED jobs and resources count
+    j->release_sched_jobs ();
+    j->release_sched_resources ();
     // check to see if any jobs held due to max_sched_jobs limit can now
     // have their dependency removed
     if (!b->held_jobs.empty ()) {
@@ -1855,17 +1878,22 @@ static int job_updated (flux_plugin_t *p,
 {
     int userid;
     char *bank = NULL;
+    char *queue = NULL;
     char *updated_queue = NULL;
     char *updated_bank = NULL;
     Association *a;
+    Association *a_new = NULL;
+    bool held_job_moved;
+    bool sched_usage_freed;
+    Job *j;
 
     flux_t *h = flux_jobtap_get_flux (p);
     if (flux_plugin_arg_unpack (args,
                                 FLUX_PLUGIN_ARG_IN,
-                                "{s:i, s{s{s{s?s}}}, s:{s?s, s?s}}",
+                                "{s:i, s{s{s{s?s, s?s}}}, s:{s?s, s?s}}",
                                 "userid", &userid,
-                                "jobspec", "attributes", "system", "bank",
-                                &bank,
+                                "jobspec", "attributes", "system",
+                                "bank", &bank, "queue", &queue,
                                 "updates",
                                   "attributes.system.queue", &updated_queue,
                                   "attributes.system.bank", &updated_bank) < 0)
@@ -1884,15 +1912,30 @@ static int job_updated (flux_plugin_t *p,
         return -1;
     }
 
+    j = static_cast<Job *> (
+            flux_jobtap_job_aux_get (p,
+                                     FLUX_JOBTAP_CURRENT_JOB,
+                                     "mf_priority:job_info"));
+    if (j == NULL) {
+        flux_jobtap_raise_exception (p,
+                                     FLUX_JOBTAP_CURRENT_JOB,
+                                     "mf_priority",
+                                     0,
+                                     "%s: job info missing",
+                                     topic);
+        return -1;
+    }
+
+    a_new = a;
     if (updated_bank != NULL && a->bank_name != std::string (updated_bank)) {
         // the bank for the user has been updated, so we need to update
         // the Association object for this job
 
         // get attributes of new bank
-        Association *a_new = get_association (userid,
-                                              updated_bank,
-                                              users,
-                                              users_def_bank);
+        a_new = get_association (userid,
+                                 updated_bank,
+                                 users,
+                                 users_def_bank);
         if (a_new == nullptr) {
             flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
                                          "mf_priority", 0,
@@ -1905,28 +1948,43 @@ static int job_updated (flux_plugin_t *p,
 
         // update the active jobs count of the old bank
         a->cur_active_jobs--;
-        // assign the new Association object to the original Association object
-        a = a_new;
         // update the active jobs count of the updated bank
-        a->cur_active_jobs++;
+        a_new->cur_active_jobs++;
 
         // assign priority associated with validated bank
-        a->bank_factor = get_bank_priority (a->bank_name.c_str (), banks);
+        a_new->bank_factor = get_bank_priority (a_new->bank_name.c_str (),
+                                                banks);
 
         // re-pack the updated Association object to the job
         if (flux_jobtap_job_aux_set (p,
                                      FLUX_JOBTAP_CURRENT_JOB,
                                      "mf_priority:bank_info",
-                                     a,
+                                     a_new,
                                      NULL) < 0)
             flux_log_error (h, "flux_jobtap_job_aux_set");
     }
 
-    if (updated_queue != NULL)
+    std::string new_queue = updated_queue ? updated_queue
+                                          : (queue ? queue : j->queue);
+
+    if (updated_queue != NULL) {
         // the queue for the job has been updated, so fetch the priority
         // associated with this queue and assign it to the Association object
         // associated with the job
-        a->queue_factor = get_queue_info (updated_queue, a->queues, queues);
+        a_new->queue_factor = get_queue_info (updated_queue,
+                                              a_new->queues,
+                                              queues);
+    }
+
+    sched_usage_freed = j->move_sched (a_new, new_queue);
+    held_job_moved = move_held_job (a, a_new, j->id, new_queue);
+    if (sched_usage_freed || held_job_moved) {
+        if (check_and_release_all_held_jobs (p) < 0) {
+            flux_log_error (h,
+                            "%s: error checking and releasing held jobs",
+                            topic);
+        }
+    }
 
     return 0;
 }
@@ -2119,16 +2177,11 @@ static int inactive_cb (flux_plugin_t *p,
                             cancelled_job),
             b->held_jobs.end ()
         );
-        if (flux_jobtap_job_event_posted (p, FLUX_JOBTAP_CURRENT_JOB, "priority")) {
-            // this job was actually in SCHED state, so we need to decrement
-            // the SCHED counts for the association that this job is
-            // contributing to since it never ran
-            b->cur_sched_jobs--;
-            b->queue_usage[queue_str].cur_sched_jobs--;
-            b->queue_usage[queue_str].cur_sched_nodes -= j->nnodes ();
-            b->queue_usage[queue_str].cur_sched_cores -= j->ncores ();
-            // check to see if any jobs held due to the limits above can now
-            // have their dependency removed.
+        bool sched_jobs_freed = j->release_sched_jobs ();
+        bool sched_resources_freed = j->release_sched_resources ();
+        if (sched_jobs_freed || sched_resources_freed) {
+            // this job was actually in SCHED state, so see if other held jobs
+            // can use the SCHED headroom it just freed.
             if (check_and_release_all_held_jobs (p) < 0) {
                 flux_log_error (h,
                                 "%s: error checking and releasing held jobs",

@@ -31,6 +31,17 @@ extern "C" {
 // custom job resource counting file
 #include "jj.hpp"
 
+class Association;
+
+struct SchedCharge {
+    Association *assoc = nullptr;
+    std::string queue;
+    int nodes = 0;
+    int cores = 0;
+    bool jobs = false;
+    bool resources = false;
+};
+
 class Job {
 public:
     // attributes
@@ -39,7 +50,7 @@ public:
     // the total amount of each resource type requested, keyed by type
     // name such as node or core. Populated by count_resources ()
     std::map<std::string, int> resources;
-    std::string queue;             // the queue the job was submitted under
+    std::string queue;             // queue the job is currently assigned to
     double fairshare = -1.0;       // fair-share value associated with this job
 
     // constructor
@@ -61,6 +72,14 @@ public:
     int nnodes () const { return get_resource ("node"); }
     int ncores () const { return get_resource ("core"); }
 
+    // charge or release this job's SCHED usage
+    bool charge_sched (Association *assoc, const std::string &queue);
+    bool release_sched_jobs ();
+    bool release_sched_resources ();
+    bool move_sched (Association *assoc, const std::string &queue);
+    bool sched_jobs_charged () const { return sched_charge.jobs; }
+    bool sched_resources_charged () const { return sched_charge.resources; }
+
     // add a dependency to the job's list of dependencies
     void add_dep (const std::string &dep);
 
@@ -69,6 +88,9 @@ public:
 
     // remove a job dependency from a job's list of dependencies
     void remove_dep (const std::string &dep);
+
+private:
+    SchedCharge sched_charge;
 };
 
 #endif // JOB_H

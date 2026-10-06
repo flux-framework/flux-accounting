@@ -106,7 +106,10 @@ data_writer_db_test01_t_LDADD = \
 accounting_test01_t_SOURCES = \
 	plugins/test/accounting_test01.cpp \
 	plugins/accounting.cpp \
-	plugins/accounting.hpp
+	plugins/accounting.hpp \
+	plugins/job.cpp \
+	plugins/job.hpp \
+	plugins/jj.cpp
 accounting_test01_t_CXXFLAGS = $(AM_CXXFLAGS) -I$(top_srcdir) $(JANSSON_CFLAGS)
 accounting_test01_t_LDADD = \
 	common/libtap/libtap.la \
