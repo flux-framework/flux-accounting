@@ -1531,9 +1531,9 @@ static int new_cb (flux_plugin_t *p,
         return -1;
     }
 
-    if (state == FLUX_JOB_STATE_RUN) {
-        // this job was already running; increment the association's running
-        // jobs and resource counts
+    if (state == FLUX_JOB_STATE_RUN || state == FLUX_JOB_STATE_CLEANUP) {
+        // this job was already running or cleaning up; increment the
+        // association's running jobs and resource counts
         b->cur_run_jobs++;
         // we need to charge the sched resources for this job but decrement
         // the current number of jobs in SCHED since this is already running
