@@ -1531,10 +1531,14 @@ static int new_cb (flux_plugin_t *p,
         return -1;
     }
 
-    if (state == FLUX_JOB_STATE_RUN) {
-        // this job was already running; increment the association's running
-        // jobs and resource counts
+    if (state == FLUX_JOB_STATE_RUN || state == FLUX_JOB_STATE_CLEANUP) {
+        // this job was already running or cleaning up; increment the
+        // association's running jobs and resource counts
         b->cur_run_jobs++;
+        // we need to charge the sched resources for this job but decrement
+        // the current number of jobs in SCHED since this is already running
+        j->charge_sched (b, queue_str);
+        j->release_sched_jobs ();
         if (queue != NULL) {
             // a queue was passed in; increment counter of the number of
             // queue-specific running jobs for this association
@@ -1643,15 +1647,15 @@ static int depend_cb (flux_plugin_t *p,
             job.add_dep (D_QUEUE_MSJ);
         }
         if (!b->under_queue_max_sched_nodes (job, queue_str, queues)) {
-            // association is already at their max nodes in SCHED state limit
-            // across their running jobs in this queue; add a dependency
+            // association is already at their max nodes in SCHED/RUN state
+            // limit across their running jobs in this queue; add a dependency
             if (flux_jobtap_dependency_add (p, id, D_QUEUE_MSN) < 0)
                 goto error;
             job.add_dep (D_QUEUE_MSN);
         }
         if (!b->under_queue_max_sched_cores (job, queue_str, queues)) {
-            // association is already at their max cores in SCHED state limit
-            // across their running jobs in this queue; add a dependency
+            // association is already at their max cores in SCHED/RUN state
+            // limit across their running jobs in this queue; add a dependency
             if (flux_jobtap_dependency_add (p, id, D_QUEUE_MSC) < 0)
                 goto error;
             job.add_dep (D_QUEUE_MSC);
@@ -1852,7 +1856,6 @@ static int run_cb (flux_plugin_t *p,
 
     // decrement the association's current SCHED jobs and resources count
     j->release_sched_jobs ();
-    j->release_sched_resources ();
     // check to see if any jobs held due to max_sched_jobs limit can now
     // have their dependency removed
     if (!b->held_jobs.empty ()) {
@@ -2219,6 +2222,10 @@ static int inactive_cb (flux_plugin_t *p,
             // decrement num of running jobs the association has in queue
             b->queue_usage[queue_str].cur_run_jobs--;
     }
+
+    // decrement the association's current SCHED jobs and resources count
+    j->release_sched_jobs ();
+    j->release_sched_resources ();
 
     // check to see if any jobs held due to the limits above can now
     // have their dependency removed

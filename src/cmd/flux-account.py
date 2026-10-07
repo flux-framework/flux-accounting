@@ -950,8 +950,8 @@ def add_add_queue_arg(subparsers):
         "--max-sched-nodes-per-assoc",
         type=int,
         help=(
-            "max number of nodes in SCHED state an association can have across all of "
-            "their active jobs in this queue at any given time"
+            "max number of nodes an association can have across all of their jobs "
+            "in SCHED state or RUN state in this queue at any given time"
         ),
         default=INTEGER_MAX,
         metavar="NNODES",
@@ -961,8 +961,8 @@ def add_add_queue_arg(subparsers):
         "--max-sched-cores-per-assoc",
         type=int,
         help=(
-            "max number of cores in SCHED state an association can have across all of "
-            "their active jobs in this queue at any given time"
+            "max number of cores an association can have across all of their jobs "
+            "in SCHED state or RUN state in this queue at any given time"
         ),
         default=INTEGER_MAX,
         metavar="NCORES",
@@ -1087,8 +1087,8 @@ def add_edit_queue_arg(subparsers):
         "--max-sched-nodes-per-assoc",
         type=int,
         help=(
-            "max number of nodes in SCHED state an association can have across all of "
-            "their active jobs in this queue at any given time"
+            "max number of nodes an association can have across all of their jobs "
+            "in SCHED state or RUN state in this queue at any given time"
         ),
         default=None,
         metavar="NNODES",
@@ -1098,8 +1098,8 @@ def add_edit_queue_arg(subparsers):
         "--max-sched-cores-per-assoc",
         type=int,
         help=(
-            "max number of cores in SCHED state an association can have across all of "
-            "their active jobs in this queue at any given time"
+            "max number of cores an association can have across all of their jobs "
+            "in SCHED state or RUN state in this queue at any given time"
         ),
         default=None,
         metavar="NCORES",

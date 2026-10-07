@@ -1,6 +1,6 @@
 #!/bin/bash
 
-test_description='test limiting number of resources in SCHED per-queue'
+test_description='test limiting number of resources in SCHED or RUN per-queue'
 
 . `dirname $0`/sharness.sh
 
@@ -29,8 +29,8 @@ test_expect_success 'start flux-accounting service' '
 '
 
 # Setting max-sched-nodes and max-sched-cores to 4 means that an association
-# can have up to 4 nodes and 4 cores in SCHED state in the "pdebug" queue at
-# any given time.
+# can have up to 4 nodes and 4 cores in SCHED or RUN state in the "pdebug"
+# queue at any given time.
 test_expect_success 'add a queue to DB' '
 	flux account add-queue pdebug \
 		--max-sched-nodes-per-assoc=4 \
@@ -75,22 +75,16 @@ test_expect_success 'queue is properly configured in plugin internal data struct
 		".queues.pdebug.max_sched_cores_per_assoc == 4" <query.json
 '
 
-# This job will proceed to RUN immediately but take up all current resources
-# of this instance, so any job submitted while this job is running will be
-# placed in SCHED state.
+# This job will proceed to RUN immediately but take up all of the available
+# nodes/cores allowed per-association in this queue, so any other job submitted
+# by this association while this job is running will have a dependency placed
+# on it.
 test_expect_success 'first job proceeds to RUN immediately' '
 	job1=$(flux python ${SUBMIT_AS} 50001 -N4 --queue=pdebug sleep inf) &&
 	flux job wait-event -t 5 ${job1} alloc
 '
 
-# Since the first job is currently running, this job is placed in SCHED state
-# until enough resources are freed up for this job to run.
-test_expect_success 'second job gets placed in SCHED state' '
-	job2=$(flux python ${SUBMIT_AS} 50001 -N4 --queue=pdebug sleep inf) &&
-	flux job wait-event -t 5 ${job2} priority
-'
-
-test_expect_success 'association has 4 nodes and 4 cores in SCHED state' '
+test_expect_success 'association has 4 nodes and 4 cores in SCHED or RUN state' '
 	flux jobtap query mf_priority.so > query.json &&
 	test_debug "jq -S . <query.json" &&
 	jq -e \
@@ -103,16 +97,16 @@ test_expect_success 'association has 4 nodes and 4 cores in SCHED state' '
 		 .banks[0].queue_usage.pdebug.cur_sched_cores == 4" <query.json
 '
 
-# Since the association already has 4 nodes and 4 cores in SCHED state, this
-# job has dependencies placed on it.
-test_expect_success 'third submitted job has SCHED-state-related dependency' '
-	job3=$(flux python ${SUBMIT_AS} 50001 -N1 --queue=pdebug sleep inf) &&
+# Since the association already has 4 nodes and 4 cores allocated to a job,
+# this job has dependencies placed on it.
+test_expect_success 'second submitted job has SCHED-state-related dependency' '
+	job2=$(flux python ${SUBMIT_AS} 50001 -N1 --queue=pdebug sleep inf) &&
 	flux job wait-event -t 5 \
 		--match-context=description="max-sched-nodes-queue-limit" \
-		${job3} dependency-add &&
+		${job2} dependency-add &&
 	flux job wait-event -t 5 \
 		--match-context=description="max-sched-cores-queue-limit" \
-		${job3} dependency-add
+		${job2} dependency-add
 '
 
 # When the first job gets cancelled, the second job can proceed to run because
@@ -122,22 +116,9 @@ test_expect_success 'second job receives alloc event' '
 	flux job wait-event -t 5 ${job2} alloc
 '
 
-# When the second job proceeds to run, the job.state.run callback checks to see
-# if any other jobs held due to the max_sched_nodes and max_sched_cores
-# per-queue limit can have their dependency removed.
-test_expect_success 'third job has max-sched-nodes and max-sched-cores dependencies removed' '
-	flux job wait-event -t 5 \
-		--match-context=description="max-sched-nodes-queue-limit" \
-		${job3} dependency-remove &&
-	flux job wait-event -t 5 \
-		--match-context=description="max-sched-cores-queue-limit" \
-		${job3} dependency-remove
-'
-
 test_expect_success 'cancel jobs' '
-	flux cancel ${job2} ${job3} &&
-	flux job wait-event -t 5 ${job2} clean &&
-	flux job wait-event -t 5 ${job3} clean
+	flux cancel ${job2} &&
+	flux job wait-event -t 5 ${job2} clean
 '
 
 test_expect_success 'association job counts are correct' '
@@ -174,8 +155,8 @@ test_expect_success 'association job counts are correct' '
 '
 
 # In this set of tests, we make sure that with two queues, a job held in queue
-# A due to a max SCHED limit is not released when a job in B transitions to RUN
-# state.
+# A due to a max-sched-[nodes|cores]-per-assoc limit is not released when a job
+# in B transitions to RUN state.
 test_expect_success 'edit pdebug limits' '
 	flux account edit-queue pdebug \
 		--max-sched-nodes-per-assoc=2 \
@@ -203,117 +184,27 @@ test_expect_success 'association hits limits in both queues' '
 	pdebug_job1=$(flux python ${SUBMIT_AS} 50001 -N2 --queue=pdebug sleep inf) &&
 	 flux job wait-event -t 5 ${pdebug_job1} alloc &&
 	pbatch_job1=$(flux python ${SUBMIT_AS} 50001 -N2 --queue=pbatch sleep inf) &&
-	 flux job wait-event -t 5 ${pbatch_job1} alloc &&
-	pdebug_job2=$(flux python ${SUBMIT_AS} 50001 -N2 --queue=pdebug sleep inf) &&
-	 flux job wait-event -t 5 ${pdebug_job2} priority &&
-	pbatch_job2=$(flux python ${SUBMIT_AS} 50001 -N2 --queue=pbatch sleep inf) &&
-	 flux job wait-event -t 5 ${pbatch_job2} priority
+	 flux job wait-event -t 5 ${pbatch_job1} alloc
 '
 
 test_expect_success 'jobs have dependencies placed on them after limits are hit' '
-	pdebug_job3=$(flux python ${SUBMIT_AS} 50001 -N1 --queue=pdebug sleep inf) &&
+	pdebug_job2=$(flux python ${SUBMIT_AS} 50001 -N1 --queue=pdebug sleep inf) &&
 	 flux job wait-event -t 5 \
 		 --match-context=description="max-sched-nodes-queue-limit" \
-		 ${pdebug_job3} dependency-add &&
+		 ${pdebug_job2} dependency-add &&
 	 flux job wait-event -t 5 \
 		 --match-context=description="max-sched-cores-queue-limit" \
-		 ${pdebug_job3} dependency-add &&
-	pbatch_job3=$(flux python ${SUBMIT_AS} 50001 -N1 --queue=pbatch sleep inf) &&
+		 ${pdebug_job2} dependency-add &&
+	pbatch_job2=$(flux python ${SUBMIT_AS} 50001 -N1 --queue=pbatch sleep inf) &&
 	 flux job wait-event -t 5 \
 		 --match-context=description="max-sched-nodes-queue-limit" \
-		 ${pbatch_job3} dependency-add &&
+		 ${pbatch_job2} dependency-add &&
 	 flux job wait-event -t 5 \
 		 --match-context=description="max-sched-cores-queue-limit" \
-		 ${pbatch_job3} dependency-add
+		 ${pbatch_job2} dependency-add
 '
 
 test_expect_success 'ensure job counts for association are accurate' '
-	flux jobtap query mf_priority.so > query.json &&
-	test_debug "jq -S . <query.json" &&
-	jq -e \
-		".mf_priority_map[] |
-		 select(.userid == 50001) |
-		 .banks[0].cur_active_jobs == 6" <query.json &&
-	jq -e \
-		".mf_priority_map[] |
-		 select(.userid == 50001) |
-		 .banks[0].cur_run_jobs == 2" <query.json &&
-	jq -e \
-		".mf_priority_map[] |
-		 select(.userid == 50001) |
-		 .banks[0].cur_sched_jobs == 2" <query.json &&
-	jq -e \
-		".mf_priority_map[] |
-		 select(.userid == 50001) |
-		 .banks[0].held_jobs | length == 2" <query.json &&
-	jq -e ".mf_priority_map[] | \
-		select(.userid == 50001) | \
-		.banks[0].queue_usage[\"pdebug\"].cur_run_jobs == 1" <query.json &&
-	jq -e ".mf_priority_map[] | \
-		select(.userid == 50001) | \
-		.banks[0].queue_usage[\"pbatch\"].cur_run_jobs == 1" <query.json &&
-	jq -e ".mf_priority_map[] | \
-		select(.userid == 50001) | \
-		.banks[0].queue_usage[\"pdebug\"].cur_sched_jobs == 1" <query.json &&
-	jq -e ".mf_priority_map[] | \
-		select(.userid == 50001) | \
-		.banks[0].queue_usage[\"pbatch\"].cur_sched_jobs == 1" <query.json
-'
-
-test_expect_success 'job1 in pdebug is cancelled; job2 in pdebug can now run' '
-	flux cancel ${pdebug_job1} &&
-	flux job wait-event -t 5 ${pdebug_job2} alloc
-'
-
-test_expect_success 'held job in pbatch is still not released' '
-	pbatch_job3_dec=$(flux job id -t dec ${pbatch_job3}) &&
-	flux jobtap query mf_priority.so > query.json &&
-	test_debug "jq -S . <query.json" &&
-	jq -e \
-		".mf_priority_map[] |
-		 select(.userid == 50001) |
-		 .banks[0].cur_active_jobs == 5" <query.json &&
-	jq -e \
-		".mf_priority_map[] |
-		 select(.userid == 50001) |
-		 .banks[0].cur_run_jobs == 2" <query.json &&
-	jq -e \
-		".mf_priority_map[] |
-		 select(.userid == 50001) |
-		 .banks[0].cur_sched_jobs == 2" <query.json &&
-	jq -e \
-		".mf_priority_map[] |
-		 select(.userid == 50001) |
-		 .banks[0].held_jobs | length == 1" <query.json &&
-	jq -e \
-		".mf_priority_map[] |
-		 select(.userid == 50001) |
-		 .banks[0].held_jobs[\"${pbatch_job3_dec}\"].deps \
-			| length == 2" <query.json &&
-	jq -e \
-		".mf_priority_map[] |
-		 select(.userid == 50001) |
-		 .banks[0].held_jobs[\"${pbatch_job3_dec}\"].deps[0] \
-			== \"max-sched-nodes-queue-limit\"" <query.json &&
-	jq -e \
-		".mf_priority_map[] |
-		 select(.userid == 50001) |
-		 .banks[0].held_jobs[\"${pbatch_job3_dec}\"].deps[1] \
-			== \"max-sched-cores-queue-limit\"" <query.json
-'
-
-test_expect_success 'job2 in pdebug cancelled; job2 in pbatch can run' '
-	flux cancel ${pdebug_job2} &&
-	flux job wait-event -t 5 ${pbatch_job2} alloc
-'
-
-test_expect_success 'dependency removed from job3 in pbatch now that job2 in pbatch runs' '
-	flux job wait-event -t 5 \
-		--match-context=description="max-sched-nodes-queue-limit" \
-		${pbatch_job3} dependency-remove &&
-	flux job wait-event -t 5 \
-		--match-context=description="max-sched-cores-queue-limit" \
-		${pbatch_job3} dependency-remove &&
 	flux jobtap query mf_priority.so > query.json &&
 	test_debug "jq -S . <query.json" &&
 	jq -e \
@@ -327,19 +218,95 @@ test_expect_success 'dependency removed from job3 in pbatch now that job2 in pba
 	jq -e \
 		".mf_priority_map[] |
 		 select(.userid == 50001) |
-		 .banks[0].cur_sched_jobs == 2" <query.json &&
+		 .banks[0].held_jobs | length == 2" <query.json &&
+	jq -e ".mf_priority_map[] | \
+		select(.userid == 50001) | \
+		.banks[0].queue_usage[\"pdebug\"].cur_run_jobs == 1" <query.json &&
+	jq -e ".mf_priority_map[] | \
+		select(.userid == 50001) | \
+		.banks[0].queue_usage[\"pbatch\"].cur_run_jobs == 1" <query.json
+'
+
+test_expect_success 'job1 in pdebug is cancelled; job2 in pdebug can now run' '
+	flux cancel ${pdebug_job1} &&
+	flux job wait-event -t 5 ${pdebug_job2} alloc
+'
+
+test_expect_success 'held job in pbatch is still not released' '
+	pbatch_job2_dec=$(flux job id -t dec ${pbatch_job2}) &&
+	flux jobtap query mf_priority.so > query.json &&
+	test_debug "jq -S . <query.json" &&
 	jq -e \
 		".mf_priority_map[] |
 		 select(.userid == 50001) |
-		 .banks[0].held_jobs | length == 0" <query.json
+		 .banks[0].cur_active_jobs == 3" <query.json &&
+	jq -e \
+		".mf_priority_map[] |
+		 select(.userid == 50001) |
+		 .banks[0].cur_run_jobs == 2" <query.json &&
+	jq -e \
+		".mf_priority_map[] |
+		 select(.userid == 50001) |
+		 .banks[0].held_jobs | length == 1" <query.json &&
+	jq -e \
+		".mf_priority_map[] |
+		 select(.userid == 50001) |
+		 .banks[0].held_jobs[\"${pbatch_job2_dec}\"].deps \
+			| length == 2" <query.json &&
+	jq -e \
+		".mf_priority_map[] |
+		 select(.userid == 50001) |
+		 .banks[0].held_jobs[\"${pbatch_job2_dec}\"].deps[0] \
+			== \"max-sched-nodes-queue-limit\"" <query.json &&
+	jq -e \
+		".mf_priority_map[] |
+		 select(.userid == 50001) |
+		 .banks[0].held_jobs[\"${pbatch_job2_dec}\"].deps[1] \
+			== \"max-sched-cores-queue-limit\"" <query.json
+'
+
+test_expect_success 'job1 in pbatch cancelled; job2 in pbatch can run' '
+	flux cancel ${pbatch_job1} &&
+	flux job wait-event -t 5 ${pbatch_job2} alloc
+'
+
+test_expect_success 'dependency removed from job2 in pbatch now that job1 in pbatch complete' '
+	flux job wait-event -t 5 \
+		--match-context=description="max-sched-nodes-queue-limit" \
+		${pbatch_job2} dependency-remove &&
+	flux job wait-event -t 5 \
+		--match-context=description="max-sched-cores-queue-limit" \
+		${pbatch_job2} dependency-remove &&
+	flux jobtap query mf_priority.so > query.json &&
+	test_debug "jq -S . <query.json" &&
+	jq -e \
+		".mf_priority_map[] |
+		 select(.userid == 50001) |
+		 .banks[0].cur_active_jobs == 2" <query.json &&
+	jq -e \
+		".mf_priority_map[] |
+		 select(.userid == 50001) |
+		 .banks[0].cur_run_jobs == 2" <query.json &&
+	jq -e \
+		".mf_priority_map[] |
+		 select(.userid == 50001) |
+		 .banks[0].cur_sched_jobs == 0" <query.json &&
+	jq -e \
+		".mf_priority_map[] |
+		 select(.userid == 50001) |
+		 .banks[0].held_jobs | length == 0" <query.json &&
+	jq -e ".mf_priority_map[] | \
+		select(.userid == 50001) | \
+		.banks[0].queue_usage[\"pbatch\"].cur_sched_nodes == 1" <query.json &&
+	jq -e ".mf_priority_map[] | \
+		select(.userid == 50001) | \
+		.banks[0].queue_usage[\"pbatch\"].cur_sched_cores == 1" <query.json
 '
 
 test_expect_success 'cancel jobs' '
-	flux cancel ${pbatch_job1} ${pbatch_job2} ${pdebug_job3} ${pbatch_job3} &&
+	flux cancel ${pbatch_job2} ${pdebug_job2} &&
 	flux job wait-event -t 5 ${pbatch_job1} clean &&
-	flux job wait-event -t 5 ${pbatch_job2} clean &&
-	flux job wait-event -t 5 ${pdebug_job3} clean &&
-	flux job wait-event -t 5 ${pbatch_job3} clean
+	flux job wait-event -t 5 ${pdebug_job2} clean
 '
 
 test_expect_success 'edit properties of pdebug queue' '
@@ -351,14 +318,12 @@ test_expect_success 'edit properties of pdebug queue' '
 
 # This set of tests ensures that an association's cur_sched_nodes and
 # cur_sched_cores counts are correctly counted after a plugin restart.
-test_expect_success 'submit enough jobs to keep one in SCHED state' '
+test_expect_success 'submit a job' '
 	job1=$(flux python ${SUBMIT_AS} 50001 -N4 --queue=pdebug sleep inf) &&
-	flux job wait-event -t 5 ${job1} alloc &&
-	job2=$(flux python ${SUBMIT_AS} 50001 -N4 --queue=pdebug sleep inf) &&
-	flux job wait-event -t 5 ${job2} priority
+	flux job wait-event -t 5 ${job1} alloc
 '
 
-test_expect_success 'association has 4 nodes and 4 cores in SCHED state' '
+test_expect_success 'association has 4 nodes and 4 cores in SCHED/RUN state' '
 	flux jobtap query mf_priority.so > query.json &&
 	test_debug "jq -S . <query.json" &&
 	jq -e \
@@ -383,15 +348,11 @@ test_expect_success 'association still has 4 nodes and 4 cores in SCHED state af
 	jq -e \
 		".mf_priority_map[] |
 		 select(.userid == 50001) |
-		 .banks[0].cur_active_jobs == 2" <query.json &&
+		 .banks[0].cur_active_jobs == 1" <query.json &&
 	jq -e \
 		".mf_priority_map[] |
 		 select(.userid == 50001) |
 		 .banks[0].cur_run_jobs == 1" <query.json &&
-	jq -e \
-		".mf_priority_map[] |
-		 select(.userid == 50001) |
-		 .banks[0].cur_sched_jobs == 1" <query.json &&
 	jq -e \
 		".mf_priority_map[] |
 		 select(.userid == 50001) |
@@ -402,10 +363,9 @@ test_expect_success 'association still has 4 nodes and 4 cores in SCHED state af
 		 .banks[0].queue_usage.pdebug.cur_sched_cores == 4" <query.json
 '
 
-test_expect_success 'cancel jobs' '
-	flux cancel ${job1} ${job2} &&
-	flux job wait-event -t 5 ${job1} clean &&
-	flux job wait-event -t 5 ${job2} clean
+test_expect_success 'cancel job' '
+	flux cancel ${job1} &&
+	flux job wait-event -t 5 ${job1} clean
 '
 
 # Verify that when a SCHED job transitions out of SCHED, the freed per-queue
@@ -420,12 +380,6 @@ test_expect_success 'reset pdebug to 4 sched nodes/cores' '
 test_expect_success 'running job occupies all resources' '
 	rjob=$(flux python ${SUBMIT_AS} 50001 -N4 --queue=pdebug sleep inf) &&
 	flux job wait-event -t 5 ${rjob} alloc
-'
-
-# ssjob sits in SCHED and consumes all resources available to be in SCHED
-test_expect_success 'sched job consumes all per-queue sched headroom' '
-	ssjob=$(flux python ${SUBMIT_AS} 50001 -N4 --queue=pdebug sleep inf) &&
-	flux job wait-event -t 5 ${ssjob} priority
 '
 
 # both jobs here will have both SCHED-related resource limits applied to them
@@ -446,14 +400,13 @@ test_expect_success 'heldA and heldB both pick up node and core dependencies' '
 		${heldB} dependency-add
 '
 
-# Cancel the running job. ssjob transitions to RUN, freeing all 4 sched
-# nodes/cores. In the resulting check_and_release_held_jobs () pass, heldA
-# is released first; its job.state.sched callback fires synchronously and bumps
-# cur_sched_nodes/cores to 2 before heldB is evaluated. heldB must then release
-# because cur_sched_nodes (2) + heldB.nnodes (2) == 4, which is <= 4
-test_expect_success 'cancel running job; sched job runs and both held jobs release' '
+# Cancel the running job, freeing all 4 sched nodes/cores. In the resulting
+# check_and_release_held_jobs () pass, heldA is released first; its job.state.sched
+# callback fires synchronously and bumps cur_sched_nodes/cores to 2 before heldB is
+# evaluated. heldB must then release because cur_sched_nodes (2) +
+# heldB.nnodes (2) == 4, which is <= 4
+test_expect_success 'cancel running job; both held jobs release' '
 	flux cancel ${rjob} &&
-	flux job wait-event -t 5 ${ssjob} alloc &&
 	flux job wait-event -t 5 \
 		--match-context=description="max-sched-nodes-queue-limit" \
 		${heldA} dependency-remove &&
@@ -469,8 +422,7 @@ test_expect_success 'cancel running job; sched job runs and both held jobs relea
 '
 
 test_expect_success 'cancel jobs' '
-	flux cancel ${ssjob} ${heldA} ${heldB} &&
-	flux job wait-event -t 5 ${ssjob} clean &&
+	flux cancel ${heldA} ${heldB} &&
 	flux job wait-event -t 5 ${heldA} clean &&
 	flux job wait-event -t 5 ${heldB} clean
 '

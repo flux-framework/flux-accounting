@@ -101,8 +101,8 @@ public:
     int cur_run_jobs = 0;   // number of running jobs in queue
     int cur_nodes = 0;      // number of nodes across all running jobs in queue
     int cur_sched_jobs = 0; // number of jobs in SCHED state in queue
-    int cur_sched_nodes = 0;// number of nodes in SCHED state in queue
-    int cur_sched_cores = 0;// number of cores in SCHED state in queue
+    int cur_sched_nodes = 0;// number of nodes in SCHED/RUN state in queue
+    int cur_sched_cores = 0;// number of cores in SCHED/RUN state in queue
 };
 
 // all attributes are per-user/bank
