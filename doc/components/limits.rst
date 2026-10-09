@@ -120,9 +120,11 @@ meet the requirements to have their dependencies removed and transition to
 ``RUN``. The workflow looks like the following: grab the held job, its
 attributes, and its dependencies. Ensure that the job would not:
 
-* Put the association over the max running jobs limit for the *queue* the job is submitted in.
+* Put the association over the max running jobs limit for the *queue* the job
+  is submitted in.
 
-* Put the association over the max nodes limit for the *queue* the job is submitted in.
+* Put the association over the max scheduled nodes or cores limit for the
+  *queue* the job is submitted in.
 
 * Put the association over their max running jobs limit *regardless of queue*.
 
@@ -178,7 +180,7 @@ user ID.
 No. If the limits configured for a particular queue or association do not seem
 to fit your needs, you can change them. However, be sure to note that these
 limits need to be pushed to the priority plugin with
-``flux account-priority-update`` in order for them to take effetc. When the
+``flux account-priority-update`` in order for them to take effect. When the
 plugin is updated with the new limits, the held jobs for every association are
 reanalyzed to see if they now fit the requirements to be released.
 
