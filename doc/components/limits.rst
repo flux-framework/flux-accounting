@@ -41,10 +41,6 @@ The soft limits in flux-accounting are composed of:
   The max number of running jobs an association can have in a given queue at
   any given time.
 
-(per-queue) max nodes
-  The max number of nodes an association can have across their running jobs in
-  a givent queue at any given time.
-
 (per-queue) max scheduled nodes
   The max number of nodes an association can have across all of their jobs in
   SCHED state or RUN state in a queue at any given time.
@@ -132,6 +128,30 @@ attributes, and its dependencies. Ensure that the job would not:
 The associated dependency is removed from the job **as each requirement is
 met**. In other words, a job can have a dependency removed from it while
 still possessing one or more other dependencies.
+
+Changelog
+=========
+
+``max_nodes_per_assoc`` queue limit
+-----------------------------------
+
+The ``max_nodes_per_assoc`` queue property was previously enforced as a soft
+aggregate limit on the number of nodes an association could have across its
+running and scheduled jobs in a queue. This property is now deprecated and is
+no longer enforced by the priority plugin. It remains available in the
+flux-accounting database, command-line interface, and priority plugin query
+output for compatibility.
+
+Aggregate SCHED and RUN node usage within a queue is enforced by
+``max_sched_nodes_per_assoc``. Existing queue configuration is not migrated
+automatically. Administrators who relied on the aggregate behavior of
+``max_nodes_per_assoc`` should configure ``max_sched_nodes_per_assoc`` with
+the desired aggregate limit.
+
+The priority plugin no longer adds the ``max-resources-queue`` dependency.
+When the plugin is reloaded, it makes a best-effort attempt to remove this
+dependency from jobs that were held by an older plugin version before
+rebuilding their current flux-accounting dependencies.
 
 FAQ
 ===

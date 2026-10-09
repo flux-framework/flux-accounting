@@ -938,7 +938,8 @@ def add_add_queue_arg(subparsers):
         "--max-nodes-per-assoc",
         help=(
             "max number of nodes an association can have across all of their running "
-            "jobs in the queue"
+            "jobs in the queue [DEPRECATED; please use the --max-sched-nodes-per-assoc "
+            "limit instead]"
         ),
         default=INTEGER_MAX,
         metavar="MAX_NODES_PER_ASSOC",
@@ -1075,7 +1076,8 @@ def add_edit_queue_arg(subparsers):
         type=int,
         help=(
             "max number of nodes an association can have across all of their running "
-            "jobs in the queue"
+            "jobs in the queue [DEPRECATED; please use the --max-sched-nodes-per-assoc "
+            "limit instead]"
         ),
         default=None,
         metavar="MAX_NODES_PER_ASSOC",
