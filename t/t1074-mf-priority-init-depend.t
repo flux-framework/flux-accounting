@@ -249,22 +249,24 @@ test_expect_success 'cancel job2' '
 	flux job wait-event -t 5 ${job2} clean
 '
 
-# This set of tests checks that the per-queue max resource limits are
+# This set of tests checks that the per-queue max sched node limits are
 # preserved with a plugin reload.
-test_expect_success 'edit max nodes per-association for pdebug' '
-	flux account edit-queue pdebug --max-running-jobs=-1 --max-nodes-per-assoc=1 &&
+test_expect_success 'edit max sched nodes per-association for pdebug' '
+	flux account edit-queue pdebug \
+		--max-running-jobs=-1 \
+		--max-sched-nodes-per-assoc=1 &&
 	flux account-priority-update -p ${DB} &&
 	flux jobtap query mf_priority.so > query.json &&
 	test_debug "jq -S . <query.json" &&
-	jq -e ".queues.pdebug.max_nodes_per_assoc == 1" <query.json
+	jq -e ".queues.pdebug.max_sched_nodes_per_assoc == 1" <query.json
 '
 
-test_expect_success 'max nodes per-association per-queue limit gets triggered' '
+test_expect_success 'max sched nodes per-association per-queue limit gets triggered' '
 	job1=$(flux python ${SUBMIT_AS} 50001 -N1 sleep inf) &&
 	flux job wait-event -t 5 ${job1} alloc &&
 	job2=$(flux python ${SUBMIT_AS} 50001 -N1 sleep inf) &&
 	flux job wait-event -t 5 \
-		--match-context=description="max-resources-queue" \
+		--match-context=description="max-sched-nodes-queue-limit" \
 		${job2} dependency-add
 '
 
@@ -294,7 +296,7 @@ test_expect_success 'cancel job1' '
 
 test_expect_success 'job2 gets alloc event now that association under limit' '
 	flux job wait-event -t 5 \
-		--match-context=description="max-resources-queue" \
+		--match-context=description="max-sched-nodes-queue-limit" \
 		${job2} dependency-remove
 	flux job wait-event -t 5 ${job2} alloc
 '
