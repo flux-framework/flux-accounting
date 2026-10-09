@@ -23,10 +23,13 @@ altogether and will report a message as to why the job cannot proceed past
 validation. Soft limits will allow a job to be submitted but will prevent it
 from running until a prerequisite has been met.
 
-There is just one hard limit in flux-accounting:
+The hard limits in flux-accounting are composed of:
 
 (per-association) max active jobs
   The max number of active jobs an association can have at any given time.
+
+(per-queue) max nodes per association
+  The max number of nodes a single job may request in a given queue.
 
 The soft limits in flux-accounting are composed of:
 
@@ -40,10 +43,6 @@ The soft limits in flux-accounting are composed of:
 (per-queue) max running jobs
   The max number of running jobs an association can have in a given queue at
   any given time.
-
-(per-queue) max nodes
-  The max number of nodes an association can have across their running jobs in
-  a givent queue at any given time.
 
 (per-queue) max scheduled nodes
   The max number of nodes an association can have across all of their jobs in

@@ -928,10 +928,7 @@ def add_add_queue_arg(subparsers):
     )
     subparser_add_queue.add_argument(
         "--max-nodes-per-assoc",
-        help=(
-            "max number of nodes an association can have across all of their running "
-            "jobs in the queue"
-        ),
+        help="max number of nodes a job can have in a queue",
         default=INTEGER_MAX,
         metavar="MAX_NODES_PER_ASSOC",
     )
@@ -1065,10 +1062,7 @@ def add_edit_queue_arg(subparsers):
     subparser_edit_queue.add_argument(
         "--max-nodes-per-assoc",
         type=int,
-        help=(
-            "max number of nodes an association can have across all of their running "
-            "jobs in the queue"
-        ),
+        help="max number of nodes a job can have in a queue",
         default=None,
         metavar="MAX_NODES_PER_ASSOC",
     )
