@@ -45,8 +45,7 @@ the ``queue_table`` in the flux-accounting database:
 
 .. option:: --max-nodes-per-assoc
 
-    The maximum number of nodes an association can have across all of their
-    running jobs in this queue.
+    The maximum number of nodes a single job may request in this queue.
 
 .. option:: --max-sched-jobs
 

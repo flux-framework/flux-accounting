@@ -202,11 +202,11 @@ test_expect_success 'cancel job(s)' '
 	flux cancel ${job1} ${job2}
 '
 
-# This set repeats the same process as above, but ensures that a
-# max-nodes-per-association per-queue limit can also be removed from a job in
-# DEPEND state after an update.
-test_expect_success 'edit the max_nodes property for bronze queue; update plugin' '
-	flux account edit-queue bronze --max-nodes-per-assoc=1 &&
+# This set repeats the same process as above, but ensures that a per-queue
+# max-sched-nodes limit can also be removed from a job in DEPEND state after
+# an update.
+test_expect_success 'edit the max_sched_nodes property for bronze queue; update plugin' '
+	flux account edit-queue bronze --max-sched-nodes-per-assoc=1 &&
 	flux account-priority-update -p ${DB}
 '
 
@@ -217,7 +217,7 @@ test_expect_success 'submit two jobs and make sure second one is held in DEPEND'
 	job2=$(flux python ${SUBMIT_AS} 50001 \
 		-N 1 -n 1 --queue=bronze sleep inf) &&
 	flux job wait-event -vt 10 \
-		--match-context=description="max-resources-queue" \
+		--match-context=description="max-sched-nodes-queue-limit" \
 		${job2} dependency-add &&
 	flux jobtap query mf_priority.so > query.json &&
 	test_debug "jq -S . <query.json" &&
@@ -228,16 +228,17 @@ test_expect_success 'submit two jobs and make sure second one is held in DEPEND'
 		 length == 1" <query.json
 '
 
-test_expect_success 'update max nodes per-association limit for queue; update DB' '
-	flux account edit-queue bronze --max-nodes-per-assoc=-1 &&
-	flux account view-queue bronze > bronze_max_nodes_limit.out &&
-	grep "\"max_nodes_per_assoc\": \"unlimited\"" bronze_max_nodes_limit.out &&
+test_expect_success 'update max sched nodes per-association limit for queue; update DB' '
+	flux account edit-queue bronze --max-sched-nodes-per-assoc=-1 &&
+	flux account view-queue bronze > bronze_max_sched_nodes_limit.out &&
+	grep "\"max_sched_nodes_per_assoc\": \"unlimited\"" \
+		bronze_max_sched_nodes_limit.out &&
 	flux account-priority-update -p ${DB}
 '
 
 test_expect_success 'ensure previously held job proceeds to RUN' '
 	flux job wait-event -vt 5 \
-		--match-context=description="max-resources-queue" \
+		--match-context=description="max-sched-nodes-queue-limit" \
 		${job2} dependency-remove
 '
 

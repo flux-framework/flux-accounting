@@ -1,6 +1,6 @@
 #!/bin/bash
 
-test_description='test max-resources-queue counts jobs committed in SCHED state'
+test_description='test max-sched-nodes counts jobs committed in SCHED state'
 
 . `dirname $0`/sharness.sh
 
@@ -29,7 +29,7 @@ test_expect_success 'start flux-accounting service' '
 '
 
 test_expect_success 'add queues to DB' '
-	flux account add-queue bronze --max-nodes-per-assoc=2 &&
+	flux account add-queue bronze --max-sched-nodes-per-assoc=2 &&
 	flux account add-queue standby
 '
 
@@ -73,8 +73,8 @@ test_expect_success 'filler job in standby soaks all physical nodes' '
 '
 
 
-# job1 takes up all of the max_nodes_per_assoc limit in the bronze queue for
-# user1
+# job1 takes up all of the max_sched_nodes_per_assoc limit in the bronze queue
+# for user1
 test_expect_success 'job1 enters SCHED state in bronze' '
 	job1=$(flux python ${SUBMIT_AS} 50001 -N2 --queue=bronze sleep inf) &&
 	flux job wait-event -t 5 ${job1} priority
@@ -90,11 +90,11 @@ test_expect_success 'job1 is counted in SCHED for bronze' '
 '
 
 # With 2 nodes already committed to bronze (job1 in SCHED), job2 (another 2
-# nodes) exceeds the cap and is held with a max-resources-queue dependency
-test_expect_success 'job2 is held with max-resources-queue dependency' '
+# nodes) exceeds the cap and is held with a max-sched-nodes dependency
+test_expect_success 'job2 is held with max-sched-nodes dependency' '
 	job2=$(flux python ${SUBMIT_AS} 50001 -N2 --queue=bronze sleep inf) &&
 	flux job wait-event -t 5 \
-		--match-context=description="max-resources-queue" \
+		--match-context=description="max-sched-nodes-queue-limit" \
 		${job2} dependency-add
 '
 
@@ -104,11 +104,11 @@ test_expect_success 'job1 running still holds job2; job1 done releases it' '
 	flux cancel ${filler} &&
 	flux job wait-event -t 5 ${job1} alloc &&
 	test_must_fail flux job wait-event -t 2 \
-		--match-context=description="max-resources-queue" \
+		--match-context=description="max-sched-nodes-queue-limit" \
 		${job2} dependency-remove &&
 	flux cancel ${job1} &&
 	flux job wait-event -t 5 \
-		--match-context=description="max-resources-queue" \
+		--match-context=description="max-sched-nodes-queue-limit" \
 		${job2} dependency-remove &&
 	flux job wait-event -t 5 ${job2} alloc
 '

@@ -42,9 +42,9 @@ test_expect_success 'add some banks' '
 '
 
 test_expect_success 'add some queues to the DB' '
-	flux account add-queue bronze --max-nodes-per-assoc=1 &&
-	flux account add-queue silver --max-nodes-per-assoc=2 &&
-	flux account add-queue gold --max-nodes-per-assoc=3
+	flux account add-queue bronze --max-sched-nodes-per-assoc=1 &&
+	flux account add-queue silver --max-sched-nodes-per-assoc=2 &&
+	flux account add-queue gold --max-sched-nodes-per-assoc=3
 '
 
 test_expect_success 'add an association to the DB' '
@@ -73,8 +73,8 @@ test_expect_success 'send flux-accounting information to the plugin' '
 '
 
 # Scenario 1: An association submits a 1-node job to the bronze queue, which
-# has a max_nodes limit of 1. A second-submitted job to the bronze queue will
-# be held with a queue-specific max resources dependency. 
+# has a max_sched_nodes limit of 1. A second-submitted job to the bronze queue
+# will be held with a queue-specific max sched nodes dependency.
 test_expect_success 'submit a job to bronze queue' '
 	job1=$(flux python ${SUBMIT_AS} 50001 --queue=bronze -N1 sleep 60) &&
 	flux job wait-event -vt 5 ${job1} alloc
@@ -101,10 +101,10 @@ test_expect_success 'check resource counts for association in bronze queue' '
 		 .banks[0].queue_usage[\"bronze\"].cur_run_jobs == 1" <query.json
 '
 
-test_expect_success 'hold second job due to per-queue max nodes limit' '
+test_expect_success 'hold second job due to per-queue max sched nodes limit' '
 	job2=$(flux python ${SUBMIT_AS} 50001 --queue=bronze -N1 sleep 60) &&
 	flux job wait-event -vt 5 \
-		--match-context=description="max-resources-queue" \
+		--match-context=description="max-sched-nodes-queue-limit" \
 		${job2} dependency-add &&
 	flux jobtap query mf_priority.so > query.json &&
 	test_debug "jq -S . <query.json" &&
@@ -146,10 +146,10 @@ test_expect_success 'cancel second job' '
 '
 
 # Scenario 2: An association submits a 1-node job to the bronze queue, which
-# has a max_nodes limit of 1. The association's properties are also edited to
-# have a max_nodes limit of 1. A second-submitted job to the bronze queue will
-# be held with BOTH a queue-specific max_nodes_per_assoc dependency AND a
-# per-association max resources dependency.
+# has a max_sched_nodes limit of 1. The association's properties are also
+# edited to have a max_nodes limit of 1. A second-submitted job to the bronze
+# queue will be held with BOTH a queue-specific max_sched_nodes_per_assoc
+# dependency AND a per-association max resources dependency.
 test_expect_success 'edit association max_nodes limit to 1' '
 	flux account edit-user user1 --max-nodes=1
 '
@@ -187,7 +187,7 @@ test_expect_success 'check resource counts for association' '
 test_expect_success 'hold second job due to queue and association limits' '
 	job2=$(flux python ${SUBMIT_AS} 50001 --queue=bronze -N1 sleep 60) &&
 	flux job wait-event -vt 5 \
-		--match-context=description="max-resources-queue" \
+		--match-context=description="max-sched-nodes-queue-limit" \
 		${job2} dependency-add &&
 	flux job wait-event -vt 5 \
 		--match-context=description="max-resources-user-limit" \
@@ -232,10 +232,10 @@ test_expect_success 'cancel second job' '
 '
 
 # Scenario 3: An association submits a 1-node job to the bronze queue, which
-# has a max_nodes limit of 1 AND a max_running_jobs limit of 1. A
+# has a max_sched_nodes limit of 1 AND a max_running_jobs limit of 1. A
 # second-submitted job to the bronze queue will be held with the following
 # dependencies:
-#   - queue-specific max_nodes_per_assoc
+#   - queue-specific max_sched_nodes_per_assoc
 #   - queue-specific max_running_jobs
 #   - association-specific max_nodes
 test_expect_success 'edit queue max_running_jobs limit to 1' '
@@ -275,7 +275,7 @@ test_expect_success 'check resource counts for association' '
 test_expect_success 'second job is held due to multiple limits being hit' '
 	job2=$(flux python ${SUBMIT_AS} 50001 --queue=bronze -N1 sleep 60) &&
 	flux job wait-event -vt 5 \
-		--match-context=description="max-resources-queue" \
+		--match-context=description="max-sched-nodes-queue-limit" \
 		${job2} dependency-add &&
 	flux job wait-event -vt 5 \
 		--match-context=description="max-resources-user-limit" \
@@ -324,11 +324,11 @@ test_expect_success 'cancel second job' '
 '
 
 # Scenario 4: An association submits a 1-node job to the bronze queue, which
-# has a max_nodes limit of 1 AND a max_running_jobs limit of 1. The
+# has a max_sched_nodes limit of 1 AND a max_running_jobs limit of 1. The
 # association's properties are also edited to have a max running jobs limit of
 # 1. A second-submitted job to the bronze queue will be held with the following
 # dependencies:
-#   - queue-specific max_nodes
+#   - queue-specific max_sched_nodes
 #   - queue-specific max_running_jobs
 #   - association-specific max_nodes
 #   - association-specific max_running_jobs
@@ -369,7 +369,7 @@ test_expect_success 'check resource counts for association' '
 test_expect_success 'second job is held due to multiple limits being hit' '
 	job2=$(flux python ${SUBMIT_AS} 50001 --queue=bronze -N1 sleep 60) &&
 	flux job wait-event -vt 5 \
-		--match-context=description="max-resources-queue" \
+		--match-context=description="max-sched-nodes-queue-limit" \
 		${job2} dependency-add &&
 	flux job wait-event -vt 5 \
 		--match-context=description="max-resources-user-limit" \
