@@ -54,19 +54,22 @@ void initialize_queues () {
     queues["bronze"].name = "bronze";
     queues["bronze"].max_running_jobs = 100;
     queues["bronze"].max_nodes_per_assoc = 1;
+    queues["bronze"].max_sched_nodes_per_assoc = 1;
 }
 
 void queue_limits_defined ()
 {
     ok (queues["bronze"].max_nodes_per_assoc == 1,
-        "bronze queue has a max_nodes limit of 1");
+        "bronze queue has a per-job max_nodes limit of 1");
+    ok (queues["bronze"].max_sched_nodes_per_assoc == 1,
+        "bronze queue has a max_sched_nodes limit of 1");
 }
 
 /*
- * Without running any prior jobs, an association is under the
- * queue's max_nodes limit.
+ * Without any SCHED/RUN commitments, an association is under the
+ * queue's max_sched_nodes limit.
  */
-void association_under_queue_max_nodes_limit_true ()
+void association_under_queue_max_sched_nodes_limit_true ()
 {
     Association *a = &users[50001]["bank_A"];
 
@@ -78,8 +81,8 @@ void association_under_queue_max_nodes_limit_true ()
 
     ok (a->queue_usage["bronze"].cur_nodes == 0,
         "association has no occupied nodes under bronze queue");
-    ok (a->under_queue_max_resources (job, "bronze", queues) == true,
-        "association is under queue's max_nodes limit");
+    ok (a->under_queue_max_sched_nodes (job, "bronze", queues) == true,
+        "association is under queue's max_sched_nodes limit");
 
     // assume job passes all checks and has moved to RUN state
     a->cur_run_jobs = 1;
@@ -89,12 +92,13 @@ void association_under_queue_max_nodes_limit_true ()
 }
 
 /*
- * Once an association's limit is hit within a particular queue, a
+ * Once an association's sched-node limit is hit within a particular queue, a
  * per-queue dependency is added on the job.
  */
-void association_under_queue_max_nodes_limit_false ()
+void association_under_queue_max_sched_nodes_limit_false ()
 {
     Association *a = &users[50001]["bank_A"];
+    a->queue_usage["bronze"].cur_sched_nodes = 1;
 
     // assume Job object above is still running; create a Job object that is
     // also under the "bronze" queue (so it will have a dependency added to it)
@@ -102,38 +106,39 @@ void association_under_queue_max_nodes_limit_false ()
     job.id = 2;
     job.resources["node"] = 1;
     job.queue = "bronze";
-    job.add_dep (D_QUEUE_MRES);
+    job.add_dep (D_QUEUE_MSN);
     a->held_jobs.emplace_back (job);
 
     ok (a->held_jobs.size () == 1,
-        "association has one held job due to per-queue max_resources limit");
+        "association has one held job due to per-queue max_sched_nodes limit");
     ok (job.deps.size () == 1,
         "held job has one dependency added to it");
-    ok (a->under_queue_max_resources (job, "bronze", queues) == false,
-        "association is not under queue's max_nodes limit");
+    ok (a->under_queue_max_sched_nodes (job, "bronze", queues) == false,
+        "association is not under queue's max_sched_nodes limit");
 }
 
 /*
- * Once the first job finishes running and current job and resource counters
- * are decremented, the check for the held job will pass, the dependency will
- * be removed, and the job can proceed to RUN state.
+ * Once the first job finishes and sched-node counters are decremented, the
+ * check for the held job will pass, the dependency will be removed, and the
+ * job can proceed to RUN state.
  */
-void association_release_held_job_true ()
+void association_release_held_sched_node_job_true ()
 {
     Association *a = &users[50001]["bank_A"];
     a->cur_run_jobs = 0;
     a->cur_nodes = 0;
     a->queue_usage["bronze"].cur_run_jobs = 0;
     a->queue_usage["bronze"].cur_nodes = 0;
+    a->queue_usage["bronze"].cur_sched_nodes = 0;
     Job held_job = a->held_jobs.front ();
 
-    ok (a->under_queue_max_resources (held_job, "bronze", queues) == true,
-        "association is now under queue's max_nodes limit");
-    
-    held_job.remove_dep (D_QUEUE_MRES);
+    ok (a->under_queue_max_sched_nodes (held_job, "bronze", queues) == true,
+        "association is now under queue's max_sched_nodes limit");
+
+    held_job.remove_dep (D_QUEUE_MSN);
     ok (held_job.deps.size () == 0,
         "held job no longer has any dependencies added to it");
-    
+
     // erase held job from association's held_jobs vector
     a->held_jobs.clear ();
     ok (a->held_jobs.size () == 0,
@@ -141,30 +146,27 @@ void association_release_held_job_true ()
 }
 
 /*
- * A job sitting in SCHED state (cur_sched_nodes > 0) counts against the
- * per-queue max_nodes limit even when no job is running yet (cur_nodes == 0).
+ * Jobs released earlier in a held-job sweep count against the per-queue
+ * max_sched_nodes limit before their persistent counters are updated.
  */
-void association_sched_node_counts_against_queue_max ()
+void pending_sched_nodes_count_against_queue_max ()
 {
     Association *a = &users[50001]["bank_A"];
     a->cur_run_jobs = 0;
     a->cur_nodes = 0;
     a->queue_usage["bronze"].cur_run_jobs = 0;
     a->queue_usage["bronze"].cur_nodes = 0;
-    a->queue_usage["bronze"].cur_sched_nodes = 1;
+    a->queue_usage["bronze"].cur_sched_nodes = 0;
 
     Job job;
     job.id = 3;
     job.resources["node"] = 1;
     job.queue = "bronze";
 
-    ok (a->under_queue_max_resources (job, "bronze", queues) == false,
-        "SCHED-state node counts against per-queue max_nodes limit");
-
-    // once the SCHED commitment clears, the queue has headroom again
-    a->queue_usage["bronze"].cur_sched_nodes = 0;
-    ok (a->under_queue_max_resources (job, "bronze", queues) == true,
-        "queue has headroom once SCHED commitment clears");
+    ok (a->under_queue_max_sched_nodes (job, "bronze", queues, 1) == false,
+        "pending SCHED-state node counts against per-queue max_sched_nodes");
+    ok (a->under_queue_max_sched_nodes (job, "bronze", queues, 0) == true,
+        "queue has headroom without pending SCHED commitment");
 }
 
 /*
@@ -229,10 +231,10 @@ int main (int argc, char* argv[])
     initialize_queues ();
 
     queue_limits_defined ();
-    association_under_queue_max_nodes_limit_true ();
-    association_under_queue_max_nodes_limit_false ();
-    association_release_held_job_true ();
-    association_sched_node_counts_against_queue_max ();
+    association_under_queue_max_sched_nodes_limit_true ();
+    association_under_queue_max_sched_nodes_limit_false ();
+    association_release_held_sched_node_job_true ();
+    pending_sched_nodes_count_against_queue_max ();
     set_queue_max_sched_jobs_limit ();
     association_under_queue_max_sched_jobs_limit_true ();
     association_under_queue_max_sched_jobs_limit_false ();
