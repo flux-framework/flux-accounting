@@ -35,6 +35,11 @@ projects, and job records.
    The amount of decay to apply to historical usage. By default, this is set at
    0.5.
 
+.. option:: --decay-method
+
+   The method used to decay historical usage. Valid values are ``periodic`` and
+   ``continuous``. By default, this is set to ``periodic``.
+
 .. option:: --config-path
 
    Path to a TOML file with an ``[accounting]`` table used to customize the
