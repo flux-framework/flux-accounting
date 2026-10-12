@@ -12,6 +12,7 @@
 import csv
 import sqlite3
 import json
+import logging
 import math
 import time
 
@@ -20,6 +21,37 @@ from fluxacct.util import with_cursor
 from fluxacct.database import sql
 from fluxacct.formatting import formatters as fmt
 from flux.util import parse_fsd
+
+LOGGER = logging.getLogger(__name__)
+
+USAGE_DURATION_KEYS = {"priority_usage_reset_period", "priority_decay_half_life"}
+PERIODIC_REBIN_KEYS = USAGE_DURATION_KEYS | {"decay_factor"}
+CONTINUOUS_RESET_KEYS = {"priority_decay_half_life", "decay_factor"}
+
+ACTION_NONE = "none"
+ACTION_REBIN_PERIODIC = "rebin_periodic_usage"
+ACTION_RESET_CONTINUOUS = "reset_continuous_usage"
+ACTION_SWITCH_TO_CONTINUOUS = "switch_to_continuous"
+ACTION_SWITCH_TO_PERIODIC = "switch_to_periodic"
+
+
+def get_decay_method(cursor):
+    """
+    Return the configured job-usage decay method.
+
+    Older databases may not have the key yet, so callers should treat a missing
+    value as the historical periodic behavior.
+    """
+    row = cursor.execute(
+        "SELECT value FROM config_table WHERE key='decay_method'"
+    ).fetchone()
+    return row[0].lower() if row is not None else "periodic"
+
+
+def _validate_decay_factor(value):
+    decay_factor = float(value)
+    if decay_factor <= 0 or decay_factor >= 1:
+        raise ValueError("decay_factor must be a floating-point value between 0 and 1")
 
 
 @with_cursor
@@ -55,9 +87,7 @@ def reconfigure_usage_bins(conn, cursor):
     new_num_periods = math.ceil(new_reset_period / new_half_life)
 
     # fetch all associations
-    cursor.execute(
-        "SELECT DISTINCT username, userid, bank FROM job_usage_per_association_table"
-    )
+    cursor.execute("SELECT username, userid, bank FROM association_table")
     associations = cursor.fetchall()
 
     # delete all existing period rows for every association
@@ -372,6 +402,93 @@ def add_config(conn, cursor, key_value_string):
     return 0
 
 
+def set_continuous_usage_state(cursor):
+    """
+    Preserve scalar usage and clear periodic usage-bin state.
+    """
+    row = cursor.execute(
+        "SELECT value FROM config_table WHERE key='decay_factor'"
+    ).fetchone()
+    _validate_decay_factor(row[0] if row is not None else 0.5)
+
+    cursor.execute("DELETE FROM job_usage_per_association_table")
+    cursor.execute("""
+        INSERT OR IGNORE INTO usage_decay_state (cluster, last_update)
+        VALUES ('cluster', 0.0)
+        """)
+    cursor.execute(
+        """
+        UPDATE usage_decay_state SET last_update=?
+        WHERE cluster='cluster'
+        """,
+        (time.time(),),
+    )
+
+
+def reset_periodic_usage(conn, cursor):
+    """
+    Recreate periodic bins and clear scalar association and bank usage.
+    """
+    # pylint: disable=no-value-for-parameter
+    reconfigure_usage_bins(conn)
+    cursor.execute("UPDATE association_table SET job_usage=0.0")
+    cursor.execute("UPDATE bank_table SET job_usage=0.0")
+
+
+def reset_continuous_usage(cursor):
+    """
+    Clear scalar association and bank usage and start a new continuous clock.
+    """
+    now = time.time()
+    cursor.execute("UPDATE association_table SET job_usage=0.0")
+    cursor.execute("UPDATE bank_table SET job_usage=0.0")
+    cursor.execute("UPDATE job_usage_factor_table SET last_job_timestamp=0")
+    cursor.execute(
+        "INSERT INTO config_table (key, value) "
+        "VALUES ('reconfigure_time', ?) ON CONFLICT(key)"
+        "DO UPDATE SET value = excluded.value",
+        (now,),
+    )
+    cursor.execute("""
+        INSERT OR IGNORE INTO usage_decay_state (cluster, last_update)
+        VALUES ('cluster', 0.0)
+        """)
+    cursor.execute(
+        """
+        UPDATE usage_decay_state SET last_update=?
+        WHERE cluster='cluster'
+        """,
+        (now,),
+    )
+
+
+def _usage_reconfiguration_action(current_method, target_method, changed_keys):
+    """
+    Return the usage-state operation required after editing config_table.
+
+    Mode switches between supported methods have their own semantics and take
+    precedence over parameter edits in the same command:
+
+    - periodic -> continuous preserves scalar usage and clears periodic bins.
+    - continuous -> periodic recreates bins and resets usage to 0.0.
+    - periodic parameter edits recreate bins and reset usage to 0.0.
+    - continuous parameter edits reset scalar usage only for keys consumed by
+      continuous decay.
+    """
+    if (current_method, target_method) == ("periodic", "continuous"):
+        return ACTION_SWITCH_TO_CONTINUOUS
+    if (current_method, target_method) == ("continuous", "periodic"):
+        return ACTION_SWITCH_TO_PERIODIC
+
+    if target_method == "periodic" and changed_keys & PERIODIC_REBIN_KEYS:
+        return ACTION_REBIN_PERIODIC
+
+    if target_method == "continuous" and changed_keys & CONTINUOUS_RESET_KEYS:
+        return ACTION_RESET_CONTINUOUS
+
+    return ACTION_NONE
+
+
 @with_cursor
 def edit_config(conn, cursor, key_value_strings):
     """
@@ -382,31 +499,48 @@ def edit_config(conn, cursor, key_value_strings):
         cursor: The SQLite Cursor object.
         key_value_strings: A list of key=value strings to update in config_table.
     """
-    bin_config_keys = {"priority_usage_reset_period", "priority_decay_half_life"}
     usage_config_keys = {"node_weight", "core_weight", "gpu_weight"}
-    requires_rebin = False
+    key_value_pairs = []
+    seen_keys = set()
+    current_method = get_decay_method(cursor)
+    target_method = current_method
+
+    for key_value_string in key_value_strings:
+        key, value = key_value_string.split("=")
+        if key in seen_keys:
+            raise ValueError(f"duplicate config key {key}")
+        seen_keys.add(key)
+        key_value_pairs.append((key, value))
+        if key == "decay_method":
+            target_method = value.lower()
 
     try:
-        for key_value_string in key_value_strings:
-            key, value = key_value_string.split("=")
-
+        normalized_key_value_pairs = []
+        for key, value in key_value_pairs:
             if key in usage_config_keys:
                 # ensure that weight is a floating-point value
                 float(value)
-            if key in bin_config_keys:
+            if key in USAGE_DURATION_KEYS:
                 # parse value as Flux Standard Duration (FSD)
                 value = parse_fsd(str(value))
-                requires_rebin = True
             if key == "decay_factor":
-                if (float(value) <= 0) or (float(value) >= 1):
-                    raise ValueError(
-                        "decay_factor must be a floating-point value between 0 and 1"
-                    )
-                requires_rebin = True
+                _validate_decay_factor(value)
             if key == "deny_unknown_queues":
                 # ensure value is exactly "true" or "false" (case-insensitive)
                 if value.lower() not in ["true", "false"]:
                     raise ValueError("deny_unknown_queues must be 'true' or 'false'")
+            if key == "decay_method":
+                value = value.lower()
+                if value not in ["periodic", "continuous"]:
+                    raise ValueError("decay_method must be 'periodic' or 'continuous'")
+            normalized_key_value_pairs.append((key, value))
+
+        changed_keys = {key for key, _ in normalized_key_value_pairs}
+        usage_action = _usage_reconfiguration_action(
+            current_method, target_method, changed_keys
+        )
+
+        for key, value in normalized_key_value_pairs:
             cursor.execute(
                 "UPDATE config_table SET value=? WHERE key=?",
                 (value, key),
@@ -414,9 +548,32 @@ def edit_config(conn, cursor, key_value_strings):
             if cursor.rowcount == 0:
                 raise ValueError(f"key {key} not found in config_table")
 
-        if requires_rebin:
+        if usage_action in [
+            ACTION_SWITCH_TO_CONTINUOUS,
+            ACTION_SWITCH_TO_PERIODIC,
+        ]:
+            LOGGER.warning(
+                "changing decay_method from %s to %s",
+                current_method,
+                target_method,
+            )
+
+        if usage_action == ACTION_SWITCH_TO_PERIODIC:
+            # switching from continuous to periodic, and since we cannot reconstruct
+            # the usage into periodic bins, we'll just reset the usage.
+            reset_periodic_usage(conn, cursor)
+        elif usage_action == ACTION_REBIN_PERIODIC:
             # pylint: disable=no-value-for-parameter
+            # we are re-binning periodic usage, so just reset the usage
             reconfigure_usage_bins(conn)
+        elif usage_action == ACTION_RESET_CONTINUOUS:
+            # we are redefining how continuous usage is being decayed, so reset the
+            # usage
+            reset_continuous_usage(cursor)
+        elif usage_action == ACTION_SWITCH_TO_CONTINUOUS:
+            # switching from periodic to continuous, so preserve the current usage
+            # for associations and discard the periodic usage bins
+            set_continuous_usage_state(cursor)
 
         conn.commit()
     except Exception:
@@ -438,6 +595,7 @@ def delete_config(conn, cursor, key):
         "core_weight",
         "gpu_weight",
         "deny_unknown_queues",
+        "decay_method",
     ]:
         raise ValueError(
             "key-value pair is not allowed to be removed from config_table"
