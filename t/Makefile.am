@@ -139,7 +139,8 @@ TESTSCRIPTS = \
 	python/t1022_job_record_ncores_ngpus.py \
 	python/t1023_weighted_usage.py \
 	python/t1024_accounting_config.py \
-	python/t1025_project_usage.py
+	python/t1025_project_usage.py \
+	python/t1026_continuous_decay.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
