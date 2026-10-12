@@ -58,6 +58,7 @@ class TestDB(unittest.TestCase):
             "sqlite_sequence",
             "job_usage_factor_table",
             "t_half_life_period_table",
+            "usage_decay_state",
             "queue_table",
             "project_table",
             "project_usage_state",

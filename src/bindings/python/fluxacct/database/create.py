@@ -50,6 +50,7 @@ def create_db(
     priority_decay_half_life=None,
     decay_factor=None,
     config_path=None,
+    decay_method=None,
 ):
     conf = AccountingConfig(config_path)
 
@@ -66,9 +67,14 @@ def create_db(
         priority_decay_half_life = conf["usage"]["decay-half-life"]
     if decay_factor is None:
         decay_factor = conf["usage"]["decay-factor"]
+    if decay_method is None:
+        decay_method = conf["usage"]["decay-method"]
+    decay_method = decay_method.lower()
 
     if not 0.0 < decay_factor < 1.0:
         raise ValueError(f"Value must be between 0.0 and 1.0, but got {decay_factor}")
+    if decay_method not in ["periodic", "continuous"]:
+        raise ValueError("decay_method must be 'periodic' or 'continuous'")
 
     db_dir = pathlib.PosixPath(filepath).parent
     db_dir.mkdir(parents=True, exist_ok=True)
@@ -154,6 +160,20 @@ def create_db(
         """)
     set_half_life_period_end(conn, priority_decay_half_life)
     LOGGER.info("Created t_half_life_period_table successfully")
+
+    # Continuous Decay State Table
+    # keeps track of the last elapsed-time decay update
+    LOGGER.info("Creating usage_decay_state table in DB...")
+    conn.execute("""
+            CREATE TABLE IF NOT EXISTS usage_decay_state (
+                cluster      tinytext PRIMARY KEY DEFAULT 'cluster',
+                last_update  real                  NOT NULL
+        );""")
+    conn.execute(
+        "INSERT INTO usage_decay_state (cluster, last_update) VALUES (?, ?)",
+        ("cluster", time.time()),
+    )
+    LOGGER.info("Created usage_decay_state table successfully")
 
     # Queue Table
     # stores queues, associated priorities, and limit information
@@ -267,6 +287,13 @@ def create_db(
         (
             "decay_factor",
             decay_factor,
+        ),
+    )
+    conn.execute(
+        "INSERT INTO config_table VALUES (?, ?)",
+        (
+            "decay_method",
+            decay_method,
         ),
     )
     for rtype, weight in conf["usage"]["weights"].items():

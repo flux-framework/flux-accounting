@@ -50,6 +50,7 @@ def default_config():
             "reset-period": "28d",
             "decay-half-life": "7d",
             "decay-factor": 0.5,
+            "decay-method": "periodic",
             "weights": {
                 "node": 1.0,
                 "core": 0.0,
@@ -161,11 +162,15 @@ class AccountingConfig(Mapping):
                 out-of-range value.
         """
         usage = self._conf["usage"]
+        if isinstance(usage["decay-method"], str):
+            usage["decay-method"] = usage["decay-method"].lower()
         if not 0.0 < usage["decay-factor"] < 1.0:
             raise ValueError(
                 f"usage.decay-factor must be between 0.0 and 1.0, "
                 f"but got {usage['decay-factor']}"
             )
+        if usage["decay-method"] not in ["periodic", "continuous"]:
+            raise ValueError("usage.decay-method must be 'periodic' or 'continuous'")
         for rtype, weight in usage["weights"].items():
             if isinstance(weight, bool) or not isinstance(weight, (int, float)):
                 raise ValueError(f"usage.weights.{rtype} must be a number")

@@ -608,6 +608,13 @@ def add_create_db_arg(subparsers):
         metavar="DECAY_FACTOR",
     )
     subparser_create_db.add_argument(
+        "--decay-method",
+        type=str.lower,
+        choices=["periodic", "continuous"],
+        default=None,
+        help="the method to use when decaying historical usage",
+    )
+    subparser_create_db.add_argument(
         "--config-path",
         help=(
             "path to a TOML file with an [accounting] section used to customize "
@@ -1829,6 +1836,7 @@ def main():
             args.priority_decay_half_life,
             args.decay_factor,
             args.config_path,
+            args.decay_method,
         )
         sys.exit(0)
 

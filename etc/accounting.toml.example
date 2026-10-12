@@ -19,6 +19,9 @@
 # the amount of decay to apply to historical usage
 #decay-factor = 0.5
 
+# how to decay historical usage: "periodic" or "continuous"
+#decay-method = "periodic"
+
 # per-resource-type weights applied when calculating job usage
 [accounting.usage.weights]
 #node = 1.0
