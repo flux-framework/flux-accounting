@@ -13,6 +13,7 @@ import sqlite3
 import time
 
 from flux.constants import FLUX_USERID_UNKNOWN
+from fluxacct.database import info
 from fluxacct.database import schema
 from fluxacct.database import sql
 from fluxacct.formatting import formatters as fmt
@@ -276,6 +277,10 @@ def insert_per_assoc_usage_rows(conn, cur, username, uid, bank):
     newly added association. The number of periods is determined by the
     PriorityUsageResetPeriod and PriorityDecayHalfLife values in config_table.
 
+    If "continuous" is selected for the usage decay mode, then we don't need to insert
+    any rows into job_usage_per_association_table since all usage is kept in just one
+    column in association_table.
+
     Args:
         conn: The SQLite Connection object.
         cur: The SQLite Cursor object.
@@ -283,6 +288,9 @@ def insert_per_assoc_usage_rows(conn, cur, username, uid, bank):
         uid: The userid of the association.
         bank: The bank the association belongs to.
     """
+    if info.get_decay_method(cur) == "continuous":
+        return
+
     cur.execute(
         "SELECT value FROM config_table WHERE key='priority_usage_reset_period'"
     )
@@ -336,6 +344,10 @@ def view_user(
     cols = cols or schema.ASSOCIATION_TABLE
 
     if job_usage:
+        if info.get_decay_method(cur) == "continuous":
+            raise ValueError(
+                "detailed job usage breakdowns are unavailable in continuous mode"
+            )
         # only return a breakdown of the association's job usage factors that make up
         # their historical usage
         cur.execute(
