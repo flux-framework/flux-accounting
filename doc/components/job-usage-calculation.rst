@@ -18,9 +18,10 @@ factor in calculating a usage factor. If these options aren't specified, the
 table defaults to 4 usage columns, each which represent one week's worth of
 jobs.
 
-The **job_usage_per_association** table stores past job usage factors per
-association. When an association is first added to the **association** table,
-they are also added to **job_usage_per_association** table.
+In periodic mode, the **job_usage_per_association** table stores past job
+usage factors per association. When an association is first added to the
+**association** table, it is also added to the
+**job_usage_per_association** table.
 
 The value of **PriorityDecayHalfLife** determines the amount of time that
 represents one "usage period" of jobs. flux-accounting filters out its ``jobs``
@@ -37,6 +38,30 @@ After the current usage factor is calculated, it is written to the first usage
 bin in the **job_usage_per_association** table along with the other, older
 factors. The oldest factor then gets removed from the table since it is no
 longer needed.
+
+Continuous decay mode
+=====================
+
+By default, flux-accounting uses the periodic bin calculation described above.
+Administrators may opt in to elapsed-time decay with
+``decay_method=continuous``. Continuous mode still charges only
+completed jobs already recorded in the ``jobs`` table, but it decays the
+existing scalar usage value on each update instead of rotating discrete bins:
+
+:math:`U_{new} = (U_{old} \times D^{\Delta t / H}) + U_{current}`
+
+Here, :math:`D` is ``decay_factor``, :math:`H` is
+``priority_decay_half_life``, and :math:`\Delta t` is the elapsed time since
+the previous continuous usage update. With the default values, half of a
+contribution remains after one week.
+
+In continuous mode, ``association_table.job_usage`` stores the complete
+continuously decayed usage value. ``job_usage_per_association_table`` remains
+periodic-mode storage only, so detailed bin breakdowns are unavailable while
+continuous mode is active.
+
+Newly completed jobs are decayed from their own ``t_inactive`` timestamp to
+the current update time before they are added to the scalar usage value.
 
 An example
 ==========
@@ -88,12 +113,13 @@ into account both their most recent *and* historical job usage.
 Viewing Breakdowns of Historical Job Usage
 ==========================================
 
-Since an association's historical job usage (i.e. the value reported in the
-``job_usage`` column) is comprised of potentially multiple usage factors that
-make up an association's job usage value, it would be useful to see how this
-value is calculated. The ``view-user`` command offers a ``-J/--job-usage``
-optional argument, which will return all of the association's job usage columns
-that make up their historical job usage value:
+In periodic mode, an association's historical job usage is the value reported
+in the ``job_usage`` column, and it may be made up of multiple usage factors.
+The ``view-user`` command offers a ``-J/--job-usage`` optional argument, which
+will return all of the association's job usage columns that make up its
+historical job usage value. In continuous mode, this detailed bin breakdown is
+unavailable because all usage is stored in just one value: the ``job_usage``
+column in ``association_table``.
 
 .. code-block:: console
 
@@ -143,15 +169,20 @@ The ``edit-config`` command accepts one or more key-value pairs to update in
 the configuration table. The following configuration keys control job usage
 calculation:
 
+- ``decay_method``: Selects ``periodic`` (the default) or
+  ``continuous`` usage decay.
+
 - ``priority_decay_half_life``: The time period representing one "usage period"
-  of jobs. This determines how often usage bins are rotated.
+  of jobs. This determines how often usage bins are rotated in periodic mode,
+  and the elapsed-time half-life in continuous mode.
 
 - ``priority_usage_reset_period``: The total time span over which historical
-  job usage is tracked. This determines the total number of usage bins.
+  job usage is tracked. This determines the total number of usage bins in
+  periodic mode, and is not used by continuous mode.
 
 - ``decay_factor``: The multiplier applied to older usage periods when
-  calculating historical usage. The default value is 0.5, meaning each older
-  period contributes half as much as the previous one.
+  calculating historical usage. In continuous mode, it is applied
+  proportionally over elapsed time. The default value is 0.5.
 
 Values for ``priority_decay_half_life`` and ``priority_usage_reset_period`` can
 be specified using `Flux Standard Duration (FSD)`_ format or in seconds. FSD
@@ -160,20 +191,44 @@ supports units such as ``m`` (minutes), ``h`` (hours), and ``d`` (days).
 The Reconfiguration Process
 ----------------------------
 
-When you modify any of the three job usage parameters listed above, the
-``edit-config`` will:
+When you modify ``priority_decay_half_life``,
+``priority_usage_reset_period``, or ``decay_factor`` in periodic mode, the
+``edit-config`` command will:
 
 1. Calculate the new number of usage bins based on the updated parameters
 2. Delete all existing usage bin data for every association
-3. Re-create the correct number of usage bins for each association (initialized to 0.0)
+3. Re-create the correct number of usage bins for each association (in periodic
+   mode)
 4. Reset all associations' job history timestamps so that the next usage update
    recalculates usage from scratch with the new configuration
+
+Because existing bin contents are removed and older jobs are excluded,
+periodic reconfiguration effectively resets usage to ``0.0``.
 
 .. note::
 
     Reconfiguring the above parameters does **not** clear job records from the
     flux-accounting database. These records can still be viewed with ``flux
     account view-job-records``.
+
+Switching from periodic mode to continuous mode preserves each association's
+current historical ``job_usage`` value, clears periodic usage-bin rows, and
+starts the continuous decay clock at the time of the config change. Switching
+from continuous mode back to periodic mode recreates periodic bins and resets
+association and bank usage to ``0.0`` because the continuous scalar value
+cannot be reconstructed into discrete historical bins.
+
+In continuous mode, changing ``priority_decay_half_life`` or
+``decay_factor`` resets association and bank usage to ``0.0`` and starts a new
+continuous decay clock. Changing ``priority_usage_reset_period`` in continuous
+mode only takes effect after switching back to periodic mode.
+
+When ``decay_method`` is changed in the same ``edit-config`` command as
+``priority_decay_half_life`` or ``decay_factor``, the mode switch determines
+what happens to usage. For example, switching from periodic to continuous
+while also changing ``priority_decay_half_life`` still preserves each
+association's current ``job_usage`` value, and the new half-life is applied to
+that value from the next usage update onward.
 
 You can also view the current configuration values at any time:
 
@@ -185,23 +240,26 @@ You can also view the current configuration values at any time:
     priority_usage_reset_period | 2419200
     priority_decay_half_life    | 604800
     decay_factor                | 0.5
+    decay_method                | periodic
 
 Important Considerations
 ------------------------
 
 .. warning::
 
-    Reconfiguring job usage parameters resets all job usage values to 0.0 for
-    every association in the database. This has several important implications:
+    Reconfiguring periodic-mode usage parameters, changing continuous-mode
+    decay parameters, or switching from continuous mode back to periodic mode,
+    resets all job usage values to 0.0 for every association in the database.
+    This has several important implications:
 
     - **fair-share values will be affected**: Since fair-share calculations
       depend on job usage, all fair-share values will also see changes based on
       the new usage data.
 
-    - **historical usage is rebuilt**: The system will reconstruct historical
-      usage bins from scratch for *every* association using the new
+    - **periodic usage bins are rebuilt**: In periodic mode, the system will
+      reconstruct usage bins from scratch for *every* association using the new
       configuration. Depending on the size of your ``association_table``, this
-      may take some time (on the order of minutes) during the reconfiguration.
+      may take some time during the reconfiguration.
 
     - **historical usage is no longer considered**: flux-accounting will **no
       longer** consider past jobs towards an association's job usage value;
