@@ -102,6 +102,10 @@ class TestAccountingCLI(unittest.TestCase):
             d.edit_config(conn, key_value_strings=["decay_factor=-0.1"])
         with self.assertRaises(ValueError):
             d.edit_config(conn, key_value_strings=["decay_factor=1.1"])
+        with self.assertRaises(ValueError):
+            d.edit_config(conn, key_value_strings=["decay_factor=0"])
+        with self.assertRaises(ValueError):
+            d.edit_config(conn, key_value_strings=["decay_factor=1"])
 
     # successfully edit decay_factor
     def test_12_edit_decay_factor_success(self):

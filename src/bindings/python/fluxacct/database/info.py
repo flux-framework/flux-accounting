@@ -398,7 +398,7 @@ def edit_config(conn, cursor, key_value_strings):
                 value = parse_fsd(str(value))
                 requires_rebin = True
             if key == "decay_factor":
-                if (float(value) < 0) or (float(value) > 1):
+                if (float(value) <= 0) or (float(value) >= 1):
                     raise ValueError(
                         "decay_factor must be a floating-point value between 0 and 1"
                     )
