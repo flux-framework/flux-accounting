@@ -200,6 +200,22 @@ class TestDB(unittest.TestCase):
         cursor.execute("SELECT value FROM config_table WHERE key='gpu_weight'")
         self.assertEqual(float(cursor.fetchone()[0]), 0.0)
 
+    def test_11_configure_decay_method(self):
+        c.create_db("flux_accounting_test_6.db", decay_method="continuous")
+        test_conn = sqlite3.connect("flux_accounting_test_6.db")
+        cursor = test_conn.cursor()
+        cursor.execute("SELECT value FROM config_table WHERE key='decay_method'")
+        self.assertEqual(cursor.fetchone()[0], "continuous")
+        cursor.execute(
+            "SELECT last_update FROM usage_decay_state WHERE cluster='cluster'"
+        )
+        self.assertIsNotNone(cursor.fetchone())
+        test_conn.close()
+
+    def test_12_configure_decay_method_bad_value(self):
+        with self.assertRaises(ValueError):
+            c.create_db("flux_accounting_test_7.db", decay_method="other")
+
     # remove database file
     @classmethod
     def tearDownClass(self):
@@ -207,6 +223,7 @@ class TestDB(unittest.TestCase):
         os.remove("flux_accounting_test_1.db")
         os.remove("flux_accounting_test_2.db")
         os.remove("flux_accounting_test_3.db")
+        os.remove("flux_accounting_test_6.db")
 
 
 def suite():

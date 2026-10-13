@@ -140,6 +140,10 @@ class TestAccountingCLI(unittest.TestCase):
         with self.assertRaises(ValueError):
             d.delete_config(conn, key="decay_factor")
 
+    def test_16a_delete_decay_method(self):
+        with self.assertRaises(ValueError):
+            d.delete_config(conn, key="decay_method")
+
     # trying to view a key-value pair that does not exist will raise a ValueError
     def test_17_view_config_bad(self):
         with self.assertRaises(ValueError):
@@ -168,6 +172,7 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertIn("priority_usage_reset_period | 86400.0", test)
         self.assertIn("priority_decay_half_life    | 3600.0", test)
         self.assertIn("decay_factor                | 0.9", test)
+        self.assertIn("decay_method                | periodic", test)
 
     def test_22_list_configs_json(self):
         test = d.list_configs(conn, json_fmt=True)
@@ -177,12 +182,15 @@ class TestAccountingCLI(unittest.TestCase):
         self.assertIn('"value": "3600.0"', test)
         self.assertIn('"key": "decay_factor"', test)
         self.assertIn('"value": "0.9"', test)
+        self.assertIn('"key": "decay_method"', test)
+        self.assertIn('"value": "periodic"', test)
 
     def test_23_list_configs_format_string(self):
         test = d.list_configs(conn, format_string="{key} -> {value}")
         self.assertIn("priority_usage_reset_period -> 86400.0", test)
         self.assertIn("priority_decay_half_life -> 3600.0", test)
         self.assertIn("decay_factor -> 0.9", test)
+        self.assertIn("decay_method -> periodic", test)
 
     def test_24_add_config_bad_format(self):
         with self.assertRaises(ValueError):
@@ -221,6 +229,40 @@ class TestAccountingCLI(unittest.TestCase):
             "SELECT value FROM config_table WHERE key='deny_unknown_queues'"
         ).fetchone()
         self.assertEqual(test["value"], "True")
+
+    def test_30a_edit_decay_method(self):
+        with self.assertLogs("fluxacct.database.info", level="WARNING") as logs:
+            d.edit_config(conn, key_value_strings=["decay_method=continuous"])
+        self.assertIn(
+            "changing decay_method from periodic to continuous",
+            logs.output[0],
+        )
+        test = cur.execute(
+            "SELECT value FROM config_table WHERE key='decay_method'"
+        ).fetchone()
+        self.assertEqual(test["value"], "continuous")
+        with self.assertLogs("fluxacct.database.info", level="WARNING") as logs:
+            d.edit_config(conn, key_value_strings=["decay_method=periodic"])
+        self.assertIn(
+            "changing decay_method from continuous to periodic",
+            logs.output[0],
+        )
+
+    def test_30b_edit_decay_method_bad(self):
+        with self.assertRaisesRegex(
+            ValueError, "decay_method must be 'periodic' or 'continuous'"
+        ):
+            d.edit_config(conn, key_value_strings=["decay_method=other"])
+
+    def test_30c_edit_config_duplicate_key(self):
+        with self.assertRaisesRegex(ValueError, "duplicate config key decay_method"):
+            d.edit_config(
+                conn,
+                key_value_strings=[
+                    "decay_method=continuous",
+                    "decay_method=periodic",
+                ],
+            )
 
     # trying to set deny_unknown_queues to invalid value will raise a ValueError
     def test_31_edit_deny_unknown_queues_bad_1(self):

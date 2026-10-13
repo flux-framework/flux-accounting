@@ -98,6 +98,12 @@ test_expect_success 'trying to delete decay_factor does not work' '
 	grep "ValueError: key-value pair is not allowed to be removed from config_table" no_delete3.err
 '
 
+test_expect_success 'trying to delete decay_method does not work' '
+	test_must_fail flux account \
+		delete-config decay_method > no_delete4.err 2>&1 &&
+	grep "ValueError: key-value pair is not allowed to be removed from config_table" no_delete4.err
+'
+
 test_expect_success 'list all configs in config_table' '
 	flux account list-configs > list_configs.test &&
 	cat <<-EOF >list_configs.expected &&
@@ -177,6 +183,12 @@ test_expect_success 'edit the usage parameters successfully' '
 	grep "priority_decay_half_life->900" edit_usage_configs.test &&
 	grep "priority_usage_reset_period->3600" edit_usage_configs.test &&
 	grep "decay_factor->0.2" edit_usage_configs.test
+'
+
+test_expect_success 'edit usage decay method successfully' '
+	flux account edit-config decay_method=continuous &&
+	flux account list-configs -o "{key}->{value}" > edit_decay_method.test &&
+	grep "decay_method->continuous" edit_decay_method.test
 '
 
 test_expect_success 'shut down flux-accounting service' '

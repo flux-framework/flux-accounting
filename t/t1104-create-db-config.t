@@ -39,6 +39,7 @@ test_expect_success 'create a config file that customizes some defaults' '
 	[accounting.usage]
 	decay-half-life = "14d"
 	decay-factor = 0.8
+	decay-method = "continuous"
 
 	[accounting.usage.weights]
 	core = 1.0
@@ -58,6 +59,7 @@ test_expect_success 'create a flux-accounting DB with the config file' '
 test_expect_success 'configured values are seeded into config_table' '
 	test $(get_config_value ${CUSTOM_DB_PATH} priority_decay_half_life) = "1209600" &&
 	test $(get_config_value ${CUSTOM_DB_PATH} decay_factor) = "0.8" &&
+	test $(get_config_value ${CUSTOM_DB_PATH} decay_method) = "continuous" &&
 	test $(get_config_value ${CUSTOM_DB_PATH} core_weight) = "1.0" &&
 	test $(get_config_value ${CUSTOM_DB_PATH} deny_unknown_queues) = "true"
 '
@@ -77,8 +79,21 @@ test_expect_success 'configured factor weights are seeded; others keep defaults'
 
 test_expect_success 'command-line options take precedence over the config file' '
 	flux account -p $(pwd)/precedence.db create-db \
-		--config-path=accounting.toml --priority-decay-half-life=1d &&
-	test $(get_config_value $(pwd)/precedence.db priority_decay_half_life) = "86400.0"
+		--config-path=accounting.toml --priority-decay-half-life=1d \
+		--decay-method=periodic &&
+	test $(get_config_value $(pwd)/precedence.db priority_decay_half_life) = "86400.0" &&
+	test $(get_config_value $(pwd)/precedence.db decay_method) = "periodic"
+'
+
+test_expect_success 'create-db --decay-method is case-insensitive' '
+	flux account -p $(pwd)/mixed_case.db create-db --decay-method=Continuous &&
+	test $(get_config_value $(pwd)/mixed_case.db decay_method) = "continuous"
+'
+
+test_expect_success 'create-db rejects an unknown --decay-method' '
+	test_must_fail flux account -p $(pwd)/bad_method.db \
+		create-db --decay-method=foo > bad_method.err 2>&1 &&
+	grep "invalid choice" bad_method.err
 '
 
 test_expect_success 'creating a DB without a config file uses the defaults' '
@@ -86,6 +101,7 @@ test_expect_success 'creating a DB without a config file uses the defaults' '
 	test $(get_config_value ${DB_PATH} priority_decay_half_life) = "604800" &&
 	test $(get_config_value ${DB_PATH} priority_usage_reset_period) = "2419200" &&
 	test $(get_config_value ${DB_PATH} decay_factor) = "0.5" &&
+	test $(get_config_value ${DB_PATH} decay_method) = "periodic" &&
 	test $(get_config_value ${DB_PATH} deny_unknown_queues) = "false" &&
 	test $(get_factor_weight ${DB_PATH} fairshare) = "100000"
 '

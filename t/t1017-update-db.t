@@ -10,10 +10,28 @@ CHECK_TABLES=${SHARNESS_TEST_SRCDIR}/scripts/check_db_info.py
 DB_INTEGRITY_CHECK=${SHARNESS_TEST_SRCDIR}/scripts/db_integrity_check.py
 OLD_DB=$(pwd)/oldFluxAccounting.db
 MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
+QUERYCMD="flux python ${SHARNESS_TEST_SRCDIR}/scripts/query.py"
 
 export TEST_UNDER_FLUX_NO_JOB_EXEC=y
 export TEST_UNDER_FLUX_SCHED_SIMPLE_MODE="limited=1"
 test_under_flux 1 job -Slog-stderr-level=1
+
+# check that a query against a DB returns the expected value
+# arg1 - database path
+# arg2 - query that selects a single value
+# arg3 - expected value
+check_db_value() {
+	local dbpath=$1
+	local query=$2
+	local expected=$3
+	local actual
+
+	actual=$(${QUERYCMD} -t 100 ${dbpath} "${query}" | awk -F' = ' '{print $2}')
+	if test "${actual}" != "${expected}"; then
+		echo "expected '${expected}' but got '${actual}' for: ${query}" >&2
+		return 1
+	fi
+}
 
 test_expect_success 'create a flux-accounting DB' '
 	flux account -p $(pwd)/FluxAccountingTestv1.db create-db
@@ -163,6 +181,13 @@ updated database schema version to)' update.test"
 			"flux account add-user --username=fluxuser --bank=G"
 		test_expect_success 'check validity of DB: '$(basename $db) \
 			"flux python ${DB_INTEGRITY_CHECK} $tmp_db > result.out && grep 'ok' result.out"
+		test_expect_success 'make sure decay method set to "periodic": '$(basename $db) \
+			"flux account view-config decay_method > decay_method.out && grep \"periodic\" decay_method.out"
+		test_expect_success 'usage_decay_state starts with no rows: '$(basename $db) \
+			"check_db_value $tmp_db \"SELECT COUNT(*) AS n FROM usage_decay_state;\" 0"
+		test_expect_success 'setting decay_method=continuous initializes usage_decay_state: '$(basename $db) \
+			"flux account edit-config decay_method=continuous &&
+			 check_db_value $tmp_db \"SELECT COUNT(*) AS n FROM usage_decay_state WHERE cluster='cluster' AND last_update > 0;\" 1"
 		test_expect_success 'shutdown flux-accounting service' \
 			"flux python -c 'import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()'"
 	fi
