@@ -33,15 +33,6 @@ extern "C" {
 
 #include "job.hpp"
 
-// - UNKNOWN_QUEUE: a queue is specified for a submitted job that flux-accounting
-// does not know about
-// - NO_QUEUE_SPECIFIED: no queue was specified for this job
-// - INVALID_QUEUE: the association does not have permission to run jobs under
-// this queue
-#define UNKNOWN_QUEUE 0
-#define NO_QUEUE_SPECIFIED 0
-#define INVALID_QUEUE -6
-
 // - UNKNOWN_PROJECT: a project that flux-accounting doesn't know about
 // - INVALID_PROJECT: a project that the association doesn't have permission
 // to charge jobs under
@@ -119,7 +110,6 @@ public:
     int max_sched_jobs;                // max number of jobs in SCHED state
     std::vector<Job> held_jobs;        // vector to keep track of held Jobs
     std::vector<std::string> queues;   // list of accessible queues
-    int queue_factor;                  // priority factor associated with queue
     double bank_factor;                // priority factor associated with bank
     int active;                        // active status
     std::vector<std::string> projects; // list of accessible projects
@@ -208,11 +198,16 @@ void split_string_and_push_back (const char *list,
 // helper to test if a C-string is non-null and non-whitespace
 bool has_text (const char *s);
 
-// validate a potentially passed-in queue by an association and return the
-// integer priority associated with the queue
-int get_queue_info (char *queue,
-                    const std::vector<std::string> &permissible_queues,
-                    const std::map<std::string, Queue> &queues);
+// return false only if the queue is known to flux-accounting and the
+// association does not have access to it; a NULL queue or a queue unknown to
+// flux-accounting is allowed
+bool queue_permitted (const char *queue,
+                      const std::vector<std::string> &permissible_queues,
+                      const std::map<std::string, Queue> &queues);
+
+// return the configured priority for a queue, or 0 if no known queue applies
+int get_queue_priority (const std::string &queue,
+                        const std::map<std::string, Queue> &queues);
 
 // Compute a job's priority from already-resolved factors. Pure: no memo, no
 // CURRENT_JOB lookup, so it is reusable from the held-job release sweep where
