@@ -454,8 +454,25 @@ class TestAccountingCLI(unittest.TestCase):
         )
         self.assertEqual(usage_factor, 4442.0)
 
+        # period 0 should only contain the usage from the new job in the new
+        # half-life period; the decayed past usage lives in periods 1..3
+        select_stmt = "SELECT value FROM job_usage_per_association_table WHERE username='1001' AND bank='C' AND period=0"
+        cur.execute(select_stmt)
+        curr_job_usage = cur.fetchone()[0]
+        self.assertEqual(curr_job_usage, 200.0)
+
     # simulate a half-life period further; re-calculate
     # usage for user1001 to make sure its value goes down
+    #
+    # after test_15, the usage periods for user1001 should look like:
+    # p0  | p1   | p2  | p3
+    # ---------------------
+    # 200 | 4098 | 128 | 16
+    #
+    # so after another decay, they should look like:
+    # p0 | p1  | p2   | p3
+    # --------------------
+    # 0  | 100 | 2049 | 64
     @mock.patch("time.time", mock.MagicMock(return_value=(10000000 + (604800 * 2.1))))
     def test_16_recalculate_usage_after_half_life_period(self):
         user = "1001"
@@ -474,7 +491,7 @@ class TestAccountingCLI(unittest.TestCase):
             gpu_weight=0.0,
         )
 
-        self.assertEqual(usage_factor, 4334.0)
+        self.assertEqual(usage_factor, 2213.0)
 
         select_stmt = "SELECT value FROM job_usage_per_association_table WHERE username='1001' AND bank='C' AND period=0"
         cur.execute(select_stmt)
