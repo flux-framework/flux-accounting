@@ -50,7 +50,6 @@ static Association make_association (const std::string &bank_name)
     a.max_sched_jobs = 0;
     a.held_jobs = {};
     a.queues = {};
-    a.queue_factor = 0;
     a.bank_factor = 0.0;
     a.active = 1;
     a.projects = {"*"};
@@ -187,55 +186,45 @@ static void split_string_and_push_back_success ()
 }
 
 
-// ensure the correct priority factor is returned for a valid queue
-static void test_get_queue_info_success ()
+// ensure an accessible queue is allowed
+static void test_queue_permitted_success ()
 {
     Association a = users[1001]["bank_A"];
     a.queues = {"bronze", "silver"};
-    a.queue_factor = get_queue_info (const_cast<char *> ("bronze"),
-                                     a.queues,
-                                     queues);
 
-    ok (a.queue_factor == 100,
-        "get_queue_info () returns the associated priority on success");
+    ok (queue_permitted ("bronze", a.queues, queues) == true,
+        "queue_permitted () returns true for an accessible queue");
 }
 
 
-// ensure NO_QUEUE_SPECIFIED is returned when queue is NULL
-static void test_get_queue_info_no_queue_specified ()
+// ensure no queue specified is permitted
+static void test_queue_permitted_no_queue_specified ()
 {
     Association a = users[1001]["bank_A"];
-    a.queue_factor = get_queue_info (NULL, a.queues, queues);
 
-    ok (a.queue_factor == NO_QUEUE_SPECIFIED,
-        "NO_QUEUE_SPECIFIED is returned when no queue is passed in");
+    ok (queue_permitted (NULL, a.queues, queues) == true,
+        "queue_permitted () returns true when no queue is passed in");
 }
 
 
-// ensure UNKNOWN_QUEUE is returned when an unrecognized queue is passed in
-static void test_get_queue_info_unknown_queue ()
+// ensure a queue unknown to flux-accounting is permitted
+static void test_queue_permitted_unknown_queue ()
 {
     Association a = users[1001]["bank_A"];
-    a.queue_factor = get_queue_info (const_cast<char *> ("platinum"),
-                                     a.queues,
-                                     queues);
 
-    ok (a.queue_factor == UNKNOWN_QUEUE,
-        "UNKNOWN_QUEUE is returned when an unrecognized queue is passed in");
+    ok (queue_permitted ("platinum", a.queues, queues) == true,
+        "queue_permitted () returns true for an unrecognized queue");
 }
 
 
-// ensure INVALID_QUEUE is returned when an unrecognized queue is passed in
-static void test_get_queue_info_invalid_queue ()
+// ensure a known queue the association cannot access is not permitted
+static void test_queue_permitted_invalid_queue ()
 {
     Association a = users[1001]["bank_A"];
     a.queues = {"bronze", "silver"};
-    a.queue_factor = get_queue_info (const_cast<char *> ("gold"),
-                                     a.queues,
-                                     queues);
 
-    ok (a.queue_factor == INVALID_QUEUE,
-        "INVALID_QUEUE is returned when an inaccessible queue is passed in");
+    ok (queue_permitted ("gold", a.queues, queues) == false,
+        "queue_permitted () returns false for an inaccessible queue");
 }
 
 
@@ -495,10 +484,10 @@ int main (int argc, char* argv[])
     test_get_association_noexist ();
     test_get_association_no_default_bank ();
     split_string_and_push_back_success ();
-    test_get_queue_info_success ();
-    test_get_queue_info_no_queue_specified ();
-    test_get_queue_info_unknown_queue ();
-    test_get_queue_info_invalid_queue ();
+    test_queue_permitted_success ();
+    test_queue_permitted_no_queue_specified ();
+    test_queue_permitted_unknown_queue ();
+    test_queue_permitted_invalid_queue ();
     test_get_project_info_success_default ();
     test_get_project_info_success_specified ();
     test_get_project_info_unknown_project ();
