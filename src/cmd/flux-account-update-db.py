@@ -296,6 +296,7 @@ def init_config_table(cur):
         ("core_weight", "0.0"),
         ("gpu_weight", "0.0"),
         ("deny_unknown_queues", "false"),
+        ("decay_method", "periodic"),
     ]
 
     for key, value in config_entries:

@@ -29,6 +29,7 @@ for job usage calculation:
 - ``priority_usage_reset_period``
 - ``priority_decay_half_life``
 - ``decay_factor``
+- ``decay_method``
 
 Attempting to delete any of these keys will result in an error.
 

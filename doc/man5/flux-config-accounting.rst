@@ -41,6 +41,10 @@ decay-factor
    (optional) The amount of decay to apply to historical usage. Must be
    greater than 0.0 and less than 1.0 (default: ``0.5``).
 
+decay-method
+   (optional) The method used to decay historical job usage. Must be
+   ``periodic`` or ``continuous`` (default: ``"periodic"``).
+
 weights
    (optional) A sub-table mapping each resource type to the weight it is
    given when calculating job usage: ``node`` (default: ``1.0``), ``core``
@@ -83,6 +87,7 @@ EXAMPLE
    reset-period = "28d"
    decay-half-life = "7d"
    decay-factor = 0.5
+   decay-method = "periodic"
 
    [accounting.usage.weights]
    node = 1.0

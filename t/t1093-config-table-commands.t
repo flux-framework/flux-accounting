@@ -98,20 +98,27 @@ test_expect_success 'trying to delete decay_factor does not work' '
 	grep "ValueError: key-value pair is not allowed to be removed from config_table" no_delete3.err
 '
 
+test_expect_success 'trying to delete decay_method does not work' '
+	test_must_fail flux account \
+		delete-config decay_method > no_delete4.err 2>&1 &&
+	grep "ValueError: key-value pair is not allowed to be removed from config_table" no_delete4.err
+'
+
 test_expect_success 'list all configs in config_table' '
 	flux account list-configs > list_configs.test &&
 	cat <<-EOF >list_configs.expected &&
-	key                         | value  
-	----------------------------+--------
-	priority_usage_reset_period | 2419200
-	priority_decay_half_life    | 604800 
-	decay_factor                | 0.5    
-	node_weight                 | 1.0    
-	core_weight                 | 0.0    
-	gpu_weight                  | 0.0    
-	deny_unknown_queues         | false  
-	key1                        | foo1   
-	key2                        | foo2   
+	key                         | value   
+	----------------------------+---------
+	priority_usage_reset_period | 2419200 
+	priority_decay_half_life    | 604800  
+	decay_factor                | 0.5     
+	decay_method                | periodic
+	node_weight                 | 1.0     
+	core_weight                 | 0.0     
+	gpu_weight                  | 0.0     
+	deny_unknown_queues         | false   
+	key1                        | foo1    
+	key2                        | foo2    
 	EOF
 	test_cmp list_configs.test list_configs.expected
 '
@@ -123,7 +130,9 @@ test_expect_success 'list all configs in config_table in JSON format' '
 	grep "\"key\": \"priority_decay_half_life\"" list_configs_json.test &&
 	grep "\"value\": \"604800\"" list_configs_json.test &&
 	grep "\"key\": \"decay_factor\"" list_configs_json.test &&
-	grep "\"value\": \"0.5\"" list_configs_json.test
+	grep "\"value\": \"0.5\"" list_configs_json.test &&
+	grep "\"key\": \"decay_method\"" list_configs_json.test &&
+	grep "\"value\": \"periodic\"" list_configs_json.test
 '
 
 test_expect_success 'list all configs with --fields' '
@@ -134,6 +143,7 @@ test_expect_success 'list all configs with --fields' '
 	---------------------------
 	core_weight                
 	decay_factor               
+	decay_method               
 	deny_unknown_queues        
 	gpu_weight                 
 	key1                       
@@ -153,6 +163,7 @@ test_expect_success 'list all configs with format string' '
 	priority_usage_reset_period->2419200
 	priority_decay_half_life->604800
 	decay_factor->0.5
+	decay_method->periodic
 	node_weight->1.0
 	core_weight->0.0
 	gpu_weight->0.0
@@ -172,6 +183,12 @@ test_expect_success 'edit the usage parameters successfully' '
 	grep "priority_decay_half_life->900" edit_usage_configs.test &&
 	grep "priority_usage_reset_period->3600" edit_usage_configs.test &&
 	grep "decay_factor->0.2" edit_usage_configs.test
+'
+
+test_expect_success 'edit usage decay method successfully' '
+	flux account edit-config decay_method=continuous &&
+	flux account list-configs -o "{key}->{value}" > edit_decay_method.test &&
+	grep "decay_method->continuous" edit_decay_method.test
 '
 
 test_expect_success 'shut down flux-accounting service' '

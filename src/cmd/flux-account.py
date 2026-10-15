@@ -608,6 +608,13 @@ def add_create_db_arg(subparsers):
         metavar="DECAY_FACTOR",
     )
     subparser_create_db.add_argument(
+        "--decay-method",
+        type=str.lower,
+        choices=["periodic", "continuous"],
+        default=None,
+        help="the method to use when decaying historical usage",
+    )
+    subparser_create_db.add_argument(
         "--config-path",
         help=(
             "path to a TOML file with an [accounting] section used to customize "
@@ -1637,9 +1644,14 @@ def add_edit_config_arg(subparsers):
         "edit-config",
         help="edit one or more key-value pairs in config_table",
         formatter_class=flux.util.help_formatter(),
-        description="Edit configuration values. WARNING: changing "
+        description="Edit configuration values. WARNING: in periodic decay mode, "
+        "changing "
         "priority_usage_reset_period, priority_decay_half_life, or decay_factor "
-        "will re-bin all job usage bins and reset usage for every association to 0.0.",
+        "resets job usage for every association to 0.0 and re-bins all job "
+        "usage bins. In continuous decay mode, only priority_decay_half_life "
+        "and decay_factor trigger the reset. "
+        "Changing decay_method from continuous to periodic also resets "
+        "usage.",
     )
     subparsers_edit_config.set_defaults(func="edit_config")
     subparsers_edit_config.add_argument(
@@ -1829,6 +1841,7 @@ def main():
             args.priority_decay_half_life,
             args.decay_factor,
             args.config_path,
+            args.decay_method,
         )
         sys.exit(0)
 

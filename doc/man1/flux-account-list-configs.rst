@@ -48,6 +48,7 @@ List all configuration parameters in table format:
     priority_usage_reset_period | 2419200
     priority_decay_half_life    | 604800
     decay_factor                | 0.5
+    decay_method                | periodic
 
 List configurations in JSON format:
 
@@ -57,7 +58,8 @@ List configurations in JSON format:
     [
       {"key": "priority_usage_reset_period", "value": "2419200"},
       {"key": "priority_decay_half_life", "value": "604800"},
-      {"key": "decay_factor", "value": "0.5"}
+      {"key": "decay_factor", "value": "0.5"},
+      {"key": "decay_method", "value": "periodic"}
     ]
 
 List only the keys:
@@ -68,6 +70,7 @@ List only the keys:
     key
     ---------------------------
     decay_factor
+    decay_method
     priority_decay_half_life
     priority_usage_reset_period
 
@@ -80,6 +83,7 @@ Use a custom format string:
     priority_usage_reset_period->2419200
     priority_decay_half_life->604800
     decay_factor->0.5
+    decay_method->periodic
 
 SEE ALSO
 ========

@@ -15,11 +15,13 @@ import sqlite3
 from collections import defaultdict
 from datetime import datetime, timedelta
 
+from fluxacct.database import info
 from fluxacct.jobs import records as j
 from fluxacct.jobs.calculators.base import (
     calculate_weighted_usage,
     get_usage_weights,
 )
+from fluxacct.jobs.calculators.continuous import ContinuousDecayCalculator
 from fluxacct.jobs.calculators.periodic import PeriodicUsageCalculator
 from fluxacct import util
 from fluxacct.util import with_cursor
@@ -128,7 +130,12 @@ def rebuild_project_usage(acct_conn):
 
 
 def update_job_usage(acct_conn):
-    return PeriodicUsageCalculator(acct_conn).update()
+    mode = info.get_decay_method(acct_conn)
+    if mode == "periodic":
+        return PeriodicUsageCalculator(acct_conn).update()
+    if mode == "continuous":
+        return ContinuousDecayCalculator(acct_conn).update()
+    raise ValueError("decay_method must be 'periodic' or 'continuous'")
 
 
 def scrub_old_jobs(conn, num_weeks=26):

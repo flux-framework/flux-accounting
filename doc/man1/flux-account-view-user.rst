@@ -36,10 +36,12 @@ well as customizing which fields are returned.
 
     Specify output format using Python's string format syntax.
 
-.. option:: -j/--job-usage
+.. option:: -J/--job-usage
 
     List all of the past job usage factors that make up an association's
-    historical job usage value.
+    historical job usage value. In ``continuous`` usage decay mode, this
+    detailed bin breakdown is unavailable because all usage is stored in
+    just one value: the ``job_usage`` column in ``association_table``.
 
     .. note::
         This optional argument cannot be combined with ``--fields``.

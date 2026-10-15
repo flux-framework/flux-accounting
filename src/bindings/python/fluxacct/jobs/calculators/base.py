@@ -116,6 +116,45 @@ def update_project_usage_state(cursor, job_rows):
     )
 
 
+def get_new_project_job_rows(cur):
+    """Return jobs newer than their registered project's usage checkpoint."""
+    cur.execute("""
+        INSERT OR IGNORE INTO project_usage_state (project, last_job_timestamp)
+        SELECT project, 0.0 FROM project_table
+        """)
+    cur.execute("""
+        SELECT r.userid,r.id,r.t_submit,r.t_run,r.t_inactive,r.ranks,r.R,
+        r.jobspec,r.project,r.bank,r.requested_duration,r.actual_duration
+        FROM jobs r
+        JOIN project_table p ON r.project = p.project
+        JOIN project_usage_state s ON p.project = s.project
+        WHERE r.t_inactive > s.last_job_timestamp
+        ORDER BY r.project, r.t_inactive, r.id
+        """)
+    return cur.fetchall()
+
+
+def get_new_job_rows(cur):
+    """Return job rows eligible for the regular usage update."""
+    last_reconfigured = cur.execute(
+        "SELECT value FROM config_table WHERE key='reconfigure_time'"
+    ).fetchone()
+    last_reconfigured = last_reconfigured[0] if last_reconfigured is not None else 0.0
+    query = """
+    SELECT r.userid,r.id,r.t_submit,r.t_run,r.t_inactive,r.ranks,r.R,r.jobspec,
+    r.project,r.bank,r.requested_duration,r.actual_duration,b.ignore_older_than
+    FROM jobs r LEFT JOIN job_usage_factor_table j
+    ON r.userid = j.userid AND r.bank = j.bank
+    LEFT JOIN bank_table b
+    ON r.bank = b.bank WHERE r.t_inactive > j.last_job_timestamp
+    AND r.t_inactive > b.ignore_older_than
+    AND r.t_inactive > ?
+    """
+
+    cur.execute(query, (last_reconfigured,))
+    return cur.fetchall()
+
+
 def calc_bank_usage_tree(cursor, bank):
     # find all sub-banks of the current bank
     sub_banks = cursor.execute(

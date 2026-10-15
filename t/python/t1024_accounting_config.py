@@ -33,6 +33,7 @@ class TestAccountingConfig(unittest.TestCase):
         self.assertEqual(conf["usage"]["reset-period"], 2419200)
         self.assertEqual(conf["usage"]["decay-half-life"], 604800)
         self.assertEqual(conf["usage"]["decay-factor"], 0.5)
+        self.assertEqual(conf["usage"]["decay-method"], "periodic")
         self.assertEqual(
             conf["usage"]["weights"], {"node": 1.0, "core": 0.0, "gpu": 0.0}
         )
@@ -48,6 +49,7 @@ class TestAccountingConfig(unittest.TestCase):
             "[accounting.usage]\n"
             'decay-half-life = "14d"\n'
             "decay-factor = 0.25\n"
+            'decay-method = "continuous"\n'
             "[accounting.usage.weights]\n"
             "core = 1.0\n"
             "[accounting.priority.factors]\n"
@@ -58,6 +60,7 @@ class TestAccountingConfig(unittest.TestCase):
         self.assertEqual(conf["usage"]["decay-half-life"], 1209600)
         self.assertEqual(conf["usage"]["reset-period"], 2419200)
         self.assertEqual(conf["usage"]["decay-factor"], 0.25)
+        self.assertEqual(conf["usage"]["decay-method"], "continuous")
         self.assertEqual(
             conf["usage"]["weights"], {"node": 1.0, "core": 1.0, "gpu": 0.0}
         )
@@ -116,6 +119,12 @@ class TestAccountingConfig(unittest.TestCase):
     # an out-of-range decay factor raises a ValueError
     def test_10_bad_decay_factor(self):
         filename = write_toml("[accounting.usage]\ndecay-factor = 1.5\n")
+        with self.assertRaises(ValueError):
+            AccountingConfig(filename)
+        os.remove(filename)
+
+    def test_bad_decay_method(self):
+        filename = write_toml('[accounting.usage]\ndecay-method = "other"\n')
         with self.assertRaises(ValueError):
             AccountingConfig(filename)
         os.remove(filename)
@@ -187,6 +196,7 @@ class TestAccountingConfig(unittest.TestCase):
             "[accounting.usage]\n"
             'decay-half-life = "14d"\n'
             "decay-factor = 0.8\n"
+            'decay-method = "continuous"\n'
             "[accounting.usage.weights]\n"
             "core = 1.0\n"
             "[accounting.priority.factors]\n"
@@ -207,6 +217,7 @@ class TestAccountingConfig(unittest.TestCase):
         self.assertEqual(config_table["priority_decay_half_life"], "1209600")
         self.assertEqual(config_table["priority_usage_reset_period"], "2419200")
         self.assertEqual(config_table["decay_factor"], "0.8")
+        self.assertEqual(config_table["decay_method"], "continuous")
         self.assertEqual(config_table["core_weight"], "1.0")
         self.assertEqual(config_table["node_weight"], "1.0")
         self.assertEqual(config_table["deny_unknown_queues"], "true")
@@ -224,6 +235,12 @@ class TestAccountingConfig(unittest.TestCase):
         os.remove(dbname)
         os.remove(filename)
         self.assertEqual(float(config_table["priority_decay_half_life"]), 86400.0)
+
+    def test_22_decay_method_is_case_insensitive(self):
+        filename = write_toml('[accounting.usage]\ndecay-method = "Continuous"\n')
+        conf = AccountingConfig(filename)
+        os.remove(filename)
+        self.assertEqual(conf["usage"]["decay-method"], "continuous")
 
 
 def suite():

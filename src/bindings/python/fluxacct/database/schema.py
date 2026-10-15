@@ -7,7 +7,7 @@
 #
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
-DB_SCHEMA_VERSION = 39
+DB_SCHEMA_VERSION = 40
 
 # flux-accounting DB table column names
 ASSOCIATION_TABLE = [

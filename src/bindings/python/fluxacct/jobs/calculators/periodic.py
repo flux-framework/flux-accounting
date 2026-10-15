@@ -16,11 +16,13 @@ from collections import defaultdict
 
 from fluxacct.jobs import records as j
 from fluxacct.jobs.calculators.base import (
+    get_new_job_rows,
     calculate_weighted_usage,
     get_usage_weights,
     calc_bank_usage_tree,
     update_project_usage,
     update_project_usage_state,
+    get_new_project_job_rows,
     JobUsageCalculator,
 )
 
@@ -64,47 +66,6 @@ class PeriodicUsageCalculator(JobUsageCalculator):
             """,
             (user, userid, bank, 0, usg_h),
         )
-
-    @staticmethod
-    def get_new_job_rows(cur):
-        """Return job rows eligible for the regular usage update."""
-        last_reconfigured = cur.execute(
-            "SELECT value FROM config_table WHERE key='reconfigure_time'"
-        ).fetchone()
-        last_reconfigured = (
-            last_reconfigured[0] if last_reconfigured is not None else 0.0
-        )
-        query = """
-        SELECT r.userid,r.id,r.t_submit,r.t_run,r.t_inactive,r.ranks,r.R,r.jobspec,
-        r.project,r.bank,r.requested_duration,r.actual_duration,b.ignore_older_than
-        FROM jobs r LEFT JOIN job_usage_factor_table j
-        ON r.userid = j.userid AND r.bank = j.bank
-        LEFT JOIN bank_table b
-        ON r.bank = b.bank WHERE r.t_inactive > j.last_job_timestamp
-        AND r.t_inactive > b.ignore_older_than
-        AND r.t_inactive > ?
-        """
-
-        cur.execute(query, (last_reconfigured,))
-        return cur.fetchall()
-
-    @staticmethod
-    def get_new_project_job_rows(cur):
-        """Return jobs newer than their registered project's usage checkpoint."""
-        cur.execute("""
-            INSERT OR IGNORE INTO project_usage_state (project, last_job_timestamp)
-            SELECT project, 0.0 FROM project_table
-            """)
-        cur.execute("""
-            SELECT r.userid,r.id,r.t_submit,r.t_run,r.t_inactive,r.ranks,r.R,
-            r.jobspec,r.project,r.bank,r.requested_duration,r.actual_duration
-            FROM jobs r
-            JOIN project_table p ON r.project = p.project
-            JOIN project_usage_state s ON p.project = s.project
-            WHERE r.t_inactive > s.last_job_timestamp
-            ORDER BY r.project, r.t_inactive, r.id
-            """)
-        return cur.fetchall()
 
     def apply_decay_factor(self, user, bank, userid):
         """
@@ -312,9 +273,9 @@ class PeriodicUsageCalculator(JobUsageCalculator):
             result = cur.fetchall()
 
             # fetch new jobs for every association based on their last completed job
-            new_jobs = self.get_new_job_rows(cur)
+            new_jobs = get_new_job_rows(cur)
             new_job_records = j.convert_to_obj(new_jobs)
-            new_project_jobs = self.get_new_project_job_rows(cur)
+            new_project_jobs = get_new_project_job_rows(cur)
             new_project_job_records = j.convert_to_obj(new_project_jobs)
             # convert new jobs to a dictionary where the key is a tuple of the
             # user ID and bank associated with the job
