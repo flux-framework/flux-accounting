@@ -114,6 +114,7 @@ TESTSCRIPTS = \
 	t1109-issue982.t \
 	t1110-issue987.t \
 	t1111-continuous-usage-decay.t \
+	t1112-issue999.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
