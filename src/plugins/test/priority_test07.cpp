@@ -126,6 +126,38 @@ static void missing_weights_default_to_plugin_defaults ()
         "missing priority factor weights use plugin defaults");
 }
 
+static void queue_priority_known_queue ()
+{
+    std::map<std::string, Queue> queues;
+
+    queues["high"].name = "high";
+    queues["high"].priority = 42;
+
+    ok (get_queue_priority ("high", queues) == 42,
+        "known queue returns configured priority");
+}
+
+static void queue_priority_unknown_queue ()
+{
+    std::map<std::string, Queue> queues;
+
+    ok (get_queue_priority ("missing", queues) == 0,
+        "unknown queue returns zero priority");
+}
+
+static void queue_priority_empty_queue ()
+{
+    std::map<std::string, Queue> queues;
+
+    queues[""].name = "";
+    queues[""].priority = 99;
+    queues["high"].name = "high";
+    queues["high"].priority = 42;
+
+    ok (get_queue_priority ("", queues) == 0,
+        "empty queue returns zero priority");
+}
+
 int main (int argc, char *argv[])
 {
     hold_urgency_returns_min ();
@@ -133,6 +165,9 @@ int main (int argc, char *argv[])
     weighted_sum_orders_by_factors ();
     negative_sum_clamps_to_min ();
     missing_weights_default_to_plugin_defaults ();
+    queue_priority_known_queue ();
+    queue_priority_unknown_queue ();
+    queue_priority_empty_queue ();
 
     // indicate we are done testing
     done_testing ();
