@@ -1972,15 +1972,12 @@ static int job_updated (flux_plugin_t *p,
     std::string new_queue = updated_queue ? updated_queue
                                           : (queue ? queue : j->queue);
 
-    if (updated_queue != NULL) {
-        // the queue for the job has been updated, so fetch the priority
-        // associated with this queue and assign it to the Association object
-        // associated with the job
-        a_new->queue_factor = get_queue_info (updated_queue,
-                                              a_new->queues,
-                                              queues);
-    }
-
+    // No queue validation happens here: job.update is called *after* the
+    // jobspec-update event has been committed, and its return value is
+    // ignored by the job-manager. The queue was already validated by
+    // update_queue_cb () and by job.validate on the merged jobspec, so the
+    // Job object must always follow the committed update; returning early
+    // would leave j->queue (and sched usage) out of sync with the jobspec
     sched_usage_freed = j->move_sched (a_new, new_queue);
     held_job_moved = move_held_job (a, a_new, j->id, new_queue);
     if (sched_usage_freed || held_job_moved) {
