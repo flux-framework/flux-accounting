@@ -212,7 +212,7 @@ class PeriodicUsageCalculator(JobUsageCalculator):
             usg_past = self.apply_decay_factor(user, bank, userid)
             usg_historical = usg_current + usg_past
 
-            self.update_curr_usg_col(usg_historical, user, bank, userid)
+            self.update_curr_usg_col(usg_current, user, bank, userid)
             self.update_usage_col(usg_historical, user, bank)
 
         return usg_historical
