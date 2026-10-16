@@ -23,10 +23,13 @@ altogether and will report a message as to why the job cannot proceed past
 validation. Soft limits will allow a job to be submitted but will prevent it
 from running until a prerequisite has been met.
 
-There is just one hard limit in flux-accounting:
+The hard limits in flux-accounting are composed of:
 
 (per-association) max active jobs
   The max number of active jobs an association can have at any given time.
+
+(per-queue) max nodes per association
+  The max number of nodes a single job may request in a given queue.
 
 The soft limits in flux-accounting are composed of:
 
@@ -40,10 +43,6 @@ The soft limits in flux-accounting are composed of:
 (per-queue) max running jobs
   The max number of running jobs an association can have in a given queue at
   any given time.
-
-(per-queue) max nodes
-  The max number of nodes an association can have across their running jobs in
-  a givent queue at any given time.
 
 (per-queue) max scheduled nodes
   The max number of nodes an association can have across all of their jobs in
@@ -121,9 +120,11 @@ meet the requirements to have their dependencies removed and transition to
 ``RUN``. The workflow looks like the following: grab the held job, its
 attributes, and its dependencies. Ensure that the job would not:
 
-* Put the association over the max running jobs limit for the *queue* the job is submitted in.
+* Put the association over the max running jobs limit for the *queue* the job
+  is submitted in.
 
-* Put the association over the max nodes limit for the *queue* the job is submitted in.
+* Put the association over the max scheduled nodes or cores limit for the
+  *queue* the job is submitted in.
 
 * Put the association over their max running jobs limit *regardless of queue*.
 
@@ -179,7 +180,7 @@ user ID.
 No. If the limits configured for a particular queue or association do not seem
 to fit your needs, you can change them. However, be sure to note that these
 limits need to be pushed to the priority plugin with
-``flux account-priority-update`` in order for them to take effetc. When the
+``flux account-priority-update`` in order for them to take effect. When the
 plugin is updated with the new limits, the held jobs for every association are
 reanalyzed to see if they now fit the requirements to be released.
 

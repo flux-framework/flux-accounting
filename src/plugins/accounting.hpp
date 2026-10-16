@@ -60,7 +60,6 @@ enum priority_weight_default {
 #define D_QUEUE_MRJ  "max-run-jobs-queue"
 #define D_ASSOC_MRJ  "max-running-jobs-user-limit"
 #define D_ASSOC_MRES "max-resources-user-limit"
-#define D_QUEUE_MRES "max-resources-queue"
 #define D_ASSOC_MSJ  "max-sched-jobs-user-limit"
 #define D_QUEUE_MSJ  "max-sched-jobs-queue-limit"
 #define D_QUEUE_MSN  "max-sched-nodes-queue-limit"
@@ -150,10 +149,6 @@ public:
                                    const std::map<std::string, Queue> &queues,
                                    int pending);
     bool under_max_resources (const Job &job);
-    bool under_queue_max_resources (
-                                  const Job &job,
-                                  const std::string &queue,
-                                  const std::map<std::string, Queue> &queues);
     bool under_max_sched_jobs ();
     bool under_max_sched_jobs (int pending);
     bool under_queue_max_sched_jobs (const std::string &queue,

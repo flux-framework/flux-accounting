@@ -413,19 +413,6 @@ static release_result try_release_held_job (flux_plugin_t *p,
         held_job.remove_dep (D_QUEUE_MSC);
         job_queue_sched_cores += held_job.ncores ();
     }
-    // is the association under the max nodes limit for the queue the
-    // held job is submitted under?
-    if (held_job.contains_dep (D_QUEUE_MRES)
-        && b->under_queue_max_resources (held_job, held_job.queue, queues)) {
-        if (flux_jobtap_dependency_remove (p,
-                                           held_job.id,
-                                           D_QUEUE_MRES) < 0) {
-            dependency = D_QUEUE_MRES;
-            held_job_id = held_job.id;
-            goto error;
-        }
-        held_job.remove_dep (D_QUEUE_MRES);
-    }
     // is association under their overall max running jobs limit?
     if (held_job.contains_dep (D_ASSOC_MRJ)
         && b->under_max_run_jobs (counters.assoc_run[b])) {
@@ -1648,24 +1635,17 @@ static int depend_cb (flux_plugin_t *p,
         }
         if (!b->under_queue_max_sched_nodes (job, queue_str, queues)) {
             // association is already at their max nodes in SCHED/RUN state
-            // limit across their running jobs in this queue; add a dependency
+            // in this queue; add a dependency
             if (flux_jobtap_dependency_add (p, id, D_QUEUE_MSN) < 0)
                 goto error;
             job.add_dep (D_QUEUE_MSN);
         }
         if (!b->under_queue_max_sched_cores (job, queue_str, queues)) {
             // association is already at their max cores in SCHED/RUN state
-            // limit across their running jobs in this queue; add a dependency
+            // in this queue; add a dependency
             if (flux_jobtap_dependency_add (p, id, D_QUEUE_MSC) < 0)
                 goto error;
             job.add_dep (D_QUEUE_MSC);
-        }
-        if (!b->under_queue_max_resources (job, queue_str, queues)) {
-            // association is already at their max nodes limit across their
-            // running jobs in this queue; add a dependency
-            if (flux_jobtap_dependency_add (p, id, D_QUEUE_MRES) < 0)
-                goto error;
-            job.add_dep (D_QUEUE_MRES);
         }
         if (!b->under_max_run_jobs ()) {
             // association is already at their max running jobs count; add a
