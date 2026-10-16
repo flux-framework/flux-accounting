@@ -128,7 +128,7 @@ json_t* Association::to_json () const
 
     // 'o' steals the reference for both held_job_ids and user_queues
     u = json_pack ("{s:s, s:f, s:i, s:i, s:i, s:i"
-                   " s:o, s:i, s:o, s:s, s:i, s:i, s:i,"
+                   " s:o, s:o, s:s, s:i, s:i, s:i,"
                    " s:i, s:i, s:i, s:i, s:o, s:o}",
                    "bank_name", bank_name.c_str (),
                    "fairshare", fairshare,
@@ -137,7 +137,6 @@ json_t* Association::to_json () const
                    "max_active_jobs", max_active_jobs,
                    "cur_active_jobs", cur_active_jobs,
                    "queues", user_queues,
-                   "queue_factor", queue_factor,
                    "projects", user_projects,
                    "def_project", def_project.c_str (),
                    "max_nodes", max_nodes,
@@ -231,36 +230,37 @@ bool has_text (const char *s) {
 };
 
 
-int get_queue_info (char *queue,
-                    const std::vector<std::string> &permissible_queues,
-                    const std::map<std::string, Queue> &queues)
+bool queue_permitted (const char *queue,
+                      const std::vector<std::string> &permissible_queues,
+                      const std::map<std::string, Queue> &queues)
 {
-    if (queue != NULL) {
-        // check #1) the queue passed in exists in the queues map;
-        // if the queue cannot be found, this means that flux-accounting
-        // does not know about the queue, and thus should return a default
-        // factor
-        auto q_it = queues.find (queue);
-        if (q_it == queues.end ())
-            return UNKNOWN_QUEUE;
+    // no queue was specified, so return true
+    if (queue == NULL)
+        return true;
 
-        // check #2) the queue passed in is valid for the association
-        auto vect_it = std::find (permissible_queues.begin (),
-                                  permissible_queues.end (),
-                                  queue);
-        if (vect_it == permissible_queues.end ())
-            // the queue passed in is not valid for the association
-            return INVALID_QUEUE;
+    // flux-accounting does not know about this queue, so it does not
+    // restrict access to it
+    if (queues.find (queue) == queues.end ())
+        return true;
 
-        try {
-            return queues.at (queue).priority;
-        } catch (const std::out_of_range &e) {
-            return UNKNOWN_QUEUE;
-        }
-    }
+    // the queue is known
+    return std::find (permissible_queues.begin (),
+                      permissible_queues.end (),
+                      queue) != permissible_queues.end ();
+}
 
-    // no queue was specified, so just use a default queue factor
-    return NO_QUEUE_SPECIFIED;
+
+int get_queue_priority (const std::string &queue,
+                        const std::map<std::string, Queue> &queues)
+{
+    if (queue.empty ())
+        return 0;
+
+    auto it = queues.find (queue);
+    if (it == queues.end ())
+        return 0;
+
+    return it->second.priority;
 }
 
 
