@@ -33,6 +33,8 @@ extern "C" {
 
 // custom Association class file
 #include "accounting.hpp"
+// custom priority RPC callback file
+#include "priorities.hpp"
 // custom job resource counting file
 #include "jj.hpp"
 // custom Job class file
@@ -53,6 +55,15 @@ std::vector<std::string> projects;
 std::map<std::string, int> priority_weights;
 bool deny_unknown_queues = false;
 static std::string default_queue = "";
+static priority_estimate_ctx_t priority_estimate_ctx = {
+    &users,
+    &users_def_bank,
+    &queues,
+    &banks,
+    &priority_weights,
+    &deny_unknown_queues,
+    &default_queue
+};
 
 // Outcome of checking a single held job against its flux-accounting limits.
 // This is a tri-state, not a success/failure rc: only RELEASE_ERROR is a
@@ -2364,6 +2375,12 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
         || flux_jobtap_service_register (p, "rec_fac_update", rec_factor_cb, p)
         < 0
         || flux_jobtap_service_register (p, "rec_config_update", rec_config_cb, p)
+        < 0
+        || flux_jobtap_service_register_ex (p,
+                                            "estimate",
+                                            FLUX_ROLE_USER,
+                                            estimate,
+                                            &priority_estimate_ctx)
         < 0)
         return -1;
 
