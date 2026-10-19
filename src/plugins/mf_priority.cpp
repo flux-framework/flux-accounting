@@ -2271,6 +2271,12 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
     priority_weights.clear ();
     deny_unknown_queues = false;
 
+    // initialize the weights of the priority factors with default values
+    priority_weights["fairshare"] = DEFAULT_FSHARE_WEIGHT;
+    priority_weights["queue"] = DEFAULT_QUEUE_WEIGHT;
+    priority_weights["bank"] = DEFAULT_BANK_WEIGHT;
+    priority_weights["urgency"] = DEFAULT_URGENCY_WEIGHT;
+
     json_t *config_obj = NULL;
     flux_t *h = flux_jobtap_get_flux (p);
     std::string errmsg;
@@ -2316,12 +2322,6 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
         || flux_jobtap_service_register (p, "rec_config_update", rec_config_cb, p)
         < 0)
         return -1;
-
-    // initialize the weights of the priority factors with default values
-    priority_weights["fairshare"] = DEFAULT_FSHARE_WEIGHT;
-    priority_weights["queue"] = DEFAULT_QUEUE_WEIGHT;
-    priority_weights["bank"] = DEFAULT_BANK_WEIGHT;
-    priority_weights["urgency"] = DEFAULT_URGENCY_WEIGHT;
 
     return 0;
 }
