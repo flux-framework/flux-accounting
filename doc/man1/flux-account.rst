@@ -259,6 +259,13 @@ View a breakdown of an association's job priorities.
 
 See :man1:`flux-account-jobs` for more details.
 
+estimate-priority
+^^^^^^^^^^^^^^^^^
+
+Estimate the priority a job would receive without submitting it.
+
+See :man1:`flux-account-estimate-priority` for more details.
+
 DATA VISUALIZATION
 ==================
 

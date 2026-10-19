@@ -214,6 +214,13 @@ man_pages = [
         1,
     ),
     (
+        "man1/flux-account-estimate-priority",
+        "flux-account-estimate-priority",
+        "estimate job priority without submitting a job",
+        [author],
+        1,
+    ),
+    (
         "man1/flux-account-view-job-records",
         "flux-account-view-job-records",
         "view job records in the flux-accounting database",
