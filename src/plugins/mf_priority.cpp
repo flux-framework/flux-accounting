@@ -159,7 +159,7 @@ int64_t priority_calculation (flux_plugin_t *p, Job *j, int urgency)
     post_fshare_memo (p, j, b->fairshare);
 
     return calc_priority (b->fairshare,
-                          b->queue_factor,
+                          get_queue_priority (j->queue, queues),
                           b->bank_factor,
                           urgency,
                           priority_weights);
@@ -625,13 +625,13 @@ static int release_held_jobs_ordered (
                                     "{s:i}", "urgency", &urgency);
             flux_plugin_arg_destroy (info);
         }
-        // if the queue has an associated priority, fetch it
-        auto q = queues.find (c.second->queue);
-        int queue_factor = (q != queues.end ()) ? q->second.priority : 0;
         ordered.push_back ({c.first, c.second,
-                            calc_priority (c.first->fairshare, queue_factor,
-                                           c.first->bank_factor, urgency,
-                                           priority_weights)});
+                            calc_priority (
+                                c.first->fairshare,
+                                get_queue_priority (c.second->queue, queues),
+                                c.first->bank_factor,
+                                urgency,
+                                priority_weights)});
     }
 
     // sort jobs by their effective priority; ties are broken by submission
@@ -1094,11 +1094,7 @@ static int priority_cb (flux_plugin_t *p,
                 // users map, so keep it in PRIORITY
                 return flux_jobtap_priority_unavail (p, args);
 
-            // fetch priority of the associated queue
-            assoc->queue_factor = get_queue_info (queue,
-                                                  assoc->queues,
-                                                  queues);
-            if (assoc->queue_factor == INVALID_QUEUE)
+            if (!queue_permitted (queue, assoc->queues, queues))
                 // the queue the association specified is invalid
                 return -1;
 
@@ -1232,7 +1228,7 @@ static int validate_cb (flux_plugin_t *p,
     char *queue = NULL;
     const char *project = NULL;
     flux_job_state_t state;
-    int max_run_jobs, cur_active_jobs, max_active_jobs, queue_factor = 0;
+    int max_run_jobs, cur_active_jobs, max_active_jobs;
     double fairshare = 0.0;
     bool only_dne_data;
     Association *a;
@@ -1293,7 +1289,7 @@ static int validate_cb (flux_plugin_t *p,
                                        "is enabled",
                                        queue);
     }
-    if (get_queue_info (queue, a->queues, queues) == INVALID_QUEUE) {
+    if (!queue_permitted (queue, a->queues, queues)) {
         // the association specified a queue that they do not belong to; reject
         // the job and return which queues they belong to
         std::string valid_queues = join_strings (a->queues, ",");
@@ -1444,8 +1440,14 @@ static int new_cb (flux_plugin_t *p,
         }
     }
 
-    // assign priority associated with validated queue
-    b->queue_factor = get_queue_info (queue, b->queues, queues);
+    if (!queue_permitted (queue, b->queues, queues)) {
+        std::string valid_queues = join_strings (b->queues, ",");
+        return flux_jobtap_reject_job (p,
+                                       args,
+                                       MSG_INVALID_QUEUE,
+                                       queue,
+                                       valid_queues.c_str ());
+    }
     // assign priority associated with validated bank
     b->bank_factor = get_bank_priority (b->bank_name.c_str (), banks);
 
@@ -1970,15 +1972,12 @@ static int job_updated (flux_plugin_t *p,
     std::string new_queue = updated_queue ? updated_queue
                                           : (queue ? queue : j->queue);
 
-    if (updated_queue != NULL) {
-        // the queue for the job has been updated, so fetch the priority
-        // associated with this queue and assign it to the Association object
-        // associated with the job
-        a_new->queue_factor = get_queue_info (updated_queue,
-                                              a_new->queues,
-                                              queues);
-    }
-
+    // No queue validation happens here: job.update is called *after* the
+    // jobspec-update event has been committed, and its return value is
+    // ignored by the job-manager. The queue was already validated by
+    // update_queue_cb () and by job.validate on the merged jobspec, so the
+    // Job object must always follow the committed update; returning early
+    // would leave j->queue (and sched usage) out of sync with the jobspec
     sched_usage_freed = j->move_sched (a_new, new_queue);
     held_job_moved = move_held_job (a, a_new, j->id, new_queue);
     if (sched_usage_freed || held_job_moved) {
@@ -2028,7 +2027,7 @@ static int update_queue_cb (flux_plugin_t *p,
                                        "for uid: %i", userid);
 
     // validate the updated queue and make sure the user/bank has access to it;
-    if (get_queue_info (updated_queue, a->queues, queues) == INVALID_QUEUE)
+    if (!queue_permitted (updated_queue, a->queues, queues))
         // user/bank does not have access to this queue; reject the update
         return flux_jobtap_error (p,
                                   args,
