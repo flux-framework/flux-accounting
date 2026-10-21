@@ -18,6 +18,7 @@ import flux
 from flux.constants import FLUX_USERID_UNKNOWN
 from fluxacct.database import create as c
 from fluxacct.database import paths, schema
+from fluxacct.policy import priorities as prio
 from fluxacct.util import INTEGER_MAX
 
 
@@ -1466,6 +1467,47 @@ def add_jobs_arg(subparsers):
     )
 
 
+def add_estimate_priority_arg(subparsers):
+    subparser_estimate_priority = subparsers.add_parser(
+        "estimate-priority",
+        help="estimate job priority",
+        formatter_class=flux.util.help_formatter(),
+    )
+    subparser_estimate_priority.set_defaults(func="estimate_priority")
+    group = subparser_estimate_priority.add_mutually_exclusive_group()
+    group.add_argument(
+        "--bank",
+        help="bank to estimate priority under",
+        type=str,
+        metavar="BANK",
+    )
+    group.add_argument(
+        "--all-banks",
+        action="store_const",
+        const=True,
+        help="estimate priority under every bank",
+    )
+    subparser_estimate_priority.add_argument(
+        "--queue",
+        help="queue to estimate priority under",
+        type=str,
+        metavar="QUEUE",
+    )
+    subparser_estimate_priority.add_argument(
+        "--urgency",
+        help="job urgency to use in the estimate",
+        type=int,
+        default=16,
+        metavar="N",
+    )
+    subparser_estimate_priority.add_argument(
+        "--json",
+        action="store_const",
+        const=True,
+        help="print output in JSON format",
+    )
+
+
 def add_show_usage_arg(subparsers):
     subparsers_visuals = subparsers.add_parser(
         "show-usage",
@@ -1738,6 +1780,7 @@ def add_arguments_to_parser(parser, subparsers):
     add_list_priority_factors(subparsers)
     add_reset_priority_factors_arg(subparsers)
     add_jobs_arg(subparsers)
+    add_estimate_priority_arg(subparsers)
     add_show_usage_arg(subparsers)
     add_edit_all_users_arg(subparsers)
     add_synchronize_userids_arg(subparsers)
@@ -1759,6 +1802,18 @@ def set_db_location(args):
 
 def select_accounting_function(args, parser):
     data = vars(args)
+
+    if args.func == "estimate_priority":
+        rows = prio.estimate_priority_rows(
+            bank=args.bank,
+            all_banks=args.all_banks or False,
+            queue=args.queue,
+            urgency=args.urgency,
+        )
+        print(prio.format_priority_estimates(rows, json_fmt=args.json))
+        if not prio.estimate_priority_succeeded(rows):
+            sys.exit(1)
+        return
 
     # map each command to the corresponding accounting RPC call
     func_map = {

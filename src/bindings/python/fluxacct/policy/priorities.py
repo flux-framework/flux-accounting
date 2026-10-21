@@ -347,6 +347,44 @@ def reset_factors(conn):
     return 0
 
 
+def estimate_priority_rows(bank=None, all_banks=False, queue=None, urgency=16):
+    """
+    Estimate the priority a submitted job would receive from the
+    multi-factor priority plugin.
+    """
+    payload = {"all_banks": all_banks, "urgency": urgency}
+    if bank is not None:
+        payload["bank"] = bank
+    if queue is not None:
+        payload["queue"] = queue
+
+    response = flux.Flux().rpc("job-manager.mf_priority.estimate", payload).get()
+    return response["priorities"]
+
+
+def format_priority_estimates(rows, json_fmt=False):
+    """Format priority estimate rows for command output."""
+    if json_fmt:
+        return json.dumps(rows, indent=2)
+
+    header = f"{'BANK':<16}{'QUEUE':<16}{'URGENCY':<9}" f"{'PRIORITY':<12}{'ERROR'}"
+    formatted_rows = []
+    for row in rows:
+        formatted_rows.append(
+            f"{row['bank']:<16}"
+            f"{row['queue'] or '':<16}"
+            f"{row['urgency']:<9}"
+            f"{row['priority'] if row['priority'] is not None else '':<12}"
+            f"{row['error'] or ''}"
+        )
+    return f"{header}\n" + "\n".join(formatted_rows)
+
+
+def estimate_priority_succeeded(rows):
+    """Return True if at least one estimate row has a calculated priority."""
+    return any(row.get("priority") is not None for row in rows)
+
+
 def job_priorities(
     conn,
     username,

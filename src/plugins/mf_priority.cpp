@@ -33,6 +33,8 @@ extern "C" {
 
 // custom Association class file
 #include "accounting.hpp"
+// custom priority RPC callback file
+#include "priorities.hpp"
 // custom job resource counting file
 #include "jj.hpp"
 // custom Job class file
@@ -52,6 +54,16 @@ std::map<int, std::string> users_def_bank;
 std::vector<std::string> projects;
 std::map<std::string, int> priority_weights;
 bool deny_unknown_queues = false;
+static std::string default_queue = "";
+static priority_estimate_ctx_t priority_estimate_ctx = {
+    &users,
+    &users_def_bank,
+    &queues,
+    &banks,
+    &priority_weights,
+    &deny_unknown_queues,
+    &default_queue
+};
 
 // Outcome of checking a single held job against its flux-accounting limits.
 // This is a tri-state, not a success/failure rc: only RELEASE_ERROR is a
@@ -729,6 +741,47 @@ std::string join_strings (const std::vector<std::string> &vec,
 static void free_job (void *arg)
 {
     delete static_cast<Job *> (arg);
+}
+
+
+// keep Flux's default queue in sync with queue config updates; if Flux sends
+// no default_queue key, clear the cache
+static int queues_update (flux_plugin_t *p,
+                          const char *topic,
+                          flux_plugin_arg_t *args,
+                          void *arg)
+{
+    json_t *conf = NULL;
+    const char *new_default_queue = NULL;
+    json_error_t error;
+
+    if (flux_plugin_arg_unpack (args,
+                                FLUX_PLUGIN_ARG_IN,
+                                "{s:o}",
+                                "queues", &conf) < 0)
+        return flux_jobtap_error (p,
+                                  args,
+                                  "mf_priority: error unpacking "
+                                  "queues.update arguments: %s",
+                                  flux_plugin_arg_strerror (args));
+
+    if (json_unpack_ex (conf,
+                        &error,
+                        0,
+                        "{s?s}",
+                        "default_queue", &new_default_queue) < 0)
+        return flux_jobtap_error (p,
+                                  args,
+                                  "mf_priority: error unpacking "
+                                  "default_queue: %s",
+                                  error.text);
+
+    if (new_default_queue)
+        default_queue = new_default_queue;
+    else
+        default_queue.clear ();
+
+    return 0;
 }
 
 
@@ -2256,6 +2309,7 @@ static const struct flux_plugin_handler tab[] = {
     { "plugin.query", query_cb, NULL},
     { "job.update.attributes.system.queue", update_queue_cb, NULL },
     { "job.update.attributes.system.bank", update_bank_cb, NULL },
+    { "queues.update", queues_update, NULL },
     { 0 },
 };
 
@@ -2270,6 +2324,13 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
     projects.clear ();
     priority_weights.clear ();
     deny_unknown_queues = false;
+    default_queue.clear ();
+
+    // initialize the weights of the priority factors with default values
+    priority_weights["fairshare"] = DEFAULT_FSHARE_WEIGHT;
+    priority_weights["queue"] = DEFAULT_QUEUE_WEIGHT;
+    priority_weights["bank"] = DEFAULT_BANK_WEIGHT;
+    priority_weights["urgency"] = DEFAULT_URGENCY_WEIGHT;
 
     json_t *config_obj = NULL;
     flux_t *h = flux_jobtap_get_flux (p);
@@ -2314,14 +2375,14 @@ extern "C" int flux_plugin_init (flux_plugin_t *p)
         || flux_jobtap_service_register (p, "rec_fac_update", rec_factor_cb, p)
         < 0
         || flux_jobtap_service_register (p, "rec_config_update", rec_config_cb, p)
+        < 0
+        || flux_jobtap_service_register_ex (p,
+                                            "estimate",
+                                            FLUX_ROLE_USER,
+                                            estimate,
+                                            &priority_estimate_ctx)
         < 0)
         return -1;
-
-    // initialize the weights of the priority factors with default values
-    priority_weights["fairshare"] = DEFAULT_FSHARE_WEIGHT;
-    priority_weights["queue"] = DEFAULT_QUEUE_WEIGHT;
-    priority_weights["bank"] = DEFAULT_BANK_WEIGHT;
-    priority_weights["urgency"] = DEFAULT_URGENCY_WEIGHT;
 
     return 0;
 }

@@ -41,6 +41,7 @@ MAN1_FILES_PRIMARY = \
 	man1/flux-account-list-factors.1 \
 	man1/flux-account-reset-factors.1 \
 	man1/flux-account-jobs.1 \
+	man1/flux-account-estimate-priority.1 \
 	man1/flux-account-view-job-records.1 \
 	man1/flux-account-show-usage.1 \
 	man1/flux-account-edit-all-users.1 \
