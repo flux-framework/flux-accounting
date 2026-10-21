@@ -1164,15 +1164,18 @@ static int priority_cb (flux_plugin_t *p,
                                          NULL) < 0)
                 flux_log_error (h, "flux_jobtap_job_aux_set");
 
-            // now that we know the association information related to this
-            // job, we need to update the jobspec with the default bank used
-            // to submit this job under
-            if (update_jobspec_bank (p, userid) < 0) {
-                flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
-                                             "mf_priority", 0,
-                                             "job.state.priority: failed to "
-                                             "update jobspec with bank name");
-                return -1;
+            if (bank == NULL) {
+                // this job did not specify a bank and was submitted before
+                // the plugin had flux-accounting data, so it has no bank in
+                // its jobspec yet; update it with the association's default
+                if (update_jobspec_bank (p, userid) < 0) {
+                    flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
+                                                 "mf_priority", 0,
+                                                 "job.state.priority: failed "
+                                                 "to update jobspec with "
+                                                 "bank name");
+                    return -1;
+                }
             }
 
             if (project == NULL) {
