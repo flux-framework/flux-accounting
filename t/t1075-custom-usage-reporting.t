@@ -6,7 +6,6 @@ test_description='test arbitrarily calculating job usage'
 
 mkdir -p config
 
-MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
 SUBMIT_AS=${SHARNESS_TEST_SRCDIR}/scripts/submit_as.py
 DB=$(pwd)/FluxAccountingTest.db
 INSERT_JOBS="flux python ${SHARNESS_TEST_SRCDIR}/scripts/t1075/insert_jobs_to_db.py"
@@ -143,6 +142,52 @@ test_expect_success '-r: bin usage by association' '
 	grep "A:50001                          540.00" usagebyassoc.test1 &&
 	grep "A:50002                          420.00" usagebyassoc.test1 &&
 	grep "B:50003                          300.00" usagebyassoc.test1
+'
+
+test_expect_success '-r: bin usage by job name' '
+	flux account view-usage-report -s 12/01/24 -r byjobname > usagebyjobname.test1 &&
+	grep "jobname(nodesec)" usagebyjobname.test1 &&
+	grep "shared.*480.00" usagebyjobname.test1 &&
+	grep "/path/trailing/.*240.00" usagebyjobname.test1 &&
+	grep "pipeline.*240.00" usagebyjobname.test1 &&
+	grep "named with space.*120.00" usagebyjobname.test1 &&
+	grep "fallback.*120.00" usagebyjobname.test1 &&
+	grep "(unknown).*60.00" usagebyjobname.test1 &&
+	grep "TOTAL.*1260.00" usagebyjobname.test1 &&
+	test_must_fail grep "ignored" usagebyjobname.test1 &&
+	test_must_fail grep "different" usagebyjobname.test1
+'
+
+test_expect_success '-r byjobname works with username filter' '
+	flux account view-usage-report -s 12/01/24 -r byjobname -u u1 > usagebyjobname.test2 &&
+	grep "shared.*120.00" usagebyjobname.test2 &&
+	grep "/path/trailing/.*240.00" usagebyjobname.test2 &&
+	grep "named with space.*120.00" usagebyjobname.test2 &&
+	grep "fallback.*60.00" usagebyjobname.test2 &&
+	grep "TOTAL.*540.00" usagebyjobname.test2
+'
+
+test_expect_success '-r byjobname works with bank filter' '
+	flux account view-usage-report -s 12/01/24 -r byjobname -b A > usagebyjobname.test3 &&
+	grep "shared.*480.00" usagebyjobname.test3 &&
+	grep "/path/trailing/.*240.00" usagebyjobname.test3 &&
+	grep "named with space.*120.00" usagebyjobname.test3 &&
+	grep "fallback.*120.00" usagebyjobname.test3 &&
+	grep "TOTAL.*960.00" usagebyjobname.test3
+'
+
+test_expect_success '-r byjobname works with time unit' '
+	flux account view-usage-report -s 12/01/24 -r byjobname -t hour > usagebyjobname.test4 &&
+	grep "jobname(nodehour)" usagebyjobname.test4 &&
+	grep "shared.*0.13" usagebyjobname.test4 &&
+	grep "TOTAL.*0.35" usagebyjobname.test4
+'
+
+test_expect_success '-r byjobname works with job size bins' '
+	flux account view-usage-report -s 12/01/24 -r byjobname -S 1,2,3,4 > usagebyjobname.test5 &&
+	grep "1+             2+             3+             4+" usagebyjobname.test5 &&
+	grep "shared.*0.00         480.00           0.00           0.00" usagebyjobname.test5 &&
+	grep "fallback.*120.00           0.00           0.00           0.00" usagebyjobname.test5
 '
 
 test_expect_success '-t: specify usage by hour' '
