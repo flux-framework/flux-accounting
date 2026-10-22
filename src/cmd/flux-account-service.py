@@ -182,7 +182,6 @@ class AccountingService:
         except Exception as exc:
             handle.respond_error(msg, 0, f"view-user: {type(exc).__name__}: {exc}")
 
-    # pylint: disable=no-self-use
     def list_users(self, handle, watcher, msg, arg):
         try:
             val = u.list_users(
@@ -389,7 +388,6 @@ class AccountingService:
         except Exception as exc:
             handle.respond_error(msg, 0, f"list-banks: {type(exc).__name__}: {exc}")
 
-    # pylint: disable=no-self-use
     def view_job_records(self, handle, watcher, msg, arg):
         try:
             val = j.view_jobs(
