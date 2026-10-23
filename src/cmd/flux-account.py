@@ -1595,9 +1595,9 @@ def view_usage_report(subparsers):
         "-r",
         "--report-type",
         help="specify how data should be binned",
-        metavar="bybank|byuser|byassociation",
+        metavar="bybank|byuser|byassociation|byjobname",
         type=str,
-        choices=["bybank", "byuser", "byassociation"],
+        choices=["bybank", "byuser", "byassociation", "byjobname"],
     )
     subparsers_view_usage_report.add_argument(
         "-t",

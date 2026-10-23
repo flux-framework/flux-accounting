@@ -33,6 +33,9 @@ logging.basicConfig(
 )
 LOGGER = logging.getLogger(__name__)
 
+# report key used by "byjobname" for jobs whose name cannot be determined
+JOBNAME_UNKNOWN = "(unknown)"
+
 
 def rebuild_project_usage(acct_conn):
     """Replace project totals with usage calculated from all retained jobs."""
@@ -169,6 +172,10 @@ def get_key(record, rtype):
         return record.bank
     if rtype is not None and rtype == "byuser":
         return record.username
+    if rtype is not None and rtype == "byjobname":
+        # jobs without a name still count toward usage; bin them together
+        # so that TOTAL matches the other report types
+        return record.jobname if record.jobname else JOBNAME_UNKNOWN
     return f"{record.bank}:{record.username}"
 
 
@@ -240,8 +247,8 @@ def view_usage_report(
         end: End date in the following format: YY/MM/DD
         user: Only report data for a specific user.
         bank: Only report data for a specific bank.
-        report_type: How the job data should be binned (by user, by bank, or by
-            association).
+        report_type: How the job data should be binned (by user, by bank,
+            by association, or by job name).
         job_size_bins: A list of job sizes to bin data into.
         time_unit: The time unit used for calculating usage (per hour, minute, or
             second).
