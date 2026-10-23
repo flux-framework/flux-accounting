@@ -157,34 +157,19 @@ def scrub_old_jobs(conn, num_weeks=26):
     return 0
 
 
-def get_key(instr, rtype, auser, abank):
+def get_key(record, rtype):
     """
-    Return an appropriate hash key based on user requested report type, user, bank.
+    Return an appropriate hash key based on user requested report type.
 
     Args:
-        instr: The prefix for each line, which can be either be the association
-            (in "bank:username" format) or "TOTAL".
-        rtype: The resource type.
-        auser: The username of the association.
-        abank: The bank name of the association.
+        record: The job record.
+        rtype: The report type.
     """
-    if instr == "TOTAL":
-        return ""
-
-    parts = instr.split(":")
-    if len(parts) == 2:
-        bank, user = parts
-    else:
-        return ""
-
-    if (auser is not None and user != auser) or (abank is not None and bank != abank):
-        return ""
-
     if rtype is not None and rtype == "bybank":
-        return bank
+        return record.bank
     if rtype is not None and rtype == "byuser":
-        return user
-    return instr
+        return record.username
+    return f"{record.bank}:{record.username}"
 
 
 def format_header(rtype, tunit, sizebins):
@@ -288,57 +273,37 @@ def view_usage_report(
     total = {}
     ktotal = {}
 
-    result = j.view_jobs(
-        conn,
-        fields="{username} {bank} {nnodes} {t_run} {t_inactive}",
-        after_start_time=(start - 7 * 24 * 60 * 60),
-        before_end_time=end,
-        user=user,
-        bank=bank,
+    result = j.convert_to_obj(
+        j.get_jobs(
+            conn,
+            after_start_time=(start - 7 * 24 * 60 * 60),
+            before_end_time=end,
+            user=user,
+            bank=bank,
+        )
     )
 
-    for i, line in enumerate(result.split("\n")):
-        if i == 0:
-            # skip header line
-            continue
-        if not line or not line[0].isalnum():
-            continue
-
-        parts = line.split()
-        if len(parts) < 5:
-            # could not find all necessary job attributes; skip this job
-            continue
-
-        username, bank, nnodes, t_run, t_inactive = (
-            parts[0],
-            parts[1],
-            parts[2],
-            parts[3],
-            parts[4],
-        )
-
-        nnodes = int(nnodes)
-        t_run = float(t_run)
-        t_inactive = float(t_inactive)
-
-        if t_inactive < start or t_inactive > end:
+    for record in result:
+        if record.t_inactive < start or record.t_inactive > end:
             # job is outside of the set time range; skip this job
             continue
 
-        association = f"{bank}:{username}"
-        key = get_key(association, report_type, username, bank)
+        if not record.bank:
+            # jobs without a bank have historically been left out of usage
+            # reports; preserve that behavior
+            continue
 
-        if key:
-            jobusage = nnodes * (t_inactive - t_run)
-            ktotal[key] = ktotal.get(key, 0) + jobusage
+        key = get_key(record, report_type)
+        jobusage = record.nnodes * (record.t_inactive - record.t_run)
+        ktotal[key] = ktotal.get(key, 0) + jobusage
 
-            for sizebin in reversed(sizebins):
-                if nnodes >= sizebin:
-                    if key not in data:
-                        data[key] = {}
-                    data[key][sizebin] = data[key].get(sizebin, 0) + jobusage
-                    total[sizebin] = total.get(sizebin, 0) + jobusage
-                    break
+        for sizebin in reversed(sizebins):
+            if record.nnodes >= sizebin:
+                if key not in data:
+                    data[key] = {}
+                data[key][sizebin] = data[key].get(sizebin, 0) + jobusage
+                total[sizebin] = total.get(sizebin, 0) + jobusage
+                break
 
     result = ""
     result += format_header(report_type, time_unit, sizebins)
