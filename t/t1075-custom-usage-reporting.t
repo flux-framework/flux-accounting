@@ -208,6 +208,48 @@ test_expect_success '-e: end date after some jobs shows some usage' '
 	grep "960" usageend.test3
 '
 
+# Jobs with no bank were previously skipped as a side effect of the
+# string parsing, since an empty bank field collapsed under split().
+# This test makes sure that behavior is preserved by adding a job with no
+# bank specification.
+test_expect_success 'insert a job with no bank' '
+	cat >insert_nobank.py <<-EOF &&
+	import json
+	import sqlite3
+	import sys
+	conn = sqlite3.connect(sys.argv[1])
+	resources = json.dumps({
+		"version": 1,
+		"execution": {
+			"R_lite": [{"rank": "0-1", "children": {"core": "0"}}],
+			"starttime": 0,
+			"expiration": 0,
+			"nodelist": ["fluke[0-1]"],
+		},
+	})
+	jobspec = json.dumps({"attributes": {"system": {}}})
+	# 2-node job that ran for 60 seconds on January 15th, 2026, with no
+	# bank recorded
+	conn.execute(
+		"INSERT INTO jobs "
+		"(id,userid,t_submit,t_run,t_inactive,ranks,R,jobspec) "
+		"VALUES (?,?,?,?,?,?,?,?)",
+		(9, 50001, 1768478400, 1768478400, 1768478460, "0-1", resources, jobspec),
+	)
+	conn.commit()
+	conn.close()
+	EOF
+	flux python insert_nobank.py ${DB}
+'
+
+test_expect_success 'jobs with no bank are left out of usage reports' '
+	flux account view-usage-report -s 01/01/26 -e 01/31/26 > usagenobank.test1 &&
+	test_must_fail grep "50001" usagenobank.test1 &&
+	grep "^TOTAL  *0\.00$" usagenobank.test1 &&
+	flux account view-usage-report -s 01/01/26 -e 01/31/26 -r bybank > usagenobank.test2 &&
+	grep "^TOTAL  *0\.00$" usagenobank.test2
+'
+
 test_expect_success 'shut down flux-accounting service' '
 	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
