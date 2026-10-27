@@ -350,6 +350,10 @@ def clear_usage(conn, cur, banks, ignore_older_than=None):
         ignore_older_than: The timestamp in which all older jobs will not be considered
             towards job usage.
     """
+    ignore_timestamp = None
+    if ignore_older_than is not None:
+        ignore_timestamp = int(util.parse_timestamp(ignore_older_than))
+
     if len(banks) > 0:
         # one or more banks has been passed in to have their usage wiped
         for bank in banks:
@@ -366,14 +370,11 @@ def clear_usage(conn, cur, banks, ignore_older_than=None):
             clear_usage_period_columns(cur, bank)
             # propagate new usage up parent banks to root bank
             util.update_parent_bank_usage(conn, bank)
-            if ignore_older_than is not None:
+            if ignore_timestamp is not None:
                 # update bank_table with new ignore timestamp
                 cur.execute(
                     "UPDATE bank_table SET ignore_older_than=? WHERE bank=?",
-                    (
-                        int(util.parse_timestamp(ignore_older_than)),
-                        bank,
-                    ),
+                    (ignore_timestamp, bank),
                 )
             else:
                 # update bank_table with the current time to no longer consider any jobs
