@@ -38,7 +38,7 @@ options:
 
     Only calculate usage for BANK.
 
-.. option:: -r/--report-type=bybank|byuser|byassociation
+.. option:: -r/--report-type=bybank|byuser|byassociation|byjobname
 
     Specify how data should be binned.
 

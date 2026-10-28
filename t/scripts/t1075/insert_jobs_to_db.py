@@ -9,11 +9,31 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import sqlite3
-import sqlite3
+import json
 import sys
 
 
-def populate_db(conn, userid, bank, ranks, nodes, jobid, t_run, t_inactive):
+def make_jobspec(bank, name=None, command=None):
+    jobspec = {"attributes": {"system": {"bank": bank}}}
+    if name is not None:
+        jobspec["attributes"]["system"]["job"] = {"name": name}
+    if command is not None:
+        jobspec["tasks"] = [{"command": command}]
+    return json.dumps(jobspec)
+
+
+def populate_db(
+    conn,
+    userid,
+    bank,
+    ranks,
+    nodes,
+    jobid,
+    t_run,
+    t_inactive,
+    name=None,
+    command=None,
+):
     R_input = """{{
       "version": 1,
       "execution": {{
@@ -59,7 +79,7 @@ def populate_db(conn, userid, bank, ranks, nodes, jobid, t_run, t_inactive):
                 t_inactive,
                 ranks,
                 R_input,
-                '{ "attributes": { "system": { "bank": "' + bank + '"} } }',
+                make_jobspec(bank, name=name, command=command),
                 bank,
             ),
         )
@@ -86,22 +106,94 @@ def main():
     # populate the job-archive DB with fake job entries
 
     # 2-node job that ran for 60 seconds on January 1st, 2025
-    populate_db(conn, 50001, "A", "0-1", "fluke[0-1]", 1, 1735754664, (1735754664 + 60))
+    populate_db(
+        conn,
+        50001,
+        "A",
+        "0-1",
+        "fluke[0-1]",
+        1,
+        1735754664,
+        (1735754664 + 60),
+        name="shared",
+        command=["/bin/ignored"],
+    )
     # 1-node job that ran for 60 seconds on April 17th, 2025
-    populate_db(conn, 50001, "A", "0", "fluke[0]", 2, 1744913064, (1744913064 + 60))
+    populate_db(
+        conn,
+        50001,
+        "A",
+        "0",
+        "fluke[0]",
+        2,
+        1744913064,
+        (1744913064 + 60),
+        command=["/usr/bin/fallback"],
+    )
     # 1-node job that ran for 120 seconds on May 20th, 2025
-    populate_db(conn, 50001, "A", "0", "fluke[0]", 3, 1747764264, (1747764264 + 120))
+    populate_db(
+        conn,
+        50001,
+        "A",
+        "0",
+        "fluke[0]",
+        3,
+        1747764264,
+        (1747764264 + 120),
+        name="named with space",
+        command=["/bin/ignored"],
+    )
     # 4-node job that ran for 60 seconds on November 10th, 2025
-    populate_db(conn, 50001, "A", "0-3", "fluke[0-3]", 4, 1762797864, (1762797864 + 60))
+    populate_db(
+        conn,
+        50001,
+        "A",
+        "0-3",
+        "fluke[0-3]",
+        4,
+        1762797864,
+        (1762797864 + 60),
+        command=["/path/trailing/"],
+    )
     # 2-node job that ran for 180 seconds on April 18th, 2025
     populate_db(
-        conn, 50002, "A", "0-1", "fluke[0-1]", 5, 1744999464, (1744999464 + 180)
+        conn,
+        50002,
+        "A",
+        "0-1",
+        "fluke[0-1]",
+        5,
+        1744999464,
+        (1744999464 + 180),
+        name="shared",
+        command=["/bin/different"],
     )
     # 1-node job that ran for 60 seconds on December 1st, 2025
-    populate_db(conn, 50002, "A", "0", "fluke[0]", 6, 1764612264, (1764612264 + 60))
+    populate_db(
+        conn,
+        50002,
+        "A",
+        "0",
+        "fluke[0]",
+        6,
+        1764612264,
+        (1764612264 + 60),
+        command=["fallback"],
+    )
     # 4-node job that ran for 60 seconds on June 1st, 2025
-    populate_db(conn, 50003, "B", "0-3", "fluke[0-3]", 7, 1748801064, (1748801064 + 60))
-    # 2-node job that ran for 30 seconds on June 2nd, 2025
+    populate_db(
+        conn,
+        50003,
+        "B",
+        "0-3",
+        "fluke[0-3]",
+        7,
+        1748801064,
+        (1748801064 + 60),
+        command=["/opt/pipeline"],
+    )
+    # 2-node job that ran for 30 seconds on June 2nd, 2025; it has neither a
+    # job name nor a command on purpose
     populate_db(conn, 50003, "B", "0-1", "fluke[0-1]", 8, 1748887464, (1748887464 + 30))
 
 

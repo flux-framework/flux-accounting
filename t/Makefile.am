@@ -145,7 +145,8 @@ TESTSCRIPTS = \
 	python/t1024_accounting_config.py \
 	python/t1025_project_usage.py \
 	python/t1026_continuous_decay.py \
-	python/t1027_issue1003.py
+	python/t1027_issue1003.py \
+	python/t1028_job_record_jobname.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \

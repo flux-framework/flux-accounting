@@ -307,7 +307,8 @@ By default, usage is grouped by association:
     B:50003                          300.00
     TOTAL                           1260.00
 
-But can also be grouped by user or bank:
+But can also be grouped by user, bank, or job name. When grouping by job name,
+jobs whose name cannot be determined are reported under ``(unknown)``:
 
 .. code-block:: console
 
@@ -322,6 +323,16 @@ But can also be grouped by user or bank:
     bank(nodesec)                     total
     A                                960.00
     B                                300.00
+    TOTAL                           1260.00
+
+    $ flux account view-usage-report --report-type byjobname
+    jobname(nodesec)                  total
+    shared                           480.00
+    /path/trailing/                  240.00
+    pipeline                         240.00
+    fallback                         120.00
+    named with space                 120.00
+    (unknown)                         60.00
     TOTAL                           1260.00
 
 How usage is calculated can also be customized:

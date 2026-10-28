@@ -10,6 +10,7 @@
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
 import json
+import os
 
 from flux.resource import ResourceSet
 from flux.job.JobID import JobID
@@ -41,6 +42,23 @@ JOB_RECORD_FLOAT_FIELDS = {
 }
 
 
+def _lookup(obj, *path):
+    """
+    Walk a decoded JSON object along its path, where string keys index into
+    dicts and integer keys index into lists. Return None if any step is
+    missing or has the wrong type.
+    """
+    for key in path:
+        expected = dict if isinstance(key, str) else list
+        if not isinstance(obj, expected):
+            return None
+        try:
+            obj = obj[key]
+        except (KeyError, IndexError):
+            return None
+    return obj
+
+
 class JobRecord:
     """
     A record of an individual job.
@@ -61,6 +79,7 @@ class JobRecord:
         actual_duration,
         ncores,
         ngpus,
+        jobname=None,
         jobid_format="f58",
     ):
         self.userid = userid
@@ -77,6 +96,7 @@ class JobRecord:
         self.actual_duration = actual_duration
         self.ncores = ncores
         self.ngpus = ngpus
+        self.jobname = jobname
 
     @property
     def elapsed(self):
@@ -127,6 +147,29 @@ def convert_to_str(job_records, fmt_string=None):
     return output.build_table(job_records)
 
 
+def extract_job_name(jobspec):
+    """
+    Extract the Flux display name from a serialized jobspec. Return None if a
+    name cannot be determined.
+    """
+    try:
+        jobspec = json.loads(jobspec)
+    except (ValueError, TypeError):
+        return None
+
+    name = _lookup(jobspec, "attributes", "system", "job", "name")
+    if isinstance(name, str):
+        return name
+
+    # no explicit name; fall back to the basename of the command
+    arg0 = _lookup(jobspec, "tasks", 0, "command", 0)
+    if not isinstance(arg0, str):
+        return None
+
+    dirname, basename = os.path.split(arg0)
+    return basename if dirname and basename else arg0
+
+
 def convert_to_obj(rows, jobid_format="f58"):
     """
     Convert the results of a query to the jobs table to a list of JobRecord
@@ -159,6 +202,7 @@ def convert_to_obj(rows, jobid_format="f58"):
             actual_duration=row[11],
             ncores=job_ncores,
             ngpus=job_ngpus,
+            jobname=extract_job_name(row[7]),
             jobid_format=jobid_format,
         )
         job_records.append(job_record)

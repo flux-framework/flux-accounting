@@ -555,6 +555,7 @@ YY
 bankuser
 byassociation
 bybank
+byjobname
 byuser
 nodehour
 nodemin

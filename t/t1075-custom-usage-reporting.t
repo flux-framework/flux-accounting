@@ -6,7 +6,6 @@ test_description='test arbitrarily calculating job usage'
 
 mkdir -p config
 
-MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
 SUBMIT_AS=${SHARNESS_TEST_SRCDIR}/scripts/submit_as.py
 DB=$(pwd)/FluxAccountingTest.db
 INSERT_JOBS="flux python ${SHARNESS_TEST_SRCDIR}/scripts/t1075/insert_jobs_to_db.py"
@@ -145,6 +144,52 @@ test_expect_success '-r: bin usage by association' '
 	grep "B:50003                          300.00" usagebyassoc.test1
 '
 
+test_expect_success '-r: bin usage by job name' '
+	flux account view-usage-report -s 12/01/24 -r byjobname > usagebyjobname.test1 &&
+	grep "jobname(nodesec)" usagebyjobname.test1 &&
+	grep "shared.*480.00" usagebyjobname.test1 &&
+	grep "/path/trailing/.*240.00" usagebyjobname.test1 &&
+	grep "pipeline.*240.00" usagebyjobname.test1 &&
+	grep "named with space.*120.00" usagebyjobname.test1 &&
+	grep "fallback.*120.00" usagebyjobname.test1 &&
+	grep "(unknown).*60.00" usagebyjobname.test1 &&
+	grep "TOTAL.*1260.00" usagebyjobname.test1 &&
+	test_must_fail grep "ignored" usagebyjobname.test1 &&
+	test_must_fail grep "different" usagebyjobname.test1
+'
+
+test_expect_success '-r byjobname works with username filter' '
+	flux account view-usage-report -s 12/01/24 -r byjobname -u u1 > usagebyjobname.test2 &&
+	grep "shared.*120.00" usagebyjobname.test2 &&
+	grep "/path/trailing/.*240.00" usagebyjobname.test2 &&
+	grep "named with space.*120.00" usagebyjobname.test2 &&
+	grep "fallback.*60.00" usagebyjobname.test2 &&
+	grep "TOTAL.*540.00" usagebyjobname.test2
+'
+
+test_expect_success '-r byjobname works with bank filter' '
+	flux account view-usage-report -s 12/01/24 -r byjobname -b A > usagebyjobname.test3 &&
+	grep "shared.*480.00" usagebyjobname.test3 &&
+	grep "/path/trailing/.*240.00" usagebyjobname.test3 &&
+	grep "named with space.*120.00" usagebyjobname.test3 &&
+	grep "fallback.*120.00" usagebyjobname.test3 &&
+	grep "TOTAL.*960.00" usagebyjobname.test3
+'
+
+test_expect_success '-r byjobname works with time unit' '
+	flux account view-usage-report -s 12/01/24 -r byjobname -t hour > usagebyjobname.test4 &&
+	grep "jobname(nodehour)" usagebyjobname.test4 &&
+	grep "shared.*0.13" usagebyjobname.test4 &&
+	grep "TOTAL.*0.35" usagebyjobname.test4
+'
+
+test_expect_success '-r byjobname works with job size bins' '
+	flux account view-usage-report -s 12/01/24 -r byjobname -S 1,2,3,4 > usagebyjobname.test5 &&
+	grep "1+             2+             3+             4+" usagebyjobname.test5 &&
+	grep "shared.*0.00         480.00           0.00           0.00" usagebyjobname.test5 &&
+	grep "fallback.*120.00           0.00           0.00           0.00" usagebyjobname.test5
+'
+
 test_expect_success '-t: specify usage by hour' '
 	flux account view-usage-report -s 12/01/24 -u u1 -t hour > timeunit.test1 &&
 	grep "0.15" timeunit.test1
@@ -206,6 +251,48 @@ test_expect_success '-e: end date after all jobs shows all usage' '
 test_expect_success '-e: end date after some jobs shows some usage' '
 	flux account view-usage-report -s 12/31/2024 -e 06/03/2025 > usageend.test3 &&
 	grep "960" usageend.test3
+'
+
+# Jobs with no bank were previously skipped as a side effect of the
+# string parsing, since an empty bank field collapsed under split().
+# This test makes sure that behavior is preserved by adding a job with no
+# bank specification.
+test_expect_success 'insert a job with no bank' '
+	cat >insert_nobank.py <<-EOF &&
+	import json
+	import sqlite3
+	import sys
+	conn = sqlite3.connect(sys.argv[1])
+	resources = json.dumps({
+		"version": 1,
+		"execution": {
+			"R_lite": [{"rank": "0-1", "children": {"core": "0"}}],
+			"starttime": 0,
+			"expiration": 0,
+			"nodelist": ["fluke[0-1]"],
+		},
+	})
+	jobspec = json.dumps({"attributes": {"system": {}}})
+	# 2-node job that ran for 60 seconds on January 15th, 2026, with no
+	# bank recorded
+	conn.execute(
+		"INSERT INTO jobs "
+		"(id,userid,t_submit,t_run,t_inactive,ranks,R,jobspec) "
+		"VALUES (?,?,?,?,?,?,?,?)",
+		(9, 50001, 1768478400, 1768478400, 1768478460, "0-1", resources, jobspec),
+	)
+	conn.commit()
+	conn.close()
+	EOF
+	flux python insert_nobank.py ${DB}
+'
+
+test_expect_success 'jobs with no bank are left out of usage reports' '
+	flux account view-usage-report -s 01/01/26 -e 01/31/26 > usagenobank.test1 &&
+	test_must_fail grep "50001" usagenobank.test1 &&
+	grep "^TOTAL  *0\.00$" usagenobank.test1 &&
+	flux account view-usage-report -s 01/01/26 -e 01/31/26 -r bybank > usagenobank.test2 &&
+	grep "^TOTAL  *0\.00$" usagenobank.test2
 '
 
 test_expect_success 'shut down flux-accounting service' '
