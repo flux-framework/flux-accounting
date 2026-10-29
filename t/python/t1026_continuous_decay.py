@@ -308,6 +308,24 @@ class TestContinuousDecay(unittest.TestCase):
         ).fetchone()[0]
         self.assertEqual(method, "periodic")
 
+    def test_12_human_readable_bank_cutoff_allows_newer_job(self):
+        b.edit_bank(
+            self.conn,
+            bank="A",
+            ignore_older_than="Jan 1, 1970 8am",
+        )
+        insert_job(self.conn, 12, 50001, "A", 9980025.0, 9980050.0)
+
+        with mock.patch("time.time", return_value=9980100.0):
+            usage.update_job_usage(self.conn)
+
+        self.assertGreater(self.association_usage(), 0.0)
+        last_job_timestamp = self.conn.execute("""
+            SELECT last_job_timestamp FROM job_usage_factor_table
+            WHERE username='user1' AND bank='A'
+            """).fetchone()[0]
+        self.assertEqual(last_job_timestamp, 9980050.0)
+
 
 if __name__ == "__main__":
     from pycotap import TAPTestRunner

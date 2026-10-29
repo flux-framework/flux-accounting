@@ -14,6 +14,7 @@ import sys
 import os
 import time
 import sqlite3
+from datetime import datetime
 
 from fluxacct.database import create as c
 from fluxacct.entities import banks as b
@@ -108,6 +109,45 @@ class TestAccountingCLI(unittest.TestCase):
         cursor.execute("SELECT shares FROM bank_table where bank='root'")
 
         self.assertEqual(cursor.fetchone()[0], 50)
+
+    def test_07a_edit_bank_human_readable_timestamp(self):
+        b.edit_bank(
+            acct_conn,
+            bank="root",
+            ignore_older_than="Jan 1, 1990 8am",
+        )
+        row = acct_conn.execute(
+            "SELECT ignore_older_than, typeof(ignore_older_than) "
+            "FROM bank_table WHERE bank='root'"
+        ).fetchone()
+
+        expected = int(datetime(1990, 1, 1, 8).timestamp())
+        self.assertEqual(row[0], expected)
+        self.assertEqual(row[1], "integer")
+
+    def test_07b_edit_bank_numeric_timestamp_string(self):
+        b.edit_bank(acct_conn, bank="root", ignore_older_than="631180801")
+        row = acct_conn.execute(
+            "SELECT ignore_older_than, typeof(ignore_older_than) "
+            "FROM bank_table WHERE bank='root'"
+        ).fetchone()
+
+        self.assertEqual(row[0], 631180801)
+        self.assertEqual(row[1], "integer")
+
+    def test_07c_invalid_timestamp_does_not_edit_bank(self):
+        with self.assertRaisesRegex(ValueError, "not a valid timestamp"):
+            b.edit_bank(
+                acct_conn,
+                bank="root",
+                shares=75,
+                ignore_older_than="not-a-timestamp",
+            )
+        row = acct_conn.execute(
+            "SELECT shares, ignore_older_than FROM bank_table WHERE bank='root'"
+        ).fetchone()
+
+        self.assertEqual(tuple(row), (50, 631180801))
 
     # edit a bank's parent bank
     def test_08_edit_parent_bank_success(self):

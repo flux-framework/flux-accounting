@@ -95,6 +95,21 @@ test_expect_success 'edit a field in a bank account' '
 	grep -w "C\|50" edited_bank.out
 '
 
+test_expect_success 'edit a bank cutoff with a human-readable timestamp' '
+	flux account edit-bank A --ignore-older-than="Jan 1, 1990 8am" &&
+	flux account view-bank A > edited_bank_timestamp.out &&
+	jq -e ".[0].ignore_older_than == 631180800" edited_bank_timestamp.out
+'
+
+test_expect_success 'reject an invalid bank cutoff without editing other fields' '
+	test_must_fail flux account edit-bank A --shares=99 \
+		--ignore-older-than=not-a-timestamp > invalid_bank_timestamp.out 2>&1 &&
+	grep "not a valid timestamp" invalid_bank_timestamp.out &&
+	flux account view-bank A > unchanged_bank.out &&
+	jq -e ".[0].shares == 1 and .[0].ignore_older_than == 631180800" \
+		unchanged_bank.out
+'
+
 test_expect_success 'try to edit a field in a bank account with a bad value' '
 	test_must_fail flux account edit-bank C --shares=-1000 > bad_edited_value.out 2>&1 &&
 	grep "new shares amount must be > 0" bad_edited_value.out

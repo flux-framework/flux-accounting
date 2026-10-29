@@ -101,19 +101,42 @@ def get_username(userid):
 
 def parse_timestamp(timestamp):
     """
-    Parse a timestamp and convert it to a seconds-since-epoch timestamp. Try to first
-    parse it as a human-readable format (e.g. "2025-01-27 12:00:00"), or just return as a
-    seconds-since-epoch timestamp if the parsing fails.
+    Parse a human-readable timestamp or numeric seconds-since-epoch value.
 
     Returns:
         a seconds-since-epoch timestamp
+
+    Raises:
+        ValueError: the timestamp is empty, invalid, or non-finite
     """
-    try:
-        # try to parse as a human-readable timestamp
-        return parse_datetime(str(timestamp)).timestamp()
-    except ValueError:
-        # just return as a seconds-since-epoch timestamp
-        return timestamp
+    if timestamp is None or (isinstance(timestamp, str) and not timestamp.strip()):
+        raise ValueError(f"{timestamp!r} is not a valid timestamp")
+
+    text = str(timestamp).strip()
+    parsed_timestamp = None
+
+    # flux-core reserves a string of exactly eight digits for an ISO 8601
+    # basic-format date (YYYYMMDD), so never treat one as a raw
+    # seconds-since-epoch value; a numeric (int/float) value is always an epoch
+    is_basic_date = isinstance(timestamp, str) and len(text) == 8 and text.isdecimal()
+    if not is_basic_date:
+        try:
+            parsed_timestamp = float(timestamp)
+        except (TypeError, ValueError, OverflowError):
+            pass
+
+    if parsed_timestamp is None:
+        try:
+            parsed_timestamp = parse_datetime(text).timestamp()
+        except (OSError, TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(f"{timestamp!r} is not a valid timestamp") from exc
+
+    if not math.isfinite(parsed_timestamp):
+        raise ValueError(f"{timestamp!r} is not a valid timestamp")
+
+    if parsed_timestamp.is_integer():
+        return int(parsed_timestamp)
+    return parsed_timestamp
 
 
 def format_value(val):

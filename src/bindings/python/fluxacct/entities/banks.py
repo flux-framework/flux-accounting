@@ -238,7 +238,7 @@ def add_bank(
         return 0
 
     # convert to a timestamp
-    ignore_older_than = util.parse_timestamp(ignore_older_than)
+    ignore_older_than = int(util.parse_timestamp(ignore_older_than))
 
     # insert the bank values into the database
     try:
@@ -386,6 +386,8 @@ def edit_bank(
     ignore_older_than=None,
 ):
     params = locals()
+    if ignore_older_than is not None:
+        params["ignore_older_than"] = int(util.parse_timestamp(ignore_older_than))
     editable_fields = [
         "shares",
         "parent_bank",
