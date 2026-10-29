@@ -306,6 +306,33 @@ test_expect_success 'cancel job2' '
 	flux job wait-event -t 5 ${job2} clean
 '
 
+# A dependency left by an older plugin version should be removed when the
+# current plugin is loaded and rediscovers a job already in DEPEND state.
+test_expect_success 'create job with stale max-resources-queue dependency' '
+	legacy_job=$(flux python ${SUBMIT_AS} 50001 \
+		--begin-time=+1h -N1 sleep inf) &&
+	flux job wait-event -t 5 ${legacy_job} dependency-add &&
+	flux post-job-event ${legacy_job} dependency-add \
+		description=max-resources-queue &&
+	flux job wait-event -t 5 \
+		--match-context=description=max-resources-queue \
+		${legacy_job} dependency-add
+'
+
+test_expect_success 'plugin reload removes stale queue dependency' '
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} \
+		"config=$(flux account export-json)" &&
+	flux job wait-event -t 5 \
+		--match-context=description=max-resources-queue \
+		${legacy_job} dependency-remove
+'
+
+test_expect_success 'cancel legacy dependency test job' '
+	flux cancel ${legacy_job} &&
+	flux job wait-event -t 5 ${legacy_job} clean
+'
+
 test_expect_success 'shut down flux-accounting service' '
 	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
