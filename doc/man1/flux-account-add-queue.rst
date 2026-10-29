@@ -47,7 +47,8 @@ each queue:
 .. option:: --max-nodes-per-assoc
 
     The maximum number of nodes an association can have across all of their
-    running jobs in this queue.
+    running jobs in this queue. [DEPRECATED; please use the
+    ``--max-sched-nodes-per-assoc`` limit instead]
 
 .. option:: --max-sched-jobs
 

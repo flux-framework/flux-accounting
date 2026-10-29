@@ -68,7 +68,7 @@ test_expect_success 'submit a job with a size greater than max_cores limit' '
 '
 
 test_expect_success 'add a queue to the DB' '
-	flux account add-queue bronze --max-nodes-per-assoc=1
+	flux account add-queue bronze --max-sched-nodes-per-assoc=1
 '
 
 test_expect_success 'edit association to belong to the queue' '

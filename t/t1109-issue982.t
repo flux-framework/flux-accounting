@@ -45,8 +45,8 @@ test_expect_success 'start flux-accounting service' '
 '
 
 test_expect_success 'add queues to DB' '
-	flux account add-queue pbatch --max-nodes-per-assoc=2 &&
-	flux account add-queue pdebug --max-nodes-per-assoc=2 &&
+	flux account add-queue pbatch --max-sched-nodes-per-assoc=2 &&
+	flux account add-queue pdebug --max-sched-nodes-per-assoc=2 &&
 	flux account add-queue standby
 '
 
@@ -125,7 +125,7 @@ test_expect_success 'job1 is counted in SCHED for pbatch' '
 test_expect_success 'job2 is held by current pbatch SCHED usage' '
 	job2=$(flux python ${SUBMIT_AS} 50001 -N1 -n2 --queue=pbatch sleep inf) &&
 	flux job wait-event -t 5 \
-		--match-context=description="max-resources-queue" \
+		--match-context=description="max-sched-nodes-queue-limit" \
 		${job2} dependency-add
 '
 
@@ -140,7 +140,7 @@ test_expect_success 'update SCHED job from pbatch to pdebug' '
 
 test_expect_success 'held pbatch job is released after SCHED usage transfer' '
 	flux job wait-event -t 5 \
-		--match-context=description="max-resources-queue" \
+		--match-context=description="max-sched-nodes-queue-limit" \
 		${job2} dependency-remove
 '
 
@@ -232,7 +232,7 @@ test_expect_success 'fresh pbatch job is not held by stale queue usage' '
 	job3=$(flux python ${SUBMIT_AS} 50001 -N2 --queue=pbatch sleep inf) &&
 	flux job wait-event -t 5 ${job3} priority &&
 	test_must_fail flux job wait-event -t 1 \
-		--match-context=description="max-resources-queue" \
+		--match-context=description="max-sched-nodes-queue-limit" \
 		${job3} dependency-add
 '
 
@@ -377,10 +377,10 @@ test_expect_success 'job1 enters SCHED state in pbatch' '
 	flux job wait-event -t 5 ${job1} priority
 '
 
-test_expect_success 'job2 is held by pbatch max-resources-queue' '
+test_expect_success 'job2 is held by pbatch max sched nodes' '
 	job2=$(flux python ${SUBMIT_AS} 50001 -N1 --queue=pbatch sleep inf) &&
 	flux job wait-event -t 5 \
-		--match-context=description="max-resources-queue" \
+		--match-context=description="max-sched-nodes-queue-limit" \
 		${job2} dependency-add
 '
 
@@ -404,7 +404,7 @@ test_expect_success 'update held job2 from pbatch to pdebug' '
 
 test_expect_success 'held accounting dependency is removed after queue update' '
 	flux job wait-event -t 5 \
-		--match-context=description="max-resources-queue" \
+		--match-context=description="max-sched-nodes-queue-limit" \
 		${job2} dependency-remove
 '
 
