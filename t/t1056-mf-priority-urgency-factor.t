@@ -76,14 +76,20 @@ test_expect_success 'submit a job with urgency 17' '
 '
 
 # priority = (urgency_weight * (urgency - 16)) = (1000 * (15 - 16)) = -1000
-# Since this priority evaluates to < 0, the plugin will return
-# FLUX_JOB_PRIORITY_MIN.
+# Since this priority evaluates to < 0 for a non-HOLD job, the plugin will
+# return FLUX_JOB_PRIORITY_MIN + 1.
 test_expect_success 'submit a job with urgency 15' '
 	job2=$(flux submit --urgency=15 sleep 60) &&
 	flux job wait-event -vt 5 -f json ${job2} priority \
 		| jq '.context.priority' > job2.priority &&
-	grep "0" job2.priority &&
-	flux cancel ${job2}
+	grep -x "1" job2.priority
+'
+
+test_expect_success 'lowest runnable priority job is sent to the scheduler' '
+	flux queue start &&
+	flux job wait-event -vt 5 ${job2} alloc &&
+	flux cancel ${job2} &&
+	flux queue stop
 '
 
 # Configuring the priority factor weights like the following will ensure that

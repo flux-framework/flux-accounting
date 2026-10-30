@@ -16,6 +16,10 @@ importance. In this document, we will explain the factors that contribute to
 the calculation of a job's priority as well as how to customize how job
 priority is calculated.
 
+Priority 0 is reserved for jobs with a hold urgency of 0. If the calculated
+priority for a job with any other urgency rounds to 0 or below, the priority
+plugin assigns priority 1, the lowest priority that can be scheduled.
+
 ************************
 The Priority Calculation
 ************************

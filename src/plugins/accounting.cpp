@@ -302,7 +302,12 @@ int64_t calc_priority (double fairshare,
                               DEFAULT_URGENCY_WEIGHT) *
             (urgency - FLUX_JOB_URGENCY_DEFAULT)));
 
-    return priority < 0 ? FLUX_JOB_PRIORITY_MIN : priority;
+    if (priority <= FLUX_JOB_PRIORITY_MIN)
+        // since 0 is reserved for jobs that are held and the urgency for
+        // this job is > 0, bump the priority to the lowest runnable priority
+        return FLUX_JOB_PRIORITY_MIN + 1;
+
+    return priority;
 }
 
 

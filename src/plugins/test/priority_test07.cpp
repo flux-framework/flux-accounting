@@ -84,10 +84,25 @@ static void weighted_sum_orders_by_factors ()
 }
 
 /*
- * A weighted sum that comes out negative clamps to the minimum priority rather
- * than returning a negative value.
+ * A non-HOLD weighted sum of exactly zero gets the lowest runnable priority
+ * since FLUX_JOB_PRIORITY_MIN is reserved for jobs with HOLD urgency.
  */
-static void negative_sum_clamps_to_min ()
+static void zero_sum_clamps_to_lowest_runnable ()
+{
+    int64_t prio = calc_priority (0.0,
+                                  0,
+                                  0.0,
+                                  FLUX_JOB_URGENCY_DEFAULT,
+                                  weights);
+    ok (prio == FLUX_JOB_PRIORITY_MIN + 1,
+        "a zero non-HOLD number results in the lowest runnable priority");
+}
+
+/*
+ * A non-HOLD weighted sum that comes out negative will be bumped up to the
+ * lowest runnable priority.
+ */
+static void negative_sum_clamps_to_lowest_runnable ()
 {
     // a negative queue weight with a positive queue factor drives the sum
     // negative: 0 + (-10000) * 5 == -50000
@@ -99,8 +114,8 @@ static void negative_sum_clamps_to_min ()
     };
     int64_t prio =
         calc_priority (0.0, 5, 0.0, FLUX_JOB_URGENCY_DEFAULT, neg_weights);
-    ok (prio == FLUX_JOB_PRIORITY_MIN,
-        "a negative weighted sum clamps to FLUX_JOB_PRIORITY_MIN");
+    ok (prio == FLUX_JOB_PRIORITY_MIN + 1,
+        "a negative non-HOLD number results in the lowest runnable priority");
 }
 
 /*
@@ -163,7 +178,8 @@ int main (int argc, char *argv[])
     hold_urgency_returns_min ();
     expedite_urgency_returns_max ();
     weighted_sum_orders_by_factors ();
-    negative_sum_clamps_to_min ();
+    zero_sum_clamps_to_lowest_runnable ();
+    negative_sum_clamps_to_lowest_runnable ();
     missing_weights_default_to_plugin_defaults ();
     queue_priority_known_queue ();
     queue_priority_unknown_queue ();
