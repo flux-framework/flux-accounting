@@ -65,16 +65,17 @@ test_expect_success 'job remains to be held in SCHED' '
 	test $(flux jobs -no {state} ${job}) = "SCHED"
 '
 
-test_expect_success 'start queue so that resources can be allocated to job' '
-	flux queue start
-'
-
 test_expect_success 'update the plugin with flux-accounting information' '
 	flux account-priority-update -p $(pwd)/FluxAccountingTest.db
 '
 
+test_expect_success 'start queue so that resources can be allocated to job' '
+	flux queue start
+'
+
 test_expect_success 'job proceeds to RUN' '
-	flux job wait-event -vt 5 ${job} alloc
+	flux job wait-event -vt 5 ${job} start &&
+	test_must_fail flux job wait-event -t 0.1 ${job} exception
 '
 
 test_expect_success 'cancel job' '

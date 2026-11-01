@@ -15,8 +15,8 @@ mf_priority_la_SOURCES = \
 	accounting.cpp \
 	jj.cpp \
 	job.cpp
-mf_priority_la_CPPFLAGS = -I$(top_srcdir)/src/plugins
+mf_priority_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/src/plugins
 mf_priority_la_LDFLAGS = $(fluxplugin_ldflags) -module
 resource_quotas_la_SOURCES = resource_quotas.cpp jj.cpp
-resource_quotas_la_CPPFLAGS = -I$(top_srcdir)/src/plugins
+resource_quotas_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/src/plugins
 resource_quotas_la_LDFLAGS = $(fluxplugin_ldflags) -module
