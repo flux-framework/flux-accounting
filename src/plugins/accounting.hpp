@@ -71,18 +71,11 @@ enum priority_weight_default {
   "job size (%i node(s), %i core(s)) is greater than max resources limits " \
   "configured for association (%i node(s), %i core(s))"
 
-// min_nodes_per_job, max_nodes_per_job, and max_time_per_job are not
-// currently used or enforced in this plugin, so their values have no
-// effect in queue limit enforcement.
 class Queue {
 public:
     std::string name = "";
-    int min_nodes_per_job = 0;
-    int max_nodes_per_job = std::numeric_limits<int>::max ();
-    int max_time_per_job = std::numeric_limits<int>::max ();
     int priority = 0;
     int max_running_jobs = std::numeric_limits<int>::max ();
-    int max_nodes_per_assoc = 2147483647;
     int max_sched_jobs = 2147483647;
     int max_sched_nodes_per_assoc = std::numeric_limits<int>::max ();
     int max_sched_cores_per_assoc = std::numeric_limits<int>::max ();

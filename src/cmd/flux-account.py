@@ -902,26 +902,6 @@ def add_add_queue_arg(subparsers):
     subparser_add_queue.set_defaults(func="add_queue")
     subparser_add_queue.add_argument("queue", help="queue name", metavar="QUEUE")
     subparser_add_queue.add_argument(
-        "--min-nodes-per-job",
-        help="min nodes per job",
-        default=1,
-        metavar="MIN NODES PER JOB",
-    )
-    subparser_add_queue.add_argument(
-        "-N",
-        "--max-nodes-per-job",
-        help="max nodes per job",
-        default=1,
-        metavar="MAX NODES PER JOB",
-    )
-    subparser_add_queue.add_argument(
-        "-t",
-        "--max-time-per-job",
-        help="max time per job",
-        default=60,
-        metavar="MAX TIME PER JOB",
-    )
-    subparser_add_queue.add_argument(
         "-P",
         "--priority",
         help="associated priority for the queue",
@@ -933,16 +913,6 @@ def add_add_queue_arg(subparsers):
         help="max number of running jobs an association can have in the queue",
         default=100,
         metavar="MAX_RUNNING_JOBS",
-    )
-    subparser_add_queue.add_argument(
-        "--max-nodes-per-assoc",
-        help=(
-            "max number of nodes an association can have across all of their running "
-            "jobs in the queue [DEPRECATED; please use the --max-sched-nodes-per-assoc "
-            "limit instead]"
-        ),
-        default=INTEGER_MAX,
-        metavar="MAX_NODES_PER_ASSOC",
     )
     subparser_add_queue.add_argument(
         "--max-sched-jobs",
@@ -1034,29 +1004,6 @@ def add_edit_queue_arg(subparsers):
     subparser_edit_queue.set_defaults(func="edit_queue")
     subparser_edit_queue.add_argument("queue", help="queue name", metavar="QUEUE")
     subparser_edit_queue.add_argument(
-        "--min-nodes-per-job",
-        type=int,
-        help="min nodes per job",
-        default=None,
-        metavar="MIN NODES PER JOB",
-    )
-    subparser_edit_queue.add_argument(
-        "-N",
-        "--max-nodes-per-job",
-        type=int,
-        help="max nodes per job",
-        default=None,
-        metavar="MAX NODES PER JOB",
-    )
-    subparser_edit_queue.add_argument(
-        "-t",
-        "--max-time-per-job",
-        type=int,
-        help="max time per job",
-        default=None,
-        metavar="MAX TIME PER JOB",
-    )
-    subparser_edit_queue.add_argument(
         "-P",
         "--priority",
         type=int,
@@ -1070,17 +1017,6 @@ def add_edit_queue_arg(subparsers):
         help="max number of running jobs an association can have in the queue",
         default=None,
         metavar="MAX_RUNNING_JOBS",
-    )
-    subparser_edit_queue.add_argument(
-        "--max-nodes-per-assoc",
-        type=int,
-        help=(
-            "max number of nodes an association can have across all of their running "
-            "jobs in the queue [DEPRECATED; please use the --max-sched-nodes-per-assoc "
-            "limit instead]"
-        ),
-        default=None,
-        metavar="MAX_NODES_PER_ASSOC",
     )
     subparser_edit_queue.add_argument(
         "--max-sched-jobs",
@@ -1288,8 +1224,8 @@ def add_list_queues_arg(subparsers):
         help="list of fields to include in JSON output",
         default=None,
         metavar=(
-            "QUEUE,MIN_NODES_PER_JOB,MAX_NODES_PER_JOB,MAX_TIME_PER_JOB,PRIORITY,"
-            "MAX_SCHED_JOBS,MAX_SCHED_NODES,MAX_SCHED_CORES"
+            "QUEUE,PRIORITY,MAX_RUNNING_JOBS,MAX_SCHED_JOBS,"
+            "MAX_SCHED_NODES_PER_ASSOC,MAX_SCHED_CORES_PER_ASSOC,MAX_NODES,MAX_CORES"
         ),
     )
     subparser_list_queues.add_argument(

@@ -7,7 +7,7 @@
 #
 # SPDX-License-Identifier: LGPL-3.0
 ###############################################################
-DB_SCHEMA_VERSION = 40
+DB_SCHEMA_VERSION = 41
 
 # flux-accounting DB table column names
 ASSOCIATION_TABLE = [
@@ -42,12 +42,8 @@ BANK_TABLE = [
 ]
 QUEUE_TABLE = [
     "queue",
-    "min_nodes_per_job",
-    "max_nodes_per_job",
-    "max_time_per_job",
     "priority",
     "max_running_jobs",
-    "max_nodes_per_assoc",
     "max_sched_jobs",
     "max_sched_nodes_per_assoc",
     "max_sched_cores_per_assoc",

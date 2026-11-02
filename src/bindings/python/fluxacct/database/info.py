@@ -318,12 +318,8 @@ def export_as_json(conn, cursor):
         # create a JSON payload with the results of the query
         queue = {
             "queue": str(row["queue"]),
-            "min_nodes_per_job": int(row["min_nodes_per_job"]),
-            "max_nodes_per_job": int(row["max_nodes_per_job"]),
-            "max_time_per_job": int(row["max_time_per_job"]),
             "priority": int(row["priority"]),
             "max_running_jobs": int(row["max_running_jobs"]),
-            "max_nodes_per_assoc": int(row["max_nodes_per_assoc"]),
             "max_sched_jobs": int(row["max_sched_jobs"]),
             "max_sched_nodes_per_assoc": int(row["max_sched_nodes_per_assoc"]),
             "max_sched_cores_per_assoc": int(row["max_sched_cores_per_assoc"]),
