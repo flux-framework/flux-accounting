@@ -71,8 +71,7 @@ def get_cols_list(old_columns, new_columns):
 
 
 # builds the "<name> <type> [DEFAULT x] [NOT NULL]" column definition fragment
-# from a PRAGMA table_info() tuple, shared by the table-rebuild path and the
-# ALTER TABLE ... ADD COLUMN fast path
+# from a PRAGMA table_info() tuple, used when adding new tables or columns
 def column_def(column):
     column_name = column[1]
     column_type = column[2]
@@ -89,24 +88,14 @@ def column_def(column):
 
 
 # adds a new version of the table to the DB
-def add_tmp_table_to_db(old_cur, table, cols):
-    add_stmt = "CREATE TABLE IF NOT EXISTS " + table[0] + "_tmp" + " ("
-
-    add_stmt += ", ".join(column_def(column) for column in cols)
-
-    # look for primary key to add to table; if column[5] > 0, that means
-    # it is either the primary key or one of the values that make up a
-    # primary key
-    primary_keys = ",".join([column[1] for column in cols if column[5] > 0])
-    if len(primary_keys) > 0:
-        add_stmt += ", PRIMARY KEY ("
-        add_stmt += ",".join([column[1] for column in cols if column[5] > 0])
-        add_stmt += ")"
-
-    add_stmt += ");"
-
-    # add new table to DB
-    old_cur.execute(add_stmt)
+def add_tmp_table_to_db(old_cur, new_cur, table):
+    # PRAGMA table_info omits constraints such as ON CONFLICT REPLACE.
+    # Preserve the template's complete table definition when rebuilding.
+    new_cur.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name=?", table
+    )
+    create_stmt = new_cur.fetchone()[0]
+    old_cur.execute(create_stmt.replace(table[0], table[0] + "_tmp", 1))
 
 
 # move all existing rows from the old version of the table to the new version of the table
@@ -172,23 +161,12 @@ def update_tables(old_cur, new_cur):
             # we need to add this table to the DB
             LOGGER.info("new table found: %s", table[0])
 
-            # get schema information about new table to add
-            new_cur.execute("PRAGMA table_info(%s)" % table)
-            new_columns = new_cur.fetchall()
-
-            add_stmt = "CREATE TABLE IF NOT EXISTS " + table[0] + "("
-
-            add_stmt += ", ".join(column_def(column) for column in new_columns)
-
-            # look for primary key in new table to add
-            primary_keys = [column[1] for column in new_columns if column[5] > 0]
-            if primary_keys:
-                add_stmt += ", PRIMARY KEY (" + ", ".join(primary_keys) + ")"
-
-            add_stmt += ");"
-
-            # add table to old DB
-            old_cur.execute(add_stmt)
+            # copy the template's full CREATE TABLE statement so that
+            # constraints such as ON CONFLICT REPLACE are preserved
+            new_cur.execute(
+                "SELECT sql FROM sqlite_master WHERE type='table' AND name=?", table
+            )
+            old_cur.execute(new_cur.fetchone()[0])
             new_tables_added += 1
 
     if new_tables_added == 0:
@@ -241,7 +219,7 @@ def update_columns(old_cur, new_cur):
             # removing a column requires rebuilding the table: create a new
             # version with the updated column list, copy every existing row, and
             # replace the old table
-            add_tmp_table_to_db(old_cur, table, cols)
+            add_tmp_table_to_db(old_cur, new_cur, table)
             move_existing_rows(old_cur, cols, old_columns, table)
             rename_tmp_table(old_cur, table)
         elif added_cols:
@@ -376,6 +354,7 @@ def update_db(path, new_db):
 
     old_conn = est_sqlite_conn(path)
     old_cur = old_conn.cursor()
+    new_conn = None
 
     try:
         with tempfile.TemporaryDirectory() as tmp_dir_name:
@@ -392,6 +371,8 @@ def update_db(path, new_db):
 
             new_cur = new_conn.cursor()
 
+            # include DDL before the first INSERT in the migration transaction
+            old_conn.execute("BEGIN")
             update_tables(old_cur, new_cur)
             migrate_job_usage_to_per_assoc(old_cur)
 
@@ -412,21 +393,22 @@ def update_db(path, new_db):
             old_conn.commit()
             LOGGER.info("database update complete")
 
-            # close connections to DB's and remove temporary database
-            old_conn.close()
-            new_conn.close()
     except sqlite3.OperationalError as exc:
         LOGGER.exception(
             "Unable to open temporary database file: %s. Exception: %s",
             new_db,
             exc,
         )
-        old_conn.close()
+        old_conn.rollback()
         sys.exit(1)
     except sqlite3.IntegrityError as exc:
         LOGGER.exception("SQLite integrity error: %s", exc)
-        old_conn.close()
+        old_conn.rollback()
         sys.exit(1)
+    finally:
+        old_conn.close()
+        if new_conn is not None:
+            new_conn.close()
 
 
 def main():
