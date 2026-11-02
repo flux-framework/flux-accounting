@@ -637,6 +637,7 @@ int load_associations (
         Association *a;
         a = &users[uid][bank];
 
+        a->provisional = false;
         a->bank_name = bank;
         a->fairshare = fshare;
         a->max_run_jobs = max_running_jobs;

@@ -95,6 +95,7 @@ public:
 class Association {
 public:
     // attributes
+    bool provisional = false;          // waiting for accounting data
     std::string bank_name;             // name of bank
     double fairshare;                  // fair share value
     int max_run_jobs;                  // max number of running jobs
