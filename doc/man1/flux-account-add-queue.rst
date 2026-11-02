@@ -9,6 +9,7 @@ flux-account-add-queue(1)
  The queues defined in flux-accounting are for accounting purposes
  (permissions, priority calculation, and limits) only. They are a separate
  construct from queues in flux-core_ and queuing policies in flux-sched_.
+ Per-job size and duration limits should be configured in flux-core_.
 
 SYNOPSIS
 ========
@@ -24,18 +25,6 @@ DESCRIPTION
 the flux-accounting database. Different properties and limits can be set for
 each queue:
 
-.. option:: --min-nodes-per-job
-
-    The minimum number of nodes required to run jobs in this queue.
-
-.. option:: -N/--max-nodes-per-job
-
-    The maximum number of nodes a job can use in this queue.
-
-.. option:: -t/--max-time-per-job
-
-    The max time a job can be running in this queue.
-
 .. option:: -P/--priority
 
     An associated priority to be applied to jobs submitted to this queue.
@@ -43,12 +32,6 @@ each queue:
 .. option:: --max-running-jobs
 
     Max number of running jobs an association can have in this queue.
-
-.. option:: --max-nodes-per-assoc
-
-    The maximum number of nodes an association can have across all of their
-    running jobs in this queue. [DEPRECATED; please use the
-    ``--max-sched-nodes-per-assoc`` limit instead]
 
 .. option:: --max-sched-jobs
 
