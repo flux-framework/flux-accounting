@@ -87,7 +87,7 @@ test_expect_success 'update plugin with new flux-accounting data' '
 	flux account-priority-update -p ${DB_PATH}
 '
 
-test_expect_success 'submit a job with a size greater than max_nodes_per_association limit on queue' '
+test_expect_success 'submit a job with a size greater than max_sched_nodes_per_assoc limit on queue' '
 	test_must_fail flux python ${SUBMIT_AS} 50001 \
 		--queue=bronze -N2 sleep 5 > max_resources_queue.out 2>&1 &&
 	test_debug "cat max_resources_queue.out" &&

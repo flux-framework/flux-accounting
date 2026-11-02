@@ -146,8 +146,6 @@ test_expect_success 'get all the columns from the queue_table and make sure the 
 	cat <<-EOF | sort > queue_table_columns.expected
 	table name: queue_table
 	queue
-	min_nodes_per_job
-	max_nodes_per_job
 	priority
 	EOF
 	test_cmp queue_table_columns.expected queue_table_columns.test

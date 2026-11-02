@@ -40,12 +40,8 @@ test_expect_success 'add a default queue and send it to the plugin' '
 		"data" : [
 			{
 				"queue": "default",
-				"min_nodes_per_job": 0,
-				"max_nodes_per_job": 5,
-				"max_time_per_job": 64000,
 				"priority": 0,
 				"max_running_jobs": 2147483647,
-				"max_nodes_per_assoc": 2147483647,
 				"max_sched_jobs": 2147483647,
 				"max_sched_nodes_per_assoc": 2147483647,
 				"max_sched_cores_per_assoc": 2147483647

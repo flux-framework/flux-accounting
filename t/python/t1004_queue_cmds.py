@@ -47,22 +47,22 @@ class TestAccountingCLI(unittest.TestCase):
 
     # edit a value for a queue in the queue_table
     def test_03_edit_queue_successfully(self):
-        q.edit_queue(acct_conn, queue="queue_1", max_nodes_per_job=100)
-        cur.execute("SELECT max_nodes_per_job FROM queue_table WHERE queue='queue_1'")
+        q.edit_queue(acct_conn, queue="queue_1", max_running_jobs=50)
+        cur.execute("SELECT max_running_jobs FROM queue_table WHERE queue='queue_1'")
 
-        self.assertEqual(cur.fetchone()[0], 100)
+        self.assertEqual(cur.fetchone()[0], 50)
 
     # edit multiple fields for a given queue
     def test_04_edit_multiple_fields(self):
         q.edit_queue(
             acct_conn,
             queue="queue_1",
-            min_nodes_per_job=1,
-            max_nodes_per_job=128,
-            max_nodes_per_assoc=1234,
+            priority=1,
+            max_running_jobs=128,
+            max_sched_nodes_per_assoc=1234,
         )
         cur.execute(
-            "SELECT min_nodes_per_job, max_nodes_per_job, max_nodes_per_assoc "
+            "SELECT priority, max_running_jobs, max_sched_nodes_per_assoc "
             "FROM queue_table WHERE queue='queue_1'"
         )
         results = cur.fetchall()
@@ -74,14 +74,14 @@ class TestAccountingCLI(unittest.TestCase):
     # edit a value with a bad type for a queue in the queue_table
     def test_05_edit_queue_bad_type(self):
         with self.assertRaises(ValueError):
-            q.edit_queue(acct_conn, queue="queue_1", max_nodes_per_job="foo")
+            q.edit_queue(acct_conn, queue="queue_1", max_running_jobs="foo")
 
     # reset a value for a queue in the queue_table
     def test_06_reset_queue_limit(self):
-        q.edit_queue(acct_conn, queue="queue_1", max_nodes_per_job=-1)
-        cur.execute("SELECT max_nodes_per_job FROM queue_table where queue='queue_1'")
+        q.edit_queue(acct_conn, queue="queue_1", max_running_jobs=-1)
+        cur.execute("SELECT max_running_jobs FROM queue_table where queue='queue_1'")
 
-        self.assertEqual(cur.fetchone()[0], 1)
+        self.assertEqual(cur.fetchone()[0], 100)
 
     # remove a queue currently in the queue_table
     def test_07_delete_queue(self):

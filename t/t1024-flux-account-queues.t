@@ -49,7 +49,7 @@ test_expect_success 'view some queue information' '
 
 test_expect_success 'view some queue information with --parsable' '
 	flux account view-queue standby --parsable > standby_parsable.out &&
-	grep "standby | 1                 | 1                 | 60               | 0" standby_parsable.out
+	grep "standby | 0        | 100              | unlimited" standby_parsable.out
 '
 
 test_expect_success 'call view-queue with a format string' '
@@ -91,41 +91,49 @@ test_expect_success 'remove a queue' '
 '
 
 test_expect_success 'add a queue with no optional args to the queue_table' '
-	flux account add-queue queue_1
+	flux account add-queue queue_1 &&
 	flux account view-queue queue_1 > new_queue.out &&
-	grep -w "queue_1\|1\|1\|60\|0" new_queue.out
+	jq -e ".[0] == {queue: \"queue_1\", priority: 0,
+		max_running_jobs: 100, max_sched_jobs: \"unlimited\",
+		max_sched_nodes_per_assoc: \"unlimited\",
+		max_sched_cores_per_assoc: \"unlimited\",
+		max_nodes: \"unlimited\", max_cores: \"unlimited\"}" <new_queue.out
 '
 
 test_expect_success 'add another queue with some optional args' '
 	flux account add-queue queue_2 \
-		--min-nodes-per-job=1 \
-		--max-nodes-per-job=10 \
-		--max-time-per-job=120 \
-		--max-nodes-per-assoc=1234 &&
+		--priority=1 \
+		--max-running-jobs=10 \
+		--max-sched-jobs=120 \
+		--max-sched-nodes-per-assoc=1234 &&
 	flux account view-queue queue_2 > new_queue2.out &&
-	grep -w "queue_1\|1\|10\|120\|1234" new_queue2.out
+	jq -e ".[0] | .queue == \"queue_2\" and .priority == 1 and
+		.max_running_jobs == 10 and .max_sched_jobs == 120 and
+		.max_sched_nodes_per_assoc == 1234" <new_queue2.out
 '
 
 test_expect_success 'edit some queue information' '
-	flux account edit-queue queue_1 --max-nodes-per-job 100 &&
-	flux account view-queue queue_1 > edited_max_nodes.out &&
-	grep -w "queue_1\|100" edited_max_nodes.out
+	flux account edit-queue queue_1 --max-running-jobs 50 &&
+	flux account view-queue queue_1 > edited_max_jobs.out &&
+	jq -e ".[0].max_running_jobs == 50" <edited_max_jobs.out
 '
 
 test_expect_success 'edit multiple columns for one queue' '
 	flux account edit-queue queue_1 \
-		--min-nodes-per-job 1 \
-		--max-nodes-per-job 128 \
-		--max-time-per-job 120 \
-		--max-nodes-per-assoc 1234 &&
+		--priority 1 \
+		--max-running-jobs 128 \
+		--max-sched-jobs 120 \
+		--max-sched-nodes-per-assoc 1234 &&
 	flux account view-queue queue_1 > edited_queue_multiple.out &&
-	grep -w "queue_1\|1\|128\|120\|1234" edited_queue_multiple.out
+	jq -e ".[0] | .priority == 1 and .max_running_jobs == 128 and
+		.max_sched_jobs == 120 and .max_sched_nodes_per_assoc == 1234" \
+		<edited_queue_multiple.out
 '
 
 test_expect_success 'reset a queue limit' '
-	flux account edit-queue queue_1 --max-nodes-per-job -1 &&
+	flux account edit-queue queue_1 --max-running-jobs -1 &&
 	flux account view-queue queue_1 > reset_limit.out &&
-	grep -w "queue_1\|1\|1\|120\|0" reset_limit.out
+	jq -e ".[0].max_running_jobs == 100" <reset_limit.out
 '
 
 test_expect_success 'trying to view a queue that does not exist should raise a ValueError' '
@@ -151,9 +159,9 @@ test_expect_success 'call list-queues and customize output' '
 
 test_expect_success 'call list-queues with a format string' '
 	flux account list-queues \
-		-o "{queue:<8}||{max_time_per_job:<12}" > format_string.out &&
-	grep "queue   ||max_time_per_job" format_string.out &&
-	grep "standby ||60" format_string.out
+		-o "{queue:<8}||{max_running_jobs:<16}" > format_string.out &&
+	grep "queue   ||max_running_jobs" format_string.out &&
+	grep "standby ||100" format_string.out
 '
 
 test_expect_success 'remove a queue that is referenced by at least one association' '
