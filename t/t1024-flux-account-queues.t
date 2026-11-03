@@ -170,6 +170,34 @@ test_expect_success 'remove a queue that is referenced by at least one associati
 	grep "WARNING: user(s) in the association_table still reference this queue." warning_message.out
 '
 
+test_expect_success 'add-queue RPC with old fields still adds the queue' '
+	cat <<-EOF >outdated_fields.py
+	import flux
+	import json
+
+	data = { "queue" : "queue_foo", "max_time_per_job" : 60 }
+	flux.Flux().rpc("accounting.add_queue", json.dumps(data)).get()
+	EOF
+	flux python outdated_fields.py &&
+	flux account view-queue queue_foo > queue_foo.out &&
+	grep "\"queue\": \"queue_foo\"" queue_foo.out &&
+	grep "\"priority\": 0" queue_foo.out
+'
+
+test_expect_success 'edit-queue RPC with old fields ignores the old fields' '
+	cat <<-EOF >outdated_fields.py
+	import flux
+	import json
+
+	data = { "queue" : "queue_foo", "max_time_per_job" : 60, "priority" : 1234 }
+	flux.Flux().rpc("accounting.edit_queue", json.dumps(data)).get()
+	EOF
+	flux python outdated_fields.py &&
+	flux account view-queue queue_foo > queue_foo_edited.out &&
+	grep "\"queue\": \"queue_foo\"" queue_foo_edited.out &&
+	grep "\"priority\": 1234" queue_foo_edited.out
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
