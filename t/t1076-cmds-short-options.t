@@ -29,16 +29,12 @@ test_expect_success 'add a bank with a short option' '
 
 test_expect_success 'add a queue with short options' '
 	flux account add-queue gold \
-		-N 64 \
-		-t 3600 \
 		-P 1000 &&
 	flux account view-queue gold
 '
 
 test_expect_success 'edit a queue with short options' '
 	flux account edit-queue gold \
-		-N 32 \
-		-t 1800 \
 		-P 500 &&
 	flux account view-queue gold
 '

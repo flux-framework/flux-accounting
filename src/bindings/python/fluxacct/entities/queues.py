@@ -36,12 +36,8 @@ def add_queue(
     conn,
     cur,
     queue,
-    min_nodes_per_job=1,
-    max_nodes_per_job=1,
-    max_time=60,
     priority=0,
     max_running_jobs=100,
-    max_nodes_per_assoc=INTEGER_MAX,
     max_sched_jobs=INTEGER_MAX,
     max_sched_nodes_per_assoc=INTEGER_MAX,
     max_sched_cores_per_assoc=INTEGER_MAX,
@@ -52,29 +48,21 @@ def add_queue(
         insert_stmt = """
                       INSERT INTO queue_table (
                         queue,
-                        min_nodes_per_job,
-                        max_nodes_per_job,
-                        max_time_per_job,
                         priority,
                         max_running_jobs,
-                        max_nodes_per_assoc,
                         max_sched_jobs,
                         max_sched_nodes_per_assoc,
                         max_sched_cores_per_assoc,
                         max_nodes,
                         max_cores
-                      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                       """
         cur.execute(
             insert_stmt,
             (
                 queue,
-                min_nodes_per_job,
-                max_nodes_per_job,
-                max_time,
                 priority,
                 max_running_jobs,
-                max_nodes_per_assoc,
                 max_sched_jobs,
                 max_sched_nodes_per_assoc,
                 max_sched_cores_per_assoc,
@@ -124,12 +112,8 @@ def edit_queue(
     conn,
     cur,
     queue,
-    min_nodes_per_job=None,
-    max_nodes_per_job=None,
-    max_time_per_job=None,
     priority=None,
     max_running_jobs=None,
-    max_nodes_per_assoc=None,
     max_sched_jobs=None,
     max_sched_nodes_per_assoc=None,
     max_sched_cores_per_assoc=None,
@@ -138,12 +122,8 @@ def edit_queue(
 ):
     params = locals()
     editable_fields = [
-        "min_nodes_per_job",
-        "max_nodes_per_job",
-        "max_time_per_job",
         "priority",
         "max_running_jobs",
-        "max_nodes_per_assoc",
         "max_sched_jobs",
         "max_sched_nodes_per_assoc",
         "max_sched_cores_per_assoc",

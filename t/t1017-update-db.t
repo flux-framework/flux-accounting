@@ -146,8 +146,6 @@ test_expect_success 'get all the columns from the queue_table and make sure the 
 	cat <<-EOF | sort > queue_table_columns.expected
 	table name: queue_table
 	queue
-	min_nodes_per_job
-	max_nodes_per_job
 	priority
 	EOF
 	test_cmp queue_table_columns.expected queue_table_columns.test
@@ -237,8 +235,130 @@ test_expect_success 'successfully call a flux account command after the old DB h
 '
 
 test_expect_success 'call update-db from the / directory to make sure command works' '
-	cd / &&
-	flux account-update-db -p ${OLD_DB}
+	(cd / && flux account-update-db -p ${OLD_DB})
+'
+
+test_expect_success 'update a v0.10.0 DB that does not have a queue_table' '
+	cp ${SHARNESS_TEST_SRCDIR}/expected/test_dbs/FluxAccountingv0-10-0.db v0_10.db &&
+	chmod +rw v0_10.db &&
+	flux account-update-db -p v0_10.db
+'
+
+test_expect_success 'queue_table created during update replaces NULL with defaults' '
+	cat <<-EOF >check_new_queue_table.py &&
+	import sqlite3
+
+	conn = sqlite3.connect("v0_10.db")
+	# edit-queue <queue> --<limit> -1 writes NULL; ON CONFLICT REPLACE must
+	# turn it into the column default instead of failing NOT NULL
+	conn.execute("INSERT INTO queue_table (queue, priority) VALUES (?, NULL)", ("gold",))
+	conn.execute("UPDATE queue_table SET max_running_jobs = NULL WHERE queue = ?", ("gold",))
+	row = conn.execute(
+	    "SELECT priority, max_running_jobs FROM queue_table WHERE queue = ?", ("gold",)
+	).fetchone()
+	assert row == (0, 100), row
+	EOF
+	flux python check_new_queue_table.py
+'
+
+test_expect_success 'seed a v0.61.0 DB with a queue that sets every column' '
+	cp ${SHARNESS_TEST_SRCDIR}/expected/test_dbs/FluxAccountingv0-61-0.db seeded.db &&
+	chmod +rw seeded.db &&
+	cat <<-EOF >seed_queue.py &&
+	import json
+	import sqlite3
+
+	conn = sqlite3.connect("seeded.db")
+	cols = [c[1] for c in conn.execute("PRAGMA table_info(queue_table)")]
+	vals = ["gold"] + [i + 7 for i in range(len(cols) - 1)]
+	placeholders = ", ".join(["?"] * len(cols))
+	conn.execute(
+	    "INSERT INTO queue_table (" + ", ".join(cols) + ") VALUES (" + placeholders + ")",
+	    vals,
+	)
+	conn.commit()
+	with open("seeded_queue.json", "w") as fp:
+	    json.dump(dict(zip(cols, vals)), fp)
+	EOF
+	flux python seed_queue.py
+'
+
+test_expect_success 'update the seeded DB' '
+	flux account-update-db -p seeded.db
+'
+
+test_expect_success 'retained queue values survive, removed columns are gone' '
+	cat <<-EOF >check_queue.py &&
+	import json
+	import sqlite3
+
+	with open("seeded_queue.json") as fp:
+	    expected = json.load(fp)
+	conn = sqlite3.connect("seeded.db")
+	conn.row_factory = sqlite3.Row
+	row = dict(
+	    conn.execute("SELECT * FROM queue_table WHERE queue = ?", ("gold",)).fetchone()
+	)
+	removed = {
+	    "min_nodes_per_job",
+	    "max_nodes_per_job",
+	    "max_time_per_job",
+	    "max_nodes_per_assoc",
+	}
+	assert not removed & row.keys(), row.keys()
+	for col, val in row.items():
+	    assert val == expected[col], (col, val, expected[col])
+	# the rebuilt queue_table must keep ON CONFLICT REPLACE from the template
+	conn.execute("UPDATE queue_table SET max_running_jobs = NULL WHERE queue = ?", ("gold",))
+	assert conn.execute("SELECT max_running_jobs FROM queue_table").fetchone()[0] == 100
+	EOF
+	flux python check_queue.py
+'
+
+test_expect_success 'create a template DB whose queue_table rejects existing rows' '
+	cp ${SHARNESS_TEST_SRCDIR}/expected/test_dbs/FluxAccountingv0-40-0.db rollback.db &&
+	chmod +rw rollback.db &&
+	cat <<-EOF >bad_template.py &&
+	import sqlite3
+	from fluxacct.database import create as c
+
+	c.create_db("bad_template.db")
+	conn = sqlite3.connect("bad_template.db")
+	sql = conn.execute(
+	    "SELECT sql FROM sqlite_master WHERE name = ?", ("queue_table",)
+	).fetchone()[0]
+	conn.execute("DROP TABLE queue_table")
+	conn.execute(sql.replace("PRIMARY KEY", "CHECK (priority < 0), PRIMARY KEY", 1))
+	conn.commit()
+
+	conn = sqlite3.connect("rollback.db")
+	conn.execute("INSERT INTO queue_table (queue, priority) VALUES (?, ?)", ("gold", 5))
+	conn.commit()
+	EOF
+	flux python bad_template.py &&
+	cat <<-EOF >snapshot_db.py
+	import sqlite3
+	import sys
+
+	conn = sqlite3.connect(sys.argv[1])
+	print("user_version:", conn.execute("PRAGMA user_version").fetchone()[0])
+	for (name,) in conn.execute("SELECT name FROM sqlite_master ORDER BY name"):
+	    print("object:", name)
+	for col in conn.execute("PRAGMA table_info(queue_table)"):
+	    print("queue_table column:", col[1])
+	for row in conn.execute("SELECT * FROM queue_table ORDER BY queue"):
+	    print("queue_table row:", tuple(row))
+	EOF
+'
+
+test_expect_success 'a failed update leaves the DB unchanged' '
+	flux python snapshot_db.py rollback.db >rollback_before.out &&
+	test_must_fail flux account-update-db -p rollback.db \
+		--new-db bad_template.db >rollback_update.out 2>&1 &&
+	test_debug "cat rollback_update.out" &&
+	grep "SQLite integrity error" rollback_update.out &&
+	flux python snapshot_db.py rollback.db >rollback_after.out &&
+	test_cmp rollback_before.out rollback_after.out
 '
 
 test_expect_success 'shut down flux-accounting service' '

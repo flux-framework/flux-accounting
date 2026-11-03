@@ -178,6 +178,32 @@ following command:
 
  $ sudo -u flux flux account-update-db
 
+.. _queue-property-removal:
+
+Schema version 41 removes the unused queue properties
+``min_nodes_per_job``, ``max_nodes_per_job``, ``max_time_per_job``, and
+``max_nodes_per_assoc``. The upgrade discards their stored values and preserves
+all remaining queue properties. It does not transfer limits to another
+property. Configure per-job size and duration limits in flux-core; use
+``max_sched_nodes_per_assoc`` for accounting's aggregate SCHED/RUN node limit
+per association in a queue.
+
+Upgrade the CLI, accounting service, and priority plugin together. Stop the
+accounting service and periodic accounting updaters before upgrading and
+running ``flux account-update-db``. The updater creates a ``.backup`` copy of
+the database. After the upgrade, restart the service, reload the priority
+plugin, refresh its data with ``flux account-priority-update``, and resume
+periodic updates. An older plugin requires the removed fields and cannot
+consume the new queue payloads.
+
+The removed properties are no longer accepted by the Python queue add/edit
+functions or their corresponding CLI options. The queue-specific ``-N`` and
+``-t`` aliases are also removed. Queue RPC payloads, JSON and CSV exports,
+queue displays, and plugin query output no longer include these properties.
+Update scripts that select these fields or depend on output column positions.
+Before importing an older queue CSV, remove the obsolete columns from its
+header and the corresponding values from every row.
+
 A series of actions should run periodically to keep the accounting
 system in sync with Flux:
 

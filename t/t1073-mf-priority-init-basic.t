@@ -34,7 +34,9 @@ test_expect_success 'add banks' '
 '
 
 test_expect_success 'add a queue to the DB' '
-	flux account add-queue pdebug
+	flux account add-queue pdebug --max-running-jobs=10 \
+		--max-sched-jobs=11 --max-sched-nodes-per-assoc=12 \
+		--max-sched-cores-per-assoc=13
 '
 
 test_expect_success 'add associations' '
@@ -166,7 +168,10 @@ test_expect_success 'queue_table is properly unpacked in plugin' '
 	flux jobtap query mf_priority.so > query.json &&
 	test_debug "jq -S . <query.json" &&
 	jq -e ".queues.pdebug.name == \"pdebug\"" <query.json &&
-	jq -e ".queues.pdebug.priority == 0" <query.json
+	jq -e ".queues.pdebug == {name: \"pdebug\", priority: 0,
+		max_running_jobs: 10, max_sched_jobs: 11,
+		max_sched_nodes_per_assoc: 12, max_sched_cores_per_assoc: 13}" \
+		<query.json
 '
 
 test_expect_success 'add a project to the DB' '

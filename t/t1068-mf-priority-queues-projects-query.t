@@ -46,7 +46,9 @@ test_expect_success 'add an association' '
 '
 
 test_expect_success 'add some queues' '
-	flux account add-queue bronze --priority=100 &&
+	flux account add-queue bronze --priority=100 --max-running-jobs=11 \
+		--max-sched-jobs=13 --max-sched-nodes-per-assoc=17 \
+		--max-sched-cores-per-assoc=19 &&
 	flux account add-queue silver --priority=200 &&
 	flux account add-queue gold --priority=300
 '
@@ -68,7 +70,10 @@ test_expect_success 'run flux jobtap query' '
 '
 
 test_expect_success 'check queue information in output of flux jobtap query' '
-	jq -e ".queues.bronze.priority == 100" <query.json &&
+	jq -e ".queues.bronze == {name: \"bronze\", priority: 100,
+		max_running_jobs: 11, max_sched_jobs: 13,
+		max_sched_nodes_per_assoc: 17, max_sched_cores_per_assoc: 19}" \
+		<query.json &&
 	jq -e ".queues.silver.priority == 200" <query.json &&
 	jq -e ".queues.gold.priority == 300" <query.json
 '

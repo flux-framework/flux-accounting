@@ -134,21 +134,23 @@ still possessing one or more other dependencies.
 Changelog
 =========
 
-``max_nodes_per_assoc`` queue limit
------------------------------------
+Removed queue properties
+------------------------
 
 The ``max_nodes_per_assoc`` queue property was previously enforced as a soft
 aggregate limit on the number of nodes an association could have across its
-running and scheduled jobs in a queue. This property is now deprecated and is
-no longer enforced by the priority plugin. It remains available in the
-flux-accounting database, command-line interface, and priority plugin query
-output for compatibility.
+running and scheduled jobs in a queue. It was deprecated and its enforcement
+removed. Schema version 41 removes the property from the database, CLI, and
+priority plugin payloads and query output, together with the unused
+``min_nodes_per_job``, ``max_nodes_per_job``, and ``max_time_per_job``
+properties. Configure per-job size and duration limits in flux-core.
 
 Aggregate SCHED and RUN node usage within a queue is enforced by
 ``max_sched_nodes_per_assoc``. Existing queue configuration is not migrated
 automatically. Administrators who relied on the aggregate behavior of
 ``max_nodes_per_assoc`` should configure ``max_sched_nodes_per_assoc`` with
-the desired aggregate limit.
+the desired aggregate limit. See flux-accounting's `NEWS.md`_ for upgrade
+instructions and compatibility details.
 
 The priority plugin no longer adds the ``max-resources-queue`` dependency.
 When the plugin is reloaded, it makes a best-effort attempt to remove this
@@ -175,10 +177,9 @@ dependency, look to see:
 
 .. code-block:: console
 
-  $ flux account view-queue debug --parsable
-  queue  | min_nodes_per_job | max_nodes_per_job | max_time_per_job | priority | max_running_jobs | max_nodes_per_assoc
-  -------+-------------------+-------------------+------------------+----------+------------------+--------------------
-  debug  | 1                 | 1                 | 60               | 0        | 100              | 1
+  $ flux account view-queue debug -o '{queue:<8} {max_running_jobs}'
+  queue    max_running_jobs
+  debug    100
 
 If more information is required, you may also want to check the limits
 configured for the association:
@@ -208,3 +209,5 @@ reanalyzed to see if they now fit the requirements to be released.
 .. _virtual states: https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_21.html#virtual-states
 
 .. _dependency: https://flux-framework.readthedocs.io/projects/flux-core/en/latest/guide/troubleshooting.html#job-dependencies
+
+.. _NEWS.md: https://github.com/flux-framework/flux-accounting/blob/master/NEWS.md
