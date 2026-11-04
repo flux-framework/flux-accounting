@@ -136,7 +136,7 @@ def edit_queue(
             # check that the passed in value is truly an integer
             if not isinstance(params[field], int):
                 raise ValueError("passed in value must be an integer")
-            if params[field] != "priority" and params[field] < -1:
+            if field != "priority" and params[field] < -1:
                 raise ValueError(
                     "value must be a non-negative integer or -1 to reset to default"
                 )
