@@ -105,7 +105,6 @@ public:
     int max_sched_jobs;                // max number of jobs in SCHED state
     std::vector<Job> held_jobs;        // vector to keep track of held Jobs
     std::vector<std::string> queues;   // list of accessible queues
-    double bank_factor;                // priority factor associated with bank
     int active;                        // active status
     std::vector<std::string> projects; // list of accessible projects
     std::string def_project;           // default project
