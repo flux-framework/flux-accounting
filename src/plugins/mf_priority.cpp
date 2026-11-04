@@ -1500,8 +1500,6 @@ static int new_cb (flux_plugin_t *p,
                                        queue,
                                        valid_queues.c_str ());
     }
-    // assign priority associated with validated bank
-    b->bank_factor = get_bank_priority (b->bank_name.c_str (), banks);
 
     max_run_jobs = b->max_run_jobs;
     cur_active_jobs = b->cur_active_jobs;
@@ -2000,10 +1998,6 @@ static int job_updated (flux_plugin_t *p,
         a->cur_active_jobs--;
         // update the active jobs count of the updated bank
         a_new->cur_active_jobs++;
-
-        // assign priority associated with validated bank
-        a_new->bank_factor = get_bank_priority (a_new->bank_name.c_str (),
-                                                banks);
 
         // re-pack the updated Association object to the job
         if (flux_jobtap_job_aux_set (p,
