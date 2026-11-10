@@ -197,7 +197,7 @@ void estimate (flux_t *h,
         goto error;
     }
     if (ctx->users->empty ()
-        || check_map_for_dne_only (*ctx->users, *ctx->users_def_bank)) {
+        || check_map_for_dne_only (*ctx->users)) {
         errno = EAGAIN;
         errmsg = "flux-accounting data has not been loaded into the "
                  "priority plugin yet";

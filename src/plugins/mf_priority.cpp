@@ -1113,7 +1113,7 @@ static int priority_cb (flux_plugin_t *p,
                                               users,
                                               users_def_bank);
         if (assoc == nullptr) {
-            if (check_map_for_dne_only (users, users_def_bank) == true)
+            if (check_map_for_dne_only (users) == true)
                 // the plugin is still waiting on flux-accounting data to be
                 // loaded in; keep the job in PRIORITY
                 return flux_jobtap_priority_unavail (p, args);
@@ -1300,7 +1300,7 @@ static int validate_cb (flux_plugin_t *p,
         // the association could not be found in the plugin's internal map,
         // so perform a check to see if the map has any loaded
         // flux-accounting data before rejecting the job
-        bool only_dne_data = check_map_for_dne_only (users, users_def_bank);
+        bool only_dne_data = check_map_for_dne_only (users);
 
         if (users.empty () || only_dne_data) {
             return add_special_association (p, h, userid);
@@ -2105,7 +2105,7 @@ static int update_bank_cb (flux_plugin_t *p,
         // the association could not be found in the plugin's internal map,
         // so perform a check to see if the map has any loaded flux-accounting
         // data before rejecting the update
-        bool only_dne_data = check_map_for_dne_only (users, users_def_bank);
+        bool only_dne_data = check_map_for_dne_only (users);
 
         if (users.empty () || only_dne_data) {
             return flux_jobtap_error (p,

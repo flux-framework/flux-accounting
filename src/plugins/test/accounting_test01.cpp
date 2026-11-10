@@ -301,7 +301,7 @@ static void test_under_queue_max_running_jobs_false ()
 // ensure false is returned because we have valid flux-accounting data in map
 static void test_check_map_dne_false ()
 {
-    bool result = check_map_for_dne_only (users, users_def_bank);
+    bool result = check_map_for_dne_only (users);
 
     ok (result == false, "valid flux-accounting data has been loaded");
 }
@@ -314,10 +314,11 @@ static void test_check_map_dne_true ()
     users_def_bank.clear ();
 
     Association tmp_user = make_association ("DNE");
+    tmp_user.provisional = true;
     add_user_to_map (users, 9999, "DNE", tmp_user);
     users_def_bank[9999] = "DNE";
 
-    bool result = check_map_for_dne_only (users, users_def_bank);
+    bool result = check_map_for_dne_only (users);
 
     ok (result == true, "no flux-accounting data has been loaded");
 }
