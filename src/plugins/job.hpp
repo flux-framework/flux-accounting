@@ -80,6 +80,11 @@ public:
     bool sched_jobs_charged () const { return sched_charge.jobs; }
     bool sched_resources_charged () const { return sched_charge.resources; }
 
+    // charge, release, or move this job's association usage
+    bool charge_active (Association *assoc);
+    bool release_active ();
+    bool move_usage (Association *assoc, const std::string &queue);
+
     // add a dependency to the job's list of dependencies
     void add_dep (const std::string &dep);
 
@@ -91,6 +96,7 @@ public:
 
 private:
     SchedCharge sched_charge;
+    Association *m_active_assoc = nullptr;
 };
 
 #endif // JOB_H
