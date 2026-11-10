@@ -546,6 +546,8 @@ static void erase_released_held_jobs (const released_jobs_t &to_erase)
 
 static void gather_held_jobs (Association *b, held_job_candidates_t &candidates)
 {
+    if (b->provisional)
+        return;
     for (auto &held_job : b->held_jobs)
         candidates.push_back (std::make_pair (b, &held_job));
 }
@@ -752,6 +754,78 @@ error:
 }
 
 
+static int resolve_held_job (flux_plugin_t *p,
+                             flux_jobid_t id,
+                             flux_plugin_arg_t *args)
+{
+    Association *old = static_cast<Association *> (flux_jobtap_job_aux_get (
+                                                p,
+                                                id,
+                                                "mf_priority:bank_info"));
+    if (!old || !old->provisional)
+        return 0;
+    int rc = resolve_association (p, id, args);
+    if (rc <= 0)
+        return rc;
+    Association *b = static_cast<Association *> (flux_jobtap_job_aux_get (
+                                                p,
+                                                id,
+                                                "mf_priority:bank_info"));
+    for (auto &job : b->held_jobs) {
+        if (job.id != id)
+            continue;
+        // The provisional job has not been checked against the real limits.
+        // Attach all checks, including currently satisfied ones, so the
+        // ordered sweep reserves headroom for earlier jobs before each check.
+        const char *deps[] = { D_QUEUE_MRJ, D_QUEUE_MSJ, D_QUEUE_MSN,
+                              D_QUEUE_MSC, D_ASSOC_MRJ, D_ASSOC_MSJ,
+                              D_ASSOC_MRES };
+        for (const char *dep : deps) {
+            if (job.contains_dep (dep))
+                continue;
+            if (flux_jobtap_dependency_add (p, job.id, dep) < 0) {
+                flux_jobtap_raise_exception (p, job.id, "mf_priority", 0,
+                                             "failed to add %s dependency",
+                                             dep);
+                return -1;
+            }
+            job.add_dep (dep);
+        }
+        break;
+    }
+    return 0;
+}
+
+
+static int resolve_provisional_held_jobs (flux_plugin_t *p)
+{
+    // Snapshot IDs: resolution moves vector entries and jobspec updates can
+    // invoke callbacks. No release candidate pointers may exist at this point.
+    std::vector<flux_jobid_t> ids;
+    int errors = 0;
+    for (auto &user : users)
+        for (auto &bank : user.second)
+            if (bank.second.provisional)
+                for (auto &job : bank.second.held_jobs)
+                    ids.push_back (job.id);
+
+    for (auto id : ids) {
+        flux_plugin_arg_t *args = flux_jobtap_job_lookup (p, id);
+        if (!args) {
+            // the job may no longer be active; nothing to resolve
+            errors++;
+            continue;
+        }
+        // on error, an exception has already been raised on this job, so
+        // keep going and resolve the rest of the held jobs
+        if (resolve_held_job (p, id, args) < 0)
+            errors++;
+        flux_plugin_arg_destroy (args);
+    }
+    return errors ? -1 : 0;
+}
+
+
 /*
  * Release a set of held jobs, gathered as {Association*, Job*} pairs, in
  * priority order (highest priority first), breaking ties by jobid so that
@@ -860,6 +934,17 @@ static int check_and_release_held_jobs (flux_plugin_t *p, Association *b)
  */
 static int check_and_release_all_held_jobs (flux_plugin_t *p)
 {
+    // static initializes this only once, so callbacks triggered by jobspec
+    // updates see "true" on reentry and skip starting a nested release pass
+    static bool resolving = false;
+    if (resolving)
+        return 0;
+    resolving = true;
+    if (resolve_provisional_held_jobs (p) < 0)
+        flux_log (flux_jobtap_get_flux (p),
+                  LOG_ERR,
+                  "failed to resolve one or more provisional held jobs");
+    resolving = false;
     held_job_candidates_t candidates;
 
     for (auto &entry : users) {
