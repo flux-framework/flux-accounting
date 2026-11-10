@@ -40,11 +40,6 @@ extern "C" {
 // custom Job class file
 #include "job.hpp"
 
-// the plugin does not know about the association who submitted a job and will
-// assign default values to the association until it receives information from
-// flux-accounting
-#define BANK_INFO_MISSING 999
-
 static const double FSHARE_EPSILON = 1e-9;
 
 std::map<int, std::map<std::string, Association>> users;
@@ -237,31 +232,34 @@ static int update_jobspec_project (flux_plugin_t *p, int userid, char *bank)
  * Create a special Association object for an association's job while the
  * plugin waits for flux-accounting data to be loaded.
  */
-static void add_special_association (flux_plugin_t *p, flux_t *h, int userid)
+static int add_special_association (flux_plugin_t *p, flux_t *h, int userid)
 {
-    Association *a;
+    auto entry = users[userid].emplace ("DNE", Association ());
+    Association *a = &entry.first->second;
 
-    a = &users[userid]["DNE"];
-    users_def_bank[userid] = "DNE";
-
-    a->bank_name = "DNE";
-    a->fairshare = 0.1;
-    a->max_run_jobs = BANK_INFO_MISSING;
-    a->cur_run_jobs = 0;
-    a->max_active_jobs = 1000;
-    a->cur_active_jobs = 0;
-    a->active = 1;
-    a->held_jobs = std::vector<Job>();
-    a->max_nodes = INT16_MAX;
-    a->max_cores = INT16_MAX;
-    a->max_sched_jobs = INT16_MAX;
+    // several replayed jobs can share this placeholder; do not reset the usage
+    if (entry.second) {
+        a->provisional = true;
+        a->bank_name = "DNE";
+        a->fairshare = 0.1;
+        a->max_run_jobs = INT32_MAX;
+        a->max_active_jobs = INT32_MAX;
+        a->active = 1;
+        a->max_nodes = INT32_MAX;
+        a->max_cores = INT32_MAX;
+        a->max_sched_jobs = INT32_MAX;
+    }
+    users_def_bank.emplace (userid, "DNE");
 
     if (flux_jobtap_job_aux_set (p,
                                  FLUX_JOBTAP_CURRENT_JOB,
                                  "mf_priority:bank_info",
                                  a,
-                                 NULL) < 0)
+                                 NULL) < 0) {
         flux_log_error (h, "flux_jobtap_job_aux_set");
+        return -1;
+    }
+    return 0;
 }
 
 
@@ -548,6 +546,8 @@ static void erase_released_held_jobs (const released_jobs_t &to_erase)
 
 static void gather_held_jobs (Association *b, held_job_candidates_t &candidates)
 {
+    if (b->provisional)
+        return;
     for (auto &held_job : b->held_jobs)
         candidates.push_back (std::make_pair (b, &held_job));
 }
@@ -1101,7 +1101,7 @@ static int priority_cb (flux_plugin_t *p,
                                                     FLUX_JOBTAP_CURRENT_JOB,
                                                     "mf_priority:bank_info"));
 
-    if (b == nullptr || b->max_run_jobs == BANK_INFO_MISSING) {
+    if (b == nullptr || b->provisional) {
         /*
          * The flux-accounting information associated with this job could not
          * be found by the time this job got to job.state.priority. This could
@@ -1139,18 +1139,16 @@ static int priority_cb (flux_plugin_t *p,
                 // the queue the association specified is invalid
                 return -1;
 
-            // the bank this job was submitted under was unknown when the job
-            // was first accepted, so the active jobs count for the association
-            // must be incremented
-            assoc->cur_active_jobs++;
-
             // update this job with the now-found association's information
             if (flux_jobtap_job_aux_set (p,
                                          FLUX_JOBTAP_CURRENT_JOB,
                                          "mf_priority:bank_info",
                                          assoc,
-                                         NULL) < 0)
+                                         NULL) < 0) {
                 flux_log_error (h, "flux_jobtap_job_aux_set");
+                return -1;
+            }
+            b = assoc;
 
             if (bank == NULL) {
                 // this job did not specify a bank and was submitted before
@@ -1226,6 +1224,12 @@ static int priority_cb (flux_plugin_t *p,
             return -1;
         }
     }
+
+    // record late association charges only after the Job object is attached
+    // since an existing Job object may already carry an active charge under a
+    // provisional association
+    j->move_usage (b, j->queue);
+    j->charge_active (b);
 
     priority = priority_calculation (p, j, urgency);
 
@@ -1305,8 +1309,7 @@ static int validate_cb (flux_plugin_t *p,
         bool only_dne_data = check_map_for_dne_only (users, users_def_bank);
 
         if (users.empty () || only_dne_data) {
-            add_special_association (p, h, userid);
-            return 0;
+            return add_special_association (p, h, userid);
         } else {
             return flux_jobtap_reject_job (p,
                                            args,
@@ -1475,8 +1478,7 @@ static int new_cb (flux_plugin_t *p,
         if (b == nullptr) {
             // the association could not be found in internal map, so create a
             // special Association object that will hold the job in PRIORITY
-            add_special_association (p, h, userid);
-            return 0;
+            return add_special_association (p, h, userid);
         }
 
         if (bank == NULL) {
@@ -1539,11 +1541,10 @@ static int new_cb (flux_plugin_t *p,
                                  FLUX_JOBTAP_CURRENT_JOB,
                                  "mf_priority:bank_info",
                                  b,
-                                 NULL) < 0)
+                                 NULL) < 0) {
         flux_log_error (h, "flux_jobtap_job_aux_set");
-
-    // increment the association's active jobs count
-    b->cur_active_jobs++;
+        return -1;
+    }
 
     if (queue != NULL)
         queue_str = queue;
@@ -1582,6 +1583,8 @@ static int new_cb (flux_plugin_t *p,
         flux_log_error (h, "job.new: flux_jobtap_job_aux_set (job_info)");
         return -1;
     }
+
+    j->charge_active (b);
 
     if (state == FLUX_JOB_STATE_RUN || state == FLUX_JOB_STATE_CLEANUP) {
         // this job was already running or cleaning up; increment the
@@ -1932,7 +1935,7 @@ static int job_updated (flux_plugin_t *p,
     Association *a;
     Association *a_new = NULL;
     bool held_job_moved;
-    bool sched_usage_freed;
+    bool usage_freed;
     Job *j;
 
     flux_t *h = flux_jobtap_get_flux (p);
@@ -1994,18 +1997,15 @@ static int job_updated (flux_plugin_t *p,
             return -1;
         }
 
-        // update the active jobs count of the old bank
-        a->cur_active_jobs--;
-        // update the active jobs count of the updated bank
-        a_new->cur_active_jobs++;
-
         // re-pack the updated Association object to the job
         if (flux_jobtap_job_aux_set (p,
                                      FLUX_JOBTAP_CURRENT_JOB,
                                      "mf_priority:bank_info",
                                      a_new,
-                                     NULL) < 0)
+                                     NULL) < 0) {
             flux_log_error (h, "flux_jobtap_job_aux_set");
+            return -1;
+        }
     }
 
     std::string new_queue = updated_queue ? updated_queue
@@ -2017,9 +2017,9 @@ static int job_updated (flux_plugin_t *p,
     // update_queue_cb () and by job.validate on the merged jobspec, so the
     // Job object must always follow the committed update; returning early
     // would leave j->queue (and sched usage) out of sync with the jobspec
-    sched_usage_freed = j->move_sched (a_new, new_queue);
+    usage_freed = j->move_usage (a_new, new_queue);
     held_job_moved = move_held_job (a, a_new, j->id, new_queue);
-    if (sched_usage_freed || held_job_moved) {
+    if (usage_freed || held_job_moved) {
         if (check_and_release_all_held_jobs (p) < 0) {
             flux_log_error (h,
                             "%s: error checking and releasing held jobs",
@@ -2205,7 +2205,7 @@ static int inactive_cb (flux_plugin_t *p,
     // if a queue cannot be found, just set it to ""
     queue_str = queue ? queue : "";
 
-    b->cur_active_jobs--;
+    j->release_active ();
     if (!flux_jobtap_job_event_posted (p, FLUX_JOBTAP_CURRENT_JOB, "alloc")) {
         // check to see if this job exists in the Association object's list of
         // held jobs, and if so, remove it
