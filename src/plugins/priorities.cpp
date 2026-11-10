@@ -226,7 +226,7 @@ void estimate (flux_t *h,
         }
         for (auto &entry : user_it->second) {
             // skip the placeholder created by add_special_association ()
-            if (entry.first == "DNE")
+            if (entry.second.provisional)
                 continue;
             // calculate the estimated priority for this bank
             if (append_priority_estimate (results,
@@ -253,7 +253,7 @@ void estimate (flux_t *h,
                      "for caller";
             goto error;
         }
-        if (a->bank_name == "DNE") {
+        if (a->provisional) {
             // mirror priority_cb (), which keeps such a job in PRIORITY
             errno = EAGAIN;
             errmsg = "flux-accounting data for caller has not been loaded "
