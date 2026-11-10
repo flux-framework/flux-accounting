@@ -312,14 +312,12 @@ int64_t calc_priority (double fairshare,
 
 
 bool check_map_for_dne_only (std::map<int, std::map<std::string, Association>>
-                               &users,
-                             std::map<int, std::string> &users_def_bank)
+                               &users)
 {
-    for (const auto& entry : users) {
-        auto it = users_def_bank.find(entry.first);
-        if (it != users_def_bank.end() && it->second != "DNE")
-            return false;
-    }
+    for (const auto &user : users)
+        for (const auto &bank : user.second)
+            if (!bank.second.provisional)
+                return false;
 
     return true;
 }
