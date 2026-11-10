@@ -1296,6 +1296,11 @@ static int validate_cb (flux_plugin_t *p,
     // perform a lookup in the users map of the unpacked user/bank
     a = get_association (userid, bank, users, users_def_bank);
 
+    // attach a shared placeholder to each live job so new_cb () can account
+    // for it just as it does for the first job that created the placeholder.
+    if (a && a->provisional)
+        return add_special_association (p, h, userid);
+
     if (a == nullptr) {
         // the association could not be found in the plugin's internal map,
         // so perform a check to see if the map has any loaded
@@ -1469,7 +1474,7 @@ static int new_cb (flux_plugin_t *p,
         // Association object was not unpacked; perform lookup
         b = get_association (userid, bank, users, users_def_bank);
 
-        if (b == nullptr) {
+        if (b == nullptr || b->provisional) {
             // the association could not be found in internal map, so create a
             // special Association object that will hold the job in PRIORITY
             return add_special_association (p, h, userid);
