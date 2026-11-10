@@ -50,7 +50,6 @@ static Association make_association (const std::string &bank_name)
     a.max_sched_jobs = 0;
     a.held_jobs = {};
     a.queues = {};
-    a.bank_factor = 0.0;
     a.active = 1;
     a.projects = {"*"};
     a.def_project = "*";

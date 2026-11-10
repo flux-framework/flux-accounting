@@ -112,6 +112,18 @@ test_expect_success 'update the bank of the pending job and check priority' '
 	flux cancel ${job3}
 '
 
+# If a bank's priority is edited while one of its jobs is pending, the job's
+# priority should change on the next update.
+# priority = (bank_priority * bank_weight) = (5 * 100) = 500
+test_expect_success 'edit the priority of a bank with a pending job' '
+	job4=$(flux python ${SUBMIT_AS} 50001 --setattr=system.bank=A sleep 60) &&
+	flux job wait-event -t 5 --match-context=priority=100 ${job4} priority &&
+	flux account edit-bank A --priority=5 &&
+	flux account-priority-update -p ${DB_PATH} &&
+	flux job wait-event -t 5 --match-context=priority=500 ${job4} priority &&
+	flux cancel ${job4}
+'
+
 test_expect_success 'shut down flux-accounting service' '
 	flux python -c "import flux; flux.Flux().rpc(\"accounting.shutdown_service\").get()"
 '
