@@ -617,7 +617,8 @@ def edit_user(conn, cur, username, bank=None, **kwargs):
     Edit a field for an association in the association_table. If "bank" is not passed,
     edit the column across every row for the user in the association_table. If -1 is
     passed for any of the fields, reset the field to its default value in the
-    association_table.
+    association_table. Userid edits also update the association's existing
+    usage-factor records and periodic usage bins.
 
     Args:
         username: The username of the association.
@@ -688,69 +689,76 @@ def edit_user(conn, cur, username, bank=None, **kwargs):
 
     if add_queue and delete_queue and add_queue == delete_queue:
         raise ValueError("cannot pass queue to both --add-queue and --delete-queue")
-    if add_queue or delete_queue:
-        modify_queues(conn, cur, username, bank, add_queue, delete_queue)
+    with conn:
+        if add_queue or delete_queue:
+            modify_queues(conn, cur, username, bank, add_queue, delete_queue)
 
-    for field, value in updates.items():
-        if value is not None:
-            if str(value) == "-1" or str(value).lower() == "unlimited":
-                if field == "default_bank":
-                    raise ValueError(
-                        f"default bank cannot be reset with -1; please specify a value"
-                    )
-                # clear either the queues or the projects
+        for field, value in updates.items():
+            if value is not None:
+                if str(value) == "-1" or str(value).lower() == "unlimited":
+                    if field == "default_bank":
+                        raise ValueError(
+                            f"default bank cannot be reset with -1; please specify a value"
+                        )
+                    # clear either the queues or the projects
+                    if field == "queues":
+                        clear_queues(conn, cur, username, bank)
+                    elif field == "projects":
+                        clear_projects(conn, cur, username, bank)
+                    elif field in ("max_nodes", "max_cores"):
+                        # set value to max integer
+                        update_stmt = (
+                            f"UPDATE association_table SET "
+                            f"{field}={INTEGER_MAX} WHERE username=?"
+                        )
+                        tup = (username,)
+
+                        if bank is not None:
+                            update_stmt += " AND bank=?"
+                            tup = tup + (bank,)
+
+                        cur.execute(update_stmt, tup)
+                    else:
+                        # for the other fields, setting to NULL will reset it to its default value
+                        update_stmt = f"UPDATE association_table SET {field}=NULL WHERE username=?"
+                        tup = (username,)
+
+                        if bank is not None:
+                            update_stmt += " AND bank=?"
+                            tup = tup + (bank,)
+
+                        cur.execute(update_stmt, tup)
+
+                    # skip the rest of the loop if reset logic was handled
+                    continue
+
                 if field == "queues":
-                    clear_queues(conn, cur, username, bank)
+                    validate_queue(cur, queues=value)
                 elif field == "projects":
-                    clear_projects(conn, cur, username, bank)
-                elif field in ("max_nodes", "max_cores"):
-                    # set value to max integer
-                    update_stmt = (
-                        f"UPDATE association_table SET "
-                        f"{field}={INTEGER_MAX} WHERE username=?"
-                    )
-                    tup = (username,)
+                    updates[field] = validate_project(cur, projects=value)
 
-                    if bank is not None:
-                        update_stmt += " AND bank=?"
-                        tup = tup + (bank,)
+                update_stmt = f"UPDATE association_table SET {field}=? WHERE username=?"
+                tup = (updates[field], username)
 
-                    cur.execute(update_stmt, tup)
-                else:
-                    # for the other fields, setting to NULL will reset it to its default value
-                    update_stmt = (
-                        f"UPDATE association_table SET {field}=NULL WHERE username=?"
-                    )
-                    tup = (username,)
+                if bank is not None:
+                    update_stmt += " AND bank=?"
+                    tup = tup + (bank,)
 
-                    if bank is not None:
-                        update_stmt += " AND bank=?"
-                        tup = tup + (bank,)
+                cur.execute(update_stmt, tup)
 
-                    cur.execute(update_stmt, tup)
+        if updates.get("userid") is not None:
+            # keep the usage-factor records and periodic usage bins consistent
+            # with association_table; job usage updates find jobs by userid
+            for table in ("job_usage_factor_table", "job_usage_per_association_table"):
+                update_stmt = f"UPDATE {table} SET userid=? WHERE username=?"
+                tup = (updates["userid"], username)
+                if bank is not None:
+                    update_stmt += " AND bank=?"
+                    tup = tup + (bank,)
+                cur.execute(update_stmt, tup)
 
-                # skip the rest of the loop if reset logic was handled
-                continue
-
-            if field == "queues":
-                validate_queue(cur, queues=value)
-            elif field == "projects":
-                updates[field] = validate_project(cur, projects=value)
-
-            update_stmt = f"UPDATE association_table SET {field}=? WHERE username=?"
-            tup = (updates[field], username)
-
-            if bank is not None:
-                update_stmt += " AND bank=?"
-                tup = tup + (bank,)
-
-            cur.execute(update_stmt, tup)
-
-    # update mod_time column
-    update_mod_time(conn, cur, username, bank)
-
-    # commit changes
-    conn.commit()
+        # update mod_time column
+        update_mod_time(conn, cur, username, bank)
 
     return 0
 
@@ -874,43 +882,31 @@ def edit_all_users(conn, cur, **kwargs):
 @with_cursor
 def sync_userids(conn, cur):
     """
-    Synchronize potentially inconsistent userids between associations in the
-    association_table and their corresponding rows in the job_usage_factor_table.
+    Synchronize usage-factor and periodic-bin userids with their associations.
+    Match by username and bank so each association retains its own userid.
     """
-    select_stmt = """
-    SELECT j.username,
-           j.userid AS old_userid,
-           a.userid AS new_userid
-    FROM job_usage_factor_table j
-    JOIN association_table a
-      ON j.username = a.username
-    WHERE j.userid != a.userid
-    """
-    cur.execute(select_stmt)
-    result = cur.fetchall()
+    changed = 0
+    with conn:
+        for table in ("job_usage_factor_table", "job_usage_per_association_table"):
+            update_stmt = f"""
+            UPDATE {table}
+            SET userid = (
+                SELECT a.userid FROM association_table a
+                WHERE a.username = {table}.username AND a.bank = {table}.bank
+            )
+            WHERE EXISTS (
+                SELECT 1 FROM association_table a
+                WHERE a.username = {table}.username AND a.bank = {table}.bank
+                  AND a.userid != {table}.userid
+            )
+            """
+            cur.execute(update_stmt)
+            changed += cur.rowcount
 
-    if len(result) > 0:
-        # there are userids for associations that are inconsistent between the
-        # association_table and job_usage_factor_table; make them consistent
-        # by executing a query to set them with what is defined in association_table
+    if changed > 0:
         print(
             "found inconsistent userids; updating to reflect what is in ",
             "association_table",
         )
-        update_stmt = """
-        UPDATE job_usage_factor_table
-        SET userid = (
-            SELECT association_table.userid
-            FROM association_table
-            WHERE association_table.username = job_usage_factor_table.username
-        )
-        WHERE EXISTS (
-            SELECT 1
-            FROM association_table
-            WHERE association_table.username = job_usage_factor_table.username
-        )
-        """
-        cur.execute(update_stmt)
-        conn.commit()
 
     return 0
