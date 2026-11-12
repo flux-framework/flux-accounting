@@ -183,8 +183,6 @@ def clear_queues(conn, cur, username, bank=None):
         )
         update_mod_time(conn, cur, username, bank)
 
-    conn.commit()
-
     return 0
 
 
@@ -203,7 +201,6 @@ def clear_projects(conn, cur, username, bank=None):
         )
 
     update_mod_time(conn, cur, username, bank)
-    conn.commit()
 
     return 0
 
