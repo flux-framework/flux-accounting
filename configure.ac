@@ -137,6 +137,16 @@ X_AC_EXPAND_INSTALL_DIRS
 ##
 RRA_WITH_SYSTEMD_UNITDIR
 
+##
+# Where flux-core searches for bash completion drop-ins
+##
+AC_ARG_WITH([fluxbashcompletiondir],
+    [AS_HELP_STRING([--with-fluxbashcompletiondir=DIR],
+        [Directory for flux bash completion drop-ins])],
+    [fluxbashcompletiondir=$withval],
+    [fluxbashcompletiondir='${datadir}/flux/bash-completion'])
+AC_SUBST(fluxbashcompletiondir)
+
 fluxplugin_ldflags="-avoid-version -export-symbols-regex '^flux_plugin_init\$\$' --disable-static -shared -export-dynamic"
 AC_SUBST(fluxplugin_ldflags)
 
