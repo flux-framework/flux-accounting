@@ -24,42 +24,41 @@ resolved, please see the :doc:`../components/limits` page.
 inconsistent and/or inaccurate. How can I resolve this?**
 
 If it seems like association or bank job usage values don't look correct, the
-first thing to check would be the consistency between the association's
-``userid`` column in both the ``association_table`` and the
-``job_usage_factor_table``. If they are reporting different values, then the
-script that updates job usage values for that association will be skipped
-since the script searches for completed jobs based on ``userid``. To sync the
-two tables to use the same user ID defined in the ``association_table`` in the
-``job_usage_factor_table``, you can run the ``sync-userids`` command. Under the
-hood, this command is running this query to see which user IDs are
-inconsistent:
+first thing to check is the consistency of the association's ``userid`` in
+``association_table``, ``job_usage_factor_table``, and, in periodic decay mode,
+``job_usage_per_association_table``. A mismatch in ``job_usage_factor_table``
+can prevent completed jobs from being included in usage updates, since jobs
+are found by userid and bank.
+
+Run ``flux account sync-userids`` to copy each association's userid into its
+existing usage-factor records and periodic usage bins. The command matches
+rows by username and bank, and repairs either table even when the other table
+already agrees. Usage values, periods, and job timestamps are preserved. For
+example, the repair query for periodic bins is:
 
 .. code-block:: sql
 
-  SELECT j.username,
-         j.userid AS old_userid,
-         a.userid AS new_userid
-    FROM job_usage_factor_table j
-    JOIN association_table a
-      ON j.username = a.username
-   WHERE j.userid != a.userid;
-
-And this one to update ``job_usage_factor_table`` with the user ID found in
-``association_table``:
-
-.. code-block:: sql
-
-  UPDATE job_usage_factor_table
+  UPDATE job_usage_per_association_table
      SET userid = (
-       SELECT association_table.userid
-         FROM association_table
-        WHERE association_table.username = job_usage_factor_table.username
+       SELECT a.userid FROM association_table a
+        WHERE a.username = job_usage_per_association_table.username
+          AND a.bank = job_usage_per_association_table.bank
      )
   WHERE EXISTS (
-       SELECT 1
-         FROM association_table
-        WHERE association_table.username = job_usage_factor_table.username
+       SELECT 1 FROM association_table a
+        WHERE a.username = job_usage_per_association_table.username
+          AND a.bank = job_usage_per_association_table.bank
+          AND a.userid != job_usage_per_association_table.userid
   );
+
+The usage-factor repair uses the same query with ``job_usage_factor_table``
+in place of ``job_usage_per_association_table``. Rows with no matching
+association are left unchanged.
+
+Changing a userid with ``edit-user --userid`` also updates the userid in the
+selected associations' existing usage-factor records and periodic usage bins,
+so ``sync-userids`` is only needed to repair tables that are already
+inconsistent.
 
 .. note::
 

@@ -67,7 +67,7 @@ class PeriodicUsageCalculator(JobUsageCalculator):
             (user, userid, bank, 0, usg_h),
         )
 
-    def apply_decay_factor(self, user, bank, userid):
+    def apply_decay_factor(self, user, bank):
         """
         Apply a decay factor to an association's job usage period values. Since
         this helper issues a write to the flux-accounting DB and does not have a
@@ -77,7 +77,6 @@ class PeriodicUsageCalculator(JobUsageCalculator):
         Args:
             user: The username of the association.
             bank: The bank name of the association.
-            userid: The userid of the association.
         """
         cur = self.conn.cursor()
         cur.execute("SELECT value FROM config_table WHERE key='decay_factor'")
@@ -104,18 +103,18 @@ class PeriodicUsageCalculator(JobUsageCalculator):
             cur.execute(
                 """
                 UPDATE job_usage_per_association_table SET value=?
-                WHERE username=? AND userid=? AND bank=? AND period=?
+                WHERE username=? AND bank=? AND period=?
                 """,
-                (value * decay, user, userid, bank, next_period),
+                (value * decay, user, bank, next_period),
             )
 
         # period 0 will be written with the current period's usage
         cur.execute(
             """
             UPDATE job_usage_per_association_table SET value=0.0
-            WHERE username=? AND userid=? AND bank=? AND period=0
+            WHERE username=? AND bank=? AND period=0
             """,
-            (user, userid, bank),
+            (user, bank),
         )
 
         # return the sum of all periods excluding period 0 since that will be
@@ -123,9 +122,9 @@ class PeriodicUsageCalculator(JobUsageCalculator):
         cur.execute(
             """
             SELECT SUM(value) FROM job_usage_per_association_table
-            WHERE username=? AND userid=? AND bank=? AND period > 0
+            WHERE username=? AND bank=? AND period > 0
             """,
-            (user, userid, bank),
+            (user, bank),
         )
         result = cur.fetchone()
         return result[0] if result[0] is not None else 0.0
@@ -188,7 +187,7 @@ class PeriodicUsageCalculator(JobUsageCalculator):
         elif len(user_jobs) == 0 and (float(end_hl) < (time.time() - hl_period)):
             # no new jobs in the new half-life period; previous job usage periods
             # need to have a half-life decay applied to them
-            usg_historical = self.apply_decay_factor(user, bank, userid)
+            usg_historical = self.apply_decay_factor(user, bank)
 
             self.update_curr_usg_col(
                 usg_current,
@@ -209,7 +208,7 @@ class PeriodicUsageCalculator(JobUsageCalculator):
         else:
             # found new jobs in the new half-life period
             # apply decay factor to past usage periods of a user's jobs
-            usg_past = self.apply_decay_factor(user, bank, userid)
+            usg_past = self.apply_decay_factor(user, bank)
             usg_historical = usg_current + usg_past
 
             self.update_curr_usg_col(usg_current, user, bank, userid)

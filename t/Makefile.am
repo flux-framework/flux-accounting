@@ -118,6 +118,7 @@ TESTSCRIPTS = \
 	t1113-estimate-priority.t \
 	t1114-issue1007.t \
 	t1115-bash-completion.t \
+	t1116-issue1025.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
@@ -148,7 +149,8 @@ TESTSCRIPTS = \
 	python/t1026_continuous_decay.py \
 	python/t1027_issue1003.py \
 	python/t1028_job_record_jobname.py \
-	python/t1029_util.py
+	python/t1029_util.py \
+	python/t1030_issue1025.py
 
 dist_check_SCRIPTS = \
 	$(TESTSCRIPTS) \
