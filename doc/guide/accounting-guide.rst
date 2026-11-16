@@ -84,6 +84,26 @@ commands, such as ``sqlite3.OperationalError: attempt to write a readonly databa
 2. An active Flux system instance is running. The flux-accounting service will
 only run after the system instance is started.
 
+Shell Completion
+================
+
+The ``flux-accounting`` package installs a bash completion drop-in that adds
+tab completion for ``flux account`` subcommands and their options. With
+flux-core version 0.92.0 or later, it works automatically wherever the ``flux``
+completion is loaded.
+
+To try the completion from a build tree, add the directory containing the
+``account`` drop-in to ``FLUX_BASH_COMPLETION_PATH``:
+
+.. code-block:: console
+
+ $ export FLUX_BASH_COMPLETION_PATH=/path/to/flux-accounting/etc/bash-completion
+
+See :core:man7:`flux-bash-completion` for details about the drop-in interface.
+
+Once loaded, ``flux account <TAB>`` lists the available subcommands and
+``flux account <subcommand> --<TAB>`` lists that subcommand's options.
+
 Accounting Database Creation
 ============================
 
