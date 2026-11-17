@@ -95,6 +95,7 @@ public:
 class Association {
 public:
     // attributes
+    bool provisional = false;          // waiting for accounting data
     std::string bank_name;             // name of bank
     double fairshare;                  // fair share value
     int max_run_jobs;                  // max number of running jobs
@@ -208,12 +209,11 @@ int64_t calc_priority (double fairshare,
                        int urgency,
                        const std::map<std::string, int> &weights);
 
-// check the contents of the users map to see if every user's bank is a
-// temporary "DNE" value; if it is, the plugin is still waiting on
+// check the contents of the users map to see if every association is a
+// provisional placeholder; if it is, the plugin is still waiting on
 // flux-accounting data
 bool check_map_for_dne_only (std::map<int, std::map<std::string, Association>>
-                               &users,
-                             std::map<int, std::string> &users_def_bank);
+                               &users);
 
 // validate a potentially passed-in project by an association
 int get_project_info (const char *project,
