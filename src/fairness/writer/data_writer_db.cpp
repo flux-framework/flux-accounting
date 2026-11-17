@@ -170,16 +170,16 @@ int data_writer_db_t::update_fairshare_values (
                                     std::shared_ptr<weighted_tree_node_t> node)
 {
     int rc;
-    const char *fshare, *username, *bank;
+    const char *username, *bank;
 
     if (node->is_user ()) {
         // get parameters for UPDATE statement
-        fshare = std::to_string (node->get_fshare ()).c_str ();
+        const std::string fshare = std::to_string(node->get_fshare ());
         username = node->get_name ().c_str ();
         bank = node->get_parent ()->get_name ().c_str ();
 
         // bind parameters to compiled SQL statement
-        c_ud = bind_param (DB, c_ud, 1, fshare);
+        c_ud = bind_param (DB, c_ud, 1, fshare.c_str ());
         if (c_ud == nullptr)
             return -1;
 
