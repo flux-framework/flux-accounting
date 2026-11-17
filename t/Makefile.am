@@ -119,6 +119,7 @@ TESTSCRIPTS = \
 	t1114-issue1007.t \
 	t1115-bash-completion.t \
 	t1116-issue1025.t \
+	t1117-issue1030.t \
 	t5000-valgrind.t \
 	python/t1000-example.py \
 	python/t1001_db.py \
