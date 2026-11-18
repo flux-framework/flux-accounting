@@ -77,8 +77,8 @@ void weighted_tree_node_t::calc_set_children_weight ()
     auto total = std::accumulate (
                      m_children.begin (),
                      m_children.end (),
-                     std::pair<uint64_t, uint64_t> (0, 0),
-                     [] (const std::pair<uint64_t, uint64_t> &a,
+                     std::pair<uint64_t, double> (0, 0),
+                     [] (const std::pair<uint64_t, double> &a,
                          const std::shared_ptr<weighted_tree_node_t> &b) {
                          uint64_t s_sum = a.first + b->get_shares ();
                          double u_sum = a.second + b->get_usage ();
