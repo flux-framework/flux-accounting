@@ -137,3 +137,39 @@ bool Job::move_sched (Association *assoc, const std::string &queue)
 
     return sched_usage_freed;
 }
+
+
+bool Job::charge_active (Association *assoc)
+{
+    if (m_active_assoc)
+        return false;
+
+    m_active_assoc = assoc;
+    assoc->cur_active_jobs++;
+    return true;
+}
+
+
+bool Job::release_active ()
+{
+    if (!m_active_assoc)
+        return false;
+
+    m_active_assoc->cur_active_jobs--;
+    m_active_assoc = nullptr;
+    return true;
+}
+
+
+bool Job::move_usage (Association *assoc, const std::string &queue)
+{
+    bool usage_freed = move_sched (assoc, queue);
+
+    if (m_active_assoc && m_active_assoc != assoc) {
+        release_active ();
+        charge_active (assoc);
+        usage_freed = true;
+    }
+
+    return usage_freed;
+}
