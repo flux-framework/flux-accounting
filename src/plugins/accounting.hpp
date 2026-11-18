@@ -117,6 +117,9 @@ public:
 
     // methods
     json_t* to_json () const;    // convert object to JSON string
+    // is this the placeholder association used while waiting on
+    // flux-accounting data?
+    bool is_dne () const { return bank_name == "DNE"; }
     // check to see if a job can be released from all flux-accounting
     // dependencies
     //

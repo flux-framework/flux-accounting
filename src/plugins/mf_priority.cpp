@@ -40,11 +40,6 @@ extern "C" {
 // custom Job class file
 #include "job.hpp"
 
-// the plugin does not know about the association who submitted a job and will
-// assign default values to the association until it receives information from
-// flux-accounting
-#define BANK_INFO_MISSING 999
-
 static const double FSHARE_EPSILON = 1e-9;
 
 std::map<int, std::map<std::string, Association>> users;
@@ -252,9 +247,9 @@ static void add_special_association (flux_plugin_t *p, flux_t *h, int userid)
         a = &banks["DNE"];
         a->bank_name = "DNE";
         a->fairshare = 0.1;
-        a->max_run_jobs = BANK_INFO_MISSING;
+        a->max_run_jobs = INT16_MAX;
         a->cur_run_jobs = 0;
-        a->max_active_jobs = 1000;
+        a->max_active_jobs = INT16_MAX;
         a->cur_active_jobs = 0;
         a->active = 1;
         a->held_jobs = std::vector<Job>();
@@ -1109,7 +1104,7 @@ static int priority_cb (flux_plugin_t *p,
                                                     FLUX_JOBTAP_CURRENT_JOB,
                                                     "mf_priority:bank_info"));
 
-    if (b == nullptr || b->max_run_jobs == BANK_INFO_MISSING) {
+    if (b == nullptr || b->is_dne ()) {
         /*
          * The flux-accounting information associated with this job could not
          * be found by the time this job got to job.state.priority. This could
@@ -1138,7 +1133,7 @@ static int priority_cb (flux_plugin_t *p,
                                          userid);
             return -1;
         } else {
-            if (assoc->bank_name == "DNE")
+            if (assoc->is_dne ())
                 // the association still does not have a valid entry in the
                 // users map, so keep it in PRIORITY
                 return flux_jobtap_priority_unavail (p, args);
