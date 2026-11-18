@@ -162,4 +162,64 @@ test_expect_success 'cancelling the second job clears DNE usage and holds' '
 		.cur_active_jobs == 0 and (.held_jobs | length) == 0" query.json
 '
 
+# an association whose real max_running_jobs happens to be 999 must not be
+# mistaken for the DNE placeholder when its job reaches job.state.priority
+test_expect_success 'reload with an unrestricted queue and no association data' '
+	cat >queue-unlimited.json <<-EOF &&
+	{"queues": [{
+		"queue": "",
+		"priority": 0,
+		"max_running_jobs": 2147483647,
+		"max_sched_jobs": 2147483647,
+		"max_sched_nodes_per_assoc": 2147483647,
+		"max_sched_cores_per_assoc": 2147483647
+	}]}
+	EOF
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-unlimited.json)"
+'
+
+test_expect_success 'load an association with max_running_jobs of 999' '
+	cat <<-EOF >payload.py &&
+	import flux
+	import json
+
+	data = {
+		"data": [
+			{
+				"userid": $(id -u),
+				"bank": "test_bank",
+				"def_bank": "test_bank",
+				"fairshare": 0.5,
+				"max_running_jobs": 999,
+				"max_active_jobs": 1000,
+				"max_nodes": 2147483647,
+				"max_cores": 2147483647,
+				"queues": "",
+				"active": 1,
+				"projects": "*",
+				"def_project": "*",
+				"max_sched_jobs": 2147483647
+			}
+		]
+	}
+	flux.Flux().rpc("job-manager.mf_priority.rec_update", json.dumps(data)).get()
+	EOF
+	flux python payload.py
+'
+
+test_expect_success 'job under the 999-limit association is not treated as DNE' '
+	job999=$(flux submit --bank=test_bank sleep inf) &&
+	flux job wait-event -t 15 ${job999} alloc &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 1 and .cur_run_jobs == 1" query.json
+'
+
+test_expect_success 'cancel job under the 999-limit association' '
+	flux cancel ${job999} &&
+	flux job wait-event -t 15 ${job999} clean
+'
+
 test_done
