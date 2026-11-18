@@ -222,4 +222,90 @@ test_expect_success 'cancel job under the 999-limit association' '
 	flux job wait-event -t 15 ${job999} clean
 '
 
+# a job charged to the DNE placeholder must be uncharged from it once the job
+# moves to its real association
+test_expect_success 'reload the plugin with no association data' '
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-unlimited.json)"
+'
+
+test_expect_success 'a job submitted with no association data charges DNE' '
+	jobdne=$(flux submit --wait-event=depend sleep inf) &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 1" query.json
+'
+
+test_expect_success 'load association data and reprioritize the job' '
+	flux python payload.py &&
+	flux python -c "import flux; flux.Flux().rpc(\"job-manager.mf_priority.reprioritize\").get()" &&
+	flux job wait-event -t 15 ${jobdne} alloc
+'
+
+test_expect_success 'DNE is uncharged and the real association is charged' '
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 0" query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 1 and .cur_run_jobs == 1" query.json
+'
+
+test_expect_success 'cancel the formerly DNE job' '
+	flux cancel ${jobdne} &&
+	flux job wait-event -t 15 ${jobdne} clean &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 0 and .cur_run_jobs == 0" query.json
+'
+
+# a job re-seen after a plugin reload is attached to the DNE placeholder
+# without charging it, so it must not be uncharged from it either
+test_expect_success 'submit a job with no association data' '
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-unlimited.json)" &&
+	jobreload=$(flux submit --wait-event=depend sleep inf) &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 1" query.json
+'
+
+test_expect_success 'a job re-seen after a reload does not charge DNE' '
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-unlimited.json)" &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 0" query.json
+'
+
+test_expect_success 'load association data and reprioritize the re-seen job' '
+	flux python payload.py &&
+	flux python -c "import flux; flux.Flux().rpc(\"job-manager.mf_priority.reprioritize\").get()" &&
+	flux job wait-event -t 15 ${jobreload} alloc
+'
+
+test_expect_success 'DNE is not uncharged for the re-seen job' '
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 0" query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 1 and .cur_run_jobs == 1" query.json
+'
+
+test_expect_success 'cancel the re-seen job' '
+	flux cancel ${jobreload} &&
+	flux job wait-event -t 15 ${jobreload} clean &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 0 and .cur_run_jobs == 0" query.json
+'
+
 test_done
