@@ -215,6 +215,15 @@ class TestAccountingCLI(unittest.TestCase):
         rows = cur.fetchall()
         self.assertEqual(len(rows), 0)
 
+    # bank name cannot be named "DNE" because it is a reserved keyword
+    def test_15_add_bank_cannot_use_DNE(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            '"DNE" is a reserved keyword in flux-accounting; '
+            "please choose a different name",
+        ):
+            b.add_bank(acct_conn, bank="DNE", parent_bank="root", shares=1)
+
     # remove database and log file
     @classmethod
     def tearDownClass(self):
