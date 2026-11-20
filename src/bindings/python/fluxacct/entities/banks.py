@@ -209,6 +209,14 @@ def add_bank(
         if len(cur.fetchall()) > 0:
             raise ValueError(f"bank_table already has a root bank")
 
+    # "DNE" is a special bank name reserved for holding a user's submitted job in
+    # mf_priority.cpp while it waits for valid flux-accounting data from the SQLite DB
+    if bank == "DNE":
+        raise ValueError(
+            '"DNE" is a reserved keyword in flux-accounting; '
+            "please choose a different name"
+        )
+
     # if the parent bank is not "", that means the bank trying
     # to be added wants to be placed under an existing parent bank
     try:

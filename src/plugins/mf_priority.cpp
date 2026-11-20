@@ -40,11 +40,6 @@ extern "C" {
 // custom Job class file
 #include "job.hpp"
 
-// the plugin does not know about the association who submitted a job and will
-// assign default values to the association until it receives information from
-// flux-accounting
-#define BANK_INFO_MISSING 999
-
 static const double FSHARE_EPSILON = 1e-9;
 
 std::map<int, std::map<std::string, Association>> users;
@@ -241,20 +236,28 @@ static void add_special_association (flux_plugin_t *p, flux_t *h, int userid)
 {
     Association *a;
 
-    a = &users[userid]["DNE"];
+    auto &banks = users[userid];
+    auto it = banks.find ("DNE");
     users_def_bank[userid] = "DNE";
 
-    a->bank_name = "DNE";
-    a->fairshare = 0.1;
-    a->max_run_jobs = BANK_INFO_MISSING;
-    a->cur_run_jobs = 0;
-    a->max_active_jobs = 1000;
-    a->cur_active_jobs = 0;
-    a->active = 1;
-    a->held_jobs = std::vector<Job>();
-    a->max_nodes = INT16_MAX;
-    a->max_cores = INT16_MAX;
-    a->max_sched_jobs = INT16_MAX;
+    // since an existing placeholder may already own active charges and held
+    // jobs, check to see if it exists *before* creating a new entry in the
+    // plugin's internal map
+    if (it == banks.end ()) {
+        a = &banks["DNE"];
+        a->bank_name = "DNE";
+        a->fairshare = 0.1;
+        a->max_run_jobs = INT16_MAX;
+        a->cur_run_jobs = 0;
+        a->max_active_jobs = INT16_MAX;
+        a->cur_active_jobs = 0;
+        a->active = 1;
+        a->held_jobs = std::vector<Job>();
+        a->max_nodes = INT16_MAX;
+        a->max_cores = INT16_MAX;
+        a->max_sched_jobs = INT16_MAX;
+    } else
+        a = &it->second;
 
     if (flux_jobtap_job_aux_set (p,
                                  FLUX_JOBTAP_CURRENT_JOB,
@@ -1101,7 +1104,7 @@ static int priority_cb (flux_plugin_t *p,
                                                     FLUX_JOBTAP_CURRENT_JOB,
                                                     "mf_priority:bank_info"));
 
-    if (b == nullptr || b->max_run_jobs == BANK_INFO_MISSING) {
+    if (b == nullptr || b->is_dne ()) {
         /*
          * The flux-accounting information associated with this job could not
          * be found by the time this job got to job.state.priority. This could
@@ -1130,7 +1133,7 @@ static int priority_cb (flux_plugin_t *p,
                                          userid);
             return -1;
         } else {
-            if (assoc->bank_name == "DNE")
+            if (assoc->is_dne ())
                 // the association still does not have a valid entry in the
                 // users map, so keep it in PRIORITY
                 return flux_jobtap_priority_unavail (p, args);
@@ -1138,6 +1141,16 @@ static int priority_cb (flux_plugin_t *p,
             if (!queue_permitted (queue, assoc->queues, queues))
                 // the queue the association specified is invalid
                 return -1;
+
+            // a job submitted while the plugin had no flux-accounting data was
+            // charged to the DNE placeholder in new_cb (), which also attached
+            // its Job aux item; a job re-seen after a reload was not charged,
+            // so only uncharge the placeholder when that aux item is present
+            if (b != nullptr
+                && flux_jobtap_job_aux_get (p,
+                                            FLUX_JOBTAP_CURRENT_JOB,
+                                            "mf_priority:job_info") != nullptr)
+                b->cur_active_jobs--;
 
             // the bank this job was submitted under was unknown when the job
             // was first accepted, so the active jobs count for the association

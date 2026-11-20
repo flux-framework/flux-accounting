@@ -319,6 +319,12 @@ test_expect_success 'view-bank --users --active only shows active users under th
 	grep -f view_bank_users3.test view_bank_users3.expected
 '
 
+test_expect_success '"DNE" cannot be used as the bank name' '
+	test_must_fail flux account add-bank \
+		--parent-bank=root DNE 1 > reserved_bank_name.err 2>&1 &&
+	grep "\"DNE\" is a reserved keyword in flux-accounting;" reserved_bank_name.err
+'
+
 test_expect_success 'remove flux-accounting DB' '
 	rm $(pwd)/FluxAccountingTest.db
 '
