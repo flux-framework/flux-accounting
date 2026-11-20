@@ -101,6 +101,14 @@ test_expect_success 'now we can update the bank on the job because plugin has al
 	grep "attributes.system.bank=\"B\"" eventlog.out
 '
 
+test_expect_success 'the reloaded job moves its SCHED charge from DNE through A to B' '
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == 5001) |
+		.banks | (map(.bank_name) | sort) == [\"A\", \"B\", \"DNE\"] and
+		all(.[]; .cur_sched_jobs ==
+			(if .bank_name == \"B\" then 1 else 0 end))" query.json
+'
+
 test_expect_success 'start queue so that resources can be allocated to job' '
 	flux queue start
 '
