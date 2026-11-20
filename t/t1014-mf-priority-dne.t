@@ -308,4 +308,70 @@ test_expect_success 'cancel the re-seen job' '
 		.cur_active_jobs == 0 and .cur_run_jobs == 0" query.json
 '
 
+# job & resource counts are correctly reconciled to the correct association
+# after a flux-accounting update and before the job begins running
+test_expect_success 'submit a job that stays in SCHED' '
+	flux python payload.py &&
+	flux queue stop &&
+	jobsched=$(flux submit --bank=test_bank sleep inf) &&
+	flux job wait-event -t 15 ${jobsched} priority &&
+	test "$(flux jobs -no {state} ${jobsched})" = SCHED
+'
+
+test_expect_success 'a replayed SCHED job charges DNE jobs and resources' '
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-unlimited.json)" &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 1 and .cur_sched_jobs == 1 and
+		.queue_usage[\"\"].cur_sched_jobs == 1 and
+		.queue_usage[\"\"].cur_sched_nodes == 1 and
+		.queue_usage[\"\"].cur_sched_cores == 1" query.json
+'
+
+test_expect_success 'reprioritizing moves SCHED jobs and resources to the real bank' '
+	flux python payload.py &&
+	flux python -c "import flux; flux.Flux().rpc(\"job-manager.mf_priority.reprioritize\").get()" &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 0 and .cur_sched_jobs == 0 and
+		.queue_usage[\"\"].cur_sched_jobs == 0 and
+		.queue_usage[\"\"].cur_sched_nodes == 0 and
+		.queue_usage[\"\"].cur_sched_cores == 0" query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 1 and .cur_sched_jobs == 1 and
+		.queue_usage[\"\"].cur_sched_jobs == 1 and
+		.queue_usage[\"\"].cur_sched_nodes == 1 and
+		.queue_usage[\"\"].cur_sched_cores == 1" query.json
+'
+
+test_expect_success 'the replayed SCHED job runs under its real bank' '
+	flux queue start &&
+	flux job wait-event -t 15 ${jobsched} alloc &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 1 and .cur_sched_jobs == 0 and
+		.cur_run_jobs == 1 and .cur_nodes == 1 and .cur_cores == 1 and
+		.queue_usage[\"\"].cur_sched_jobs == 0 and
+		.queue_usage[\"\"].cur_sched_nodes == 1 and
+		.queue_usage[\"\"].cur_sched_cores == 1" query.json
+'
+
+test_expect_success 'cancelling the replayed SCHED job clears all real-bank usage' '
+	flux cancel ${jobsched} &&
+	flux job wait-event -t 15 ${jobsched} clean &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 0 and .cur_sched_jobs == 0 and
+		.cur_run_jobs == 0 and .cur_nodes == 0 and .cur_cores == 0 and
+		.queue_usage[\"\"].cur_sched_jobs == 0 and
+		.queue_usage[\"\"].cur_sched_nodes == 0 and
+		.queue_usage[\"\"].cur_sched_cores == 0" query.json
+'
+
 test_done
