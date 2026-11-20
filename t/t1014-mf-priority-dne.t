@@ -1,6 +1,6 @@
 #!/bin/bash
 
-test_description='Test cancelling active jobs with a late user/bank info load'
+test_description='Test DNE job accounting with a late user/bank info load'
 
 . `dirname $0`/sharness.sh
 MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
@@ -262,8 +262,8 @@ test_expect_success 'cancel the formerly DNE job' '
 		.cur_active_jobs == 0 and .cur_run_jobs == 0" query.json
 '
 
-# a job re-seen after a plugin reload is attached to the DNE placeholder
-# without charging it, so it must not be uncharged from it either
+# a job re-seen after a plugin reload must be charged to DNE just like a
+# newly submitted job, then move its charge when association data arrives
 test_expect_success 'submit a job with no association data' '
 	flux jobtap remove mf_priority.so &&
 	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-unlimited.json)" &&
@@ -274,13 +274,13 @@ test_expect_success 'submit a job with no association data' '
 		.cur_active_jobs == 1" query.json
 '
 
-test_expect_success 'a job re-seen after a reload does not charge DNE' '
+test_expect_success 'a job re-seen after a reload charges DNE' '
 	flux jobtap remove mf_priority.so &&
 	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-unlimited.json)" &&
 	flux jobtap query mf_priority.so >query.json &&
 	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
 		.banks[] | select(.bank_name == \"DNE\") |
-		.cur_active_jobs == 0" query.json
+		.cur_active_jobs == 1" query.json
 '
 
 test_expect_success 'load association data and reprioritize the re-seen job' '
@@ -289,7 +289,7 @@ test_expect_success 'load association data and reprioritize the re-seen job' '
 	flux job wait-event -t 15 ${jobreload} alloc
 '
 
-test_expect_success 'DNE is not uncharged for the re-seen job' '
+test_expect_success 'the re-seen job moves its active charge off DNE' '
 	flux jobtap query mf_priority.so >query.json &&
 	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
 		.banks[] | select(.bank_name == \"DNE\") |
