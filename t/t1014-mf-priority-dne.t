@@ -374,4 +374,37 @@ test_expect_success 'cancelling the replayed SCHED job clears all real-bank usag
 		.queue_usage[\"\"].cur_sched_cores == 0" query.json
 '
 
+# a job already running when the plugin is reloaded with no flux-accounting
+# data is charged to DNE and stays there until it finishes
+test_expect_success 'a replayed RUN job charges DNE jobs and resources' '
+	jobrun=$(flux submit --bank=test_bank sleep inf) &&
+	flux job wait-event -t 15 ${jobrun} alloc &&
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-unlimited.json)" &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 1 and .cur_sched_jobs == 0 and
+		.cur_run_jobs == 1 and .cur_nodes == 1 and .cur_cores == 1 and
+		.queue_usage[\"\"].cur_sched_jobs == 0 and
+		.queue_usage[\"\"].cur_sched_nodes == 1 and
+		.queue_usage[\"\"].cur_sched_cores == 1" query.json
+'
+
+test_expect_success 'cancelling the replayed RUN job clears DNE without missing job info' '
+	flux cancel ${jobrun} &&
+	flux job wait-event -t 15 ${jobrun} clean &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 0 and .cur_sched_jobs == 0 and
+		.cur_run_jobs == 0 and .cur_nodes == 0 and .cur_cores == 0 and
+		.queue_usage[\"\"].cur_sched_jobs == 0 and
+		.queue_usage[\"\"].cur_sched_nodes == 0 and
+		.queue_usage[\"\"].cur_sched_cores == 0" query.json &&
+	flux job eventlog -f json ${jobrun} >eventlog.json &&
+	jq -se "[.[] | select(.name == \"exception\") | .context.type]
+		== [\"cancel\"]" eventlog.json
+'
+
 test_done
