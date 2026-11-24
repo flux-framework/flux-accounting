@@ -407,4 +407,58 @@ test_expect_success 'cancelling the replayed RUN job clears DNE without missing 
 		== [\"cancel\"]" eventlog.json
 '
 
+# a job in SCHED when the plugin is reloaded with no flux-accounting data can
+# be allocated resources before that data arrives; it must run under DNE
+# instead of being killed with "job info missing" in job.state.run
+test_expect_success 'reload with no association data while a job is in SCHED' '
+	flux python payload.py &&
+	flux queue stop &&
+	joballoc=$(flux submit --bank=test_bank sleep inf) &&
+	flux job wait-event -t 15 ${joballoc} priority &&
+	test "$(flux jobs -no {state} ${joballoc})" = SCHED &&
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-unlimited.json)"
+'
+
+test_expect_success 'the replayed SCHED job starts under DNE before data arrives' '
+	flux queue start &&
+	flux job wait-event -t 15 ${joballoc} start &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 1 and .cur_sched_jobs == 0 and
+		.cur_run_jobs == 1 and .cur_nodes == 1 and .cur_cores == 1 and
+		.queue_usage[\"\"].cur_sched_jobs == 0 and
+		.queue_usage[\"\"].cur_sched_nodes == 1 and
+		.queue_usage[\"\"].cur_sched_cores == 1" query.json
+'
+
+test_expect_success 'the job keeps running on DNE after association data arrives' '
+	flux python payload.py &&
+	flux python -c "import flux; flux.Flux().rpc(\"job-manager.mf_priority.reprioritize\").get()" &&
+	test "$(flux jobs -no {state} ${joballoc})" = RUN &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 1 and .cur_run_jobs == 1" query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 0 and .cur_run_jobs == 0" query.json
+'
+
+test_expect_success 'cancelling the job clears DNE with only a cancel exception' '
+	flux cancel ${joballoc} &&
+	flux job wait-event -t 15 ${joballoc} clean &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 0 and .cur_sched_jobs == 0 and
+		.cur_run_jobs == 0 and .cur_nodes == 0 and .cur_cores == 0 and
+		.queue_usage[\"\"].cur_sched_nodes == 0 and
+		.queue_usage[\"\"].cur_sched_cores == 0" query.json &&
+	flux job eventlog -f json ${joballoc} >eventlog.json &&
+	jq -se "[.[] | select(.name == \"exception\") | .context.type]
+		== [\"cancel\"]" eventlog.json
+'
+
 test_done
