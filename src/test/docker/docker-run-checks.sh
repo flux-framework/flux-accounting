@@ -12,6 +12,7 @@ BASE_DOCKER_REPO=fluxrm/flux-core
 
 IMAGE=el10
 JOBS=2
+CONTAINER_NAME=""
 MOUNT_HOME_ARGS="--volume=$HOME:/home/$USER -e HOME"
 
 if test "$PROJECT" = "flux-core"; then
@@ -24,7 +25,7 @@ declare -r prog=${0##*/}
 die() { echo -e "$prog: $@"; exit 1; }
 
 #
-declare -r long_opts="help,quiet,interactive,image:,flux-security-version:,jobs:,no-cache,no-home,distcheck,tag:,build-directory:,install-only,no-poison,recheck,inception"
+declare -r long_opts="help,quiet,interactive,image:,flux-security-version:,jobs:,no-cache,no-home,distcheck,tag:,build-directory:,install-only,no-poison,recheck,inception,name:"
 declare -r short_opts="hqIdi:S:j:t:D:Pr"
 declare -r usage="
 Usage: $prog [OPTIONS] -- [CONFIGURE_ARGS...]\n\
@@ -44,6 +45,7 @@ Options:\n\
  -i, --image=NAME              Use base docker image NAME (default=$IMAGE)\n\
  -S, --flux-security-version=N Install flux-security vers N (default=$FLUX_SECURITY_VERSION)\n
  -j, --jobs=N                  Value for make -j (default=$JOBS)\n
+     --name=NAME               Give the Docker container NAME (default: unnamed)\n\
  -d, --distcheck               Run 'make distcheck' instead of 'make check'\n\
  -r, --recheck                 Run 'make recheck' after failure\n\
  -P, --no-poison               Do not install poison libflux and flux(1)\n\
@@ -71,6 +73,7 @@ while true; do
       -i|--image)                  IMAGE="$2";                 shift 2 ;;
       -S|--flux-security-version)  FLUX_SECURITY_VERSION="$2"; shift 2 ;;
       -j|--jobs)                   JOBS="$2";                  shift 2 ;;
+      --name)                      CONTAINER_NAME="$2";        shift 2 ;;
       -I|--interactive)            INTERACTIVE="/bin/bash";    shift   ;;
       -d|--distcheck)              DISTCHECK=t;                shift   ;;
       -r|--recheck)                RECHECK=t;                  shift   ;;
@@ -146,6 +149,7 @@ export chain_lint
 
 if [[ "$INSTALL_ONLY" == "t" ]]; then
     docker run --rm \
+        ${CONTAINER_NAME:+--name "$CONTAINER_NAME"} \
         --workdir=/usr/src \
         --volume=$TOP:/usr/src \
         ${BUILD_IMAGE} \
@@ -156,6 +160,7 @@ if [[ "$INSTALL_ONLY" == "t" ]]; then
     || (docker rm tmp.$$; die "docker run of 'make install' failed")
 else
     docker run --rm \
+        ${CONTAINER_NAME:+--name "$CONTAINER_NAME"} \
         --workdir=/usr/src \
         --volume=$TOP:/usr/src \
         $MOUNT_HOME_ARGS \
