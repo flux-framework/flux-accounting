@@ -232,13 +232,21 @@ static int update_jobspec_project (flux_plugin_t *p, int userid, char *bank)
  * Create a special Association object for an association's job while the
  * plugin waits for flux-accounting data to be loaded.
  */
-static void add_special_association (flux_plugin_t *p, flux_t *h, int userid)
+static Association *add_special_association (flux_plugin_t *p,
+                                             flux_t *h,
+                                             int userid)
 {
     Association *a;
 
     auto &banks = users[userid];
     auto it = banks.find ("DNE");
-    users_def_bank[userid] = "DNE";
+
+    // only make the placeholder the user's default bank if they have no real
+    // default bank loaded; otherwise, their other jobs that use the default
+    // bank would resolve to the placeholder
+    auto def_it = users_def_bank.find (userid);
+    if (def_it == users_def_bank.end () || def_it->second.empty ())
+        users_def_bank[userid] = "DNE";
 
     // since an existing placeholder may already own active charges and held
     // jobs, check to see if it exists *before* creating a new entry in the
@@ -265,6 +273,8 @@ static void add_special_association (flux_plugin_t *p, flux_t *h, int userid)
                                  a,
                                  NULL) < 0)
         flux_log_error (h, "flux_jobtap_job_aux_set");
+
+    return a;
 }
 
 
@@ -1138,18 +1148,21 @@ static int priority_cb (flux_plugin_t *p,
                 // users map, so keep it in PRIORITY
                 return flux_jobtap_priority_unavail (p, args);
 
-            if (!queue_permitted (queue, assoc->queues, queues))
-                // the queue the association specified is invalid
+            if (!queue_permitted (queue, assoc->queues, queues)) {
+                std::string valid_queues = join_strings (assoc->queues, ",");
+                flux_jobtap_raise_exception (p,
+                                             FLUX_JOBTAP_CURRENT_JOB,
+                                             "mf_priority",
+                                             0,
+                                             MSG_INVALID_QUEUE,
+                                             queue,
+                                             valid_queues.c_str ());
                 return -1;
+            }
 
-            // a job submitted while the plugin had no flux-accounting data was
-            // charged to the DNE placeholder in new_cb (), which also attached
-            // its Job aux item; a job re-seen after a reload was not charged,
-            // so only uncharge the placeholder when that aux item is present
-            if (b != nullptr
-                && flux_jobtap_job_aux_get (p,
-                                            FLUX_JOBTAP_CURRENT_JOB,
-                                            "mf_priority:job_info") != nullptr)
+            // new_cb () charges both newly submitted and replayed jobs to
+            // the placeholder; move the active charge to the real association
+            if (b != nullptr && b->is_dne ())
                 b->cur_active_jobs--;
 
             // the bank this job was submitted under was unknown when the job
@@ -1164,6 +1177,16 @@ static int priority_cb (flux_plugin_t *p,
                                          assoc,
                                          NULL) < 0)
                 flux_log_error (h, "flux_jobtap_job_aux_set");
+
+            Job *j = static_cast<Job *> (flux_jobtap_job_aux_get (
+                                                p,
+                                                FLUX_JOBTAP_CURRENT_JOB,
+                                                "mf_priority:job_info"));
+            // move_sched () cannot fail; it returns true only if SCHED usage
+            // was freed. That result is not needed here: this path runs
+            // under reprior_cb (), which checks held jobs afterwards anyway
+            if (j != nullptr)
+                j->move_sched (assoc, queue ? queue : "");
 
             if (bank == NULL) {
                 // this job did not specify a bank and was submitted before
@@ -1488,13 +1511,12 @@ static int new_cb (flux_plugin_t *p,
         if (b == nullptr) {
             // the association could not be found in internal map, so create a
             // special Association object that will hold the job in PRIORITY
-            add_special_association (p, h, userid);
-            return 0;
-        }
-
-        if (bank == NULL) {
+            b = add_special_association (p, h, userid);
+        } else if (bank == NULL && !b->is_dne ()) {
             // this job is meant to run under the association's default bank;
             // as a result, update the jobspec with their default bank name
+            // (a job that resolves to the DNE placeholder gets its real
+            // default bank in priority_cb () once data arrives)
             if (update_jobspec_bank (p, userid) < 0) {
                 flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
                                              "mf_priority", 0,
@@ -1505,7 +1527,7 @@ static int new_cb (flux_plugin_t *p,
         }
     }
 
-    if (!queue_permitted (queue, b->queues, queues)) {
+    if (!b->is_dne () && !queue_permitted (queue, b->queues, queues)) {
         std::string valid_queues = join_strings (b->queues, ",");
         return flux_jobtap_reject_job (p,
                                        args,
@@ -1536,7 +1558,7 @@ static int new_cb (flux_plugin_t *p,
         return 0;
     }
 
-    if (project == NULL) {
+    if (project == NULL && !b->is_dne ()) {
         // this job is meant to run under a default project, so update
         // the jobspec with the project name
         if (update_jobspec_project (p, userid, bank) < 0) {
@@ -1596,6 +1618,12 @@ static int new_cb (flux_plugin_t *p,
         return -1;
     }
 
+    // a job replayed in RUN or CLEANUP is charged to the DNE placeholder
+    // when the plugin has no flux-accounting data yet, and it stays there
+    // until it finishes: priority_cb () never runs for it, so its charges
+    // do not move to its real association when data arrives. This is
+    // intentional; flux-accounting does not cancel jobs that were already
+    // running before the plugin was loaded.
     if (state == FLUX_JOB_STATE_RUN || state == FLUX_JOB_STATE_CLEANUP) {
         // this job was already running or cleaning up; increment the
         // association's running jobs and resource counts
@@ -1675,6 +1703,13 @@ static int depend_cb (flux_plugin_t *p,
 
         return -1;
     }
+
+    if (b->is_dne ())
+        // a job attached to the DNE placeholder already waits in PRIORITY
+        // until priority_cb () finds its real association, so don't hold it
+        // here; the placeholder combines usage from all of the user's banks,
+        // and a job held against it is not moved when data arrives
+        return 0;
 
     if (jobspec == NULL) {
         flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "mf_priority",

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-test_description='Test cancelling active jobs with a late user/bank info load'
+test_description='Test DNE job accounting with a late user/bank info load'
 
 . `dirname $0`/sharness.sh
 MULTI_FACTOR_PRIORITY=${FLUX_BUILD_DIR}/src/plugins/.libs/mf_priority.so
@@ -99,7 +99,9 @@ test_expect_success 'cancel job #1' '
 '
 
 # Explicit missing banks cause repeated placeholder initialization for one
-# user. The known unnamed queue holds both jobs before association data arrives.
+# user. The placeholder keeps each job's active charge, but even a queue limit
+# that would hold them does not hold jobs attached to it in DEPEND, since the
+# placeholder combines usage from all of a user's banks.
 test_expect_success 'reload with a queue limit and no association data' '
 	flux job wait-event -t 15 ${jobid1} clean &&
 	userid=$(id -u) &&
@@ -117,45 +119,36 @@ test_expect_success 'reload with a queue limit and no association data' '
 	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-limit.json)"
 '
 
-test_expect_success 'first missing bank creates a charged queue-held job' '
-	held1=$(flux submit --bank=A --setattr=project=* sleep inf) &&
-	flux job wait-event -t 15 \
-		--match-context=description=max-run-jobs-queue \
-		${held1} dependency-add &&
-	held1_dec=$(flux job id -t dec ${held1}) &&
+test_expect_success 'first missing bank creates a charged DNE job that is not held' '
+	dne1=$(flux submit --bank=A --setattr=project=* sleep inf) &&
+	flux job wait-event -t 15 ${dne1} depend &&
 	flux jobtap query mf_priority.so >query.json &&
 	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
 		.banks[] | select(.bank_name == \"DNE\") |
-		.cur_active_jobs == 1 and
-		(.held_jobs | keys) == [\"${held1_dec}\"]" query.json
+		.cur_active_jobs == 1 and (.held_jobs | length) == 0" query.json
 '
 
-test_expect_success 'another missing bank preserves existing DNE usage and holds' '
-	held2=$(flux submit --bank=B --setattr=project=* sleep inf) &&
-	flux job wait-event -t 15 \
-		--match-context=description=max-run-jobs-queue \
-		${held2} dependency-add &&
-	held2_dec=$(flux job id -t dec ${held2}) &&
+test_expect_success 'another missing bank preserves the existing DNE charge' '
+	dne2=$(flux submit --bank=B --setattr=project=* sleep inf) &&
+	flux job wait-event -t 15 ${dne2} depend &&
 	flux jobtap query mf_priority.so >query.json &&
 	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
 		.banks[] | select(.bank_name == \"DNE\") |
-		.cur_active_jobs == 2 and (.held_jobs | keys) ==
-		([\"${held1_dec}\", \"${held2_dec}\"] | sort)" query.json
+		.cur_active_jobs == 2 and (.held_jobs | length) == 0" query.json
 '
 
-test_expect_success 'cancelling the first job preserves the second charge and hold' '
-	flux cancel ${held1} &&
-	flux job wait-event -t 15 ${held1} clean &&
+test_expect_success 'cancelling the first job preserves the second charge' '
+	flux cancel ${dne1} &&
+	flux job wait-event -t 15 ${dne1} clean &&
 	flux jobtap query mf_priority.so >query.json &&
 	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
 		.banks[] | select(.bank_name == \"DNE\") |
-		.cur_active_jobs == 1 and
-		(.held_jobs | keys) == [\"${held2_dec}\"]" query.json
+		.cur_active_jobs == 1" query.json
 '
 
-test_expect_success 'cancelling the second job clears DNE usage and holds' '
-	flux cancel ${held2} &&
-	flux job wait-event -t 15 ${held2} clean &&
+test_expect_success 'cancelling the second job clears DNE usage' '
+	flux cancel ${dne2} &&
+	flux job wait-event -t 15 ${dne2} clean &&
 	flux jobtap query mf_priority.so >query.json &&
 	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
 		.banks[] | select(.bank_name == \"DNE\") |
@@ -183,6 +176,7 @@ test_expect_success 'load an association with max_running_jobs of 999' '
 	cat <<-EOF >payload.py &&
 	import flux
 	import json
+	import sys
 
 	data = {
 		"data": [
@@ -195,7 +189,7 @@ test_expect_success 'load an association with max_running_jobs of 999' '
 				"max_active_jobs": 1000,
 				"max_nodes": 2147483647,
 				"max_cores": 2147483647,
-				"queues": "",
+				"queues": sys.argv[1] if len(sys.argv) > 1 else "",
 				"active": 1,
 				"projects": "*",
 				"def_project": "*",
@@ -262,8 +256,8 @@ test_expect_success 'cancel the formerly DNE job' '
 		.cur_active_jobs == 0 and .cur_run_jobs == 0" query.json
 '
 
-# a job re-seen after a plugin reload is attached to the DNE placeholder
-# without charging it, so it must not be uncharged from it either
+# a job re-seen after a plugin reload must be charged to DNE just like a
+# newly submitted job, then move its charge when association data arrives
 test_expect_success 'submit a job with no association data' '
 	flux jobtap remove mf_priority.so &&
 	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-unlimited.json)" &&
@@ -274,13 +268,13 @@ test_expect_success 'submit a job with no association data' '
 		.cur_active_jobs == 1" query.json
 '
 
-test_expect_success 'a job re-seen after a reload does not charge DNE' '
+test_expect_success 'a job re-seen after a reload charges DNE' '
 	flux jobtap remove mf_priority.so &&
 	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-unlimited.json)" &&
 	flux jobtap query mf_priority.so >query.json &&
 	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
 		.banks[] | select(.bank_name == \"DNE\") |
-		.cur_active_jobs == 0" query.json
+		.cur_active_jobs == 1" query.json
 '
 
 test_expect_success 'load association data and reprioritize the re-seen job' '
@@ -289,7 +283,7 @@ test_expect_success 'load association data and reprioritize the re-seen job' '
 	flux job wait-event -t 15 ${jobreload} alloc
 '
 
-test_expect_success 'DNE is not uncharged for the re-seen job' '
+test_expect_success 'the re-seen job moves its active charge off DNE' '
 	flux jobtap query mf_priority.so >query.json &&
 	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
 		.banks[] | select(.bank_name == \"DNE\") |
@@ -306,6 +300,307 @@ test_expect_success 'cancel the re-seen job' '
 	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
 		.banks[] | select(.bank_name == \"test_bank\") |
 		.cur_active_jobs == 0 and .cur_run_jobs == 0" query.json
+'
+
+# job & resource counts are correctly reconciled to the correct association
+# after a flux-accounting update and before the job begins running
+test_expect_success 'submit a job that stays in SCHED' '
+	flux python payload.py &&
+	flux queue stop &&
+	jobsched=$(flux submit --bank=test_bank sleep inf) &&
+	flux job wait-event -t 15 ${jobsched} priority &&
+	test "$(flux jobs -no {state} ${jobsched})" = SCHED
+'
+
+test_expect_success 'a replayed SCHED job charges DNE jobs and resources' '
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-unlimited.json)" &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 1 and .cur_sched_jobs == 1 and
+		.queue_usage[\"\"].cur_sched_jobs == 1 and
+		.queue_usage[\"\"].cur_sched_nodes == 1 and
+		.queue_usage[\"\"].cur_sched_cores == 1" query.json
+'
+
+test_expect_success 'reprioritizing moves SCHED jobs and resources to the real bank' '
+	flux python payload.py &&
+	flux python -c "import flux; flux.Flux().rpc(\"job-manager.mf_priority.reprioritize\").get()" &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 0 and .cur_sched_jobs == 0 and
+		.queue_usage[\"\"].cur_sched_jobs == 0 and
+		.queue_usage[\"\"].cur_sched_nodes == 0 and
+		.queue_usage[\"\"].cur_sched_cores == 0" query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 1 and .cur_sched_jobs == 1 and
+		.queue_usage[\"\"].cur_sched_jobs == 1 and
+		.queue_usage[\"\"].cur_sched_nodes == 1 and
+		.queue_usage[\"\"].cur_sched_cores == 1" query.json
+'
+
+test_expect_success 'the replayed SCHED job runs under its real bank' '
+	flux queue start &&
+	flux job wait-event -t 15 ${jobsched} alloc &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 1 and .cur_sched_jobs == 0 and
+		.cur_run_jobs == 1 and .cur_nodes == 1 and .cur_cores == 1 and
+		.queue_usage[\"\"].cur_sched_jobs == 0 and
+		.queue_usage[\"\"].cur_sched_nodes == 1 and
+		.queue_usage[\"\"].cur_sched_cores == 1" query.json
+'
+
+test_expect_success 'cancelling the replayed SCHED job clears all real-bank usage' '
+	flux cancel ${jobsched} &&
+	flux job wait-event -t 15 ${jobsched} clean &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 0 and .cur_sched_jobs == 0 and
+		.cur_run_jobs == 0 and .cur_nodes == 0 and .cur_cores == 0 and
+		.queue_usage[\"\"].cur_sched_jobs == 0 and
+		.queue_usage[\"\"].cur_sched_nodes == 0 and
+		.queue_usage[\"\"].cur_sched_cores == 0" query.json
+'
+
+# a job already running when the plugin is reloaded with no flux-accounting
+# data is charged to DNE and stays there until it finishes
+test_expect_success 'a replayed RUN job charges DNE jobs and resources' '
+	jobrun=$(flux submit --bank=test_bank sleep inf) &&
+	flux job wait-event -t 15 ${jobrun} alloc &&
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-unlimited.json)" &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 1 and .cur_sched_jobs == 0 and
+		.cur_run_jobs == 1 and .cur_nodes == 1 and .cur_cores == 1 and
+		.queue_usage[\"\"].cur_sched_jobs == 0 and
+		.queue_usage[\"\"].cur_sched_nodes == 1 and
+		.queue_usage[\"\"].cur_sched_cores == 1" query.json
+'
+
+test_expect_success 'cancelling the replayed RUN job clears DNE without missing job info' '
+	flux cancel ${jobrun} &&
+	flux job wait-event -t 15 ${jobrun} clean &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 0 and .cur_sched_jobs == 0 and
+		.cur_run_jobs == 0 and .cur_nodes == 0 and .cur_cores == 0 and
+		.queue_usage[\"\"].cur_sched_jobs == 0 and
+		.queue_usage[\"\"].cur_sched_nodes == 0 and
+		.queue_usage[\"\"].cur_sched_cores == 0" query.json &&
+	flux job eventlog -f json ${jobrun} >eventlog.json &&
+	jq -se "[.[] | select(.name == \"exception\") | .context.type]
+		== [\"cancel\"]" eventlog.json
+'
+
+# a job in SCHED when the plugin is reloaded with no flux-accounting data can
+# be allocated resources before that data arrives; it must run under DNE
+# instead of being killed with "job info missing" in job.state.run
+test_expect_success 'reload with no association data while a job is in SCHED' '
+	flux python payload.py &&
+	flux queue stop &&
+	joballoc=$(flux submit --bank=test_bank sleep inf) &&
+	flux job wait-event -t 15 ${joballoc} priority &&
+	test "$(flux jobs -no {state} ${joballoc})" = SCHED &&
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-unlimited.json)"
+'
+
+test_expect_success 'the replayed SCHED job starts under DNE before data arrives' '
+	flux queue start &&
+	flux job wait-event -t 15 ${joballoc} start &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 1 and .cur_sched_jobs == 0 and
+		.cur_run_jobs == 1 and .cur_nodes == 1 and .cur_cores == 1 and
+		.queue_usage[\"\"].cur_sched_jobs == 0 and
+		.queue_usage[\"\"].cur_sched_nodes == 1 and
+		.queue_usage[\"\"].cur_sched_cores == 1" query.json
+'
+
+test_expect_success 'the job keeps running on DNE after association data arrives' '
+	flux python payload.py &&
+	flux python -c "import flux; flux.Flux().rpc(\"job-manager.mf_priority.reprioritize\").get()" &&
+	test "$(flux jobs -no {state} ${joballoc})" = RUN &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 1 and .cur_run_jobs == 1" query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 0 and .cur_run_jobs == 0" query.json
+'
+
+test_expect_success 'cancelling the job clears DNE with only a cancel exception' '
+	flux cancel ${joballoc} &&
+	flux job wait-event -t 15 ${joballoc} clean &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 0 and .cur_sched_jobs == 0 and
+		.cur_run_jobs == 0 and .cur_nodes == 0 and .cur_cores == 0 and
+		.queue_usage[\"\"].cur_sched_nodes == 0 and
+		.queue_usage[\"\"].cur_sched_cores == 0" query.json &&
+	flux job eventlog -f json ${joballoc} >eventlog.json &&
+	jq -se "[.[] | select(.name == \"exception\") | .context.type]
+		== [\"cancel\"]" eventlog.json
+'
+
+# if a queue is specified on a job held under the special "DNE" bank, it needs
+# to be re-validated once the plugin is loaded with valid flux-accounting data
+test_expect_success 'configure standby and default queues without association data' '
+	flux config load <<-EOF &&
+	[queues.default]
+	[queues.standby]
+	EOF
+	jq ".queues[0].queue = \"standby\"" queue-unlimited.json >queue-standby.json &&
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-standby.json)" &&
+	flux queue start --all
+'
+
+test_expect_success 'accept a configured queue job while association data is missing' '
+	jobqueue=$(flux submit --queue=standby --bank=test_bank \
+		--wait-event=depend sleep inf) &&
+	test "$(flux jobs -no {state} ${jobqueue})" = PRIORITY &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 1" query.json
+'
+
+test_expect_success 'the configured queue job runs when its real bank permits standby' '
+	flux python payload.py standby &&
+	flux python -c "import flux; flux.Flux().rpc(\"job-manager.mf_priority.reprioritize\").get()" &&
+	flux job wait-event -t 15 ${jobqueue} alloc &&
+	flux job info ${jobqueue} eventlog >eventlog.out &&
+	grep "\"attributes.system.project\":\"\*\"" eventlog.out &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 0" query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 1 and .cur_run_jobs == 1 and
+		.queue_usage.standby.cur_run_jobs == 1" query.json &&
+	flux cancel ${jobqueue} &&
+	flux job wait-event -t 15 ${jobqueue} clean
+'
+
+test_expect_success 'submit another configured queue job before association data arrives' '
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-standby.json)" &&
+	jobinvalid=$(flux submit --queue=standby --bank=test_bank \
+		--wait-event=depend sleep inf) &&
+	test "$(flux jobs -no {state} ${jobinvalid})" = PRIORITY
+'
+
+test_expect_success 'a real bank without standby raises an invalid queue exception' '
+	flux python payload.py &&
+	flux python -c "import flux; flux.Flux().rpc(\"job-manager.mf_priority.reprioritize\").get()" &&
+	flux job wait-event -t 15 ${jobinvalid} clean &&
+	flux job eventlog -f json ${jobinvalid} >eventlog.json &&
+	jq -se "[.[] | select(.name == \"exception\") | .context] |
+		length == 1 and .[0].type == \"mf_priority\" and
+		.[0].severity == 0 and
+		.[0].note == \"queue \\\"standby\\\" not valid for user; valid queues for user: \"" \
+		eventlog.json &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks | all(.[]; .cur_active_jobs == 0 and .cur_run_jobs == 0)" \
+		query.json
+'
+
+test_expect_success 'remove queue configuration' '
+	flux config load </dev/null &&
+	test_must_fail flux config get queues
+'
+
+# a job submitted without a bank while the plugin has no data must not have
+# the placeholder's name written into its jobspec; it gets its real default
+# bank once association data arrives
+test_expect_success 'submit two jobs without a bank before association data arrives' '
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-unlimited.json)" &&
+	jobnobank1=$(flux submit --wait-event=depend sleep inf) &&
+	jobnobank2=$(flux submit --wait-event=depend sleep inf) &&
+	for job in ${jobnobank1} ${jobnobank2}; do
+		flux job info ${job} jobspec |
+			jq -e ".attributes.system.bank == null" || return 1
+	done
+'
+
+test_expect_success 'both jobs get their real default bank when data arrives' '
+	flux python payload.py &&
+	flux python -c "import flux; flux.Flux().rpc(\"job-manager.mf_priority.reprioritize\").get()" &&
+	for job in ${jobnobank1} ${jobnobank2}; do
+		flux job wait-event -t 15 ${job} priority &&
+		flux job info ${job} jobspec |
+			jq -e ".attributes.system.bank == \"test_bank\"" || return 1
+	done &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 0" query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 2" query.json
+'
+
+test_expect_success 'cancel the jobs submitted without a bank' '
+	flux cancel ${jobnobank1} ${jobnobank2} &&
+	flux job wait-event -t 15 ${jobnobank1} clean &&
+	flux job wait-event -t 15 ${jobnobank2} clean
+'
+
+# a replayed job whose bank was removed must not make the placeholder the
+# user's default bank while the user still has real banks loaded
+test_expect_success 'hold a job under a bank that is about to be removed' '
+	jq --argjson uid ${userid} ". + {associations: [{
+		userid: \$uid, bank: \"test_bank\", def_bank: \"test_bank\",
+		fairshare: 0.5, max_running_jobs: 999, max_active_jobs: 1000,
+		max_nodes: 2147483647, max_cores: 2147483647, queues: \"\",
+		active: 1, projects: \"*\", def_project: \"*\",
+		max_sched_jobs: 2147483647}]}" \
+		queue-unlimited.json >config-one-bank.json &&
+	jq ".associations += [.associations[0] + {bank: \"other_bank\"}]" \
+		config-one-bank.json >config-two-banks.json &&
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat config-two-banks.json)" &&
+	jobgone=$(flux submit --bank=other_bank --urgency=hold \
+		--wait-event=depend sleep inf)
+'
+
+test_expect_success 'a replayed job whose bank was removed gets an exception' '
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat config-one-bank.json)" &&
+	flux job wait-event -t 15 ${jobgone} clean &&
+	flux job eventlog -f json ${jobgone} >eventlog.json &&
+	jq -se "[.[] | select(.name == \"exception\") | .context] |
+		length == 1 and .[0].type == \"mf_priority\" and
+		(.[0].note | startswith(\"cannot find user/bank\"))" eventlog.json
+'
+
+test_expect_success 'a job using the default bank still runs under its real bank' '
+	jobdefault=$(flux submit sleep inf) &&
+	flux job wait-event -t 15 ${jobdefault} priority &&
+	flux job info ${jobdefault} jobspec |
+		jq -e ".attributes.system.bank == \"test_bank\"" &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 1" query.json &&
+	flux cancel ${jobdefault} &&
+	flux job wait-event -t 15 ${jobdefault} clean
 '
 
 test_done
