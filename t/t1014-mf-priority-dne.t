@@ -525,4 +525,82 @@ test_expect_success 'remove queue configuration' '
 	test_must_fail flux config get queues
 '
 
+# a job submitted without a bank while the plugin has no data must not have
+# the placeholder's name written into its jobspec; it gets its real default
+# bank once association data arrives
+test_expect_success 'submit two jobs without a bank before association data arrives' '
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-unlimited.json)" &&
+	jobnobank1=$(flux submit --wait-event=depend sleep inf) &&
+	jobnobank2=$(flux submit --wait-event=depend sleep inf) &&
+	for job in ${jobnobank1} ${jobnobank2}; do
+		flux job info ${job} jobspec |
+			jq -e ".attributes.system.bank == null" || return 1
+	done
+'
+
+test_expect_success 'both jobs get their real default bank when data arrives' '
+	flux python payload.py &&
+	flux python -c "import flux; flux.Flux().rpc(\"job-manager.mf_priority.reprioritize\").get()" &&
+	for job in ${jobnobank1} ${jobnobank2}; do
+		flux job wait-event -t 15 ${job} priority &&
+		flux job info ${job} jobspec |
+			jq -e ".attributes.system.bank == \"test_bank\"" || return 1
+	done &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"DNE\") |
+		.cur_active_jobs == 0" query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 2" query.json
+'
+
+test_expect_success 'cancel the jobs submitted without a bank' '
+	flux cancel ${jobnobank1} ${jobnobank2} &&
+	flux job wait-event -t 15 ${jobnobank1} clean &&
+	flux job wait-event -t 15 ${jobnobank2} clean
+'
+
+# a replayed job whose bank was removed must not make the placeholder the
+# user's default bank while the user still has real banks loaded
+test_expect_success 'hold a job under a bank that is about to be removed' '
+	jq --argjson uid ${userid} ". + {associations: [{
+		userid: \$uid, bank: \"test_bank\", def_bank: \"test_bank\",
+		fairshare: 0.5, max_running_jobs: 999, max_active_jobs: 1000,
+		max_nodes: 2147483647, max_cores: 2147483647, queues: \"\",
+		active: 1, projects: \"*\", def_project: \"*\",
+		max_sched_jobs: 2147483647}]}" \
+		queue-unlimited.json >config-one-bank.json &&
+	jq ".associations += [.associations[0] + {bank: \"other_bank\"}]" \
+		config-one-bank.json >config-two-banks.json &&
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat config-two-banks.json)" &&
+	jobgone=$(flux submit --bank=other_bank --urgency=hold \
+		--wait-event=depend sleep inf)
+'
+
+test_expect_success 'a replayed job whose bank was removed gets an exception' '
+	flux jobtap remove mf_priority.so &&
+	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat config-one-bank.json)" &&
+	flux job wait-event -t 15 ${jobgone} clean &&
+	flux job eventlog -f json ${jobgone} >eventlog.json &&
+	jq -se "[.[] | select(.name == \"exception\") | .context] |
+		length == 1 and .[0].type == \"mf_priority\" and
+		(.[0].note | startswith(\"cannot find user/bank\"))" eventlog.json
+'
+
+test_expect_success 'a job using the default bank still runs under its real bank' '
+	jobdefault=$(flux submit sleep inf) &&
+	flux job wait-event -t 15 ${jobdefault} priority &&
+	flux job info ${jobdefault} jobspec |
+		jq -e ".attributes.system.bank == \"test_bank\"" &&
+	flux jobtap query mf_priority.so >query.json &&
+	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
+		.banks[] | select(.bank_name == \"test_bank\") |
+		.cur_active_jobs == 1" query.json &&
+	flux cancel ${jobdefault} &&
+	flux job wait-event -t 15 ${jobdefault} clean
+'
+
 test_done
