@@ -240,7 +240,13 @@ static Association *add_special_association (flux_plugin_t *p,
 
     auto &banks = users[userid];
     auto it = banks.find ("DNE");
-    users_def_bank[userid] = "DNE";
+
+    // only make the placeholder the user's default bank if they have no real
+    // default bank loaded; otherwise, their other jobs that use the default
+    // bank would resolve to the placeholder
+    auto def_it = users_def_bank.find (userid);
+    if (def_it == users_def_bank.end () || def_it->second.empty ())
+        users_def_bank[userid] = "DNE";
 
     // since an existing placeholder may already own active charges and held
     // jobs, check to see if it exists *before* creating a new entry in the
@@ -1506,9 +1512,11 @@ static int new_cb (flux_plugin_t *p,
             // the association could not be found in internal map, so create a
             // special Association object that will hold the job in PRIORITY
             b = add_special_association (p, h, userid);
-        } else if (bank == NULL) {
+        } else if (bank == NULL && !b->is_dne ()) {
             // this job is meant to run under the association's default bank;
             // as a result, update the jobspec with their default bank name
+            // (a job that resolves to the DNE placeholder gets its real
+            // default bank in priority_cb () once data arrives)
             if (update_jobspec_bank (p, userid) < 0) {
                 flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB,
                                              "mf_priority", 0,
