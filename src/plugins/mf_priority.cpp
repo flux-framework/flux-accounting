@@ -1696,6 +1696,13 @@ static int depend_cb (flux_plugin_t *p,
         return -1;
     }
 
+    if (b->is_dne ())
+        // a job attached to the DNE placeholder already waits in PRIORITY
+        // until priority_cb () finds its real association, so don't hold it
+        // here; the placeholder combines usage from all of the user's banks,
+        // and a job held against it is not moved when data arrives
+        return 0;
+
     if (jobspec == NULL) {
         flux_jobtap_raise_exception (p, FLUX_JOBTAP_CURRENT_JOB, "mf_priority",
                                      0, "job.state.depend: failed to unpack " \

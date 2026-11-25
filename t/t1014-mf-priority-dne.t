@@ -99,7 +99,9 @@ test_expect_success 'cancel job #1' '
 '
 
 # Explicit missing banks cause repeated placeholder initialization for one
-# user. The known unnamed queue holds both jobs before association data arrives.
+# user. The placeholder keeps each job's active charge, but even a queue limit
+# that would hold them does not hold jobs attached to it in DEPEND, since the
+# placeholder combines usage from all of a user's banks.
 test_expect_success 'reload with a queue limit and no association data' '
 	flux job wait-event -t 15 ${jobid1} clean &&
 	userid=$(id -u) &&
@@ -117,45 +119,36 @@ test_expect_success 'reload with a queue limit and no association data' '
 	flux jobtap load ${MULTI_FACTOR_PRIORITY} "config=$(cat queue-limit.json)"
 '
 
-test_expect_success 'first missing bank creates a charged queue-held job' '
-	held1=$(flux submit --bank=A --setattr=project=* sleep inf) &&
-	flux job wait-event -t 15 \
-		--match-context=description=max-run-jobs-queue \
-		${held1} dependency-add &&
-	held1_dec=$(flux job id -t dec ${held1}) &&
+test_expect_success 'first missing bank creates a charged DNE job that is not held' '
+	dne1=$(flux submit --bank=A --setattr=project=* sleep inf) &&
+	flux job wait-event -t 15 ${dne1} depend &&
 	flux jobtap query mf_priority.so >query.json &&
 	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
 		.banks[] | select(.bank_name == \"DNE\") |
-		.cur_active_jobs == 1 and
-		(.held_jobs | keys) == [\"${held1_dec}\"]" query.json
+		.cur_active_jobs == 1 and (.held_jobs | length) == 0" query.json
 '
 
-test_expect_success 'another missing bank preserves existing DNE usage and holds' '
-	held2=$(flux submit --bank=B --setattr=project=* sleep inf) &&
-	flux job wait-event -t 15 \
-		--match-context=description=max-run-jobs-queue \
-		${held2} dependency-add &&
-	held2_dec=$(flux job id -t dec ${held2}) &&
+test_expect_success 'another missing bank preserves the existing DNE charge' '
+	dne2=$(flux submit --bank=B --setattr=project=* sleep inf) &&
+	flux job wait-event -t 15 ${dne2} depend &&
 	flux jobtap query mf_priority.so >query.json &&
 	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
 		.banks[] | select(.bank_name == \"DNE\") |
-		.cur_active_jobs == 2 and (.held_jobs | keys) ==
-		([\"${held1_dec}\", \"${held2_dec}\"] | sort)" query.json
+		.cur_active_jobs == 2 and (.held_jobs | length) == 0" query.json
 '
 
-test_expect_success 'cancelling the first job preserves the second charge and hold' '
-	flux cancel ${held1} &&
-	flux job wait-event -t 15 ${held1} clean &&
+test_expect_success 'cancelling the first job preserves the second charge' '
+	flux cancel ${dne1} &&
+	flux job wait-event -t 15 ${dne1} clean &&
 	flux jobtap query mf_priority.so >query.json &&
 	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
 		.banks[] | select(.bank_name == \"DNE\") |
-		.cur_active_jobs == 1 and
-		(.held_jobs | keys) == [\"${held2_dec}\"]" query.json
+		.cur_active_jobs == 1" query.json
 '
 
-test_expect_success 'cancelling the second job clears DNE usage and holds' '
-	flux cancel ${held2} &&
-	flux job wait-event -t 15 ${held2} clean &&
+test_expect_success 'cancelling the second job clears DNE usage' '
+	flux cancel ${dne2} &&
+	flux job wait-event -t 15 ${dne2} clean &&
 	flux jobtap query mf_priority.so >query.json &&
 	jq -e ".mf_priority_map[] | select(.userid == ${userid}) |
 		.banks[] | select(.bank_name == \"DNE\") |
